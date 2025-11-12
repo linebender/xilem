@@ -413,7 +413,9 @@ pub struct WithContextState<ChildState, ChildView> {
     listener_index: Option<usize>,
 }
 
-const WITH_CONTEXT_CHILD: ViewId = ViewId::new(0);
+// Use a distinctive number here, to be able to catch bugs.
+/// This is a randomly generated 32 bit number - 3326962411 in decimal.
+const WITH_CONTEXT_CHILD: ViewId = ViewId::new(0xc64d6aeb);
 
 impl<State, Action, Context, Child, ChildView> ViewMarker
     for WithContext<State, Action, Context, Child, ChildView>

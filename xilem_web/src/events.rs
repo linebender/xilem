@@ -14,9 +14,10 @@ use crate::core::{
 };
 use crate::{DomView, OptionalAction, ViewCtx};
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
-const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 592908563 in decimal.
+const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x23571113);
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///

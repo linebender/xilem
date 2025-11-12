@@ -162,7 +162,10 @@ impl<State, Action, F, V> Button<State, Action, F, V> {
     }
 }
 
-const BUTTON_CONTENT_VIEW_ID: ViewId = ViewId::new(0);
+/// Use a distinctive number here, to be able to catch bugs.
+/// In case the generational-id view path in `View::Message` leads to the wrong view.
+/// This is a randomly generated 32 bit number - 3502359742 in decimal.
+const BUTTON_CONTENT_VIEW_ID: ViewId = ViewId::new(0xd0c1c4be);
 
 impl<State, Action, F, V> ViewMarker for Button<State, Action, F, V> {}
 impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<State, Action, F, V>
