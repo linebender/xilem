@@ -70,6 +70,21 @@ Xilem and Masonry are built on top of:
 </figure>
 
 
+## Getting started
+
+After cloning this repository, you can try running the examples, such as the `to_do_mvc` example shown above:
+
+```sh
+cargo run --example to_do_mvc
+```
+
+To add Xilem as a dependency to your project, run
+
+```sh
+cargo add xilem
+```
+
+
 ## Prerequisites
 
 ### Linux and BSD
