@@ -3,6 +3,7 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
+use masonry::parley::{FontFamily, GenericFamily};
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
@@ -35,7 +36,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
-        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
     }
 }
 
