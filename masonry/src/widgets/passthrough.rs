@@ -22,22 +22,22 @@ use crate::core::{
 /// Create a host and later replace its content inside a mutate/edit callback:
 /// ```
 /// use masonry::core::{NewWidget, Widget};
-/// use masonry::widgets::{ContentHost, Label};
+/// use masonry::widgets::{Passthrough, Label};
 ///
 /// // Create a host around a label
-/// let host = NewWidget::new(ContentHost::new(Label::new("Hello").with_auto_id()));
+/// let host = NewWidget::new(Passthrough::new(Label::new("Hello").with_auto_id()));
 ///
 /// // ... in an edit callback, mutate the widget tree
-/// # fn edit(mut host: masonry::core::WidgetMut<'_, ContentHost>) {
-/// ContentHost::replace_child(&mut host, Label::new("World").with_auto_id());
+/// # fn edit(mut host: masonry::core::WidgetMut<'_, Passthrough>) {
+/// Passthrough::replace_child(&mut host, Label::new("World").with_auto_id());
 /// # }
 /// ```
-pub struct ContentHost {
+pub struct Passthrough {
     inner: WidgetPod<dyn Widget>,
 }
 
-impl ContentHost {
-    /// Create a new `ContentHost` with the given initial child.
+impl Passthrough {
+    /// Create a new `Passthrough` with the given initial child.
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             inner: child.erased().to_pod(),
@@ -63,7 +63,7 @@ impl ContentHost {
     }
 }
 
-impl Widget for ContentHost {
+impl Widget for Passthrough {
     type Action = NoAction;
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -100,7 +100,7 @@ impl Widget for ContentHost {
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
-        trace_span!("ContentHost", id = id.trace())
+        trace_span!("Passthrough", id = id.trace())
     }
 }
 
@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn content_host_replaces_child() {
         // Start with a label
-        let widget = NewWidget::new(ContentHost::new(Label::new("A").with_auto_id()));
+        let widget = NewWidget::new(Passthrough::new(Label::new("A").with_auto_id()));
         let window_size = Size::new(160.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -125,7 +125,7 @@ mod tests {
 
         // Replace with a label with different text
         harness.edit_root_widget(|mut host| {
-            ContentHost::replace_child(&mut host, Label::new("B").with_auto_id());
+            Passthrough::replace_child(&mut host, Label::new("B").with_auto_id());
         });
 
         assert_render_snapshot!(harness, "content_host_replaced_label_B");
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn content_host_child_mut() {
         // Start with a label and then change text through child_mut
-        let widget = NewWidget::new(ContentHost::new(Label::new("Hello").with_auto_id()));
+        let widget = NewWidget::new(Passthrough::new(Label::new("Hello").with_auto_id()));
         let window_size = Size::new(200.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -142,7 +142,7 @@ mod tests {
         assert_render_snapshot!(harness, "content_host_child_mut_initial");
 
         harness.edit_root_widget(|mut host| {
-            let mut child = ContentHost::child_mut(&mut host);
+            let mut child = Passthrough::child_mut(&mut host);
             let mut label = child.downcast::<Label>();
             Label::set_text(&mut label, "World");
         });
@@ -151,7 +151,7 @@ mod tests {
 
         // Replace with a button to ensure dynamic type change works visually too
         harness.edit_root_widget(|mut host| {
-            ContentHost::replace_child(&mut host, Button::with_text("Click").with_auto_id());
+            Passthrough::replace_child(&mut host, Button::with_text("Click").with_auto_id());
         });
 
         assert_render_snapshot!(harness, "content_host_child_replaced_with_button");
