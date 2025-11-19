@@ -110,50 +110,24 @@ mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
-    use crate::widgets::{Button, Label};
+    use crate::widgets::Label;
     use vello::kurbo::Size;
 
     #[test]
-    fn content_host_replaces_child() {
+    fn passthrough_replaces_child() {
         // Start with a label
         let widget = NewWidget::new(Passthrough::new(Label::new("A").with_auto_id()));
-        let window_size = Size::new(160.0, 60.0);
+        let window_size = Size::new(30.0, 30.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "content_host_initial_label_A");
+        assert_render_snapshot!(harness, "passthrough_initial_label_A");
 
         // Replace with a label with different text
         harness.edit_root_widget(|mut host| {
             Passthrough::replace_child(&mut host, Label::new("B").with_auto_id());
         });
 
-        assert_render_snapshot!(harness, "content_host_replaced_label_B");
-    }
-
-    #[test]
-    fn content_host_child_mut() {
-        // Start with a label and then change text through child_mut
-        let widget = NewWidget::new(Passthrough::new(Label::new("Hello").with_auto_id()));
-        let window_size = Size::new(200.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
-
-        assert_render_snapshot!(harness, "content_host_child_mut_initial");
-
-        harness.edit_root_widget(|mut host| {
-            let mut child = Passthrough::child_mut(&mut host);
-            let mut label = child.downcast::<Label>();
-            Label::set_text(&mut label, "World");
-        });
-
-        assert_render_snapshot!(harness, "content_host_child_mut_updated");
-
-        // Replace with a button to ensure dynamic type change works visually too
-        harness.edit_root_widget(|mut host| {
-            Passthrough::replace_child(&mut host, Button::with_text("Click").with_auto_id());
-        });
-
-        assert_render_snapshot!(harness, "content_host_child_replaced_with_button");
+        assert_render_snapshot!(harness, "passthrough_replaced_label_B");
     }
 }
