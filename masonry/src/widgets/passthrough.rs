@@ -109,7 +109,7 @@ impl Widget for Passthrough {
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
     use vello::kurbo::Size;
 
@@ -118,10 +118,16 @@ mod tests {
         // Start with a label
         let widget = NewWidget::new(Passthrough::new(Label::new("A").with_auto_id()));
         let window_size = Size::new(30.0, 30.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "passthrough_initial_label_A");
+
+        harness.edit_root_widget(|mut host| {
+            let mut child = Passthrough::child_mut(&mut host);
+
+            // Test that child_mut returns a pointer to the child label
+            let _ = child.downcast::<Label>();
+        });
 
         // Replace with a label with different text
         harness.edit_root_widget(|mut host| {
