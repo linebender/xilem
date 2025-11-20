@@ -14,9 +14,6 @@ exclude = [
     "/resources/data/emoji_names/",
 ]
 
-[features]
-compile-stress-test = []
-
 [package.metadata.docs.rs]
 all-features = true
 # There are no platform specific docs.
@@ -36,6 +33,7 @@ name = "android.permission.INTERNET"
 
 [features]
 default = ["masonry/default", "masonry_winit/default"]
+compile-stress-test = []
 
 [dependencies]
 xilem_core.workspace = true
@@ -64,10 +62,6 @@ winit = { features = ["android-native-activity"], workspace = true }
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "stress_test"
-harness = false
 
 [[example]]
 name = "mason"
