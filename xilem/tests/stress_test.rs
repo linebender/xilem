@@ -1,44 +1,36 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs)]
-#![allow(unused)]
+//! Stress test for the build speed of Xilem components.
 
 use std::hint::black_box;
 
 use xilem::WidgetView;
-use xilem::core::Edit;
 use xilem::core::ViewArgument;
-use xilem::masonry::properties::types::AsUnit;
-use xilem::masonry::util::debug_panic;
-use xilem::palette::css;
-use xilem::style::{Padding, Style};
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, button, checkbox, flex, flex_col, flex_row, grid, image,
-    indexed_stack, label, portal, progress_bar, prose, sized_box, slider, spinner, split, task,
-    text_button, text_input, variable_label, virtual_scroll, worker, zstack,
+    checkbox, flex_row, label, portal, progress_bar, prose, sized_box, slider, spinner, split,
+    text_button, text_input,
 };
 use xilem_core::MessageResult;
 use xilem_core::map_message;
-use xilem_core::map_state;
 
 fn widgets<State: ViewArgument + Send + Sync, const N: usize>()
 -> impl WidgetView<State> + use<State, N> {
     map_message(
         flex_row((
-            text_button("button", |_| todo!()),
-            checkbox("checkbox", true, |_, _| todo!()),
+            text_button("button", |_| unimplemented!()),
+            checkbox("checkbox", true, |_, _| unimplemented!()),
             label("label"),
             portal(progress_bar(Some(0.))),
             prose("prose"),
-            sized_box(slider(0., 0., 0., |_, _| todo!())),
+            sized_box(slider(0., 0., 0., |_, _| unimplemented!())),
             spinner(),
             split(
-                text_input("input".into(), |_, _| todo!()),
-                text_input("input".into(), |_, _| todo!()),
+                text_input("input".into(), |_, _| unimplemented!()),
+                text_input("input".into(), |_, _| unimplemented!()),
             ),
         )),
-        |_, message: MessageResult<[u32; 0]>| MessageResult::Nop,
+        |_, _message: MessageResult<[u32; 0]>| MessageResult::Nop,
     )
 }
 
@@ -46,14 +38,14 @@ fn widgets<State: ViewArgument + Send + Sync, const N: usize>()
 fn mega_component() -> impl WidgetView<()> + use<> {
     flex_row((
         (
-            widgets::<(), 00>(),
-            widgets::<(), 01>(),
-            widgets::<(), 02>(),
-            widgets::<(), 03>(),
-            widgets::<(), 04>(),
-            widgets::<(), 05>(),
-            widgets::<(), 06>(),
-            widgets::<(), 07>(),
+            widgets::<(), 0>(),
+            widgets::<(), 1>(),
+            widgets::<(), 2>(),
+            widgets::<(), 3>(),
+            widgets::<(), 4>(),
+            widgets::<(), 5>(),
+            widgets::<(), 6>(),
+            widgets::<(), 7>(),
         ),
         (
             widgets::<(), 10>(),
