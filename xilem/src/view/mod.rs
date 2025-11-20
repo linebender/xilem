@@ -9,6 +9,11 @@
 pub use masonry::core::Axis;
 
 mod button;
+pub use button::*;
+
+mod canvas;
+pub use canvas::*;
+
 mod checkbox;
 mod flex;
 mod grid;
