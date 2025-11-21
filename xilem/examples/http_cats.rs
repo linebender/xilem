@@ -217,7 +217,7 @@ impl Status {
     }
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = HttpCats {
         statuses: Status::parse_file(),
         selected_code: None,
