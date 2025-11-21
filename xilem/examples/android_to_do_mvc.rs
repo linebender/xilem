@@ -15,6 +15,7 @@ mod to_do_mvc;
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use to_do_mvc::run;
     use winit::platform::android::EventLoopBuilderExtAndroid;
+    use xilem::EventLoop;
 
     let mut event_loop = EventLoop::with_user_event();
     event_loop.with_android_app(app);
