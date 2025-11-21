@@ -349,11 +349,6 @@ fn mega_component() -> impl WidgetView<()> + use<> {
     )
 }
 
-// TODO - Create a Rust issue? This is dead code, but cargo test doesn't tell you about it.
-fn main() {
-    black_box(mega_component().boxed());
-}
-
 #[test]
 fn test() {
     black_box(mega_component().boxed());
