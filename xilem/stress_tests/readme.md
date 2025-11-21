@@ -6,4 +6,4 @@ Build the tests with no feature flags to quickly check they compile.
 
 Build the tests with `--features compile-stress-test` to actually make your computer suffer.
 
-(Note that, unlike `tests/`, this isn't a folder name recongized by cargo. You need to manually add the tests in this folder to `xilem/Cargo.toml`.)
+(Note that, unlike `tests/`, this isn't a folder name recognized by cargo. You need to manually add the tests in this folder to `xilem/Cargo.toml`.)
