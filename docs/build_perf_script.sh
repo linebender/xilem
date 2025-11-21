@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# This script provides a relatively predictable way to test the build speed
+# of various targets on your machine.
+# It first performs a clean build of each target, them removes their incremental
+# cache, then builds the target again and prints the build times to stdout.
+
+# Expect to take at least 30s to run the script, probably more.
 
 echo "== INITIAL BUILDS =="
 
