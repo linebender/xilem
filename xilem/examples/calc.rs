@@ -254,7 +254,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<>
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-pub fn centered_flex_row<State: ViewArgument, Seq: FlexSequence<State>>(
+fn centered_flex_row<State: ViewArgument, Seq: FlexSequence<State>>(
     sequence: Seq,
 ) -> Flex<Seq, State> {
     flex_row(sequence)
@@ -313,7 +313,7 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Edit<Calculator>> {
     .expand()
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Calculator {
         current_num_index: 0,
         clear_current_entry_on_input: false,
@@ -343,19 +343,4 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 // example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[unsafe(no_mangle)]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }
