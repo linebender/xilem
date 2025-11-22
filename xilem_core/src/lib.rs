@@ -77,7 +77,7 @@ pub use self::message_proxy::{AsyncCtx, MessageProxy, PhantomView, ProxyError, R
 pub use self::view::{View, ViewMarker};
 pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
 pub use self::view_ctx::{ViewId, ViewPathTracker};
-pub use self::view_sequence::{Count, ViewSequence};
+pub use self::view_sequence::ViewSequence;
 pub use self::view_sequences::{WithoutElements, without_elements};
 pub use self::views::{
     Fork, Frozen, Lens, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
