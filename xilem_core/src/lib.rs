@@ -73,7 +73,7 @@ pub use self::environment::{
 };
 pub use self::message::{DynMessage, MessageResult, SendMessage};
 pub use self::message_context::MessageCtx;
-pub use self::message_proxy::{MessageProxy, PhantomView, ProxyError, RawProxy};
+pub use self::message_proxy::{MessageProxy, ProxyError, RawProxy};
 pub use self::view::{View, ViewMarker};
 pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
 pub use self::view_ctx::{ViewId, ViewPathTracker};

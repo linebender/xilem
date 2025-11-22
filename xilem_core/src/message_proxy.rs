@@ -8,7 +8,7 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{NoElement, SendMessage, View, ViewArgument, ViewId, ViewPathTracker};
+use crate::{SendMessage, ViewId};
 
 /// A handle to a Xilem driver which can be used to queue a message for a View.
 ///
@@ -91,23 +91,6 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
         self.proxy
             .send_message(self.path.clone(), SendMessage::new(message))
     }
-}
-
-/// A [`View`] which has no element type.
-pub trait PhantomView<State, Action, Context>:
-    View<State, Action, Context, Element = NoElement>
-where
-    Context: ViewPathTracker,
-    State: ViewArgument,
-{
-}
-
-impl<State, Action, Context, V> PhantomView<State, Action, Context> for V
-where
-    V: View<State, Action, Context, Element = NoElement>,
-    Context: ViewPathTracker,
-    State: ViewArgument,
-{
 }
 
 /// The potential error conditions from a [`RawProxy`] sending a message
