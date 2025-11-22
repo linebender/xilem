@@ -8,15 +8,7 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{NoElement, SendMessage, View, ViewArgument, ViewId, ViewPathTracker};
-
-/// A `Context` for a [`View`] implementation which supports
-/// asynchronous message reporting.
-pub trait AsyncCtx: ViewPathTracker {
-    /// Get a [`RawProxy`] for this context.
-    // TODO: Maybe store the current path within this Proxy?
-    fn proxy(&mut self) -> Arc<dyn RawProxy>;
-}
+use crate::{SendMessage, ViewId};
 
 /// A handle to a Xilem driver which can be used to queue a message for a View.
 ///
@@ -32,6 +24,8 @@ pub trait AsyncCtx: ViewPathTracker {
 /// # Lifetimes
 ///
 /// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
+///
+/// [`View`]: crate::View
 pub trait RawProxy: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
@@ -48,6 +42,8 @@ pub trait RawProxy: Send + Sync + 'static {
     // TODO: Do we want/need a way to asynchronously report errors back to the caller?
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
+    ///
+    /// [`View`]: crate::View
     fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError>;
     /// Get the debug formatter for this proxy type.
     fn dyn_debug(&self) -> &dyn Debug;
@@ -87,7 +83,7 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
         }
     }
 
-    /// Send `message` to the `View` which created this `MessageProxy`
+    /// Send `message` to the [`View`] which created this `MessageProxy`
     ///
     /// # Errors
     ///
@@ -95,27 +91,12 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
     /// - `Other`: As determined by the Xilem implementation.
     ///
     /// This method is currently not expected to return `ViewExpired`, as it does not block.
+    ///
+    /// [`View`]: crate::View
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
             .send_message(self.path.clone(), SendMessage::new(message))
     }
-}
-
-/// A [`View`] which has no element type.
-pub trait PhantomView<State, Action, Context>:
-    View<State, Action, Context, Element = NoElement>
-where
-    Context: ViewPathTracker,
-    State: ViewArgument,
-{
-}
-
-impl<State, Action, Context, V> PhantomView<State, Action, Context> for V
-where
-    V: View<State, Action, Context, Element = NoElement>,
-    Context: ViewPathTracker,
-    State: ViewArgument,
-{
 }
 
 /// The potential error conditions from a [`RawProxy`] sending a message
@@ -128,6 +109,8 @@ pub enum ProxyError {
     ///
     /// This likely requires async error handling to happen.
     // See comment above `SendMessage` about possible future.
+    ///
+    /// [`View`]: crate::View
     ViewExpired(SendMessage, Arc<[ViewId]>),
     /// An error specific to the driver being used.
     Other(Box<dyn core::error::Error + Send>),

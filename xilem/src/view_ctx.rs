@@ -7,7 +7,7 @@ use std::sync::Arc;
 use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut};
 
 use crate::Pod;
-use crate::core::{AsyncCtx, Environment, RawProxy, ViewId, ViewPathTracker};
+use crate::core::{Environment, RawProxy, ViewId, ViewPathTracker};
 
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
@@ -107,12 +107,6 @@ impl ViewCtx {
     }
 
     pub fn proxy(&self) -> Arc<dyn RawProxy + 'static> {
-        self.proxy.clone()
-    }
-}
-
-impl AsyncCtx for ViewCtx {
-    fn proxy(&mut self) -> Arc<dyn RawProxy> {
         self.proxy.clone()
     }
 }
