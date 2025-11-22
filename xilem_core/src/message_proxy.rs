@@ -24,6 +24,8 @@ use crate::{SendMessage, ViewId};
 /// # Lifetimes
 ///
 /// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
+///
+/// [`View`]: crate::View
 pub trait RawProxy: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
@@ -40,6 +42,8 @@ pub trait RawProxy: Send + Sync + 'static {
     // TODO: Do we want/need a way to asynchronously report errors back to the caller?
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
+    ///
+    /// [`View`]: crate::View
     fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError>;
     /// Get the debug formatter for this proxy type.
     fn dyn_debug(&self) -> &dyn Debug;
@@ -79,7 +83,7 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
         }
     }
 
-    /// Send `message` to the `View` which created this `MessageProxy`
+    /// Send `message` to the [`View`] which created this `MessageProxy`
     ///
     /// # Errors
     ///
@@ -87,6 +91,8 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
     /// - `Other`: As determined by the Xilem implementation.
     ///
     /// This method is currently not expected to return `ViewExpired`, as it does not block.
+    ///
+    /// [`View`]: crate::View
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
             .send_message(self.path.clone(), SendMessage::new(message))
@@ -103,6 +109,8 @@ pub enum ProxyError {
     ///
     /// This likely requires async error handling to happen.
     // See comment above `SendMessage` about possible future.
+    ///
+    /// [`View`]: crate::View
     ViewExpired(SendMessage, Arc<[ViewId]>),
     /// An error specific to the driver being used.
     Other(Box<dyn core::error::Error + Send>),
