@@ -138,7 +138,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         Self: Sized,
         F: Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
     {
-        crate::map_message(self, f)
+        crate::map_message_result(self, f)
     }
 
     /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
