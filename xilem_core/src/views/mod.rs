@@ -15,7 +15,7 @@ mod run_once;
 pub use self::any_view::AnyView;
 pub use self::fork::{Fork, fork};
 pub use self::lens::{Lens, lens};
-pub use self::map_message::{MapMessage, map_action, map_message};
+pub use self::map_message::{MapMessage, map_action, map_message_result};
 pub use self::map_state::{MapState, map_state};
 pub use self::memoize::{Frozen, Memoize, frozen, memoize};
 pub use self::orphan::OrphanView;
