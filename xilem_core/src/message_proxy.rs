@@ -10,14 +10,6 @@ use core::marker::PhantomData;
 
 use crate::{NoElement, SendMessage, View, ViewArgument, ViewId, ViewPathTracker};
 
-/// A `Context` for a [`View`] implementation which supports
-/// asynchronous message reporting.
-pub trait AsyncCtx: ViewPathTracker {
-    /// Get a [`RawProxy`] for this context.
-    // TODO: Maybe store the current path within this Proxy?
-    fn proxy(&mut self) -> Arc<dyn RawProxy>;
-}
-
 /// A handle to a Xilem driver which can be used to queue a message for a View.
 ///
 /// These messages are [`crate::DynMessage`]s, which are sent to a view at
