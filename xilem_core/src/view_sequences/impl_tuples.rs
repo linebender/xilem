@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 // --- MARK: for ()
@@ -15,8 +15,6 @@ where
     Element: ViewElement,
 {
     type SeqState = ();
-
-    const ELEMENTS_COUNT: Count = Count::Zero;
 
     fn seq_build(
         &self,
@@ -65,8 +63,6 @@ where
     Element: ViewElement,
 {
     type SeqState = Seq::SeqState;
-
-    const ELEMENTS_COUNT: Count = Seq::ELEMENTS_COUNT;
 
     fn seq_build(
         &self,
@@ -128,8 +124,6 @@ macro_rules! impl_view_tuple {
         {
             /// The fields of the inner tuples are (number of widgets to skip, child state).
             type SeqState = ($((usize, $seq::SeqState),)+);
-
-            const ELEMENTS_COUNT: Count = Count::combine([$($seq::ELEMENTS_COUNT,)+]);
 
             fn seq_build(
                 &self,

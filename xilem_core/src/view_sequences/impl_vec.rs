@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 /// The state used to implement `ViewSequence` for `Vec<impl ViewSequence>`
@@ -72,9 +72,6 @@ where
     // comment is always shown. This lets us explain the caveats.
     #[doc(hidden)]
     type SeqState = VecViewState<Seq::SeqState>;
-
-    #[doc(hidden)]
-    const ELEMENTS_COUNT: Count = Seq::ELEMENTS_COUNT.multiple();
 
     #[doc(hidden)]
     fn seq_build(

@@ -8,60 +8,6 @@ use crate::{
     ViewElement, ViewMarker, ViewPathTracker,
 };
 
-/// Classes that a [`ViewSequence`] can be a member of, grouped based on the number
-/// of elements it is known to contain.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Count {
-    /// This sequence is known to have no elements.
-    Zero,
-    /// This sequence is known to have exactly one element.
-    One,
-    // TODO: AtMostOne - useful for Option (and e.g. `SizedBox`?).
-    /// This sequence may have any number of elements.
-    Many,
-    /// The number of elements this sequence has is not statically known.
-    ///
-    /// This is used for [`AnyView`](crate::AnyView).
-    Unknown,
-}
-
-impl Count {
-    /// Combine the counts of multiple children.
-    pub const fn combine<const N: usize>(vals: [Self; N]) -> Self {
-        #![expect(clippy::use_self, reason = "Easier to read in this case as `Count`.")]
-        let mut idx = 0;
-        let mut current_count = Count::Zero;
-        while idx < N {
-            idx += 1;
-            match vals[idx] {
-                Count::Zero => {}
-                Count::One if matches!(current_count, Count::Zero) => {
-                    current_count = Count::One;
-                }
-                Count::One if matches!(current_count, Count::One) => {
-                    current_count = Count::Many;
-                }
-                Count::One => {}
-                // Many overwrites everything, including unknown
-                // Because if we have one "many" child, we definitely have several
-                Count::Many => {
-                    current_count = Count::Many;
-                }
-                Count::Unknown if !matches!(current_count, Count::Many) => {
-                    current_count = Count::Unknown;
-                }
-                _ => panic!("How to report this properly"),
-            }
-        }
-        current_count
-    }
-
-    /// The resulting count if there are (potentially) multiple of this sequence.
-    pub const fn multiple(self) -> Self {
-        Self::combine([self, self])
-    }
-}
-
 // --- MARK: Trait
 
 /// Views for ordered sequences of elements.
@@ -102,10 +48,6 @@ where
     ///
     /// [`ViewState`]: View::ViewState
     type SeqState;
-
-    /// The class of sequence this is, grouped based on how many elements it may contain.
-    /// This is useful for making bounds based on the expected number of child elements.
-    const ELEMENTS_COUNT: Count;
 
     /// Build the associated widgets into `elements` and initialize all states.
     #[must_use]
@@ -175,8 +117,6 @@ where
     V::Element: ViewElement,
 {
     type SeqState = V::ViewState;
-
-    const ELEMENTS_COUNT: Count = Count::One;
 
     fn seq_build(
         &self,
