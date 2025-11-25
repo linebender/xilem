@@ -374,7 +374,7 @@ impl Flex {
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
             this.ctx.remove_child(widget);
         } else {
-            // We need to explictly request layout in case of spacer removal
+            // We need to explicitly request layout in case of spacer removal
             this.ctx.request_layout();
         }
     }
@@ -468,7 +468,7 @@ impl Flex {
                     this.ctx.remove_child(widget);
                 }
             }
-            // We need to explictly request layout in case we had any spacers
+            // We need to explicitly request layout in case we had any spacers
             this.ctx.request_layout();
         }
     }
