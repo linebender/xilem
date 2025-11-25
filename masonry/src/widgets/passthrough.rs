@@ -29,7 +29,7 @@ use crate::core::{
 ///
 /// // ... in an edit callback, mutate the widget tree
 /// # fn edit(mut host: masonry::core::WidgetMut<'_, Passthrough>) {
-/// Passthrough::replace_child(&mut host, Label::new("World").with_auto_id());
+/// Passthrough::set_child(&mut host, Label::new("World").with_auto_id());
 /// # }
 /// ```
 pub struct Passthrough {
