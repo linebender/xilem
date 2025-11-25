@@ -71,8 +71,6 @@ impl ResizeObserver {
         // Force a re-send when the layout changes.
         // This might be unnecessary, but it also shouldn't hurt.
         this.widget.size = None;
-        this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Force this layout observer to send a new action.

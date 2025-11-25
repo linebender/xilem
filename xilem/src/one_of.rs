@@ -166,7 +166,6 @@ impl<
             OneOfWidget::H(w) => elem_mut.ctx.remove_child(w),
             OneOfWidget::I(w) => elem_mut.ctx.remove_child(w),
         }
-        elem_mut.ctx.children_changed();
     }
 }
 
