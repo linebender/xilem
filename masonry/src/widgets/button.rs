@@ -76,7 +76,15 @@ impl Button {
 
 // --- MARK: WIDGETMUT
 impl Button {
-    /// Get a mutable reference to the label.
+    /// Replace the child widget with a new one.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+        this.ctx.remove_child(std::mem::replace(
+            &mut this.widget.child,
+            child.erased().to_pod(),
+        ));
+    }
+
+    /// Get a mutable reference to the child.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }

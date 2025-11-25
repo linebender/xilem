@@ -36,6 +36,7 @@ pub struct Passthrough {
     inner: WidgetPod<dyn Widget>,
 }
 
+// --- MARK: BUILDERS
 impl Passthrough {
     /// Create a new `Passthrough` with the given initial child.
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
@@ -43,11 +44,20 @@ impl Passthrough {
             inner: child.erased().to_pod(),
         }
     }
+}
 
-    /// Replace the hosted child with a new widget.
-    ///
-    /// Removes the old child from the tree and installs the new child in its place.
-    pub fn replace_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+// --- MARK: METHODS
+impl Passthrough {
+    /// Get the [`WidgetId`] of the hosted child.
+    pub fn inner_id(&self) -> WidgetId {
+        self.inner.id()
+    }
+}
+
+// --- MARK: WIDGETMUT
+impl Passthrough {
+    /// Replace the child widget with a new one.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let old = std::mem::replace(&mut this.widget.inner, child.erased().to_pod());
         this.ctx.remove_child(old);
     }
@@ -56,13 +66,9 @@ impl Passthrough {
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.inner)
     }
-
-    /// Get the [`WidgetId`] of the hosted child.
-    pub fn inner_id(&self) -> WidgetId {
-        self.inner.id()
-    }
 }
 
+// --- MARK: IMPL WIDGET
 impl Widget for Passthrough {
     type Action = NoAction;
 
@@ -131,7 +137,7 @@ mod tests {
 
         // Replace with a label with different text
         harness.edit_root_widget(|mut host| {
-            Passthrough::replace_child(&mut host, Label::new("B").with_auto_id());
+            Passthrough::set_child(&mut host, Label::new("B").with_auto_id());
         });
 
         assert_render_snapshot!(harness, "passthrough_replaced_label_B");

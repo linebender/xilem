@@ -133,9 +133,7 @@ impl SizedBox {
 
 // --- MARK: WIDGETMUT
 impl SizedBox {
-    /// Give this container a child widget.
-    ///
-    /// If this container already has a child, it will be overwritten.
+    /// Replace the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);

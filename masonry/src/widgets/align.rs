@@ -9,6 +9,7 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
+use masonry_core::core::WidgetMut;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Rect, Size};
@@ -81,6 +82,22 @@ impl Align {
             width_factor: Some(1.0),
             height_factor: None,
         }
+    }
+}
+
+// --- MARK: WIDGETMUT
+impl Align {
+    /// Replace the child widget with a new one.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+        this.ctx.remove_child(std::mem::replace(
+            &mut this.widget.child,
+            child.erased().to_pod(),
+        ));
+    }
+
+    /// Get mutable reference to the child widget.
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
+        this.ctx.get_mut(&mut this.widget.child)
     }
 }
 
