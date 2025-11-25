@@ -11,7 +11,6 @@ use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
-use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
@@ -22,7 +21,7 @@ use crate::core::{
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, HoveredBorderColor, Padding,
+    DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -94,6 +93,7 @@ pub struct ButtonPress {
 impl HasProperty<DisabledBackground> for Button {}
 impl HasProperty<ActiveBackground> for Button {}
 impl HasProperty<Background> for Button {}
+impl HasProperty<FocusedBorderColor> for Button {}
 impl HasProperty<HoveredBorderColor> for Button {}
 impl HasProperty<BorderColor> for Button {}
 impl HasProperty<BorderWidth> for Button {}
@@ -182,6 +182,7 @@ impl Widget for Button {
         DisabledBackground::prop_changed(ctx, property_type);
         ActiveBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
+        FocusedBorderColor::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
@@ -235,6 +236,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let is_focused = ctx.is_focus_target();
         let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
@@ -253,18 +255,13 @@ impl Widget for Button {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let mut border_color = if is_hovered {
+        let border_color = if is_focused {
+            &props.get::<FocusedBorderColor>().0
+        } else if is_hovered {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()
         };
-
-        // FIXME - Handle this properly
-        if ctx.is_focus_target() {
-            border_color = &BorderColor {
-                color: Color::WHITE,
-            };
-        }
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);

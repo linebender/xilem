@@ -13,6 +13,20 @@ pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
 }
 
+/// The color of a widget's border when hovered by a pointer.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HoveredBorderColor(pub BorderColor);
+
+/// The color of a widget's border when focused.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FocusedBorderColor(pub BorderColor);
+
+// ---
+
+// TODO - The default border color in CSS is `currentcolor`,
+// the color text is displayed in.
+// Do we want to implement that?
+
 impl Property for BorderColor {
     fn static_default() -> &'static Self {
         static DEFAULT: BorderColor = BorderColor {
@@ -22,32 +36,6 @@ impl Property for BorderColor {
     }
 }
 
-impl BorderColor {
-    /// Create new `BorderColor` with given value.
-    pub const fn new(color: AlphaColor<Srgb>) -> Self {
-        Self { color }
-    }
-}
-
-/// The color of a widget's border when hovered by a pointer.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct HoveredBorderColor(pub BorderColor);
-
-impl Property for HoveredBorderColor {
-    fn static_default() -> &'static Self {
-        static DEFAULT: HoveredBorderColor = HoveredBorderColor(BorderColor {
-            color: AlphaColor::TRANSPARENT,
-        });
-        &DEFAULT
-    }
-}
-
-// ---
-
-// TODO - The default border color in CSS is `currentcolor`,
-// the color text is displayed in.
-// Do we want to implement that?
-
 impl Default for BorderColor {
     fn default() -> Self {
         *Self::static_default()
@@ -55,6 +43,11 @@ impl Default for BorderColor {
 }
 
 impl BorderColor {
+    /// Create new `BorderColor` with given value.
+    pub const fn new(color: AlphaColor<Srgb>) -> Self {
+        Self { color }
+    }
+
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
@@ -72,7 +65,43 @@ impl Default for HoveredBorderColor {
     }
 }
 
+impl Property for HoveredBorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: HoveredBorderColor = HoveredBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
+}
+
 impl HoveredBorderColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
+    }
+}
+
+// ---
+
+impl Default for FocusedBorderColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl Property for FocusedBorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: FocusedBorderColor = FocusedBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
+}
+
+impl FocusedBorderColor {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {

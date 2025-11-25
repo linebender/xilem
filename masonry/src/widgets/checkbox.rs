@@ -20,7 +20,8 @@ use crate::core::{
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
-    CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
+    CornerRadius, DisabledBackground, DisabledCheckmarkColor, FocusedBorderColor,
+    HoveredBorderColor, Padding,
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -86,6 +87,7 @@ impl Checkbox {
 impl HasProperty<DisabledBackground> for Checkbox {}
 impl HasProperty<ActiveBackground> for Checkbox {}
 impl HasProperty<Background> for Checkbox {}
+impl HasProperty<FocusedBorderColor> for Checkbox {}
 impl HasProperty<HoveredBorderColor> for Checkbox {}
 impl HasProperty<BorderColor> for Checkbox {}
 impl HasProperty<BorderWidth> for Checkbox {}
@@ -184,6 +186,7 @@ impl Widget for Checkbox {
         Background::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
+        FocusedBorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
@@ -223,6 +226,7 @@ impl Widget for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let is_focused = ctx.is_focus_target();
         let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
 
@@ -243,7 +247,9 @@ impl Widget for Checkbox {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let border_color = if is_hovered {
+        let border_color = if is_focused {
+            &props.get::<FocusedBorderColor>().0
+        } else if is_hovered {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()

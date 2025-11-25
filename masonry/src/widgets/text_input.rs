@@ -8,7 +8,6 @@ use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
-use vello::peniko::Color;
 
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
@@ -17,7 +16,8 @@ use crate::core::{
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
-    DisabledBackground, Padding, PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
+    DisabledBackground, FocusedBorderColor, Padding, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
 };
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
@@ -129,6 +129,7 @@ impl HasProperty<Background> for TextInput {}
 impl HasProperty<CaretColor> for TextInput {}
 impl HasProperty<DisabledBackground> for TextInput {}
 impl HasProperty<BorderColor> for TextInput {}
+impl HasProperty<FocusedBorderColor> for TextInput {}
 impl HasProperty<BorderWidth> for TextInput {}
 impl HasProperty<BoxShadow> for TextInput {}
 impl HasProperty<CornerRadius> for TextInput {}
@@ -150,6 +151,7 @@ impl Widget for TextInput {
         DisabledBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
+        FocusedBorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
@@ -283,7 +285,6 @@ impl Widget for TextInput {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
         let shadow = props.get::<BoxShadow>();
-        let mut border_color = props.get::<BorderColor>();
 
         let bg = if ctx.is_disabled() {
             &props.get::<DisabledBackground>().0
@@ -294,12 +295,11 @@ impl Widget for TextInput {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        // FIXME - Handle this properly
-        if ctx.has_focus_target() {
-            border_color = &BorderColor {
-                color: Color::WHITE,
-            };
-        }
+        let border_color = if ctx.has_focus_target() {
+            &props.get::<FocusedBorderColor>().0
+        } else {
+            props.get::<BorderColor>()
+        };
 
         shadow.paint(scene, Affine::IDENTITY, bg_rect);
 

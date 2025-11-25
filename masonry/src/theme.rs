@@ -13,8 +13,8 @@ use crate::properties::types::Length;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
+    DisabledContentColor, FocusedBorderColor, HoveredBorderColor, Padding, PlaceholderColor,
+    SelectionColor, UnfocusedSelectionColor,
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
@@ -70,6 +70,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<Button, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Button, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Button, _>(FocusedBorderColor(BorderColor {
+        color: Color::WHITE,
+    }));
 
     // Checkbox
     properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
@@ -82,6 +85,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<Checkbox, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Checkbox, _>(FocusedBorderColor(BorderColor {
+        color: Color::WHITE,
+    }));
 
     properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
@@ -96,6 +102,9 @@ pub fn default_property_set() -> DefaultProperties {
         width: BORDER_WIDTH,
     });
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
+    properties.insert::<TextInput, _>(FocusedBorderColor(BorderColor {
+        color: Color::WHITE,
+    }));
     properties.insert::<TextInput, _>(PlaceholderColor::new(PLACEHOLDER_COLOR));
     properties.insert::<TextInput, _>(CaretColor { color: TEXT_COLOR });
     properties.insert::<TextInput, _>(SelectionColor {
