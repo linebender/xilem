@@ -90,7 +90,6 @@ impl IndexedStack {
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         this.widget.children.push(child.erased().to_pod());
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Insert a child widget at the given index.
@@ -111,7 +110,6 @@ impl IndexedStack {
             this.widget.active_child += 1;
         }
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Change the active child.
@@ -166,8 +164,6 @@ impl IndexedStack {
             this.widget.active_child -= 1;
         }
         this.ctx.remove_child(child);
-        this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 }
 

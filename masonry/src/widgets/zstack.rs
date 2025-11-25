@@ -105,14 +105,12 @@ impl ZStack {
         let child = Child::new(child.erased().to_pod(), alignment.into());
         this.widget.children.push(child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Remove a child from the `ZStack`.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
     }
 
     /// Get a mutable reference to a child of the `ZStack`.

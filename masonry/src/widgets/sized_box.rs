@@ -142,7 +142,6 @@ impl SizedBox {
         }
         this.widget.child = Some(child.erased().to_pod());
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Remove the child widget.

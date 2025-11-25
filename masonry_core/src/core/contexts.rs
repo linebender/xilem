@@ -1042,7 +1042,8 @@ impl_context_method!(
 
 // --- MARK: UPDATE FLAGS
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
-    /// Request a [`paint`](crate::core::Widget::paint) and an [`accessibility`](crate::core::Widget::accessibility) pass.
+    /// Request a [`paint`](crate::core::Widget::paint) and an
+    /// [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
         self.widget_state.request_paint = true;
@@ -1054,7 +1055,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
 
     /// Request a paint pass, specifically for the [`paint`](crate::core::Widget::paint) method.
     ///
-    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::core::Widget::accessibility) pass or a call to [`post_paint`](crate::core::Widget::post_paint).
+    /// Unlike [`request_render`](Self::request_render), this does not request an
+    /// [`accessibility`](crate::core::Widget::accessibility) pass or a call to
+    /// [`post_paint`](crate::core::Widget::post_paint).
     ///
     /// Use `request_render` unless you're sure neither is needed.
     pub fn request_paint_only(&mut self) {
@@ -1073,7 +1076,8 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     /// Request an [`accessibility`](crate::core::Widget::accessibility) pass.
     ///
     /// This doesn't request a [`paint`](crate::core::Widget::paint) pass.
-    /// If you want to request both an accessibility pass and a paint pass, use [`request_render`](Self::request_render).
+    /// If you want to request both an accessibility pass and a paint pass,
+    /// use [`request_render`](Self::request_render).
     pub fn request_accessibility_update(&mut self) {
         trace!("request_accessibility_update");
         self.widget_state.needs_accessibility = true;
@@ -1094,7 +1098,8 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     // TODO - Document better
     /// Request a [`compose`] pass.
     ///
-    /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
+    /// The compose pass is often cheaper than the layout pass,
+    /// because it can only transform individual widgets' position.
     ///
     /// [`compose`]: crate::core::Widget::compose
     pub fn request_compose(&mut self) {
@@ -1122,16 +1127,21 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     /// Indicate that your children have changed.
     ///
     /// Widgets must call this method after adding a new child.
+    ///
+    /// This method will also call [`request_layout`](Self::request_layout).
     pub fn children_changed(&mut self) {
         trace!("children_changed");
         self.widget_state.children_changed = true;
         self.widget_state.needs_update_focusable = true;
         self.request_layout();
     }
+
     /// Indicate that a child is about to be removed from the tree.
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
+    ///
+    /// This method will also call [`children_changed`](Self::children_changed).
     pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
         fn remove_node(
             global_state: &mut RenderRootState,

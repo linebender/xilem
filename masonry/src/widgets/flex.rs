@@ -373,8 +373,10 @@ impl Flex {
         let child = this.widget.children.remove(idx);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
             this.ctx.remove_child(widget);
+        } else {
+            // We need to explicitly request layout in case of spacer removal
+            this.ctx.request_layout();
         }
-        this.ctx.request_layout();
     }
 
     /// Returns a mutable reference to the child widget at `idx`.
@@ -461,13 +463,13 @@ impl Flex {
     /// Remove all children from the container.
     pub fn clear(this: &mut WidgetMut<'_, Self>) {
         if !this.widget.children.is_empty() {
-            this.ctx.request_layout();
-
             for child in this.widget.children.drain(..) {
                 if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
                     this.ctx.remove_child(widget);
                 }
             }
+            // We need to explicitly request layout in case we had any spacers
+            this.ctx.request_layout();
         }
     }
 }

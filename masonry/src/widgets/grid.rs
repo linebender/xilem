@@ -151,7 +151,6 @@ impl Grid {
         let child = new_grid_child(params, child);
         this.widget.children.push(child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
@@ -171,7 +170,6 @@ impl Grid {
         let child = new_grid_child(params.into(), child);
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Set the spacing between grid items.
@@ -230,7 +228,6 @@ impl Grid {
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
     }
 }
 
