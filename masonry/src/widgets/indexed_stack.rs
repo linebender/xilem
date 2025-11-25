@@ -112,6 +112,20 @@ impl IndexedStack {
         this.ctx.children_changed();
     }
 
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) {
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child.erased().to_pod());
+        this.ctx.remove_child(old_child);
+    }
+
     /// Change the active child.
     ///
     /// # Panics
@@ -361,5 +375,11 @@ mod tests {
             IndexedStack::set_active_child(&mut stack, 1);
         });
         assert_render_snapshot!(harness, "indexed_stack_initial_builder");
+
+        // Change the active widget
+        harness.edit_root_widget(|mut stack| {
+            IndexedStack::set_child(&mut stack, 1, Button::with_text("D").with_auto_id());
+        });
+        assert_render_snapshot!(harness, "indexed_stack_builder_new_widget");
     }
 }
