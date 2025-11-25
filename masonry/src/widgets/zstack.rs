@@ -107,6 +107,22 @@ impl ZStack {
         this.ctx.children_changed();
     }
 
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), alignment.into());
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        this.ctx.remove_child(old_child.widget);
+    }
+
     /// Remove a child from the `ZStack`.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);

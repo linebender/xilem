@@ -172,6 +172,22 @@ impl Grid {
         this.ctx.children_changed();
     }
 
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<GridParams>,
+    ) {
+        let child = new_grid_child(params.into(), child);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        this.ctx.remove_child(old_child.widget);
+    }
+
     /// Set the spacing between grid items.
     pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: Length) {
         this.widget.grid_spacing = spacing;
@@ -442,6 +458,25 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
+                Button::with_text("A").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            );
+        });
+        assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
+
+        // Test replacement
+        harness.edit_root_widget(|mut grid| {
+            Grid::remove_child(&mut grid, 0);
+            Grid::add_child(
+                &mut grid,
+                Button::with_text("X").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            );
+        });
+        harness.edit_root_widget(|mut grid| {
+            Grid::set_child(
+                &mut grid,
+                0,
                 Button::with_text("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             );
