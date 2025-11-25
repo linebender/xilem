@@ -68,9 +68,6 @@ impl ResizeObserver {
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let old_child = mem::replace(&mut this.widget.child, child.erased().to_pod());
         this.ctx.remove_child(old_child);
-        // Force a re-send when the layout changes.
-        // This might be unnecessary, but it also shouldn't hurt.
-        this.widget.size = None;
     }
 
     /// Force this layout observer to send a new action.
