@@ -286,14 +286,14 @@ impl Widget for Checkbox {
             scene.stroke(&style, Affine::IDENTITY, brush.color, None, &path);
         }
         // Paint focus indicator around the entire widget (box + label)
-        if ctx.is_focus_target() || is_hovered {
+        if is_focused || is_hovered {
             let widget_size = ctx.size();
 
             let focus_rect = Rect::new(0.0, 0.0, widget_size.width, widget_size.height);
 
             let focus_rect = focus_rect.inflate(2.0, 2.0);
 
-            let focus_color = theme::FOCUS_COLOR;
+            let focus_color = props.get::<FocusedBorderColor>().0.color;
             let focus_width = 2.0;
             let focus_radius = 4.0;
 
