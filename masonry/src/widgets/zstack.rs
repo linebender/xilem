@@ -27,28 +27,6 @@ pub enum ChildAlignment {
     SelfAligned(UnitPoint),
 }
 
-/// A widget container that lays the child widgets on top of each other.
-///
-/// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
-/// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
-///
-#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
-pub struct ZStack {
-    children: Vec<Child>,
-    alignment: UnitPoint,
-}
-
-impl Default for ZStack {
-    fn default() -> Self {
-        Self {
-            children: Vec::default(),
-            alignment: UnitPoint::CENTER,
-        }
-    }
-}
-
-// --- MARK: IMPL ALIGNMENTS
-
 impl From<UnitPoint> for ChildAlignment {
     fn from(value: UnitPoint) -> Self {
         Self::SelfAligned(value)
@@ -65,7 +43,28 @@ impl Child {
     }
 }
 
-// --- MARK: IMPL ZSTACK
+/// A widget container that lays the child widgets on top of each other.
+///
+/// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
+/// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
+///
+#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
+pub struct ZStack {
+    children: Vec<Child>,
+    alignment: UnitPoint,
+}
+
+// --- MARK: DEFAULT
+impl Default for ZStack {
+    fn default() -> Self {
+        Self {
+            children: Vec::default(),
+            alignment: UnitPoint::CENTER,
+        }
+    }
+}
+
+// --- MARK: BUILDERS
 impl ZStack {
     /// Constructs a new empty `ZStack` widget.
     pub fn new() -> Self {

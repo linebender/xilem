@@ -51,42 +51,7 @@ impl Slider {
     }
 }
 
-// --- MARK: WIDGETMUT
-impl Slider {
-    /// Sets the current value of the slider.
-    pub fn set_value(this: &mut WidgetMut<'_, Self>, value: f64) {
-        let clamped_value = value.clamp(this.widget.min, this.widget.max);
-        let new_value = if let Some(step) = this.widget.step {
-            ((clamped_value / step).round() * step).clamp(this.widget.min, this.widget.max)
-        } else {
-            clamped_value
-        };
-        if (new_value - this.widget.value).abs() > f64::EPSILON {
-            this.widget.value = new_value;
-            this.ctx.request_render();
-        }
-    }
-
-    /// Sets or removes the stepping interval of the slider.
-    pub fn set_step(this: &mut WidgetMut<'_, Self>, step: Option<f64>) {
-        let filtered_step = step.filter(|s| *s > 0.0);
-        if this.widget.step != filtered_step {
-            this.widget.set_step_internal(filtered_step);
-            this.ctx.request_render();
-        }
-    }
-
-    /// Sets the range (min and max) of the slider.
-    pub fn set_range(this: &mut WidgetMut<'_, Self>, min: f64, max: f64) {
-        if this.widget.min != min || this.widget.max != max {
-            this.widget.min = min;
-            this.widget.max = max;
-            Self::set_value(this, this.widget.value);
-        }
-    }
-}
-
-// --- MARK: INTERNALS
+// --- MARK: METHODS
 impl Slider {
     fn set_step_internal(&mut self, step: Option<f64>) {
         self.step = step.filter(|s| *s > 0.0);
@@ -126,6 +91,41 @@ impl Slider {
             true
         } else {
             false
+        }
+    }
+}
+
+// --- MARK: WIDGETMUT
+impl Slider {
+    /// Sets the current value of the slider.
+    pub fn set_value(this: &mut WidgetMut<'_, Self>, value: f64) {
+        let clamped_value = value.clamp(this.widget.min, this.widget.max);
+        let new_value = if let Some(step) = this.widget.step {
+            ((clamped_value / step).round() * step).clamp(this.widget.min, this.widget.max)
+        } else {
+            clamped_value
+        };
+        if (new_value - this.widget.value).abs() > f64::EPSILON {
+            this.widget.value = new_value;
+            this.ctx.request_render();
+        }
+    }
+
+    /// Sets or removes the stepping interval of the slider.
+    pub fn set_step(this: &mut WidgetMut<'_, Self>, step: Option<f64>) {
+        let filtered_step = step.filter(|s| *s > 0.0);
+        if this.widget.step != filtered_step {
+            this.widget.set_step_internal(filtered_step);
+            this.ctx.request_render();
+        }
+    }
+
+    /// Sets the range (min and max) of the slider.
+    pub fn set_range(this: &mut WidgetMut<'_, Self>, min: f64, max: f64) {
+        if this.widget.min != min || this.widget.max != max {
+            this.widget.min = min;
+            this.widget.max = max;
+            Self::set_value(this, this.widget.value);
         }
     }
 }
@@ -457,7 +457,7 @@ impl Widget for Slider {
     }
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use vello::kurbo::{Point, Size};

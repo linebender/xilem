@@ -86,7 +86,7 @@ enum Child {
     FlexedSpacer(f64, f64),
 }
 
-// --- MARK: IMPL FLEX
+// --- MARK: BUILDERS
 impl Flex {
     /// Create a new `Flex` oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
@@ -199,7 +199,10 @@ impl Flex {
         self.children.push(new_child);
         self
     }
+}
 
+// --- MARK: METHODS
+impl Flex {
     /// Returns the number of children (widgets and spacers) this flex container has.
     pub fn len(&self) -> usize {
         self.children.len()

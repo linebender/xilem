@@ -48,7 +48,7 @@ pub struct GridParams {
     pub height: i32,
 }
 
-// --- MARK: IMPL GRID
+// --- MARK: BUILDERS
 impl Grid {
     /// Create a new grid with the given number of columns and rows.
     pub fn with_dimensions(width: i32, height: i32) -> Self {

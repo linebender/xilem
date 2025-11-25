@@ -248,6 +248,7 @@ impl std::fmt::Debug for VirtualScroll {
     }
 }
 
+// --- MARK: BUILDERS
 impl VirtualScroll {
     /// Create a new virtual scrolling list.
     ///
@@ -287,7 +288,10 @@ impl VirtualScroll {
         self.validate_valid_range();
         self
     }
+}
 
+// --- MARK: METHODS
+impl VirtualScroll {
     /// The number of currently active children in this widget.
     ///
     /// This is intended for sanity-checking of higher-level processes (i.e. so that inconsistencies can be caught early).
@@ -514,6 +518,7 @@ impl VirtualScroll {
 /// too few items, that will be sorted relatively quickly.
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
+// --- MARK: IMPL WIDGET
 impl Widget for VirtualScroll {
     type Action = VirtualScrollAction;
 
@@ -1036,6 +1041,7 @@ fn opt_iter_difference(
         .chain(new_range.end.max(old_range.start)..old_range.end)
 }
 
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;

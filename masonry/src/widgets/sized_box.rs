@@ -131,6 +131,34 @@ impl SizedBox {
     }
 }
 
+// --- MARK: METHODS
+impl SizedBox {
+    fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
+        // if we don't have a width/height, we don't change that axis.
+        // if we have a width/height, we clamp it on that axis.
+        let (min_width, max_width) = match self.width {
+            Some(width) => {
+                let w = width.max(bc.min().width).min(bc.max().width);
+                (w, w)
+            }
+            None => (bc.min().width, bc.max().width),
+        };
+
+        let (min_height, max_height) = match self.height {
+            Some(height) => {
+                let h = height.max(bc.min().height).min(bc.max().height);
+                (h, h)
+            }
+            None => (bc.min().height, bc.max().height),
+        };
+
+        BoxConstraints::new(
+            Size::new(min_width, min_height),
+            Size::new(max_width, max_height),
+        )
+    }
+}
+
 // --- MARK: WIDGETMUT
 impl SizedBox {
     /// Replace the child widget with a new one.
@@ -202,34 +230,6 @@ impl SizedBox {
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))
-    }
-}
-
-// --- MARK: INTERNALS
-impl SizedBox {
-    fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
-        // if we don't have a width/height, we don't change that axis.
-        // if we have a width/height, we clamp it on that axis.
-        let (min_width, max_width) = match self.width {
-            Some(width) => {
-                let w = width.max(bc.min().width).min(bc.max().width);
-                (w, w)
-            }
-            None => (bc.min().width, bc.max().width),
-        };
-
-        let (min_height, max_height) = match self.height {
-            Some(height) => {
-                let h = height.max(bc.min().height).min(bc.max().height);
-                (h, h)
-            }
-            None => (bc.min().height, bc.max().height),
-        };
-
-        BoxConstraints::new(
-            Size::new(min_width, min_height),
-            Size::new(max_width, max_height),
-        )
     }
 }
 

@@ -43,6 +43,7 @@ pub struct Checkbox {
     label: WidgetPod<Label>,
 }
 
+// --- MARK: BUILDERS
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Self {

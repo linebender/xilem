@@ -60,11 +60,6 @@ impl<W: Widget + ?Sized> Portal<W> {
         }
     }
 
-    #[expect(missing_docs, reason = "TODO")]
-    pub fn get_viewport_pos(&self) -> Point {
-        self.viewport_pos
-    }
-
     // TODO - rewrite doc
     /// Builder-style method for deciding whether to constrain the child vertically.
     ///
@@ -128,7 +123,13 @@ pub(crate) fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) ->
     viewport
 }
 
+// --- MARK: METHODS
 impl<W: Widget + ?Sized> Portal<W> {
+    #[expect(missing_docs, reason = "TODO")]
+    pub fn get_viewport_pos(&self) -> Point {
+        self.viewport_pos
+    }
+
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
         let viewport_max_pos =

@@ -36,6 +36,7 @@ pub struct Prose {
     clip: bool,
 }
 
+// --- MARK: BUILDERS
 impl Prose {
     /// Create a new `Prose` with the given text.
     ///
@@ -62,7 +63,10 @@ impl Prose {
         self.clip = clip;
         self
     }
+}
 
+// --- MARK: METHODS
+impl Prose {
     /// Read the underlying text area. Useful for getting its ID.
     // This is a bit of a hack, to work around `from_text_area_pod` not being
     // able to set padding.
@@ -178,6 +182,7 @@ impl Widget for Prose {
     }
 }
 
+// --- MARK: TESTS
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {

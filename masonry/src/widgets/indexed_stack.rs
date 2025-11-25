@@ -32,7 +32,7 @@ pub struct IndexedStack {
     active_child: usize,
 }
 
-// --- MARK: IMPL INDEXEDSTACK
+// --- MARK: BUILDERS
 impl IndexedStack {
     /// Create a new stack with no children.
     pub fn new() -> Self {
@@ -65,7 +65,10 @@ impl IndexedStack {
         self.active_child = idx;
         self
     }
+}
 
+// --- MARK: METHODS
+impl IndexedStack {
     /// Returns the number of children in this stack.
     pub fn len(&self) -> usize {
         self.children.len()
@@ -82,7 +85,7 @@ impl IndexedStack {
     }
 }
 
-// --- MARK: IMPL WIDGETMUT
+// --- MARK: WIDGETMUT
 impl IndexedStack {
     /// Add a child widget to the end of the stack.
     ///
