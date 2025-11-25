@@ -62,9 +62,7 @@ impl ResizeObserver {
 
 // --- MARK: WIDGETMUT
 impl ResizeObserver {
-    /// Give this container a child widget.
-    ///
-    /// The container's existing child will be overwritten.
+    /// Replace the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let old_child = mem::replace(&mut this.widget.child, child.erased().to_pod());
         this.ctx.remove_child(old_child);

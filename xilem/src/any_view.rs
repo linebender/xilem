@@ -39,7 +39,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<P
 
 impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<Passthrough> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        Passthrough::replace_child(&mut this, child.new_widget.erased());
+        Passthrough::set_child(&mut this, child.new_widget.erased());
         this
     }
 }

@@ -169,7 +169,13 @@ impl<W: Widget + ?Sized> Portal<W> {
 
 // --- MARK: WIDGETMUT
 impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Replace the child widget with a new one.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<W>) {
+        this.ctx
+            .remove_child(std::mem::replace(&mut this.widget.child, child.to_pod()));
+    }
+
+    /// Get mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
