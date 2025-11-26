@@ -13,8 +13,8 @@ use crate::properties::types::Length;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
+    DisabledContentColor, FocusedBorderColor, HoveredBorderColor, Padding, PlaceholderColor,
+    SelectionColor, UnfocusedSelectionColor,
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
@@ -38,6 +38,7 @@ pub const TEXT_COLOR: Color = Color::from_rgb8(0xf2, 0xf2, 0xf2);
 pub const DISABLED_TEXT_COLOR: Color = Color::from_rgb8(0xa0, 0xa0, 0x9a);
 pub const PLACEHOLDER_COLOR: Color = Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F);
 pub const TEXT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x16, 0x16, 0x16);
+pub const FOCUS_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 
 // TODO: The following constants are not being used in properties
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
@@ -45,7 +46,6 @@ pub const BASIC_WIDGET_HEIGHT: f64 = 18.0;
 pub const BORDERED_WIDGET_HEIGHT: f64 = 24.0;
 pub const SCROLLBAR_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_BORDER_COLOR: Color = Color::from_rgb8(0x77, 0x77, 0x77);
-pub const FOCUS_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_WIDTH: f64 = 8.;
 pub const SCROLLBAR_PAD: f64 = 2.;
 pub const SCROLLBAR_MIN_SIZE: f64 = 45.;
@@ -70,6 +70,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<Button, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Button, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Button, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
 
     // Checkbox
     properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
@@ -82,6 +83,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<Checkbox, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Checkbox, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
 
     properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
@@ -96,6 +98,7 @@ pub fn default_property_set() -> DefaultProperties {
         width: BORDER_WIDTH,
     });
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
+    properties.insert::<TextInput, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
     properties.insert::<TextInput, _>(PlaceholderColor::new(PLACEHOLDER_COLOR));
     properties.insert::<TextInput, _>(CaretColor { color: TEXT_COLOR });
     properties.insert::<TextInput, _>(SelectionColor {

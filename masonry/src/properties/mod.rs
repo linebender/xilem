@@ -23,7 +23,7 @@ mod slider;
 pub mod types;
 
 pub use background::{ActiveBackground, Background, DisabledBackground};
-pub use border_color::{BorderColor, HoveredBorderColor};
+pub use border_color::{BorderColor, FocusedBorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
 pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};

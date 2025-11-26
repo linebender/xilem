@@ -4,7 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::HasProperty;
-use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
+use masonry::properties::{ContentColor, DisabledContentColor, FocusedBorderColor, LineBreaking};
 use vello::peniko::Color;
 
 pub use masonry::properties::types::{Gradient, GradientShape};
@@ -154,6 +154,14 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         Self::Widget: HasProperty<HoveredBorderColor>,
     {
         self.prop(HoveredBorderColor(BorderColor { color }))
+    }
+
+    /// Set the element's border color when focused.
+    fn focused_border_color(self, color: Color) -> Prop<FocusedBorderColor, Self, State, Action>
+    where
+        Self::Widget: HasProperty<FocusedBorderColor>,
+    {
+        self.prop(FocusedBorderColor(BorderColor { color }))
     }
 
     /// Set the element's border width.
