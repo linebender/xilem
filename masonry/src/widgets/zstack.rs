@@ -79,7 +79,6 @@ impl ZStack {
     }
 
     /// Appends a child widget to the `ZStack`.
-    /// The child are placed back to front, in the order they are added.
     pub fn with_child(
         mut self,
         child: NewWidget<impl Widget + ?Sized>,
@@ -94,16 +93,31 @@ impl ZStack {
 // --- MARK: WIDGETMUT
 impl ZStack {
     /// Add a child widget to the `ZStack`.
-    /// The child are placed back to front, in the order they are added.
     ///
     /// See also [`with_child`][Self::with_child].
-    pub fn insert_child(
+    pub fn add_child(
         this: &mut WidgetMut<'_, Self>,
         child: NewWidget<impl Widget + ?Sized>,
         alignment: impl Into<ChildAlignment>,
     ) {
         let child = Child::new(child.erased().to_pod(), alignment.into());
         this.widget.children.push(child);
+        this.ctx.children_changed();
+    }
+
+    /// Insert a child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
+    pub fn insert_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), alignment.into());
+        this.widget.children.insert(idx, child);
         this.ctx.children_changed();
     }
 
@@ -124,18 +138,26 @@ impl ZStack {
     }
 
     /// Remove a child from the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
     }
 
     /// Get a mutable reference to a child of the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
+    ) -> WidgetMut<'t, dyn Widget> {
         let child = &mut this.widget.children[idx].widget;
-        Some(this.ctx.get_mut(child))
+        this.ctx.get_mut(child)
     }
 
     /// Change the alignment of the `ZStack`.
@@ -147,6 +169,10 @@ impl ZStack {
     }
 
     /// Change the alignment of a child of the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn update_child_alignment(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,

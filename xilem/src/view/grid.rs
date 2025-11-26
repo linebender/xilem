@@ -247,7 +247,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::Grid::insert_grid_child_at(
+            widgets::Grid::insert_child(
                 &mut self.element,
                 self.idx,
                 element.child.new_widget,
@@ -259,7 +259,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: GridElement) {
-        widgets::Grid::insert_grid_child_at(
+        widgets::Grid::insert_child(
             &mut self.element,
             self.idx,
             element.child.new_widget,

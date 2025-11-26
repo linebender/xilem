@@ -146,14 +146,14 @@ impl Grid {
     pub fn add_child(
         this: &mut WidgetMut<'_, Self>,
         child: NewWidget<impl Widget + ?Sized>,
-        params: GridParams,
+        params: impl Into<GridParams>,
     ) {
-        let child = new_grid_child(params, child);
+        let child = new_grid_child(params.into(), child);
         this.widget.children.push(child);
         this.ctx.children_changed();
     }
 
-    /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
+    /// Insert a child widget at the given index.
     ///
     /// This lets you control the order in which the children are drawn. Children are
     /// drawn in index order (i.e. each child is drawn on top of the children with lower indices).
@@ -161,7 +161,7 @@ impl Grid {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_grid_child_at(
+    pub fn insert_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: NewWidget<impl Widget + ?Sized>,
@@ -520,7 +520,7 @@ mod tests {
         // Draw a widget under the others by putting it at index 0
         // Make it wide enough to see it stick out, with half of it under A and B.
         harness.edit_root_widget(|mut grid| {
-            Grid::insert_grid_child_at(
+            Grid::insert_child(
                 &mut grid,
                 0,
                 Button::with_text("C").with_auto_id(),
