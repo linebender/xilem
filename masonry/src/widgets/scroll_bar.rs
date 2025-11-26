@@ -46,16 +46,17 @@ impl ScrollBar {
             grab_anchor: None,
         }
     }
+}
 
+// --- MARK: METHODS
+impl ScrollBar {
     /// Returns how far the scrollbar is from its initial point.
     ///
     /// Values range from 0.0 (beginning) to 1.0 (end).
     pub fn cursor_progress(&self) -> f64 {
         self.cursor_progress
     }
-}
 
-impl ScrollBar {
     fn get_cursor_rect(&self, layout_size: Size, min_length: f64) -> Rect {
         // TODO - handle invalid sizes
         let size_ratio = self.portal_size / self.content_size;

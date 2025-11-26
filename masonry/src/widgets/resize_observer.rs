@@ -142,6 +142,7 @@ impl Widget for ResizeObserver {
     }
 }
 
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use dpi::PhysicalSize;

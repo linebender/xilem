@@ -43,6 +43,7 @@ pub struct TextInput {
     clip: bool,
 }
 
+// --- MARK: BUILDERS
 impl TextInput {
     /// Create a new `TextInput` with the given text.
     ///
@@ -83,7 +84,10 @@ impl TextInput {
         self.clip = clip;
         self
     }
+}
 
+// --- MARK: METHODS
+impl TextInput {
     /// Read the underlying text area.
     ///
     /// Useful for getting its ID, as most actions from the text input will be sent by the child.
@@ -334,6 +338,7 @@ impl Widget for TextInput {
     }
 }
 
+// --- MARK: TESTS
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
