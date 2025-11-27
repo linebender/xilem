@@ -7,7 +7,7 @@ use std::mem::Discriminant;
 use accesskit::{Node, NodeId, Role};
 use masonry_core::util::bounding_box_to_rect;
 use parley::PlainEditor;
-use parley::editor::{Generation, SplitString};
+use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};

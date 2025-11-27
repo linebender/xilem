@@ -153,7 +153,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       - name: Restore cache
         uses: Swatinem/rust-cache@v2
@@ -246,7 +246,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
       - name: Install xvfb, llvmpipe and lavapipe
@@ -380,7 +380,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       - name: Restore cache
         uses: Swatinem/rust-cache@v2
@@ -444,6 +444,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libfontconfig1-dev
 
       # We test documentation using nightly to match docs.rs.
       - name: Run cargo doc
