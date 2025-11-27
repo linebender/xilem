@@ -67,64 +67,64 @@ name = "mason"
 # However it is possible to set doc-scrape-examples to false for other specific examples.
 doc-scrape-examples = true
 
-# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
-[[example]]
-# A custom example target which uses the same `mason.rs` file but for android
-name = "mason_android"
-path = "examples/mason.rs"
-# cdylib is required for cargo-apk
-crate-type = ["cdylib"]
-
 [[example]]
 name = "calc"
-
-[[example]]
-name = "calc_android"
-path = "examples/calc.rs"
-# cdylib is required for cargo-apk
-crate-type = ["cdylib"]
-
-[[example]]
-name = "http_cats"
-
-[[example]]
-name = "http_cats_android"
-path = "examples/http_cats.rs"
-# cdylib is required for cargo-apk
-crate-type = ["cdylib"]
 
 [[example]]
 name = "stopwatch"
 
 [[example]]
-name = "stopwatch_android"
-path = "examples/stopwatch.rs"
-# cdylib is required for cargo-apk
-crate-type = ["cdylib"]
-
-[[example]]
 name = "to_do_mvc"
-
-[[example]]
-name = "to_do_mvc_android"
-path = "examples/to_do_mvc.rs"
-# cdylib is required for cargo-apk
-crate-type = ["cdylib"]
 
 [[example]]
 name = "variable_clock"
 
 [[example]]
-name = "variable_clock_android"
-path = "examples/variable_clock.rs"
+name = "emoji_picker"
+
+[[example]]
+name = "http_cats"
+
+# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "android_mason"
+path = "examples/android_mason.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
-name = "emoji_picker"
+name = "android_calc"
+path = "examples/android_calc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
 
 [[example]]
-name = "emoji_picker_android"
-path = "examples/emoji_picker.rs"
+name = "android_stopwatch"
+path = "examples/android_stopwatch.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "android_to_do_mvc"
+path = "examples/android_to_do_mvc.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "android_variable_clock"
+path = "examples/android_variable_clock.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "android_emoji_picker"
+path = "examples/android_emoji_picker.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
+[[example]]
+name = "android_http_cats"
+path = "examples/android_http_cats.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
