@@ -5,12 +5,12 @@ use std::sync::Arc;
 
 use masonry::core::WidgetMut;
 use masonry::widgets;
-use vello::kurbo::Size;
 use vello::Scene;
+use vello::kurbo::Size;
 use xilem_core::MessageContext;
 
-use crate::core::{Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use crate::core::{Mut, View, ViewMarker};
+use crate::{MessageResult, Pod, ViewCtx};
 
 /// Creates a non-interactive drawing surface.
 ///
