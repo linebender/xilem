@@ -14,27 +14,24 @@ use crate::{MessageResult, Pod, ViewCtx};
 /// # Example
 ///
 /// ```
-/// use xilem::view::canvas;
-/// use vello::{
-///     kurbo::{Affine, Rect, Size},
-///     peniko::{Color, Fill},
-///     Scene,
-/// };
+/// use xilem::masonry::{kurbo::{Rect, Size}, peniko::Fill, vello::Scene};
+/// use xilem::{Affine, view::canvas};
 /// use std::sync::Arc;
+/// # use xilem::WidgetView;
 ///
+/// # fn fill_canvas() -> impl WidgetView<()> + use<> {
 /// let my_canvas = canvas(Arc::new(|scene: &mut Scene, size: Size| {
-///     // Define a rectangle that fills the entire canvas.
-///     let rect = Rect::new(0.0, 0.0, size.width, size.height);
-///
-///     // Fill the rectangle with a solid color.
+///     // Drawing a simple rectangle that fills the canvas.
 ///     scene.fill(
 ///         Fill::NonZero,
 ///         Affine::IDENTITY,
-///         &Color::from_rgb8(51, 102, 204),
+///         xilem::palette::css::AQUA,
 ///         None,
-///         &rect,
+///         &Rect::new(0.0, 0.0, size.width, size.height),
 ///     );
 /// }));
+/// # my_canvas
+/// # }
 /// ```
 pub fn canvas(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Canvas {
     Canvas {
