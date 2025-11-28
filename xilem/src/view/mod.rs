@@ -9,6 +9,7 @@
 pub use masonry::core::Axis;
 
 mod button;
+mod canvas;
 mod checkbox;
 mod flex;
 mod grid;
@@ -33,6 +34,7 @@ mod worker;
 mod zstack;
 
 pub use self::button::*;
+pub use self::canvas::*;
 pub use self::checkbox::*;
 pub use self::flex::*;
 pub use self::grid::*;
