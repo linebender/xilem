@@ -290,7 +290,6 @@ where
                 self.run_logic(masonry_ctx);
             }
             MessageResult::RequestRebuild => {
-                window.view_ctx.set_state_changed(false);
                 window.view.masonry_root.rebuild(
                     &window.view.masonry_root,
                     &mut window.view_state,
