@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{Affine, Pod, ViewCtx, WidgetView};
 
 /// A view which transforms the widget created by child.
@@ -156,7 +156,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> xilem_core::MessageResult<Action> {

@@ -6,7 +6,7 @@
 use peniko::kurbo::{BezPath, Circle, Line, Rect};
 use xilem_core::{Arg, ViewArgument};
 
-use crate::core::{MessageContext, MessageResult, Mut, OrphanView};
+use crate::core::{MessageCtx, MessageResult, Mut, OrphanView};
 use crate::modifiers::{Attributes, WithModifier};
 use crate::{FromWithContext, Pod, SVG_NS, ViewCtx};
 
@@ -74,7 +74,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Line, State, Action> for V
     fn orphan_message(
         _view: &Line,
         (): &mut Self::OrphanViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -131,7 +131,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Rect, State, Action> for V
     fn orphan_message(
         _view: &Rect,
         (): &mut Self::OrphanViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -185,7 +185,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Circle, State, Action> for
     fn orphan_message(
         _view: &Circle,
         (): &mut Self::OrphanViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -241,7 +241,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<BezPath, State, Action> fo
     fn orphan_message(
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

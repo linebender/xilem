@@ -11,8 +11,7 @@ use std::rc::Rc;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, View, ViewArgument,
-    ViewMarker,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker,
 };
 use crate::modifiers::Children;
 use crate::vec_splice::VecSplice;
@@ -59,7 +58,7 @@ pub(crate) trait DomViewSequence<State: ViewArgument, Action>: 'static {
     fn dyn_seq_message(
         &self,
         seq_state: &mut Box<dyn Any>,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
@@ -113,7 +112,7 @@ where
     fn dyn_seq_message(
         &self,
         seq_state: &mut Box<dyn Any>,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -331,7 +330,7 @@ pub(crate) fn message_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
     element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
-    ctx: &mut MessageContext,
+    ctx: &mut MessageCtx,
     app_state: Arg<'_, State>,
 ) -> MessageResult<Action>
 where
@@ -449,7 +448,7 @@ where
     fn message(
         &self,
         element_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -529,7 +528,7 @@ macro_rules! define_element {
             fn message(
                 &self,
                 element_state: &mut Self::ViewState,
-                message: &mut MessageContext,
+                message: &mut MessageCtx,
                 element: Mut<'_, Self::Element>,
                 app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {
@@ -544,7 +543,7 @@ macro_rules! define_elements {
         use std::marker::PhantomData;
         use super::{build_element, rebuild_element, teardown_element, message_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut,  ViewMarker, MessageContext},
+            core::{MessageResult, Mut,  ViewMarker, MessageCtx},
             DomFragment, Pod, View, Arg, ViewArgument, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*

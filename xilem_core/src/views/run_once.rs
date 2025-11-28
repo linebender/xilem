@@ -4,8 +4,7 @@
 use core::fmt::Debug;
 
 use crate::{
-    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker, ViewPathTracker,
 };
 
 /// A view which executes `once` exactly once.
@@ -120,7 +119,7 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
         _: Arg<'_, State>,
     ) -> MessageResult<Action> {

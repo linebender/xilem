@@ -9,7 +9,7 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::{
-    Arg, MessageContext, MessageResult, Mut, OrphanView, View, ViewArgument, ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, OrphanView, View, ViewArgument, ViewPathTracker,
 };
 
 mod common;
@@ -72,7 +72,7 @@ impl<State: ViewArgument, Action> OrphanView<&'static str, State, Action> for Te
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

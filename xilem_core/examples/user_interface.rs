@@ -7,7 +7,7 @@
 use core::any::Any;
 
 use xilem_core::{
-    Arg, Edit, Environment, MessageContext, MessageResult, Mut, SuperElement, View, ViewArgument,
+    Arg, Edit, Environment, MessageCtx, MessageResult, Mut, SuperElement, View, ViewArgument,
     ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
@@ -91,7 +91,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Button {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

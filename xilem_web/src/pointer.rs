@@ -11,14 +11,14 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::interfaces::Element;
 use crate::{DomView, ViewCtx};
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 305418260 in decimal.
 const POINTER_VIEW_ID: ViewId = ViewId::new(0x1234_5014);
 
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
@@ -207,7 +207,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

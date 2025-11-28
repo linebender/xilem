@@ -4,7 +4,7 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=placehero
 
-//! A mastodon client written in Xilem.
+//! A mastodon client written in [Xilem][xilem].
 //!
 //! We're assuming that all Mastodon servers supported are trusted (and so it's not a
 //! privacy violation for them to know that two accounts you log in to are linked).
@@ -15,9 +15,7 @@
 //!
 //! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 //!
-//! - `default`: Enables the default features of [`xilem`][xilem].
-//!
-//! [xilem]: https://crates.io/crates/xilem
+//! - `default`: Enables the default features of [Xilem][xilem].
 
 #![expect(clippy::todo, reason = "Landing intentionally in-progress work.")]
 

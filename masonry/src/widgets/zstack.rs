@@ -27,28 +27,6 @@ pub enum ChildAlignment {
     SelfAligned(UnitPoint),
 }
 
-/// A widget container that lays the child widgets on top of each other.
-///
-/// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
-/// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
-///
-#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
-pub struct ZStack {
-    children: Vec<Child>,
-    alignment: UnitPoint,
-}
-
-impl Default for ZStack {
-    fn default() -> Self {
-        Self {
-            children: Vec::default(),
-            alignment: UnitPoint::CENTER,
-        }
-    }
-}
-
-// --- MARK: IMPL ALIGNMENTS
-
 impl From<UnitPoint> for ChildAlignment {
     fn from(value: UnitPoint) -> Self {
         Self::SelfAligned(value)
@@ -65,7 +43,28 @@ impl Child {
     }
 }
 
-// --- MARK: IMPL ZSTACK
+/// A widget container that lays the child widgets on top of each other.
+///
+/// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
+/// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
+///
+#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
+pub struct ZStack {
+    children: Vec<Child>,
+    alignment: UnitPoint,
+}
+
+// --- MARK: DEFAULT
+impl Default for ZStack {
+    fn default() -> Self {
+        Self {
+            children: Vec::default(),
+            alignment: UnitPoint::CENTER,
+        }
+    }
+}
+
+// --- MARK: BUILDERS
 impl ZStack {
     /// Constructs a new empty `ZStack` widget.
     pub fn new() -> Self {
@@ -79,7 +78,6 @@ impl ZStack {
     }
 
     /// Appends a child widget to the `ZStack`.
-    /// The child are placed back to front, in the order they are added.
     pub fn with_child(
         mut self,
         child: NewWidget<impl Widget + ?Sized>,
@@ -94,10 +92,9 @@ impl ZStack {
 // --- MARK: WIDGETMUT
 impl ZStack {
     /// Add a child widget to the `ZStack`.
-    /// The child are placed back to front, in the order they are added.
     ///
     /// See also [`with_child`][Self::with_child].
-    pub fn insert_child(
+    pub fn add_child(
         this: &mut WidgetMut<'_, Self>,
         child: NewWidget<impl Widget + ?Sized>,
         alignment: impl Into<ChildAlignment>,
@@ -105,23 +102,61 @@ impl ZStack {
         let child = Child::new(child.erased().to_pod(), alignment.into());
         this.widget.children.push(child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
+    }
+
+    /// Insert a child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
+    pub fn insert_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), alignment.into());
+        this.widget.children.insert(idx, child);
+        this.ctx.children_changed();
+    }
+
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), alignment.into());
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        this.ctx.remove_child(old_child.widget);
     }
 
     /// Remove a child from the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
     }
 
     /// Get a mutable reference to a child of the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
+    ) -> WidgetMut<'t, dyn Widget> {
         let child = &mut this.widget.children[idx].widget;
-        Some(this.ctx.get_mut(child))
+        this.ctx.get_mut(child)
     }
 
     /// Change the alignment of the `ZStack`.
@@ -133,6 +168,10 @@ impl ZStack {
     }
 
     /// Change the alignment of a child of the `ZStack`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn update_child_alignment(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,

@@ -6,9 +6,7 @@ use std::marker::PhantomData;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
-};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker};
 use crate::{OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
@@ -141,7 +139,7 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

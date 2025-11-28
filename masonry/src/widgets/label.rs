@@ -84,13 +84,6 @@ impl Label {
         }
     }
 
-    /// Get the current text of this label.
-    ///
-    /// To update the text of an active label, use [`set_text`](Self::set_text).
-    pub fn text(&self) -> &ArcStr {
-        &self.text
-    }
-
     /// Set a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
@@ -152,6 +145,16 @@ impl Label {
             );
         }
         self.styles.insert(property)
+    }
+}
+
+// --- MARK: METHODS
+impl Label {
+    /// Get the current text of this label.
+    ///
+    /// To update the text of an active label, use [`set_text`](Self::set_text).
+    pub fn text(&self) -> &ArcStr {
+        &self.text
     }
 }
 

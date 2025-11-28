@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 
 use crate::view_sequences::NoElements;
 use crate::{
-    AppendVec, Arg, MessageContext, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
+    AppendVec, Arg, MessageCtx, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
     ViewPathTracker, ViewSequence,
 };
 
@@ -111,7 +111,7 @@ where
     fn message(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> crate::MessageResult<Action> {

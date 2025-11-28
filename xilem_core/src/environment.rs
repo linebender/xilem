@@ -7,8 +7,7 @@ use anymore::AnyDebug;
 use hashbrown::{HashMap, hash_map::Entry};
 
 use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
@@ -328,7 +327,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -414,7 +413,9 @@ pub struct WithContextState<ChildState, ChildView> {
     listener_index: Option<usize>,
 }
 
-const WITH_CONTEXT_CHILD: ViewId = ViewId::new(0);
+// Use a distinctive number here, to be able to catch bugs.
+/// This is a randomly generated 32 bit number - 3326962411 in decimal.
+const WITH_CONTEXT_CHILD: ViewId = ViewId::new(0xc64d6aeb);
 
 impl<State, Action, Context, Child, ChildView> ViewMarker
     for WithContext<State, Action, Context, Child, ChildView>
@@ -577,7 +578,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -722,7 +723,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         mut app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

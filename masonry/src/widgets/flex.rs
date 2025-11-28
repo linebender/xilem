@@ -86,7 +86,7 @@ enum Child {
     FlexedSpacer(f64, f64),
 }
 
-// --- MARK: IMPL FLEX
+// --- MARK: BUILDERS
 impl Flex {
     /// Create a new `Flex` oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
@@ -199,7 +199,10 @@ impl Flex {
         self.children.push(new_child);
         self
     }
+}
 
+// --- MARK: METHODS
+impl Flex {
     /// Returns the number of children (widgets and spacers) this flex container has.
     pub fn len(&self) -> usize {
         self.children.len()
@@ -362,6 +365,84 @@ impl Flex {
         this.ctx.request_layout();
     }
 
+    /// Replace the child widget at the given index with a new non-flex one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) {
+        let child = Child::Fixed {
+            widget: child.erased().to_pod(),
+            alignment: None,
+        };
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
+            this.ctx.remove_child(widget);
+        }
+        this.ctx.children_changed();
+    }
+
+    /// Replace the child widget at the given index with a new flex one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_flex_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<FlexParams>,
+    ) {
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
+            this.ctx.remove_child(widget);
+        }
+        this.ctx.children_changed();
+    }
+
+    /// Replace the child widget at the given index with an empty spacer.
+    ///
+    /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
+        let new_child = Child::FixedSpacer(len, 0.0);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], new_child);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
+            this.ctx.remove_child(widget);
+        }
+        this.ctx.request_layout();
+    }
+
+    /// Replace the child widget at the given index
+    /// with an empty spacer with a specific `flex` factor.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_flex_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
+        let flex = if flex >= 0.0 {
+            flex
+        } else {
+            debug_panic!("set_flex_spacer called with negative length: {}", flex);
+            0.0
+        };
+        let new_child = Child::FlexedSpacer(flex, 0.0);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], new_child);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
+            this.ctx.remove_child(widget);
+        }
+        this.ctx.request_layout();
+    }
+
     /// Remove the child at `idx`.
     ///
     /// This child can be a widget or a spacer.
@@ -373,8 +454,10 @@ impl Flex {
         let child = this.widget.children.remove(idx);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
             this.ctx.remove_child(widget);
+        } else {
+            // We need to explicitly request layout in case of spacer removal
+            this.ctx.request_layout();
         }
-        this.ctx.request_layout();
     }
 
     /// Returns a mutable reference to the child widget at `idx`.
@@ -461,13 +544,13 @@ impl Flex {
     /// Remove all children from the container.
     pub fn clear(this: &mut WidgetMut<'_, Self>) {
         if !this.widget.children.is_empty() {
-            this.ctx.request_layout();
-
             for child in this.widget.children.drain(..) {
                 if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
                     this.ctx.remove_child(widget);
                 }
             }
+            // We need to explicitly request layout in case we had any spacers
+            this.ctx.request_layout();
         }
     }
 }
@@ -1260,18 +1343,27 @@ mod tests {
     fn edit_flex_container() {
         let image_1 = {
             let widget = Flex::column()
-                .with_child(Label::new("a").with_auto_id())
+                .with_child(Label::new("q").with_auto_id())
                 .with_child(Label::new("b").with_auto_id())
-                .with_child(Label::new("c").with_auto_id())
+                .with_child(Label::new("w").with_auto_id())
                 .with_child(Label::new("d").with_auto_id())
                 .with_auto_id();
-            // -> abcd
+            // -> qbwd
 
             let window_size = Size::new(200.0, 150.0);
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), widget, window_size);
 
             harness.edit_root_widget(|mut flex| {
+                Flex::set_child(&mut flex, 0, Label::new("a").with_auto_id());
+                // -> abwd
+                Flex::set_flex_child(
+                    &mut flex,
+                    2,
+                    Label::new("c").with_auto_id(),
+                    FlexParams::default(),
+                );
+                // -> abcd
                 Flex::remove_child(&mut flex, 1);
                 // -> acd
                 Flex::add_child(&mut flex, Label::new("x").with_auto_id());

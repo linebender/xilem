@@ -41,9 +41,9 @@ impl TestCtx {
         &mut self,
         target_id_path: Vec<ViewId>,
         message: DynMessage,
-        f: impl FnOnce(&mut MessageContext),
+        f: impl FnOnce(&mut MessageCtx),
     ) {
-        let mut ctx = MessageContext::new(std::mem::take(&mut self.1), target_id_path, message);
+        let mut ctx = MessageCtx::new(std::mem::take(&mut self.1), target_id_path, message);
         f(&mut ctx);
         self.1 = ctx.finish().0;
     }
@@ -162,7 +162,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: (),
     ) -> MessageResult<Action> {
@@ -221,7 +221,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &mut MessageContext,
+        _: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
         _: (),
     ) -> MessageResult<Action> {

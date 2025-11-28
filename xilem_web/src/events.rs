@@ -10,14 +10,14 @@ use web_sys::{AddEventListenerOptions, js_sys};
 
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::{DomView, OptionalAction, ViewCtx};
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
-const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 592908563 in decimal.
+const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x23571113);
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
@@ -218,7 +218,7 @@ fn teardown_event_listener<State, Action, V>(
 fn message_event_listener<State, Action, V, Event, OA, Callback>(
     element_view: &V,
     state: &mut OnEventState<V::ViewState>,
-    message: &mut MessageContext,
+    message: &mut MessageCtx,
     element: Mut<'_, V::Element>,
     app_state: Arg<'_, State>,
     handler: &Callback,
@@ -342,7 +342,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -463,7 +463,7 @@ macro_rules! event_definitions {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                 message: &mut MessageContext,
+                 message: &mut MessageCtx,
                  element: Mut<'_, Self::Element>,
                 app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {
@@ -653,7 +653,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

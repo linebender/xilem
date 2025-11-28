@@ -32,7 +32,7 @@ pub struct IndexedStack {
     active_child: usize,
 }
 
-// --- MARK: IMPL INDEXEDSTACK
+// --- MARK: BUILDERS
 impl IndexedStack {
     /// Create a new stack with no children.
     pub fn new() -> Self {
@@ -65,7 +65,10 @@ impl IndexedStack {
         self.active_child = idx;
         self
     }
+}
 
+// --- MARK: METHODS
+impl IndexedStack {
     /// Returns the number of children in this stack.
     pub fn len(&self) -> usize {
         self.children.len()
@@ -82,7 +85,7 @@ impl IndexedStack {
     }
 }
 
-// --- MARK: IMPL WIDGETMUT
+// --- MARK: WIDGETMUT
 impl IndexedStack {
     /// Add a child widget to the end of the stack.
     ///
@@ -90,7 +93,6 @@ impl IndexedStack {
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         this.widget.children.push(child.erased().to_pod());
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Insert a child widget at the given index.
@@ -111,7 +113,20 @@ impl IndexedStack {
             this.widget.active_child += 1;
         }
         this.ctx.children_changed();
-        this.ctx.request_layout();
+    }
+
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) {
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child.erased().to_pod());
+        this.ctx.remove_child(old_child);
     }
 
     /// Change the active child.
@@ -166,8 +181,6 @@ impl IndexedStack {
             this.widget.active_child -= 1;
         }
         this.ctx.remove_child(child);
-        this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 }
 
@@ -365,5 +378,11 @@ mod tests {
             IndexedStack::set_active_child(&mut stack, 1);
         });
         assert_render_snapshot!(harness, "indexed_stack_initial_builder");
+
+        // Change the active widget
+        harness.edit_root_widget(|mut stack| {
+            IndexedStack::set_child(&mut stack, 1, Button::with_text("D").with_auto_id());
+        });
+        assert_render_snapshot!(harness, "indexed_stack_builder_new_widget");
     }
 }

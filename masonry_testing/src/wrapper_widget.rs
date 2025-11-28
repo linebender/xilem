@@ -44,9 +44,6 @@ impl WrapperWidget {
     pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
         let old_child = std::mem::replace(&mut this.widget.child, child);
         this.ctx.remove_child(old_child);
-
-        this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 }
 

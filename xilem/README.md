@@ -37,11 +37,15 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
 [crate::view::text_input]: https://docs.rs/xilem/latest/xilem/view/fn.text_input.html
 [crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
-[masonry::parley]: https://docs.rs/parley/latest/parley
-[masonry::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
-[masonry::vello]: https://docs.rs/vello/latest/vello/
 [xilem_core]: https://docs.rs/parley_core/latest/xilem_core
 [xilem_examples]: ./examples/
+
+[masonry_winit]: https://crates.io/crates/masonry_winit
+[masonry]: https://crates.io/crates/masonry
+[Parley]: https://crates.io/crates/parley
+[Vello]: https://crates.io/crates/vello
+[wgpu]: https://crates.io/crates/wgpu
+[winit]: https://crates.io/crates/winit
 
 <!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
@@ -55,13 +59,14 @@ was presented at the RustNL conference in 2024, and gives a video introduction t
 Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
 Masonry itself is built on top of a wide array of foundational Rust UI projects:
 
-* Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
-* GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
-* Text layout is provided by [Parley][masonry::parley].
+* Rendering is provided by [Vello], a high performance GPU compute-centric 2D renderer.
+* GPU compute infrastructure is provided by [wgpu].
+* Text layout is provided by [Parley].
 * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
-* Window handling is provided by [winit][].
+* Window handling is provided by [Winit][].
 
-Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
+Xilem can currently be considered to be in an alpha state.
+Lots of things need improvements (including this documentation!).
 
 There is also a [blog post][xilem_blog] from when Xilem was first introduced.
 
@@ -155,20 +160,17 @@ That is a simplifying assumption for most Rust code, but this is mismatched with
 
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
-- `default`: Enables the default features of [`masonry`][masonry] and [`masonry_winit`][masonry_winit].
+* `default`: Enables the default features of [Masonry][masonry] and [Masonry Winit][masonry_winit].
 
 [accesskit_docs]: masonry::accesskit
+[Parley]: masonry::parley
+[Vello]: masonry::vello
+[winit]: masonry_winit::winit
+[wgpu]: masonry::vello::wgpu
+
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
-[Fontique]: https://crates.io/crates/fontique
-[Masonry]: https://crates.io/crates/masonry
-[masonry_core]: https://crates.io/crates/masonry_core
-[masonry_winit]: https://crates.io/crates/masonry_winit
-[Parley]: https://crates.io/crates/parley
 [skrifa]: https://crates.io/crates/skrifa
-[swash]: https://crates.io/crates/swash
-[Vello]: https://crates.io/crates/vello
-[winit]: https://crates.io/crates/winit
 [xilem_blog]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
 [xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
 

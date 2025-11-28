@@ -48,7 +48,7 @@ pub struct GridParams {
     pub height: i32,
 }
 
-// --- MARK: IMPL GRID
+// --- MARK: BUILDERS
 impl Grid {
     /// Create a new grid with the given number of columns and rows.
     pub fn with_dimensions(width: i32, height: i32) -> Self {
@@ -146,15 +146,14 @@ impl Grid {
     pub fn add_child(
         this: &mut WidgetMut<'_, Self>,
         child: NewWidget<impl Widget + ?Sized>,
-        params: GridParams,
+        params: impl Into<GridParams>,
     ) {
-        let child = new_grid_child(params, child);
+        let child = new_grid_child(params.into(), child);
         this.widget.children.push(child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
-    /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
+    /// Insert a child widget at the given index.
     ///
     /// This lets you control the order in which the children are drawn. Children are
     /// drawn in index order (i.e. each child is drawn on top of the children with lower indices).
@@ -162,7 +161,7 @@ impl Grid {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_grid_child_at(
+    pub fn insert_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: NewWidget<impl Widget + ?Sized>,
@@ -171,7 +170,22 @@ impl Grid {
         let child = new_grid_child(params.into(), child);
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
-        this.ctx.request_layout();
+    }
+
+    /// Replace the child widget at the given index with a new one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
+    pub fn set_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<GridParams>,
+    ) {
+        let child = new_grid_child(params.into(), child);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        this.ctx.remove_child(old_child.widget);
     }
 
     /// Set the spacing between grid items.
@@ -230,7 +244,6 @@ impl Grid {
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
     }
 }
 
@@ -451,6 +464,25 @@ mod tests {
         });
         assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
 
+        // Test replacement
+        harness.edit_root_widget(|mut grid| {
+            Grid::remove_child(&mut grid, 0);
+            Grid::add_child(
+                &mut grid,
+                Button::with_text("X").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            );
+        });
+        harness.edit_root_widget(|mut grid| {
+            Grid::set_child(
+                &mut grid,
+                0,
+                Button::with_text("A").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            );
+        });
+        assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
+
         // Change the grid params to position it on the other corner
         harness.edit_root_widget(|mut grid| {
             Grid::update_child_grid_params(&mut grid, 0, GridParams::new(1, 1, 1, 1));
@@ -488,7 +520,7 @@ mod tests {
         // Draw a widget under the others by putting it at index 0
         // Make it wide enough to see it stick out, with half of it under A and B.
         harness.edit_root_widget(|mut grid| {
-            Grid::insert_grid_child_at(
+            Grid::insert_child(
                 &mut grid,
                 0,
                 Button::with_text("C").with_auto_id(),

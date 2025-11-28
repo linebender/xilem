@@ -9,7 +9,7 @@ use masonry::widgets;
 pub use masonry::widgets::ChildAlignment;
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
@@ -140,7 +140,7 @@ where
     fn message(
         &self,
         ZStackState { seq_state, scratch }: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -235,8 +235,7 @@ where
                     self.alignment,
                 );
             }
-            let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
-                .expect("ZStackWrapper always has a widget child");
+            let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
@@ -248,20 +247,18 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
-            .expect("ZStackWrapper always has a widget child");
+        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
-            .expect("ZStackWrapper always has a corresponding child");
+        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
         self.view
             .message(view_state, message, child.downcast(), app_state)
     }
@@ -322,8 +319,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
-            let mut child = widgets::ZStack::child_mut(&mut this.parent, this.idx)
-                .expect("This is supposed to be a widget");
+            let mut child = widgets::ZStack::child_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -373,7 +369,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<ZStackElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::ZStack::insert_child(
+            widgets::ZStack::add_child(
                 &mut self.element,
                 element.widget.new_widget,
                 element.alignment,
@@ -384,7 +380,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: ZStackElement) {
-        widgets::ZStack::insert_child(
+        widgets::ZStack::add_child(
             &mut self.element,
             element.widget.new_widget,
             element.alignment,

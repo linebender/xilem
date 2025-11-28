@@ -34,6 +34,7 @@ pub struct ProgressBar {
     label: WidgetPod<Label>,
 }
 
+// --- MARK: BUILDERS
 impl ProgressBar {
     /// Create a new `ProgressBar`.
     ///
@@ -47,7 +48,10 @@ impl ProgressBar {
             NewWidget::new_with_props(Label::new(Self::value(progress)), label_props).to_pod();
         Self { progress, label }
     }
+}
 
+// --- MARK: METHODS
+impl ProgressBar {
     fn value_accessibility(&self) -> Box<str> {
         if let Some(value) = self.progress {
             format!("{:.0}%", value * 100.).into()

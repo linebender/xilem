@@ -1,15 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::accesskit::{Node, Role};
-use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
-};
-use masonry::kurbo::{Point, Size};
-use tracing::{Span, trace_span};
-use vello::Scene;
+use masonry::core::{FromDynWidget, Widget};
+use masonry::widgets::Passthrough;
 
 use crate::core::{AnyElement, AnyView, Mut, SuperElement};
 use crate::{Pod, ViewCtx};
@@ -23,13 +16,11 @@ use crate::{Pod, ViewCtx};
 /// views in a [`ViewSequence`](xilem_core::ViewSequence).
 // TODO: Mention `Either` when we have implemented that?
 pub type AnyWidgetView<State, Action = ()> =
-    dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
+    dyn AnyView<State, Action, ViewCtx, Pod<Passthrough>> + Send + Sync;
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<Passthrough> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        ctx.create_pod(DynWidget {
-            inner: child.new_widget.erased().to_pod(),
-        })
+        ctx.create_pod(Passthrough::new(child.new_widget.erased()))
     }
 
     fn with_downcast_val<R>(
@@ -37,7 +28,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
-            let mut child = this.ctx.get_mut(&mut this.widget.inner);
+            let mut child = Passthrough::child_mut(&mut this);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -46,93 +37,9 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<Passthrough> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        DynWidget::replace_inner(&mut this, child.new_widget.erased());
+        Passthrough::set_child(&mut this, child.new_widget.erased());
         this
-    }
-}
-
-/// A widget whose only child can be dynamically replaced.
-#[expect(
-    unnameable_types,
-    reason = "This is an implementation detail of `AnyWidgetView`"
-)]
-pub struct DynWidget {
-    inner: WidgetPod<dyn Widget>,
-}
-
-impl DynWidget {
-    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: NewWidget<dyn Widget>) {
-        let old_widget = std::mem::replace(&mut this.widget.inner, widget.to_pod());
-        this.ctx.remove_child(old_widget);
-    }
-
-    pub(crate) fn inner_id(&self) -> WidgetId {
-        self.inner.id()
-    }
-}
-
-/// Forward all events to the child widget.
-impl Widget for DynWidget {
-    type Action = NoAction;
-
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
-    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
-        ctx.register_child(&mut self.inner);
-    }
-
-    fn layout(
-        &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = ctx.run_layout(&mut self.inner, bc);
-        ctx.place_child(&mut self.inner, Point::ORIGIN);
-        size
-    }
-
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
-
-    fn accessibility_role(&self) -> Role {
-        Role::GenericContainer
-    }
-
-    fn accessibility(
-        &mut self,
-        _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
-        _node: &mut Node,
-    ) {
-    }
-
-    fn children_ids(&self) -> ChildrenIds {
-        ChildrenIds::from_slice(&[self.inner.id()])
-    }
-
-    fn make_trace_span(&self, id: WidgetId) -> Span {
-        trace_span!("DynWidget", id = id.trace())
     }
 }

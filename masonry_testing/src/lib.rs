@@ -6,7 +6,7 @@
 
 //! Headless runner for testing [Masonry](https://docs.rs/masonry/latest/) applications.
 //!
-//! The primary type from this crate is [`TestHarness`], which creates a host for any [Widget].
+//! The primary type from this crate is [`TestHarness`][], which creates a host for any [Widget][].
 //! The widget can of course have children, which allows this crate to be used for testing entire applications.
 //!
 //! The testing harness can:
@@ -25,13 +25,13 @@
 //!
 //! # Screenshots
 //!
-//! Tests using `TestHarness` can include snapshot steps by using the [`assert_render_snapshot`] screenshot.
+//! Tests using `TestHarness` can include snapshot steps by using the [`assert_render_snapshot`][] macro.
 //! This renders the application being tested, then compares it against the png file with the given name
 //! from the `screenshots` folder (in the package being tested, i.e. adjacent to its `Cargo.toml` file).
 //!
 //! Masonry Testing will update the reference file when the `MASONRY_TEST_BLESS` environment variable has a value of `1`.
 //! This can be used if the file doesn't exist, or there's an expected difference.
-//! The screenshots are losslessly compressed (using [oxipng]) and limited to a small maximum file size (this
+//! The screenshots are losslessly compressed (using [Oxipng][oxipng]) and limited to a small maximum file size (this
 //! limit has an escape hatch).
 //! This ensures that the screenshots are small enough to embed in a git repository with limited risk
 //! of clone times growing unreasonably.

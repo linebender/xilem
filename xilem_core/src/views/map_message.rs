@@ -4,9 +4,7 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
-};
+use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
 /// View type for [`map_message`] and [`map_action`]. Most users will want to use `map_action` (the latter).
 ///
@@ -165,7 +163,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         mut app_state: Arg<'_, State>,
     ) -> MessageResult<ParentAction> {

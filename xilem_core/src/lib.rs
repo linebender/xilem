@@ -7,7 +7,7 @@
 //! Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 //! If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
 //!
-//! Xilem apps will interact with some of the functions from this crate, in particular [`memoize`][].
+//! Xilem apps will interact with some of the functions from this crate, particularly fundamental views such as [`memoize`][] and [`lens`][].
 //! Xilem apps which use custom widgets (and therefore must implement custom views), will implement the [`View`][] trait.
 //!
 //! If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
@@ -32,7 +32,6 @@
 //! [Xilem]: https://crates.io/crates/xilem
 //! [Xilem Web]: https://crates.io/crates/xilem_web
 //! [xilem docs]: https://docs.rs/xilem/latest/xilem/
-//! [Zulip]: https://xi.zulipchat.com/#narrow/stream/354396-xilem
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
@@ -51,34 +50,41 @@ extern crate alloc;
 
 pub use anymore;
 
-mod any_view;
-mod context;
-mod deferred;
 mod element;
+mod element_splice;
 mod environment;
 mod message;
-mod sequence;
-mod state;
+mod message_context;
+mod message_proxy;
 mod view;
+mod view_argument;
+mod view_ctx;
+mod view_sequence;
+
+// TODO - Make views (and view_sequences?) pub.
+mod view_sequences;
 mod views;
 
-pub use self::any_view::{AnyView, AnyViewState};
-pub use self::context::MessageContext;
-pub use self::deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 pub use self::element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
+pub use self::element_splice::{AppendVec, ElementSplice};
 pub use self::environment::{
     Environment, EnvironmentItem, OnActionWithContext, Provides, Rebuild, Resource, Slot,
     WithContext, on_action_with_context, provides, with_context,
 };
 pub use self::message::{DynMessage, MessageResult, SendMessage};
-pub use self::sequence::{
-    AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
-};
-pub use self::state::{Arg, Edit, Read, ViewArgument};
-pub use self::view::{View, ViewId, ViewMarker, ViewPathTracker};
+pub use self::message_context::MessageCtx;
+pub use self::message_proxy::{MessageProxy, ProxyError, RawProxy};
+pub use self::view::{View, ViewMarker};
+pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
+pub use self::view_ctx::{ViewId, ViewPathTracker};
+pub use self::view_sequence::{Count, ViewSequence};
+pub use self::view_sequences::{WithoutElements, without_elements};
 pub use self::views::{
     Fork, Frozen, Lens, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
     map_action, map_message, map_state, memoize, one_of, run_once, run_once_raw,
 };
+
+// TODO - Remove this re-export and rewrite code importing it
+pub use self::views::AnyView;
 
 pub mod docs;

@@ -33,17 +33,18 @@ pub struct Spinner {
     t: f64,
 }
 
+// --- MARK: DEFAULT
+impl Default for Spinner {
+    fn default() -> Self {
+        Self { t: 0.0 }
+    }
+}
+
 // --- MARK: BUILDERS
 impl Spinner {
     /// Create a spinner widget
     pub fn new() -> Self {
         Self::default()
-    }
-}
-
-impl Default for Spinner {
-    fn default() -> Self {
-        Self { t: 0.0 }
     }
 }
 

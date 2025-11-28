@@ -7,7 +7,7 @@ use std::mem::Discriminant;
 use accesskit::{Node, NodeId, Role};
 use masonry_core::util::bounding_box_to_rect;
 use parley::PlainEditor;
-use parley::editor::{Generation, SplitString};
+use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
@@ -134,20 +134,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         }
     }
 
-    /// Get the current text of this text area.
-    ///
-    /// To update the text of an active text area, use [`reset_text`](Self::reset_text).
-    ///
-    /// The return value is not just `&str` to handle IME preedits.
-    pub fn text(&self) -> SplitString<'_> {
-        self.editor.text()
-    }
-
-    /// Check if this text area holds nothing, including IME preedit content.
-    pub fn is_empty(&self) -> bool {
-        self.editor.raw_text().is_empty()
-    }
-
     /// Set a style property for the new text area.
     ///
     /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
@@ -249,8 +235,22 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 }
 
-// --- MARK: HELPERS
+// --- MARK: METHODS
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
+    /// Get the current text of this text area.
+    ///
+    /// To update the text of an active text area, use [`reset_text`](Self::reset_text).
+    ///
+    /// The return value is not just `&str` to handle IME preedits.
+    pub fn text(&self) -> SplitString<'_> {
+        self.editor.text()
+    }
+
+    /// Check if this text area holds nothing, including IME preedit content.
+    pub fn is_empty(&self) -> bool {
+        self.editor.raw_text().is_empty()
+    }
+
     /// Get the IME area from the editor, accounting for padding.
     ///
     /// This should only be called when the editor layout is available.
@@ -1046,6 +1046,7 @@ pub enum InsertNewline {
 // - Clicking in the right place changes the selection as expected?
 // - Keyboard actions have expected results?
 
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use masonry_core::core::NewWidget;

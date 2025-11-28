@@ -194,7 +194,6 @@ impl<T> TreeArena<T> {
     /// # Panics
     ///
     /// Panics if the parent is actually a child of the to-be-reparented node, or
-    /// if the to-be-reparented node is a root node, or
     /// if either node id cannot be found, or
     /// if both given ids are equal.
     pub fn reparent(&mut self, child: impl Into<NodeId>, new_parent: impl Into<NodeId>) {
@@ -209,23 +208,32 @@ impl<T> TreeArena<T> {
             !self.get_id_path(new_parent_id).contains(&child_id),
             "cannot reparent because new_parent #{new_parent_id} is a child of the to-be-reparented node #{child_id}"
         );
-        assert!(
-            !self.roots.contains_key(&child_id),
-            "reparenting of root nodes is currently not supported"
-        );
 
-        let old_parent_id = self
-            .parents_map
-            .get(&child_id)
-            .unwrap_or_else(|| panic!("no node found for child id #{child_id}"))
-            .unwrap();
-        let child_node = self
-            .find_mut(old_parent_id)
-            .unwrap()
-            .children
-            .children
-            .remove(&child_id)
-            .unwrap();
+        // Ensure new parent exists.
+        let _ = self
+            .find(new_parent_id)
+            .unwrap_or_else(|| panic!("no node found for new_parent id #{new_parent_id}"));
+
+        // Detach the child from its current location (root or non-root).
+        let was_root = self.roots.contains_key(&child_id);
+        let child_node = if was_root {
+            self.roots
+                .remove(&child_id)
+                .unwrap_or_else(|| panic!("no node found for child id #{child_id}"))
+        } else {
+            let old_parent_id = self
+                .parents_map
+                .get(&child_id)
+                .unwrap_or_else(|| panic!("no node found for child id #{child_id}"))
+                .unwrap();
+            self.find_mut(old_parent_id)
+                .unwrap()
+                .children
+                .children
+                .remove(&child_id)
+                .unwrap()
+        };
+
         self.parents_map.insert(child_id, Some(new_parent_id));
         self.find_mut(new_parent_id)
             .unwrap_or_else(|| panic!("no node found for new_parent id #{new_parent_id}"))

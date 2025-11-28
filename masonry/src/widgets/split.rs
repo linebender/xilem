@@ -137,13 +137,13 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     }
 }
 
-// --- MARK: INTERNALS
 // TODO - Remove this function, and remove pixel-snapping code from this file.
 #[doc(hidden)]
 pub fn ceil_length(l: Length) -> Length {
     Length::px(l.get().ceil())
 }
 
+// --- MARK: METHODS
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
@@ -300,6 +300,18 @@ where
     ChildA: Widget + FromDynWidget + ?Sized,
     ChildB: Widget + FromDynWidget + ?Sized,
 {
+    /// Replace the first child widget with a new one.
+    pub fn set_child1(this: &mut WidgetMut<'_, Self>, child: NewWidget<ChildA>) {
+        this.ctx
+            .remove_child(std::mem::replace(&mut this.widget.child1, child.to_pod()));
+    }
+
+    /// Replace the second child widget with a new one.
+    pub fn set_child2(this: &mut WidgetMut<'_, Self>, child: NewWidget<ChildB>) {
+        this.ctx
+            .remove_child(std::mem::replace(&mut this.widget.child2, child.to_pod()));
+    }
+
     /// Get a mutable reference to the first child widget.
     pub fn child1_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildA> {
         this.ctx.get_mut(&mut this.widget.child1)

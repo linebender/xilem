@@ -9,7 +9,6 @@
 pub use masonry::core::Axis;
 
 mod button;
-mod canvas;
 mod checkbox;
 mod flex;
 mod grid;
@@ -20,6 +19,7 @@ mod portal;
 mod progress_bar;
 mod prop;
 mod prose;
+mod resize_observer;
 mod sized_box;
 mod slider;
 mod spinner;
@@ -33,7 +33,6 @@ mod worker;
 mod zstack;
 
 pub use self::button::*;
-pub use self::canvas::*;
 pub use self::checkbox::*;
 pub use self::flex::*;
 pub use self::grid::*;
@@ -44,6 +43,7 @@ pub use self::portal::*;
 pub use self::progress_bar::*;
 pub use self::prop::*;
 pub use self::prose::*;
+pub use self::resize_observer::*;
 pub use self::sized_box::*;
 pub use self::slider::*;
 pub use self::spinner::*;

@@ -73,7 +73,6 @@ impl LayerStack {
         };
         this.widget.layers.push(layer);
         this.ctx.children_changed();
-        this.ctx.request_layout();
     }
 
     /// Get a mutable reference to the root widget of the layer at `idx`.

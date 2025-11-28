@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx};
 
 use masonry::core::{ArcStr, NewWidget};
@@ -163,7 +163,7 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

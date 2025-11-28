@@ -8,7 +8,7 @@ use masonry::properties::types::Length;
 use masonry::widgets;
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
@@ -174,7 +174,7 @@ where
     fn message(
         &self,
         GridState { seq_state, scratch }: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -247,7 +247,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::Grid::insert_grid_child_at(
+            widgets::Grid::insert_child(
                 &mut self.element,
                 self.idx,
                 element.child.new_widget,
@@ -259,7 +259,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: GridElement) {
-        widgets::Grid::insert_grid_child_at(
+        widgets::Grid::insert_child(
             &mut self.element,
             self.idx,
             element.child.new_widget,
@@ -484,7 +484,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

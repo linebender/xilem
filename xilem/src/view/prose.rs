@@ -8,7 +8,7 @@ use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlign, ViewCtx};
 
 /// A view which displays selectable text.
@@ -184,7 +184,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx> for Pros
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

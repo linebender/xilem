@@ -6,7 +6,7 @@ use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 
 use super::{Label, label};
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 use crate::{MessageResult, Pod, TextAlign, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
@@ -142,7 +142,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel
     fn message(
         &self,
         (): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

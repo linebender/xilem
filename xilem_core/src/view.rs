@@ -4,7 +4,7 @@
 //! The primary view trait and associated trivial implementations.
 
 use crate::message::MessageResult;
-use crate::{Arg, MessageContext, Mut, ViewArgument, ViewElement, ViewPathTracker};
+use crate::{Arg, MessageCtx, Mut, ViewArgument, ViewElement, ViewPathTracker};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -102,7 +102,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
