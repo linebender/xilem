@@ -25,13 +25,7 @@ impl ViewElement for InitialRootWidget {
 }
 
 impl<State: 'static> RenderRootView<State> {
-    /// A view representing a window.
-    ///
-    /// `id` can be created using the [`WindowId::next()`] method and _must_ be the
-    /// same each frame for the same window. Usually it should be stored in app
-    /// state somewhere.
-    ///
-    /// `title` initializes [`WindowOptions`].
+    /// Create the view from the [`WidgetView`] representing its root widget.
     pub fn new(root_view: impl WidgetView<Edit<State>>) -> Self {
         Self {
             root_widget_view: root_view.boxed(),
