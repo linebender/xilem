@@ -6,7 +6,7 @@ use core::marker::PhantomData;
 
 use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
-/// View type for [`map_message`] and [`map_action`]. Most users will want to use `map_action` (the latter).
+/// View type for [`map_message_result`] and [`map_action`]. Most users will want to use `map_action` (the latter).
 ///
 /// This view maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
 #[must_use = "View values do nothing unless provided to Xilem."]
@@ -94,9 +94,11 @@ where
 
 /// A view which maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
 ///
+/// Changing the [`MessageResult`] kind is mainly useful to intercept child messages.
+///
 /// This is the more general form of [`map_action`].
 /// In most cases, you probably want to use that function.
-pub fn map_message<State, ParentAction, ChildAction, Context: ViewPathTracker, V, F>(
+pub fn map_message_result<State, ParentAction, ChildAction, Context: ViewPathTracker, V, F>(
     view: V,
     map_fn: F,
 ) -> MapMessage<V, State, ParentAction, ChildAction, Context, F>
