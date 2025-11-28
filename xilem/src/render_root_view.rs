@@ -10,7 +10,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 /// A view representing a [`RenderRoot`].
 pub struct RenderRootView<State: 'static> {
-    /// The view generating the RenderRoot's contents.
+    /// The view generating the `RenderRoot`'s contents.
     pub(crate) root_widget_view: Box<AnyWidgetView<Edit<State>, ()>>,
 }
 
