@@ -7,7 +7,7 @@ use masonry::core::WidgetMut;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
-use xilem_core::MessageContext;
+use xilem_core::MessageCtx;
 
 use crate::core::{Mut, View, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx};
@@ -103,7 +103,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _ctx: &mut MessageContext,
+        _ctx: &mut MessageCtx,
         _widget: WidgetMut<'_, widgets::Canvas>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
