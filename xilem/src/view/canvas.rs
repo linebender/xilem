@@ -3,11 +3,10 @@
 
 use std::sync::Arc;
 
-use masonry::core::WidgetMut;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
-use xilem_core::MessageCtx;
+use xilem_core::{Arg, MessageCtx, ViewArgument};
 
 use crate::core::{Mut, View, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx};
@@ -67,11 +66,12 @@ impl Canvas {
 }
 
 impl ViewMarker for Canvas {}
-impl<State, Action> View<State, Action, ViewCtx> for Canvas {
+
+impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let mut widget = widgets::Canvas::from_arc(self.draw.clone());
 
         if let Some(alt_text) = &self.alt_text {
@@ -88,13 +88,15 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _state: &mut State,
+        _: Arg<'_, State>,
     ) {
         if !Arc::ptr_eq(&self.draw, &prev.draw) {
             widgets::Canvas::set_painter_arc(&mut element, self.draw.clone());
         }
-        if self.alt_text != prev.alt_text {
-            element.set_alt_text(&mut self.alt_text.clone());
+        if self.alt_text != prev.alt_text
+            && let Some(alt_text) = &self.alt_text
+        {
+            widgets::Canvas::set_alt_text(element, alt_text.clone());
         }
     }
 
@@ -103,11 +105,12 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _ctx: &mut MessageCtx,
-        _widget: WidgetMut<'_, widgets::Canvas>,
-        _app_state: &mut State,
+        message: &mut MessageCtx,
+        _element: Mut<'_, Self::Element>,
+        _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         tracing::error!(
+            ?message,
             "Message arrived in Canvas::message, but Canvas doesn't consume any messages, this is a bug"
         );
         MessageResult::Stale
