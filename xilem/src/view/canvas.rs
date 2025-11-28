@@ -11,22 +11,18 @@ use xilem_core::{Arg, MessageCtx, ViewArgument};
 use crate::core::{Mut, View, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx};
 
-/// Creates a non-interactive drawing surface.
-///
-/// The `canvas` function provides a way to render custom graphics using a
-/// user-supplied drawing callback.
-///
 /// # Example
 ///
 /// ```
 /// use xilem::view::canvas;
-/// use xilem::vello::{
-///     kurbo::{Affine, Rect},
+/// use vello::{
+///     kurbo::{Affine, Rect, Size},
 ///     peniko::{Color, Fill},
 ///     Scene,
 /// };
+/// use std::sync::Arc;
 ///
-/// let my_canvas = canvas(|scene: &mut Scene, size| {
+/// let my_canvas = canvas(Arc::new(|scene: &mut Scene, size: Size| {
 ///     // Define a rectangle that fills the entire canvas.
 ///     let rect = Rect::new(0.0, 0.0, size.width, size.height);
 ///
@@ -38,7 +34,7 @@ use crate::{MessageResult, Pod, ViewCtx};
 ///         None,
 ///         &rect,
 ///     );
-/// });
+/// }));
 /// ```
 pub fn canvas(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Canvas {
     Canvas {
