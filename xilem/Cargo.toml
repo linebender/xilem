@@ -36,6 +36,7 @@ default = ["masonry/default", "masonry_winit/default"]
 
 [dependencies]
 xilem_core.workspace = true
+xilem_masonry.workspace = true
 masonry.workspace = true
 masonry_winit.workspace = true
 winit.workspace = true

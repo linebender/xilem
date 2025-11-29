@@ -1,0 +1,29 @@
+[package]
+name = "xilem_masonry"
+version.workspace = true
+description = "Masonry frontend for the Xilem Rust UI framework."
+keywords = ["gui", "ui", "native", "gpu", "performance"]
+categories = ["gui", "graphics", "internationalization", "accessibility"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+
+[features]
+default = ["masonry/default"]
+
+[dependencies]
+xilem_core.workspace = true
+masonry.workspace = true
+tracing.workspace = true
+vello.workspace = true
+tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+
+[lints]
+workspace = true
