@@ -8,14 +8,13 @@ use xilem_core::Edit;
 use crate::core::{Arg, MessageCtx, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
-/// A view representing a [`RenderRoot`].
-pub struct RenderRootView<State: 'static> {
+/// A view representing a Masonry [`RenderRoot`].
+pub struct MasonryRoot<State: 'static> {
     /// The view generating the `RenderRoot`'s contents.
     pub(crate) root_widget_view: Box<AnyWidgetView<Edit<State>, ()>>,
 }
 
-pub(crate) type RenderRootViewState =
-    <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
+pub(crate) type MasonryRootState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
 
 /// A wrapper type around [`Passthrough`] for implementing [`ViewElement`].
 pub struct InitialRootWidget(pub Pod<Passthrough>);
@@ -24,7 +23,7 @@ impl ViewElement for InitialRootWidget {
     type Mut<'a> = &'a mut RenderRoot;
 }
 
-impl<State: 'static> RenderRootView<State> {
+impl<State: 'static> MasonryRoot<State> {
     /// Create the view from the [`WidgetView`] representing its root widget.
     pub fn new(root_view: impl WidgetView<Edit<State>>) -> Self {
         Self {
@@ -33,11 +32,11 @@ impl<State: 'static> RenderRootView<State> {
     }
 }
 
-impl<State> ViewMarker for RenderRootView<State> where State: 'static {}
-impl<State> View<Edit<State>, (), ViewCtx> for RenderRootView<State> {
+impl<State> ViewMarker for MasonryRoot<State> where State: 'static {}
+impl<State> View<Edit<State>, (), ViewCtx> for MasonryRoot<State> {
     type Element = InitialRootWidget;
 
-    type ViewState = RenderRootViewState;
+    type ViewState = MasonryRootState;
 
     fn build(
         &self,

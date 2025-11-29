@@ -6,13 +6,13 @@ use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{Arg, Edit, MessageCtx, Mut, View, ViewElement, ViewMarker};
-use crate::{AnyWidgetView, InitialRootWidget, RenderRootView, ViewCtx, WidgetView, WindowOptions};
+use crate::{AnyWidgetView, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
 pub struct WindowView<State: 'static> {
     pub(crate) id: WindowId,
     pub(crate) options: WindowOptions<State>,
-    pub(crate) render_root_view: RenderRootView<State>,
+    pub(crate) render_root_view: MasonryRoot<State>,
     /// The base color of the window.
     pub(crate) base_color: Color,
 }
@@ -34,7 +34,7 @@ pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
     WindowView {
         id,
         options: WindowOptions::new(title),
-        render_root_view: RenderRootView::new(root_view),
+        render_root_view: MasonryRoot::new(root_view),
         base_color: BACKGROUND_COLOR,
     }
 }
