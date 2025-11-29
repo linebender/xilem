@@ -30,7 +30,8 @@
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::view::{Axis, text_button, flex, label};
+//! use xilem::masonry::core::Axis;
+//! use xilem::view::{text_button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //! use xilem::core::Edit;
 //!
