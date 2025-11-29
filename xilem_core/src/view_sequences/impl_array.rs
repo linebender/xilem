@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 impl<State, Action, Context, Element, Seq, const N: usize>
@@ -16,10 +16,6 @@ where
 {
     /// The fields of the tuple are (number of widgets to skip, child `SeqState`).
     type SeqState = [(usize, Seq::SeqState); N];
-
-    #[doc(hidden)]
-    // TODO: Optimise?
-    const ELEMENTS_COUNT: Count = Count::combine([Seq::ELEMENTS_COUNT; N]);
 
     #[doc(hidden)]
     fn seq_build(

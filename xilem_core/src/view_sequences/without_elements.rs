@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 
 use crate::element::NoElement;
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
     ViewPathTracker, ViewSequence,
 };
 
@@ -92,8 +92,6 @@ where
     Seq: ViewSequence<State, Action, Context, NoElement>,
 {
     type SeqState = Seq::SeqState;
-
-    const ELEMENTS_COUNT: Count = Count::Zero;
 
     fn seq_build(
         &self,

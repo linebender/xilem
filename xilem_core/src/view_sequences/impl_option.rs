@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
@@ -40,18 +40,6 @@ where
     // comment is always shown. This lets us explain the caveats.
     #[doc(hidden)]
     type SeqState = OptionSeqState<Seq::SeqState>;
-
-    #[doc(hidden)]
-    const ELEMENTS_COUNT: Count = const {
-        match Seq::ELEMENTS_COUNT {
-            // This sequence has zero or one children,
-            // which is best explained as "Many".
-            Count::One => Count::Many,
-            Count::Many => Count::Many,
-            Count::Unknown => Count::Unknown,
-            Count::Zero => Count::Zero,
-        }
-    };
 
     #[doc(hidden)]
     fn seq_build(
