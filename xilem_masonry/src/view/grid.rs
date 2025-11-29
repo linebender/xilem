@@ -19,6 +19,7 @@ pub use masonry::widgets::GridParams;
 ///
 /// # Example
 /// ```ignore
+/// # use xilem_masonry as xilem;
 /// use masonry::widgets::GridParams;
 /// use xilem::view::{
 ///     text_button, grid, label, GridExt,
@@ -319,6 +320,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::view::{text_button, prose, grid, GridExt};
     /// # use xilem::{WidgetView, core::Edit};
@@ -345,6 +347,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::{view::{text_button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView, core::Edit};

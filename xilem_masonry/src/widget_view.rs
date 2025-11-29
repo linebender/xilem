@@ -18,6 +18,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::{view::label, WidgetView};
     ///
     /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
@@ -53,6 +54,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::{masonry::properties::CornerRadius, view::{text_button, label}, WidgetView};
     ///
     /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
@@ -94,6 +96,7 @@ where
 /// # Examples
 ///
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::{view::prose, WidgetViewSequence, core::ViewArgument};
 ///
 /// fn prose_sequence<State: ViewArgument>(

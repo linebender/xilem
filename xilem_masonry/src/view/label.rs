@@ -13,10 +13,12 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// # Example
 ///
 /// ```
-/// use xilem::palette;
+/// # use xilem_masonry as xilem;
+/// use xilem::masonry::palette;
 /// use xilem::view::label;
 /// use xilem::style::Style as _;
-/// use xilem::{FontWeight, TextAlign};
+/// use xilem::masonry::parley::Alignment as TextAlign;
+/// use xilem::masonry::parley::style::FontWeight;
 /// use xilem::masonry::parley::fontique;
 /// # use xilem::WidgetView;
 /// # use xilem::core::Edit;

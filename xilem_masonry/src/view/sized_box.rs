@@ -18,6 +18,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// # Example
 /// See more methods for `sized_box` on [`SizedBox`] page.
 /// ```ignore
+/// # use xilem_masonry as xilem;
 /// use xilem::view::{sized_box, button};
 /// use xilem::palette;
 /// use vello::kurbo::RoundedRectRadii;
