@@ -1,12 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::core::{FromDynWidget, HasProperty, Property, Widget};
 use masonry::kurbo::Affine;
 
-use masonry::core::{FromDynWidget, HasProperty, Property, Widget};
-use xilem_core::ViewArgument;
-
-use crate::core::{View, ViewSequence};
+use crate::core::{View, ViewArgument, ViewSequence};
 use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 

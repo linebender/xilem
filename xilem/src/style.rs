@@ -12,9 +12,9 @@ pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
-use xilem_core::ViewArgument;
 
 use crate::WidgetView;
+use crate::core::ViewArgument;
 use crate::view::Prop;
 
 /// Trait implemented by most widget views that lets you style their properties.

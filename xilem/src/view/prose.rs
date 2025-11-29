@@ -8,8 +8,9 @@ use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
+use crate::core::MessageResult;
 use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlign, ViewCtx};
+use crate::{Color, Pod, TextAlign, ViewCtx};
 
 /// A view which displays selectable text.
 pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> {

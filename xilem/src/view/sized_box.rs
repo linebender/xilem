@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
@@ -161,7 +161,7 @@ where
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");
         self.inner

@@ -8,13 +8,12 @@ use std::sync::Arc;
 
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::JoinHandle;
-use xilem_core::Resource;
 
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    Arg, MessageCtx, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
-    ViewMarker, ViewPathTracker,
+    Arg, MessageCtx, MessageProxy, MessageResult, Mut, NoElement, Resource, View, ViewArgument,
+    ViewId, ViewMarker, ViewPathTracker,
 };
 
 // TODO: Update generic variable names to be more .

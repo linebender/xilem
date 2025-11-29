@@ -8,6 +8,7 @@
 
 use std::time::Duration;
 
+use masonry::core::Axis;
 use masonry::properties::types::Length;
 use vello::kurbo::Size;
 use winit::error::EventLoopError;
@@ -15,7 +16,7 @@ use xilem::core::{Resource, fork, provides, run_once, with_context, without_elem
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
-    Axis, FlexExt as _, FlexSpacer, PointerButton, button_any_pointer, checkbox, flex, flex_col,
+    FlexExt as _, FlexSpacer, PointerButton, button_any_pointer, checkbox, flex, flex_col,
     flex_row, label, prose, resize_observer, task, text_button, text_input,
 };
 use xilem::{

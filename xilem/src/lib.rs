@@ -30,7 +30,8 @@
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::view::{Axis, text_button, flex, label};
+//! use xilem::masonry::core::Axis;
+//! use xilem::view::{text_button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //! use xilem::core::Edit;
 //!
@@ -157,20 +158,21 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 pub use masonry;
-pub use masonry::kurbo::{Affine, Vec2};
+pub use masonry::dpi;
+pub use masonry::palette;
+pub use tokio;
+pub use winit;
+pub use xilem_core as core;
+
 pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::{Blob, Color, ImageBrush, ImageFormat};
 pub use masonry::widgets::InsertNewline;
-pub use masonry::{dpi, palette};
 pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
 pub use window_options::WindowOptions;
-pub use xilem_core as core;
 
-/// Tokio is the async runner used with Xilem.
-pub use tokio;
-
-pub use winit;
+pub mod style;
+pub mod view;
 
 mod any_view;
 mod app;
@@ -182,19 +184,13 @@ mod widget_view;
 mod window_options;
 mod window_view;
 
-pub mod style;
-pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
-
 pub use app::{AppState, ExitOnClose, Xilem};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
 pub use pod::Pod;
 pub use view_ctx::ViewCtx;
 pub use widget_view::{WidgetView, WidgetViewSequence};
 pub use window_view::{PodWindow, WindowView, window};
-
-// FIXME - Remove these re-exports.
-pub(crate) use xilem_core::{MessageResult, ViewId};
 
 #[cfg(windows)]
 pub use window_options::WindowOptionsExtWindows;

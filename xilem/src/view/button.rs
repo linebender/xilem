@@ -8,9 +8,11 @@ use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+};
 use crate::view::{Label, label};
-use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///

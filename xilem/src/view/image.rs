@@ -6,9 +6,9 @@
 use masonry::widgets;
 use vello::peniko::ImageBrush;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::view::Prop;
-use crate::{MessageResult, Pod, ViewCtx, WidgetView};
+use crate::{Pod, ViewCtx, WidgetView};
 
 pub use masonry::properties::ObjectFit;
 

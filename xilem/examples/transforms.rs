@@ -6,11 +6,12 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
+use xilem::core::Edit;
 use xilem::core::one_of::Either;
+use xilem::masonry::kurbo::{Affine, Vec2};
 use xilem::style::Style as _;
 use xilem::view::{GridExt as _, grid, label, sized_box, text_button, transformed};
-use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
+use xilem::{Color, EventLoop, WidgetView, WindowOptions, Xilem};
 
 struct TransformsGame {
     rotation: f64,

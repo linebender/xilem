@@ -47,7 +47,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
-/// use xilem::view::{Axis, button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
+/// use xilem::masonry::core::Axis;
+/// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 /// use xilem::core::Edit;
 ///
@@ -509,8 +510,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{Axis, text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
+    /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
     /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
@@ -536,8 +538,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{Axis, flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
+    /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
     /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
@@ -567,8 +570,9 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # Examples
 /// ```
+/// use xilem::masonry::core::Axis;
 /// use xilem::masonry::properties::types::AsUnit;
-/// use xilem::view::{Axis, text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
+/// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView, core::ViewArgument};
 ///
 /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
@@ -753,8 +757,9 @@ impl FlexSpacer {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{Axis, flex, FlexSpacer}};
+    /// use xilem::view::{flex, FlexSpacer};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
     /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
@@ -777,7 +782,8 @@ where
     ///
     /// # Examples
     /// ```
-    /// use xilem::view::{Axis, flex, flex_item, label};
+    /// use xilem::masonry::core::Axis;
+    /// use xilem::view::{flex, flex_item, label};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
     /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {

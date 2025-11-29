@@ -3,8 +3,8 @@
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{MessageResult, Pod, ViewCtx};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// An indefinite spinner.
 ///

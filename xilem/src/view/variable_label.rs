@@ -5,9 +5,11 @@ use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 
-use super::{Label, label};
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
-use crate::{MessageResult, Pod, TextAlign, ViewCtx, ViewId};
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+};
+use crate::view::{Label, label};
+use crate::{Pod, TextAlign, ViewCtx};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
