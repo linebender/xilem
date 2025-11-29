@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "xilem",
     "xilem_core",
+    "xilem_masonry",
     "masonry",
     "masonry_core",
     "masonry_testing",
@@ -25,7 +26,7 @@ members = [
 
 [workspace.package]
 # Xilem version, also used by other packages which want to mimic Xilem's version.
-# Right now those packages include: xilem_core, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
+# Right now those packages include: xilem_core, xilem_masonry, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
 #
 # NOTE: When bumping this, remember to also bump the aforementioned other packages'
 #       version in the dependencies section of this file.
@@ -44,6 +45,7 @@ masonry_core = { version = "0.4.0", path = "masonry_core", default-features = fa
 masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
 masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
 xilem_core = { version = "0.4.0", path = "xilem_core" }
+xilem_masonry = { version = "0.4.0", path = "xilem_masonry" }
 xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
 

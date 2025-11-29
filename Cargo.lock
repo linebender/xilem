@@ -5527,6 +5527,7 @@ dependencies = [
  "vello",
  "winit",
  "xilem_core",
+ "xilem_masonry",
 ]
 
 [[package]]
@@ -5537,6 +5538,17 @@ dependencies = [
  "hashbrown 0.16.1",
  "kurbo",
  "tracing",
+]
+
+[[package]]
+name = "xilem_masonry"
+version = "0.4.0"
+dependencies = [
+ "masonry",
+ "tokio",
+ "tracing",
+ "vello",
+ "xilem_core",
 ]
 
 [[package]]

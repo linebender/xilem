@@ -4,7 +4,8 @@ This repository holds the source code for the Xilem project and the Masonry proj
 
 - Xilem is a family of high-level GUI frameworks. Xilem apps are written with idiomatic Rust code, with little to no reliance on macros and DSLs.
     - **`xilem_core`** includes the traits that define Xilem.
-    - **`xilem`** is the natively compiled framework, built on Masonry.
+    - **`xilem_masonry`** is the natively compiled framework, built on Masonry.
+    - **`xilem`** is a batteries-included wrapper for `xilem_masonry` using `winit` for platform support.
     - **`xilem_web`** is the web framework, built on the DOM.
 - Masonry is a foundational framework for building high-level Rust GUI libraries.
     - **`masonry_core`** includes the base GUI engine.
@@ -29,6 +30,7 @@ graph TD
     %% end
 %%   subgraph Xilem
     xilem[Xilem]
+    xilem_masonry[Xilem Masonry]
     xilem_core[Xilem Core]
     xilem_web[Xilem Web]
 %%   end
@@ -83,11 +85,13 @@ vello --> linebender_resource_handle
 
 xilem_web --> web_sys
 xilem_web --> xilem_core
-xilem --> xilem_core
 masonry_core -->  vello
 masonry_core -->  parley
 masonry_core -->  tree_arena
 
-xilem --> masonry
+xilem_masonry --> xilem_core
+xilem_masonry --> masonry
+
+xilem --> xilem_masonry
 xilem --> masonry_winit
 ```
