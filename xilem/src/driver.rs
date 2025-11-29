@@ -291,8 +291,8 @@ where
             }
             MessageResult::RequestRebuild => {
                 window.view_ctx.set_state_changed(false);
-                window.view.render_root_view.rebuild(
-                    &window.view.render_root_view,
+                window.view.masonry_root.rebuild(
+                    &window.view.masonry_root,
                     &mut window.view_state,
                     &mut window.view_ctx,
                     masonry_ctx.render_root(window_id),

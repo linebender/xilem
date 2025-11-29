@@ -12,7 +12,7 @@ use crate::{AnyWidgetView, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, 
 pub struct WindowView<State: 'static> {
     pub(crate) id: WindowId,
     pub(crate) options: WindowOptions<State>,
-    pub(crate) render_root_view: MasonryRoot<State>,
+    pub(crate) masonry_root: MasonryRoot<State>,
     /// The base color of the window.
     pub(crate) base_color: Color,
 }
@@ -34,7 +34,7 @@ pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
     WindowView {
         id,
         options: WindowOptions::new(title),
-        render_root_view: MasonryRoot::new(root_view),
+        masonry_root: MasonryRoot::new(root_view),
         base_color: BACKGROUND_COLOR,
     }
 }
@@ -79,8 +79,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         ctx: &mut ViewCtx,
         app_state: Arg<'_, Edit<State>>,
     ) -> (Self::Element, Self::ViewState) {
-        let (InitialRootWidget(root_widget), view_state) =
-            self.render_root_view.build(ctx, app_state);
+        let (InitialRootWidget(root_widget), view_state) = self.masonry_root.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
             PodWindow(
@@ -109,8 +108,8 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         }
 
         ctx.set_state_changed(true);
-        self.render_root_view.rebuild(
-            &prev.render_root_view,
+        self.masonry_root.rebuild(
+            &prev.masonry_root,
             root_widget_view_state,
             ctx,
             window.render_root(),
@@ -124,7 +123,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         ctx: &mut ViewCtx,
         window: Mut<'_, Self::Element>,
     ) {
-        self.render_root_view
+        self.masonry_root
             .teardown(view_state, ctx, window.render_root());
     }
 
@@ -135,7 +134,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         window: Mut<'_, Self::Element>,
         app_state: Arg<'_, Edit<State>>,
     ) -> xilem_core::MessageResult<()> {
-        self.render_root_view
+        self.masonry_root
             .message(view_state, message, window.render_root(), app_state)
     }
 }
