@@ -45,11 +45,11 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
+/// # use xilem_masonry as xilem;
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
-/// use winit::error::EventLoopError;
 /// use xilem::masonry::core::Axis;
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
-/// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+/// use xilem::WidgetView;
 /// use xilem::core::Edit;
 ///
 /// /// A component to make a bigger than usual button.
@@ -79,12 +79,6 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     ))
 ///     .main_axis_alignment(MainAxisAlignment::Center)
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
-/// }
-///
-/// fn main() -> Result<(), EventLoopError> {
-///     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
-///     app.run_in(EventLoop::with_user_event())?;
-///     Ok(())
 /// }
 /// ```
 pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
@@ -484,6 +478,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
 /// # Examples
 ///
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::view::{label, FlexSequence, FlexExt as _};
 /// use xilem::core::ViewArgument;
 ///
@@ -510,6 +505,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
@@ -538,6 +534,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
@@ -570,6 +567,7 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # Examples
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::masonry::core::Axis;
 /// use xilem::masonry::properties::types::AsUnit;
 /// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
@@ -757,6 +755,7 @@ impl FlexSpacer {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, FlexSpacer};
@@ -782,6 +781,7 @@ where
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::view::{flex, flex_item, label};
     /// # use xilem::{WidgetView, core::ViewArgument};

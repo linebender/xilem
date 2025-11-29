@@ -22,6 +22,7 @@ use masonry::widgets;
 ///
 /// # Example
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::view::{
 ///     text_button, flex_col, indexed_stack, label
 /// };

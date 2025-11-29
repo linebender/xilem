@@ -44,6 +44,7 @@ type Callback<State, Action> =
 /// Create a basic text input with its content stored in the app state:
 ///
 /// ```
+/// # use xilem_masonry as xilem;
 /// # use xilem::view::text_input;
 /// # use xilem::WidgetView;
 /// # use xilem::core::Edit;
@@ -62,7 +63,9 @@ type Callback<State, Action> =
 /// Create a multiline `text_input`:
 ///
 /// ```
-/// use xilem::{view::text_input, InsertNewline};
+/// # use xilem_masonry as xilem;
+/// use xilem::view::text_input;
+/// use xilem::masonry::widgets::InsertNewline;
 /// # use xilem::WidgetView;
 /// # use xilem::core::Edit;
 ///

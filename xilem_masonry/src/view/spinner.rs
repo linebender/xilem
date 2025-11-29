@@ -16,6 +16,7 @@ use crate::{Pod, ViewCtx};
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use xilem_masonry as xilem;
 /// # use xilem::{view::{spinner, flex_col}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
 /// # use xilem::core::Edit;

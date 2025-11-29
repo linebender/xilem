@@ -34,7 +34,9 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// To create a simple button with styled text:
 ///
 /// ```
-/// use xilem::{view::{button, label}, FontWeight};
+/// # use xilem_masonry as xilem;
+/// use xilem::masonry::parley::style::FontWeight;
+/// use xilem::view::{button, label};
 /// # use xilem::WidgetView;
 /// # use xilem::core::Edit;
 ///
@@ -54,7 +56,9 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// To create a button with more complex (non-interactive) contents children:
 ///
 /// ```
-/// use xilem::{view::{button, label, flex_row, FlexExt}, FontWeight};
+/// # use xilem_masonry as xilem;
+/// use xilem::masonry::parley::style::FontWeight;
+/// use xilem::view::{button, label, flex_row, FlexExt};
 /// # use xilem::WidgetView;
 /// # type State = u32;
 /// # use xilem::core::Edit;
