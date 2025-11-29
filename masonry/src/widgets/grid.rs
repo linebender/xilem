@@ -188,6 +188,25 @@ impl Grid {
         this.ctx.remove_child(old_child.widget);
     }
 
+    /// Swap the index of two children.
+    ///
+    /// This also swaps the [`GridParams`] `x` and `y` with the other child.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a` or `b` are out of bounds.
+    pub fn swap_children(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
+        let (a_x, a_y) = (this.widget.children[a].x, this.widget.children[a].y);
+        let (b_x, b_y) = (this.widget.children[b].x, this.widget.children[b].y);
+
+        this.widget.children.swap(a, b);
+
+        (this.widget.children[a].x, this.widget.children[a].y) = (a_x, a_y);
+        (this.widget.children[b].x, this.widget.children[b].y) = (b_x, b_y);
+
+        this.ctx.children_changed();
+    }
+
     /// Set the spacing between grid items.
     pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: Length) {
         this.widget.grid_spacing = spacing;
