@@ -3,12 +3,13 @@
 
 use std::any::type_name;
 use std::marker::PhantomData;
-use vello::kurbo::Size;
-use xilem_core::{Arg, MessageCtx, MessageResult, ViewArgument, ViewId, ViewPathTracker};
 
+use masonry::kurbo::Size;
 use masonry::widgets::{self, LayoutChanged};
 
-use crate::core::{Mut, View, ViewMarker};
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which calls the `on_resize` callback whenever the size of its child changes.

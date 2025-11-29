@@ -5,8 +5,8 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{MessageResult, Pod, ViewCtx, WidgetView};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which puts `child` into a scrollable region.
 ///

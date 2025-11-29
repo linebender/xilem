@@ -6,8 +6,8 @@ use masonry::parley::style::{FontStack, FontWeight};
 use masonry::parley::{FontFamily, GenericFamily};
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{MessageResult, Pod, TextAlign, ViewCtx};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, TextAlign, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example

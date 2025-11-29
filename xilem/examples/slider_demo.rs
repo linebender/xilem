@@ -8,6 +8,7 @@
 //! The result is displayed in a preview box, demonstrating how widgets can
 //! react to and manipulate a shared application state.
 
+use masonry::core::Axis;
 use masonry::peniko::Color;
 use masonry::properties::{
     Background, BarColor, ThumbColor, ThumbRadius,
@@ -16,13 +17,10 @@ use masonry::properties::{
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
-use xilem::{
-    EventLoop, WidgetView, WindowOptions, Xilem,
-    view::{
-        Axis, FlexExt, FlexSpacer, checkbox, flex, flex_col, flex_row, label, sized_box, slider,
-        text_button,
-    },
+use xilem::view::{
+    FlexExt, FlexSpacer, checkbox, flex, flex_col, flex_row, label, sized_box, slider, text_button,
 };
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
 
 // --- Application State ---

@@ -11,9 +11,9 @@ use masonry::properties::{
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::view::Prop;
-use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
+use crate::{InsertNewline, Pod, TextAlign, ViewCtx, WidgetView as _};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,

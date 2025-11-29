@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{MessageResult, Pod, ViewCtx};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 use masonry::core::{ArcStr, NewWidget};
 use masonry::parley::StyleProperty;

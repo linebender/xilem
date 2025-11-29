@@ -5,9 +5,8 @@ use masonry::app::RenderRoot;
 use masonry::peniko::Color;
 use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
-use xilem_core::Edit;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewElement, ViewMarker};
+use crate::core::{Arg, Edit, MessageCtx, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.

@@ -3,8 +3,10 @@
 
 use std::marker::PhantomData;
 
+use masonry::kurbo::{Affine, Vec2};
+
 use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
-use crate::{Affine, Pod, ViewCtx, WidgetView};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which transforms the widget created by child.
 ///
@@ -60,7 +62,7 @@ impl<V, State, Action> Transformed<V, State, Action> {
 
     #[must_use]
     /// Displace the widget by `v` from its natural location.
-    pub fn translate(mut self, v: impl Into<crate::Vec2>) -> Self {
+    pub fn translate(mut self, v: impl Into<Vec2>) -> Self {
         self.transform = self.transform.then_translate(v.into());
         self
     }
@@ -74,7 +76,7 @@ impl<V, State, Action> Transformed<V, State, Action> {
 }
 
 mod private {
-    use crate::Affine;
+    use masonry::kurbo::Affine;
 
     /// The View state for the [Transformed](super::Transformed)
     #[expect(

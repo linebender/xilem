@@ -1,19 +1,17 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::peniko::Blob;
-use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId};
-use tokio::runtime::Runtime as TokioRuntime;
-use xilem_core::Edit;
-
 use std::iter::Once;
 use std::sync::Arc;
 
 use masonry::core::DefaultProperties;
+use masonry::peniko::Blob;
 use masonry::theme::default_property_set;
+use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId};
+use tokio::runtime::Runtime as TokioRuntime;
 use winit::error::EventLoopError;
 
-use crate::core::map_state;
+use crate::core::{Edit, map_state};
 use crate::window_options::WindowCallbacks;
 use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 

@@ -4,9 +4,8 @@
 use std::marker::PhantomData;
 
 use masonry::widgets;
-use xilem_core::{Arg, MessageResult, Mut, View, ViewArgument, ViewMarker};
 
-use crate::core::MessageCtx;
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that displays a [`Slider`] widget.
