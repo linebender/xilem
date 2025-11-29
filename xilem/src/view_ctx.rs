@@ -18,7 +18,6 @@ pub struct ViewCtx {
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
     runtime: Arc<tokio::runtime::Runtime>,
-    state_changed: bool,
     environment: Environment,
 }
 
@@ -48,13 +47,8 @@ impl ViewCtx {
             id_path: Vec::new(),
             proxy,
             runtime,
-            state_changed: true,
             environment: Environment::new(),
         }
-    }
-
-    pub(crate) fn set_state_changed(&mut self, value: bool) {
-        self.state_changed = value;
     }
 
     pub(crate) fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
@@ -88,14 +82,6 @@ impl ViewCtx {
     pub fn record_action(&mut self, id: WidgetId) {
         let path = self.id_path.clone();
         self.widget_map.insert(id, path);
-    }
-
-    /// Whether the app's state changed since the last rebuild.
-    ///
-    /// This is useful for views whose current value depends on current app state.
-    /// (That is, currently only virtual scrolling)
-    pub fn state_changed(&self) -> bool {
-        self.state_changed
     }
 
     pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<'_, W>) {
