@@ -155,7 +155,6 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 pub use masonry;
 pub use masonry::dpi;
