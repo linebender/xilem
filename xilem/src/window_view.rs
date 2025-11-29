@@ -1,21 +1,20 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
 use masonry::peniko::Color;
 use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{Arg, Edit, MessageCtx, Mut, View, ViewElement, ViewMarker};
-use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
+use crate::{AnyWidgetView, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
 pub struct WindowView<State: 'static> {
     pub(crate) id: WindowId,
-    options: WindowOptions<State>,
-    root_widget_view: Box<AnyWidgetView<Edit<State>, ()>>,
+    pub(crate) options: WindowOptions<State>,
+    pub(crate) masonry_root: MasonryRoot<State>,
     /// The base color of the window.
-    base_color: Color,
+    pub(crate) base_color: Color,
 }
 
 pub(crate) type WindowViewState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
@@ -35,7 +34,7 @@ pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
     WindowView {
         id,
         options: WindowOptions::new(title),
-        root_widget_view: root_view.boxed(),
+        masonry_root: MasonryRoot::new(root_view),
         base_color: BACKGROUND_COLOR,
     }
 }
@@ -80,7 +79,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         ctx: &mut ViewCtx,
         app_state: Arg<'_, Edit<State>>,
     ) -> (Self::Element, Self::ViewState) {
-        let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
+        let (InitialRootWidget(root_widget), view_state) = self.masonry_root.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
             PodWindow(
@@ -109,8 +108,8 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         }
 
         ctx.set_state_changed(true);
-        self.rebuild_root_widget(
-            prev,
+        self.masonry_root.rebuild(
+            &prev.masonry_root,
             root_widget_view_state,
             ctx,
             window.render_root(),
@@ -124,10 +123,8 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         ctx: &mut ViewCtx,
         window: Mut<'_, Self::Element>,
     ) {
-        window.render_root().edit_base_layer(|mut root| {
-            self.root_widget_view
-                .teardown(view_state, ctx, root.downcast());
-        });
+        self.masonry_root
+            .teardown(view_state, ctx, window.render_root());
     }
 
     fn message(
@@ -137,10 +134,8 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         window: Mut<'_, Self::Element>,
         app_state: Arg<'_, Edit<State>>,
     ) -> xilem_core::MessageResult<()> {
-        window.render_root().edit_base_layer(|mut root| {
-            self.root_widget_view
-                .message(view_state, message, root.downcast(), app_state)
-        })
+        self.masonry_root
+            .message(view_state, message, window.render_root(), app_state)
     }
 }
 
@@ -148,32 +143,6 @@ impl<State> WindowView<State>
 where
     State: 'static,
 {
-    pub(crate) fn rebuild_root_widget(
-        &self,
-        prev: &Self,
-        root_widget_view_state: &mut WindowViewState,
-        ctx: &mut ViewCtx,
-        render_root: &mut RenderRoot,
-        app_state: &mut State,
-    ) {
-        let mut root_id = None;
-        render_root.edit_base_layer(|mut root| {
-            let mut root = root.downcast();
-            self.root_widget_view.rebuild(
-                &prev.root_widget_view,
-                root_widget_view_state,
-                ctx,
-                root.reborrow_mut(),
-                app_state,
-            );
-            root_id = Some(root.widget.inner_id());
-        });
-        render_root.set_focus_fallback(root_id);
-        if cfg!(debug_assertions) && !render_root.needs_rewrite_passes() {
-            tracing::debug!("Widget tree didn't change as result of rebuild");
-        }
-    }
-
     pub(crate) fn on_close(&self, state: &mut State) {
         if let Some(on_close) = &self.options.callbacks.on_close {
             on_close(state);
