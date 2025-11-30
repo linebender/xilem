@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use accesskit::{Point, Role, Toggled, TreeUpdate};
 use accesskit_consumer::{Node, Tree, TreeChangeHandler};
 
