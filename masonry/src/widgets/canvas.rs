@@ -20,6 +20,10 @@ use crate::core::{
 // TODO - Add background color?
 
 /// A widget allowing custom drawing.
+///
+/// A canvas takes a painter callback; every time the canvas is repainted, that callback
+/// in run with a [`Scene`].
+/// That Scene is then used as the canvas' contents.
 pub struct Canvas {
     draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
     alt_text: Option<String>,
@@ -40,13 +44,14 @@ impl Canvas {
         }
     }
 
-    /// Set the text that will be used to communicate the meaning of the canvas to
-    /// those using screen readers.
+    /// Set the text that will describe the canvas to screen readers.
     ///
     /// Users are encouraged to set alt text for the canvas.
     /// If possible, the alt-text should succinctly describe what the canvas represents.
     ///
-    /// If the canvas is decorative or too hard to describe through text, users should set alt text to `""`.
+    /// If the canvas is decorative users should set alt text to `""`.
+    /// If it's too hard to describe through text, the alt text should be left unset.
+    /// This allows accessibility clients to know that there is no accessible description of the canvas content.
     pub fn with_alt_text(mut self, alt_text: impl Into<String>) -> Self {
         self.alt_text = Some(alt_text.into());
         self
@@ -55,7 +60,7 @@ impl Canvas {
 
 // --- MARK: WIDGETMUT
 impl Canvas {
-    /// Update the draw function
+    /// Update the draw function.
     pub fn set_painter(
         this: &mut WidgetMut<'_, Self>,
         draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static,
@@ -63,7 +68,7 @@ impl Canvas {
         Self::set_painter_arc(this, Arc::new(draw));
     }
 
-    /// Update the draw function
+    /// Update the draw function.
     pub fn set_painter_arc(
         this: &mut WidgetMut<'_, Self>,
         draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
@@ -72,13 +77,17 @@ impl Canvas {
         this.ctx.request_render();
     }
 
-    /// Set the alternative text for this widget
+    /// Set the text that will describe the canvas to screen readers.
+    ///
+    /// See [`Canvas::with_alt_text`] for details.
     pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: String) {
         this.widget.alt_text = Some(alt_text);
         this.ctx.request_accessibility_update();
     }
 
-    /// Remove the existing alternative text on this widget.
+    /// Remove the canvas' alt text.
+    ///
+    /// See [`Canvas::with_alt_text`] for details.
     pub fn remove_alt_text(mut this: WidgetMut<'_, Self>) {
         this.widget.alt_text = None;
         this.ctx.request_accessibility_update();
@@ -97,6 +106,7 @@ impl Widget for Canvas {
     ) {
     }
 
+    // TODO - Do we want the Canvas to be transparent to pointer events?
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
