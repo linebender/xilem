@@ -261,11 +261,8 @@ impl ScreenReader {
             State::Active { tree } => {
                 let root = tree.state().root();
                 let point = Point::new(x, y);
-                if let Some(node) = root.node_at_point(point, &filter) {
-                    Some(describe_node(&node))
-                } else {
-                    None
-                }
+                let node = root.node_at_point(point, &filter)?;
+                Some(describe_node(&node))
             }
         }
     }
