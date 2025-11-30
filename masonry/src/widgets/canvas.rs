@@ -17,6 +17,8 @@ use crate::core::{
     WidgetMut,
 };
 
+// TODO - Add background color?
+
 /// A widget allowing custom drawing.
 pub struct Canvas {
     draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
