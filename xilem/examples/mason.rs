@@ -151,7 +151,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
             // the updates it performs will only be running whilst we are in that state.
             data.active.then(|| {
                 task(
-                    |proxy| async move {
+                    |proxy, _| async move {
                         let mut interval = time::interval(Duration::from_secs(1));
                         loop {
                             interval.tick().await;

@@ -56,7 +56,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
     fork(
         view,
         task(
-            |proxy| async move {
+            |proxy, _| async move {
                 // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
                 // ~50% of the time.
                 let mut interval = tokio::time::interval(Duration::from_secs(1));

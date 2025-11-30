@@ -67,7 +67,7 @@ impl VirtualCats {
             // lot more complicated currently.
             // Note that if this item scrolls offscreen, the ongoing load will be cancelled.
             Some(xilem::view::task_raw(
-                move |proxy| {
+                move |proxy, _| {
                     async move {
                         let url = format!("https://http.cat/{code}");
                         // Add an artificial delay to show how variable sizes work
