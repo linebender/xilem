@@ -23,7 +23,7 @@ pub struct Canvas {
     alt_text: Option<String>,
 }
 
-// --- MARK: BUILDERS ---
+// --- MARK: BUILDERS
 impl Canvas {
     /// Create a new canvas with the given draw function.
     pub fn new(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Self {
@@ -51,7 +51,7 @@ impl Canvas {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// --- MARK: WIDGETMUT
 impl Canvas {
     /// Update the draw function
     pub fn set_painter(
@@ -83,7 +83,7 @@ impl Canvas {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// --- MARK: IMPL WIDGET
 impl Widget for Canvas {
     type Action = NoAction;
 
@@ -167,7 +167,7 @@ impl Widget for Canvas {
     }
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use masonry_core::core::{DefaultProperties, Properties};
