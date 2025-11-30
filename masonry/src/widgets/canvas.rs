@@ -127,12 +127,17 @@ impl Widget for Canvas {
 
     fn layout(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        // use as much space as possible - caller can size it as necessary
-        bc.max()
+        // We use all the available space as possible.
+        let size = bc.max();
+
+        // We clip the contents we draw.
+        ctx.set_clip_path(size.to_rect());
+
+        size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
