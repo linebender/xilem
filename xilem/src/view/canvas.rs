@@ -6,10 +6,9 @@ use std::sync::Arc;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
-use xilem_core::{Arg, MessageCtx, ViewArgument};
 
-use crate::core::{Mut, View, ViewMarker};
-use crate::{MessageResult, Pod, ViewCtx};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// # Example
 ///
