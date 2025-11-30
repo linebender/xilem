@@ -13,8 +13,10 @@ use crate::{Pod, ViewCtx};
 /// # Example
 ///
 /// ```
-/// use xilem::masonry::{kurbo::{Rect, Size}, peniko::Fill, vello::Scene};
-/// use xilem::{Affine, view::canvas};
+/// use xilem::masonry::kurbo::{Rect, Size, Affine};
+/// use xilem::masonry::peniko::Fill;
+/// use xilem::masonry::vello::Scene;
+/// use xilem::view::canvas;
 /// use std::sync::Arc;
 /// # use xilem::WidgetView;
 ///
