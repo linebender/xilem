@@ -448,7 +448,7 @@ impl MasonryState<'_> {
         #[cfg(not(target_os = "ios"))]
         let size = handle.inner_size();
 
-        let window = Window::new(
+        let mut window = Window::new(
             new_window.id,
             handle,
             adapter,
@@ -533,14 +533,16 @@ impl MasonryState<'_> {
         Self::render(surface, window, scene, &self.render_cx, &mut self.renderer);
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
-        #[cfg(feature = "screen-reader")]
-        {
-            let messages = window.screen_reader.update(tree_update.clone());
-            for msg in messages {
-                tracing::info!(target: "masonry_screen_reader", "{}", msg);
-            }
-        }
+
         if let Some(tree_update) = tree_update {
+            #[cfg(feature = "screen-reader")]
+            {
+                let messages = window.screen_reader.update(tree_update.clone());
+                for msg in messages {
+                    tracing::info!(target: "masonry_screen_reader", "{}", msg);
+                }
+            }
+
             window.accesskit_adapter.update_if_active(|| tree_update);
         }
     }
@@ -706,10 +708,10 @@ impl MasonryState<'_> {
                     {
                         use masonry_core::core::PointerEvent;
                         if let PointerEvent::Move(update) = &p {
-                            let messages = window
+                            let message = window
                                 .screen_reader
                                 .hit_test(update.current.position.x, update.current.position.y);
-                            for msg in messages {
+                            if let Some(msg) = message {
                                 tracing::info!(target: "masonry_screen_reader", "{}", msg);
                             }
                         }

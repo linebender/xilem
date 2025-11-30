@@ -254,17 +254,17 @@ impl ScreenReader {
     ///
     /// # Returns
     ///
-    /// A vector containing a description of the element at the given point.
-    pub fn hit_test(&self, x: f64, y: f64) -> Vec<String> {
+    /// An optional string with a description of the element at the given point.
+    pub fn hit_test(&self, x: f64, y: f64) -> Option<String> {
         match &self.state {
-            State::Inactive { .. } => Vec::new(),
+            State::Inactive { .. } => None,
             State::Active { tree } => {
                 let root = tree.state().root();
                 let point = Point::new(x, y);
                 if let Some(node) = root.node_at_point(point, &filter) {
-                    vec![describe_node(&node)]
+                    Some(describe_node(&node))
                 } else {
-                    Vec::new()
+                    None
                 }
             }
         }
