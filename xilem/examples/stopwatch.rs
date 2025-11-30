@@ -119,7 +119,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
         data.active.then(|| {
             // Only update while active.
             task(
-                |proxy| async move {
+                |proxy, _| async move {
                     let mut interval = time::interval(Duration::from_millis(50));
                     loop {
                         interval.tick().await;

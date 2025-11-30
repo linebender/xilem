@@ -32,8 +32,7 @@ pub fn task<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> Task<State, Action, F, H, M>
 where
-    // TODO: Accept the state in this function
-    F: Fn(MessageProxy<M>) -> Fut,
+    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
@@ -62,7 +61,7 @@ pub fn task_raw<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> Task<State, Action, F, H, M>
 where
-    F: Fn(MessageProxy<M>) -> Fut,
+    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
@@ -86,7 +85,7 @@ impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<State, A
 where
     State: ViewArgument,
     Action: 'static,
-    F: Fn(MessageProxy<M>) -> Fut + 'static,
+    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
@@ -95,13 +94,13 @@ where
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
         let handle = ctx
             .runtime()
-            .spawn((self.init_future)(MessageProxy::new(proxy, path)));
+            .spawn((self.init_future)(MessageProxy::new(proxy, path), state));
         (NoElement, handle)
     }
 

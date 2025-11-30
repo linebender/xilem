@@ -323,7 +323,7 @@ fn load_instance(
     mastodon: Mastodon,
 ) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     task_raw(
-        move |result| {
+        move |result, _| {
             let mastodon = mastodon.clone();
             async move {
                 // We choose not to handle the case where the event loop has ended
