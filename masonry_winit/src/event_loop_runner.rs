@@ -448,6 +448,7 @@ impl MasonryState<'_> {
         #[cfg(not(target_os = "ios"))]
         let size = handle.inner_size();
 
+        #[allow(unused_mut, reason = "Depends on the flags")]
         let mut window = Window::new(
             new_window.id,
             handle,
