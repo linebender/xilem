@@ -136,6 +136,16 @@ impl ZStack {
         this.ctx.remove_child(old_child.widget);
     }
 
+    /// Swap the index of two children.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a` or `b` are out of bounds.
+    pub fn swap_children(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
+        this.widget.children.swap(a, b);
+        this.ctx.children_changed();
+    }
+
     /// Remove a child from the `ZStack`.
     ///
     /// # Panics
