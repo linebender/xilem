@@ -1,7 +1,7 @@
 [package]
 name = "xilem_masonry"
 version.workspace = true
-description = "Masonry frontend for the Xilem Rust UI framework."
+description = "Masonry backend for the Xilem Rust UI framework."
 keywords = ["gui", "ui", "native", "gpu", "performance"]
 categories = ["gui", "graphics", "internationalization", "accessibility"]
 edition.workspace = true

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**Masonry frontend for the Xilem Rust UI framework**
+**Masonry backend for the Xilem Rust UI framework**
 
 <!-- TODO Add shields for crates.io and docs.rs -->
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
