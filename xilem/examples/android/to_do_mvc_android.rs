@@ -3,6 +3,7 @@
 
 //! A to-do-list app, loosely inspired by todomvc.
 
+#[cfg(target_os = "android")]
 #[path = "../to_do_mvc.rs"]
 mod to_do_mvc;
 

@@ -3,6 +3,7 @@
 
 //! A playground used in the development for new Xilem Masonry features.
 
+#[cfg(target_os = "android")]
 #[path = "../mason.rs"]
 mod mason;
 

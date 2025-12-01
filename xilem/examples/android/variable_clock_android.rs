@@ -3,6 +3,7 @@
 
 //! This example uses variable fonts in a touch sensitive digital clock.
 
+#[cfg(target_os = "android")]
 #[path = "../variable_clock.rs"]
 mod variable_clock;
 
