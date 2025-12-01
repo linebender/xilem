@@ -89,42 +89,42 @@ name = "http_cats"
 # A custom example target which uses the same `mason.rs` file but for android
 [[example]]
 name = "mason_android"
-path = "examples/android/mason.rs"
+path = "examples/android/mason_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "calc_android"
-path = "examples/android/calc.rs"
+path = "examples/android/calc_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "stopwatch_android"
-path = "examples/android/stopwatch.rs"
+path = "examples/android/stopwatch_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "to_do_mvc_android"
-path = "examples/android/to_do_mvc.rs"
+path = "examples/android/to_do_mvc_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "variable_clock_android"
-path = "examples/android/variable_clock.rs"
+path = "examples/android/variable_clock_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "emoji_picker_android"
-path = "examples/android/emoji_picker.rs"
+path = "examples/android/emoji_picker_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
 [[example]]
 name = "http_cats_android"
-path = "examples/android/http_cats.rs"
+path = "examples/android/http_cats_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
