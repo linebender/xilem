@@ -11,7 +11,7 @@ use xilem::view::{flex_col, flex_row, label, text_button};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::{Edit, lens, map_message};
+use xilem_core::{Edit, lens, map_message_result};
 
 #[derive(Default)]
 struct AppState {
@@ -74,7 +74,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
                 CountMessage::Decrement => state.map_action_count -= 1,
             },
         ),
-        map_message(
+        map_message_result(
             lens(
                 |count: &mut i32| map_message_counter(*count),
                 |state: &mut AppState, ()| &mut state.map_message_count,

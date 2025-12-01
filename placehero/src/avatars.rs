@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use xilem::core::one_of::Either;
 use xilem::core::{
-    MessageProxy, MessageResult, NoElement, Resource, View, ViewArgument, fork, map_message,
+    MessageProxy, MessageResult, NoElement, Resource, View, ViewArgument, fork, map_message_result,
     on_action_with_context, provides, with_context,
 };
 use xilem::masonry::peniko::{ImageAlphaType, ImageData};
@@ -103,7 +103,7 @@ impl Avatars {
         State: ViewArgument,
         Action: 'static,
     {
-        map_message(
+        map_message_result(
             on_action_with_context(
                 |_, this: &mut Self, response| {
                     let ret = this.icons.insert(response.url, Some(response.image));
