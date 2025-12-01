@@ -107,7 +107,6 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
             *window.base_color() = self.base_color;
         }
 
-        ctx.set_state_changed(true);
         self.masonry_root.rebuild(
             &prev.masonry_root,
             root_widget_view_state,
