@@ -127,7 +127,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
 
     /// A view which maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
     ///
-    /// See [`map_message`](`crate::map_message_result`)
+    /// See [`map_message_result`](`crate::map_message_result`)
     fn map_message_result<ParentAction, F>(
         self,
         f: F,
