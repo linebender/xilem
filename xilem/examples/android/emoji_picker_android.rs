@@ -3,6 +3,7 @@
 
 //! A simple emoji picker.
 
+#[path = "../emoji_picker.rs"]
 mod emoji_picker;
 
 #[cfg(target_os = "android")]

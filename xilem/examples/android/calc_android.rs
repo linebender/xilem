@@ -3,6 +3,7 @@
 
 //! A simple calculator example
 
+#[path = "../calc.rs"]
 mod calc;
 
 #[cfg(target_os = "android")]

@@ -3,6 +3,7 @@
 
 //! A stopwatch to display elapsed time.
 
+#[path = "../stopwatch.rs"]
 mod stopwatch;
 
 #[cfg(target_os = "android")]
