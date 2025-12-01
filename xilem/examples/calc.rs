@@ -336,11 +336,7 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
+#[cfg_attr(target_os = "android", allow(dead_code, reason = "see android_main"))]
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }
