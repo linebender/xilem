@@ -3,7 +3,7 @@
 
 //! A simple emoji picker.
 
-#[cfg(target_os = "android")]
+#[expect(dead_code, reason = "original main is unused")]
 #[path = "../emoji_picker.rs"]
 mod emoji_picker;
 

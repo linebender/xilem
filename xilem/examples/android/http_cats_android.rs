@@ -4,7 +4,7 @@
 //! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
 //! This also demonstrates image loading.
 
-#[cfg(target_os = "android")]
+#[expect(dead_code, reason = "original main is unused")]
 #[path = "../http_cats.rs"]
 mod http_cats;
 

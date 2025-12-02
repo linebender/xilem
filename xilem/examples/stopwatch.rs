@@ -219,7 +219,6 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[cfg_attr(target_os = "android", allow(dead_code, reason = "see android_main"))]
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }

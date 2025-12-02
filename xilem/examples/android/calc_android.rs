@@ -3,7 +3,7 @@
 
 //! A simple calculator example
 
-#[cfg(target_os = "android")]
+#[expect(dead_code, reason = "original main is unused")]
 #[path = "../calc.rs"]
 mod calc;
 

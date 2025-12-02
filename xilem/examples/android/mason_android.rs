@@ -3,7 +3,7 @@
 
 //! A playground used in the development for new Xilem Masonry features.
 
-#[cfg(target_os = "android")]
+#[expect(dead_code, reason = "original main is unused")]
 #[path = "../mason.rs"]
 mod mason;
 
