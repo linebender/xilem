@@ -52,6 +52,22 @@ The Xilem project includes these crates:
 - **`xilem`:** Natively compiled backend for Xilem. Depends on `xilem_core`, `masonry` and `masonry_winit`.
 
 
+## Doc examples
+
+Code snippets in docs comments in both `xilem` and `xilem_masonry` should be as self-contained as possible.
+
+There should only be a single (visible) import statement at the beginning, listing all the needed imports.
+
+That import statement should start with `use xilem::`; in other words, all examples should assume that Xilem is the only available dependency (aside from the standard library).
+
+It should be possible for users to copy-paste the example code into an empty module and have it compile.
+As such, we should avoid `# ` prefixes when possible.
+View examples should include the whole `fn view() -> impl View<...> {` and `}` parts.
+
+*Note:* Some examples in `xilem` don't currently respect these guidelines.
+We should fix those examples, and make sure future examples do.
+
+
 ## Writing Xilem code
 
 **TODO - This section needs a rewrite.**
