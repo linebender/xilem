@@ -49,7 +49,8 @@ The Xilem project includes these crates:
 
 - **`xilem_core`:** Includes the core traits such as `View`, `ViewElement`, `ViewSequence`, `ElementSlice`, and many others. Also include some generic implementations for these traits (e.g. for Box, Arc, tuples, etc).
 - **`xilem_web`:** Web backend for Xilem. Depends on `xilem_core` and `wasm-bindgen`.
-- **`xilem`:** Natively compiled backend for Xilem. Depends on `xilem_core`, `masonry` and `masonry_winit`.
+- **`xilem_masonry`:** Natively compiled backend for Xilem. Depends on `xilem_core` and `masonry`.
+- **`xilem`:** Wrapper crate for `xilem_masonry`, which provides a batteries-included experience for new users. Depends on `xilem_masonry` and `masonry_winit`.
 
 
 ## Doc examples

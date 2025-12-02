@@ -22,6 +22,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// This example shows how to add two text labels on top of each other.
 ///
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::WidgetView;
 /// use xilem::view::{zstack, label, text_button};
 /// use xilem::core::ViewArgument;
