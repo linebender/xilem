@@ -12,7 +12,7 @@ use vello::peniko::{Color, Fill};
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::{get_debug_color, stroke};
+use crate::util::{get_debug_color, stroke, validate_scene};
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
@@ -64,6 +64,11 @@ fn paint_widget(
         }
         if ctx.widget_state.request_post_paint {
             widget.post_paint(&mut ctx, &props, postfix_scene);
+        }
+
+        if cfg!(debug_assertions) {
+            validate_scene(&scene).unwrap();
+            validate_scene(&postfix_scene).unwrap();
         }
     }
 

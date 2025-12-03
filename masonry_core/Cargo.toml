@@ -37,6 +37,7 @@ tracing-tracy = { version = "0.11.4", optional = true }
 tree_arena.workspace = true
 ui-events.workspace = true
 vello.workspace = true
+vello_encoding.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook.workspace = true

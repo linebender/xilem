@@ -2086,6 +2086,7 @@ dependencies = [
  "tree_arena",
  "ui-events",
  "vello",
+ "vello_encoding",
  "web-time",
 ]
 
