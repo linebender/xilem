@@ -131,7 +131,7 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 ///
 /// Generally speaking, widgets aren't used directly. They are stored by Masonry and accessed
 /// through [`WidgetPod`](crate::core::WidgetPod)s. Widget methods are called by Masonry, and a
-/// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
+/// widget should only be mutated either during a method call or through a [`WidgetMut`].
 #[allow(unused_variables, reason = "Default impls don't use method arguments")]
 pub trait Widget: AsDynWidget + Any {
     /// The action type that this widget will submit, through [`EventCtx::submit_action`]

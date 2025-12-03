@@ -74,7 +74,7 @@
 //!             });
 //!             render_root.edit_widget_with_tag(LIST_TAG, |mut list| {
 //!                 let child = Label::new(self.next_task.clone()).with_auto_id();
-//!                 Flex::add_child(&mut list, child);
+//!                 Flex::add_fixed(&mut list, child);
 //!             });
 //!         } else if action.is::<TextAction>() {
 //!             let action = action.downcast::<TextAction>().unwrap();
