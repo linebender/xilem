@@ -67,8 +67,8 @@ fn paint_widget(
         }
 
         if cfg!(debug_assertions) {
-            validate_scene(&scene).unwrap();
-            validate_scene(&postfix_scene).unwrap();
+            validate_scene(scene).unwrap();
+            validate_scene(postfix_scene).unwrap();
         }
     }
 

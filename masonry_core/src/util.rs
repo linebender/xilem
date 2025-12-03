@@ -100,13 +100,13 @@ pub enum ValidationError {
 impl Display for ValidationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ValidationError::HasNanValues => {
+            Self::HasNanValues => {
                 write!(f, "Scene was constructed with NaN values in its path data")
             }
-            ValidationError::UnbalancedPushLayer => {
+            Self::UnbalancedPushLayer => {
                 write!(f, "Scene had a `push_layer` command that was never popped")
             }
-            ValidationError::UnbalancedPopLayer => {
+            Self::UnbalancedPopLayer => {
                 write!(f, "Scene had a `pop_layer` command with no layer pushed")
             }
         }
