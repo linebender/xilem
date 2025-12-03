@@ -46,14 +46,17 @@ pub const BASIC_WIDGET_HEIGHT: f64 = 18.0;
 pub const BORDERED_WIDGET_HEIGHT: f64 = 24.0;
 pub const SCROLLBAR_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_BORDER_COLOR: Color = Color::from_rgb8(0x77, 0x77, 0x77);
-pub const SCROLLBAR_WIDTH: f64 = 8.;
 pub const SCROLLBAR_PAD: f64 = 2.;
 pub const SCROLLBAR_MIN_SIZE: f64 = 45.;
-pub const SCROLLBAR_RADIUS: f64 = 5.;
 pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
 pub const DEFAULT_GAP: Length = Length::const_px(10.0);
 pub const DEFAULT_SPACER_LEN: Length = Length::const_px(10.0);
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
+
+// NOTE: Changing the values of these constants may lead to a rendering bug.
+// See https://github.com/linebender/vello/issues/1314 for details
+pub const SCROLLBAR_WIDTH: f64 = 8.;
+pub const SCROLLBAR_RADIUS: f64 = 3.0;
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
