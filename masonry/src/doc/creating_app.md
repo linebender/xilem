@@ -41,12 +41,12 @@ fn main() {
 
     let main_widget = Portal::new(
         Flex::column()
-            .with_child(
+            .with_fixed(
                 Flex::row()
-                    .with_flex_child(TextInput::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
+                    .with(TextInput::new(""), 1.0)
+                    .with_fixed(Button::new("Add task")),
             )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+            .with_fixed_spacer(VERTICAL_WIDGET_SPACING),
     );
 
     // ...
@@ -190,12 +190,12 @@ fn main() {
 
     let main_widget = Portal::new(
         Flex::column()
-            .with_child(
+            .with_fixed(
                 Flex::row()
-                    .with_flex_child(TextInput::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
+                    .with(TextInput::new(""), 1.0)
+                    .with_fixed(Button::new("Add task")),
             )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+            .with_fixed_spacer(VERTICAL_WIDGET_SPACING),
     );
 
     use masonry::core::{ErasedAction, WidgetId};

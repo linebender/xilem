@@ -16,7 +16,7 @@ use vello::kurbo::{Point, Size};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Update, UpdateCtx, WidgetOptions, WidgetRef,
+    TextEvent, Update, UpdateCtx, WidgetMut, WidgetOptions, WidgetRef,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -561,4 +561,77 @@ impl PartialEq<WidgetId> for accesskit::NodeId {
     fn eq(&self, other: &WidgetId) -> bool {
         self.0 == other.to_raw()
     }
+}
+
+/// Trait implemented by collection widgets.
+///
+/// It provides a standard set of functions to manage children.
+pub trait CollectionWidget<Params>: Widget {
+    /// Returns the number of children.
+    fn len(&self) -> usize;
+
+    /// Returns `true` if there are no children.
+    fn is_empty(&self) -> bool;
+
+    /// Returns a mutable reference to the child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn get_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: usize) -> WidgetMut<'t, dyn Widget>;
+
+    /// Appends a child widget to the collection.
+    fn add(
+        this: &mut WidgetMut<'_, Self>,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<Params>,
+    );
+
+    /// Inserts a child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is larger than the number of children.
+    fn insert(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<Params>,
+    );
+
+    /// Replaces the child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<Params>,
+    );
+
+    /// Set the child params at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set_params(this: &mut WidgetMut<'_, Self>, idx: usize, params: impl Into<Params>);
+
+    /// Swap the index of two children.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a` or `b` are out of bounds.
+    fn swap(this: &mut WidgetMut<'_, Self>, a: usize, b: usize);
+
+    /// Remove the child at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn remove(this: &mut WidgetMut<'_, Self>, idx: usize);
+
+    /// Removes all children.
+    fn clear(this: &mut WidgetMut<'_, Self>);
 }

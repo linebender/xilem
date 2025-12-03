@@ -131,8 +131,8 @@ fn pointer_capture_suppresses_neighbors() {
     let other = NewWidget::new_with_tag(other.record(), other_tag);
 
     let parent = Flex::column()
-        .with_child(target)
-        .with_child(other)
+        .with_fixed(target)
+        .with_fixed(other)
         .with_auto_id();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
@@ -227,15 +227,15 @@ fn click_anchors_focus() {
     let other = WidgetTag::new("other");
 
     let parent = Flex::column()
-        .with_child(NewWidget::new_with_tag(
+        .with_fixed(NewWidget::new_with_tag(
             SizedBox::empty().size(5.px(), 5.px()),
             other,
         ))
-        .with_child(NewWidget::new(Button::with_text("")))
-        .with_child(NewWidget::new(Button::with_text("")))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_4))
-        .with_child(NewWidget::new(Button::with_text("")))
+        .with_fixed(NewWidget::new(Button::with_text("")))
+        .with_fixed(NewWidget::new(Button::with_text("")))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_4))
+        .with_fixed(NewWidget::new(Button::with_text("")))
         .with_auto_id();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
@@ -319,8 +319,8 @@ fn text_event_fallback() {
     let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
     let other = NewWidget::new_with_tag(TextArea::new_editable(""), other_tag);
     let parent = Flex::row()
-        .with_child(target)
-        .with_child(other)
+        .with_fixed(target)
+        .with_fixed(other)
         .with_auto_id();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
@@ -354,11 +354,11 @@ fn tab_focus() {
     let child_5 = WidgetTag::new("child_5");
 
     let parent = Flex::column()
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_1))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_2))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_4))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_5))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_1))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_2))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_4))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_5))
         .with_auto_id();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
@@ -436,10 +436,10 @@ fn accessibility_focus() {
     let child_3 = WidgetTag::new("child_3");
 
     let parent = Flex::column()
-        .with_child(NewWidget::new(Button::with_text("")))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_2))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
-        .with_child(NewWidget::new(Button::with_text("")))
+        .with_fixed(NewWidget::new(Button::with_text("")))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_2))
+        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_fixed(NewWidget::new(Button::with_text("")))
         .with_auto_id();
 
     let mut harness = TestHarness::create(test_property_set(), parent);

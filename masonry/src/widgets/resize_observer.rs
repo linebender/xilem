@@ -166,7 +166,7 @@ mod tests {
         // We use a flex here as the inner `SizedBox` will take up the full space available in this case.
         // This doesn't run into the caveat because the size of the inner widget is *not* based on the
         // size of the flex.
-        let flex = Flex::column().with_child(observer).with_auto_id();
+        let flex = Flex::column().with_fixed(observer).with_auto_id();
         let mut harness = TestHarness::create(default_property_set(), flex);
         // There will be an initial layout.
         let (LayoutChanged, action_id) = harness.pop_action::<LayoutChanged>().unwrap();

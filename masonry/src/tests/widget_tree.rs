@@ -13,16 +13,16 @@ fn access_grandchild_widget() {
     let [id_label] = widget_ids();
 
     let widget = Flex::column()
-        .with_child(
+        .with_fixed(
             Flex::row()
-                .with_child(
+                .with_fixed(
                     Flex::row()
-                        .with_child(NewWidget::new_with_id(Label::new("Old text"), id_label))
+                        .with_fixed(NewWidget::new_with_id(Label::new("Old text"), id_label))
                         .with_auto_id(),
                 )
                 .with_auto_id(),
         )
-        .with_flex_spacer(1.0)
+        .with_spacer(1.0)
         .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);

@@ -53,7 +53,7 @@ fn new_widget() {
     harness.edit_root_widget(|mut flex| {
         let widget = NewWidget::new_with_tag(SizedBox::empty().record(), widget_tag);
 
-        Flex::add_child(&mut flex, widget);
+        Flex::add_fixed(&mut flex, widget);
     });
 
     assert_matches!(
@@ -565,7 +565,7 @@ fn cursor_icon() {
     let icon_tag = WidgetTag::new("icon");
     let label = NewWidget::new(Button::with_text("hello"));
     let icon_widget = NewWidget::new_with_tag(create_icon_widget(), icon_tag);
-    let parent = NewWidget::new(Flex::row().with_child(label).with_child(icon_widget));
+    let parent = NewWidget::new(Flex::row().with_fixed(label).with_fixed(icon_widget));
 
     let mut harness = TestHarness::create(test_property_set(), parent);
     let icon_id = harness.get_widget(icon_tag).id();
@@ -582,7 +582,7 @@ fn pointer_capture_affects_pointer_icon() {
     let icon_tag = WidgetTag::new("icon");
     let label = NewWidget::new_with_tag(Button::with_text("hello"), label_tag);
     let icon_widget = NewWidget::new_with_tag(create_icon_widget(), icon_tag);
-    let parent = NewWidget::new(Flex::row().with_child(label).with_child(icon_widget));
+    let parent = NewWidget::new(Flex::row().with_fixed(label).with_fixed(icon_widget));
 
     let mut harness = TestHarness::create(test_property_set(), parent);
     let icon_id = harness.get_widget(icon_tag).id();

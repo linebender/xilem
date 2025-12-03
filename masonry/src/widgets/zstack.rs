@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
+use masonry_core::core::CollectionWidget;
 use tracing::trace_span;
 use vello::Scene;
 use vello::kurbo::{Rect, Size};
@@ -78,7 +79,7 @@ impl ZStack {
     }
 
     /// Appends a child widget to the `ZStack`.
-    pub fn with_child(
+    pub fn with(
         mut self,
         child: NewWidget<impl Widget + ?Sized>,
         alignment: impl Into<ChildAlignment>,
@@ -91,84 +92,6 @@ impl ZStack {
 
 // --- MARK: WIDGETMUT
 impl ZStack {
-    /// Add a child widget to the `ZStack`.
-    ///
-    /// See also [`with_child`][Self::with_child].
-    pub fn add_child(
-        this: &mut WidgetMut<'_, Self>,
-        child: NewWidget<impl Widget + ?Sized>,
-        alignment: impl Into<ChildAlignment>,
-    ) {
-        let child = Child::new(child.erased().to_pod(), alignment.into());
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-    }
-
-    /// Insert a child widget at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-        alignment: impl Into<ChildAlignment>,
-    ) {
-        let child = Child::new(child.erased().to_pod(), alignment.into());
-        this.widget.children.insert(idx, child);
-        this.ctx.children_changed();
-    }
-
-    /// Replace the child widget at the given index with a new one.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
-    pub fn set_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-        alignment: impl Into<ChildAlignment>,
-    ) {
-        let child = Child::new(child.erased().to_pod(), alignment.into());
-        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
-        this.ctx.remove_child(old_child.widget);
-    }
-
-    /// Swap the index of two children.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `a` or `b` are out of bounds.
-    pub fn swap_children(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
-        this.widget.children.swap(a, b);
-        this.ctx.children_changed();
-    }
-
-    /// Remove a child from the `ZStack`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
-    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let child = this.widget.children.remove(idx);
-        this.ctx.remove_child(child.widget);
-    }
-
-    /// Get a mutable reference to a child of the `ZStack`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
-    pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
-        idx: usize,
-    ) -> WidgetMut<'t, dyn Widget> {
-        let child = &mut this.widget.children[idx].widget;
-        this.ctx.get_mut(child)
-    }
-
     /// Change the alignment of the `ZStack`.
     ///
     /// See also [`with_alignment`][Self::with_alignment].
@@ -176,20 +99,109 @@ impl ZStack {
         this.widget.alignment = alignment.into();
         this.ctx.request_layout();
     }
+}
 
-    /// Change the alignment of a child of the `ZStack`.
+// --- MARK: COLLECTIONWIDGET
+impl CollectionWidget<ChildAlignment> for ZStack {
+    /// Returns the number of children.
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    /// Returns `true` if there are no children.
+    fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    /// Returns a mutable reference to the child widget at the given index.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
-    pub fn update_child_alignment(
+    /// Panics if `idx` is out of bounds.
+    fn get_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: usize) -> WidgetMut<'t, dyn Widget> {
+        let child = &mut this.widget.children[idx].widget;
+        this.ctx.get_mut(child)
+    }
+
+    /// Appends a child widget to the collection.
+    fn add(
+        this: &mut WidgetMut<'_, Self>,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), params.into());
+        this.widget.children.push(child);
+        this.ctx.children_changed();
+    }
+
+    /// Inserts a child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is larger than the number of children.
+    fn insert(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        alignment: impl Into<ChildAlignment>,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<ChildAlignment>,
     ) {
+        let child = Child::new(child.erased().to_pod(), params.into());
+        this.widget.children.insert(idx, child);
+        this.ctx.children_changed();
+    }
+
+    /// Replaces the child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(child.erased().to_pod(), params.into());
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        this.ctx.remove_child(old_child.widget);
+    }
+
+    /// Set the child alignment at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set_params(this: &mut WidgetMut<'_, Self>, idx: usize, params: impl Into<ChildAlignment>) {
         let child = &mut this.widget.children[idx];
-        child.update_alignment(alignment.into());
+        child.update_alignment(params.into());
         this.ctx.request_layout();
+    }
+
+    /// Swap the index of two children.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a` or `b` are out of bounds.
+    fn swap(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
+        this.widget.children.swap(a, b);
+        this.ctx.children_changed();
+    }
+
+    /// Remove the child at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn remove(this: &mut WidgetMut<'_, Self>, idx: usize) {
+        let child = this.widget.children.remove(idx);
+        this.ctx.remove_child(child.widget);
+    }
+
+    /// Removes all children.
+    fn clear(this: &mut WidgetMut<'_, Self>) {
+        for child in this.widget.children.drain(..) {
+            this.ctx.remove_child(child.widget);
+        }
     }
 }
 
@@ -290,7 +302,7 @@ mod tests {
         fg_props.insert(BorderWidth::all(2.0));
 
         let widget = ZStack::new()
-            .with_child(
+            .with(
                 NewWidget::new_with_props(
                     SizedBox::new(Label::new("Background").with_auto_id())
                         .width(200.px())
@@ -299,7 +311,7 @@ mod tests {
                 ),
                 ChildAlignment::ParentAligned,
             )
-            .with_child(
+            .with(
                 NewWidget::new_with_props(
                     SizedBox::new(Label::new("Foreground").with_auto_id()),
                     fg_props,
@@ -336,17 +348,17 @@ mod tests {
     fn zstack_alignments_self_aligned() {
         let widget = ZStack::new()
             .with_alignment(UnitPoint::CENTER)
-            .with_child(
+            .with(
                 Label::new("ParentAligned").with_auto_id(),
                 ChildAlignment::ParentAligned,
             )
-            .with_child(Label::new("TopLeft").with_auto_id(), UnitPoint::TOP_LEFT)
-            .with_child(Label::new("TopRight").with_auto_id(), UnitPoint::TOP_RIGHT)
-            .with_child(
+            .with(Label::new("TopLeft").with_auto_id(), UnitPoint::TOP_LEFT)
+            .with(Label::new("TopRight").with_auto_id(), UnitPoint::TOP_RIGHT)
+            .with(
                 Label::new("BottomLeft").with_auto_id(),
                 UnitPoint::BOTTOM_LEFT,
             )
-            .with_child(
+            .with(
                 Label::new("BottomRight").with_auto_id(),
                 UnitPoint::BOTTOM_RIGHT,
             )

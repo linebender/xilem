@@ -97,13 +97,13 @@
 //!     let button = NewWidget::new(Button::with_text("Add task"));
 //!
 //!     let list = Flex::column()
-//!         .with_child(NewWidget::new_with_props(
+//!         .with_fixed(NewWidget::new_with_props(
 //!             Flex::row()
-//!                 .with_flex_child(text_input, 1.0)
-//!                 .with_child(button),
+//!                 .with(text_input, 1.0)
+//!                 .with_fixed(button),
 //!             Properties::new().with(Padding::all(WIDGET_SPACING.get())),
 //!         ))
-//!         .with_spacer(WIDGET_SPACING);
+//!         .with_fixed_spacer(WIDGET_SPACING);
 //!
 //!     NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
 //! }

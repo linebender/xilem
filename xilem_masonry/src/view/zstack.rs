@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::UnitPoint;
 use masonry::widgets;
 pub use masonry::widgets::ChildAlignment;
@@ -97,7 +97,7 @@ where
         let mut widget = widgets::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.drain() {
-            widget = widget.with_child(child.widget.new_widget, child.alignment);
+            widget = widget.with(child.widget.new_widget, child.alignment);
         }
         let pod = ctx.create_pod(widget);
         (
@@ -230,13 +230,9 @@ where
     ) {
         {
             if self.alignment != prev.alignment {
-                widgets::ZStack::update_child_alignment(
-                    &mut element.parent,
-                    element.idx,
-                    self.alignment,
-                );
+                widgets::ZStack::set_params(&mut element.parent, element.idx, self.alignment);
             }
-            let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
+            let mut child = widgets::ZStack::get_mut(&mut element.parent, element.idx);
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
@@ -248,7 +244,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
+        let mut child = widgets::ZStack::get_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
     }
 
@@ -259,7 +255,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx);
+        let mut child = widgets::ZStack::get_mut(&mut element.parent, element.idx);
         self.view
             .message(view_state, message, child.downcast(), app_state)
     }
@@ -320,7 +316,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
-            let mut child = widgets::ZStack::child_mut(&mut this.parent, this.idx);
+            let mut child = widgets::ZStack::get_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -370,7 +366,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<ZStackElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::ZStack::add_child(
+            widgets::ZStack::add(
                 &mut self.element,
                 element.widget.new_widget,
                 element.alignment,
@@ -381,7 +377,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: ZStackElement) {
-        widgets::ZStack::add_child(
+        widgets::ZStack::add(
             &mut self.element,
             element.widget.new_widget,
             element.alignment,
@@ -415,7 +411,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
             };
             f(child)
         };
-        widgets::ZStack::remove_child(&mut self.element, self.idx);
+        widgets::ZStack::remove(&mut self.element, self.idx);
         ret
     }
 }
