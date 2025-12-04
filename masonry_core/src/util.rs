@@ -4,10 +4,12 @@
 //! Miscellaneous utility functions.
 
 use std::any::Any;
+use std::fmt::Display;
 
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, Fill};
+use vello_encoding::DrawTag;
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
@@ -77,6 +79,94 @@ pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<
 /// Helper function for [`Scene::fill`] with a uniform color as the brush.
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
+}
+
+// ---
+
+/// Error type returned by [`validate_scene()`].
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum ValidationError {
+    /// Scene was constructed with NaN values in its path data.
+    HasNanValues,
+    /// Scene had a `push_layer` command that was never popped.
+    UnbalancedPushLayer,
+    /// Scene had a `pop_layer` command with no layer pushed.
+    /// This is currently "unreachable" because Vello silently swallows these cases.
+    #[doc(hidden)]
+    UnbalancedPopLayer,
+}
+
+impl Display for ValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HasNanValues => {
+                write!(f, "Scene was constructed with NaN values in its path data")
+            }
+            Self::UnbalancedPushLayer => {
+                write!(f, "Scene had a `push_layer` command that was never popped")
+            }
+            Self::UnbalancedPopLayer => {
+                write!(f, "Scene had a `pop_layer` command with no layer pushed")
+            }
+        }
+    }
+}
+
+/// Take a scene and return an error if the scene is invalid.
+///
+/// A scene is invalid if:
+///
+/// - It was constructed with NaN values in its path data.
+/// - It had a `push_layer` command that was never popped.
+///
+/// ## Missing checks
+///
+/// This function may have some false negative in some cases, because Vello can
+/// sometimes silently remove NaN values from the paths given to it.
+///
+/// We'd like to catch `pop_layer` commands with no layer pushed, but Vello
+/// currently also swallows them silently.
+pub fn validate_scene(scene: &Scene) -> Result<(), ValidationError> {
+    // This assumes that `vello_encoding::Encoding::path_data` only ever stores
+    // the float values of its paths.
+    // While in theory it can store other things, in practice it never does when created
+    // using a Vello Scene, and this will not change until vello is replaced with the sparse
+    // strips API, at which point this function will likely be discarded.
+    for path_data_elem in &scene.encoding().path_data {
+        if f32::from_bits(*path_data_elem).is_nan() {
+            return Err(ValidationError::HasNanValues);
+        }
+    }
+
+    for transform in &scene.encoding().transforms {
+        for value in &transform.matrix {
+            if value.is_nan() {
+                return Err(ValidationError::HasNanValues);
+            }
+        }
+    }
+
+    let mut layer_count = 0;
+    for tag in &scene.encoding().draw_tags {
+        match *tag {
+            DrawTag::BEGIN_CLIP => {
+                layer_count += 1;
+            }
+            DrawTag::END_CLIP => {
+                if layer_count == 0 {
+                    return Err(ValidationError::UnbalancedPopLayer);
+                }
+                layer_count -= 1;
+            }
+            _ => {}
+        }
+    }
+    if layer_count > 0 {
+        return Err(ValidationError::UnbalancedPushLayer);
+    }
+
+    Ok(())
 }
 
 // ---

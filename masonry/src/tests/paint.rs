@@ -5,8 +5,10 @@ use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_core::palette::css::{BLUE, GREEN, RED};
 use masonry_core::util::{fill, stroke};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
-use vello::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
+use masonry_testing::{
+    ModularWidget, Record, TestHarness, TestWidgetExt, assert_debug_panics, assert_render_snapshot,
+};
+use vello::kurbo::{Affine, Circle, Dashes, Point, Rect, Size, Stroke, Vec2};
 use vello::peniko::Color;
 
 use crate::properties::Background;
@@ -154,4 +156,37 @@ fn paint_clipping() {
     // The red circle should be clipped by the square.
     // The dashed circle shouldn't.
     assert_render_snapshot!(harness, "paint_clipping");
+}
+
+#[test]
+fn scene_validation_nan() {
+    let widget = NewWidget::new(
+        ModularWidget::new(())
+            .layout_fn(|_, _, _, _| Size::new(10., 10.))
+            .paint_fn(move |_, _, _, scene| {
+                let nan_rect = Rect::new(0., 1., f64::NAN, 3.);
+                fill(scene, &nan_rect, Color::WHITE);
+            }),
+    );
+
+    assert_debug_panics!(
+        TestHarness::create(test_property_set(), widget),
+        "HasNanValues"
+    );
+}
+
+#[test]
+fn scene_validation_push_layer() {
+    let widget = NewWidget::new(
+        ModularWidget::new(())
+            .layout_fn(|_, _, _, _| Size::new(10., 10.))
+            .paint_fn(move |_, _, _, scene| {
+                scene.push_clip_layer(Affine::IDENTITY, &Rect::ZERO);
+            }),
+    );
+
+    assert_debug_panics!(
+        TestHarness::create(test_property_set(), widget),
+        "UnbalancedPushLayer"
+    );
 }
