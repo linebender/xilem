@@ -275,6 +275,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
 
         let text_input =
             widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
+                .with_text_alignment(self.text_alignment)
                 .with_clip(self.clip)
                 .with_placeholder(self.placeholder.clone());
 
@@ -314,12 +315,16 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
             widgets::TextInput::set_placeholder(&mut element, self.placeholder.clone());
         }
 
-        if prev.disabled != self.disabled {
+        if self.disabled != prev.disabled {
             element.ctx.set_disabled(self.disabled);
         }
 
         if self.clip != prev.clip {
             widgets::TextInput::set_clip(&mut element, self.clip);
+        }
+
+        if self.text_alignment != prev.text_alignment {
+            widgets::TextInput::set_text_alignment(&mut element, self.text_alignment);
         }
 
         let mut text_area = widgets::TextInput::text_mut(&mut element);
@@ -349,9 +354,6 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
                 &mut text_area,
                 StyleProperty::FontStack(self.font.clone()),
             );
-        }
-        if prev.text_alignment != self.text_alignment {
-            widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }
         if prev.insert_newline != self.insert_newline {
             widgets::TextArea::set_insert_newline(&mut text_area, self.insert_newline);

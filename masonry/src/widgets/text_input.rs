@@ -9,6 +9,7 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 
+use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
@@ -39,6 +40,9 @@ pub struct TextInput {
     placeholder: WidgetPod<Label>,
     placeholder_text: ArcStr,
 
+    /// The text alignment for both the text area and placeholder.
+    text_alignment: TextAlign,
+
     /// Whether to clip the contained text.
     clip: bool,
 }
@@ -58,8 +62,15 @@ impl TextInput {
             text: text.to_pod(),
             placeholder: NewWidget::new_with_props(Label::new(""), Properties::new()).to_pod(),
             placeholder_text: "".into(),
+            text_alignment: TextAlign::default(),
             clip: false,
         }
+    }
+
+    /// Set the text alignment for both the input text and placeholder.
+    pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
+        self
     }
 
     /// The text that will be displayed when this input is empty.
@@ -67,9 +78,8 @@ impl TextInput {
     /// To modify this on active text input, use [`set_placeholder`](Self::set_placeholder).
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
-        self.placeholder =
-            NewWidget::new_with_props(Label::new(placeholder_text.clone()), Properties::new())
-                .to_pod();
+        let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
+        self.placeholder = NewWidget::new_with_props(label, Properties::new()).to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -126,6 +136,13 @@ impl TextInput {
     pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
         this.widget.clip = clip;
         this.ctx.request_layout();
+    }
+
+    /// Set the text alignment for both the input text and placeholder.
+    pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
+        this.widget.text_alignment = text_alignment;
+        TextArea::set_text_alignment(&mut Self::text_mut(this), text_alignment);
+        Label::set_text_alignment(&mut Self::placeholder_mut(this), text_alignment);
     }
 }
 
