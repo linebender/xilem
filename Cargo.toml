@@ -50,7 +50,9 @@ xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
 
 anymore = "1.0.0"
-vello = { version = "0.6.0", default-features = false, features = ["wgpu"] }
+vello = { version = "0.6.0", git = "https://github.com/linebender/vello", rev = "efa9c21d42c3b321464eb7cf91a73e1b1103f8d6", default-features = false, features = [
+    "wgpu",
+] }
 kurbo = "0.12.0"
 parley = { version = "0.7.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.

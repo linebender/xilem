@@ -219,6 +219,7 @@ impl RenderContext {
                 required_limits: limits,
                 memory_hints: MemoryHints::default(),
                 trace: wgpu::Trace::Off,
+                experimental_features: wgpu::ExperimentalFeatures::disabled(),
             })
             .await
             .ok()?;
