@@ -14,7 +14,7 @@ use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::app::layer_stack::LayerStack;
+use crate::app::{AppProxy, layer_stack::LayerStack};
 use crate::core::{
     AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled,
     Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget,
@@ -79,8 +79,10 @@ pub struct RenderRoot {
 
 /// State shared between passes.
 pub(crate) struct RenderRootState {
-    /// Sink for signals to be processed by the event loop.
-    pub(crate) signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+    /// Handle to the app root.
+    ///
+    /// Enables passing signals to be processed by the event loop.
+    pub(crate) app_proxy: Box<dyn AppProxy>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -299,7 +301,7 @@ impl RenderRoot {
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
         root_widget: NewWidget<impl Widget + ?Sized>,
-        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        app_proxy: impl AppProxy + 'static,
         options: RenderRootOptions,
     ) -> Self {
         let RenderRootOptions {
@@ -322,7 +324,7 @@ impl RenderRoot {
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
-                signal_sink: Box::new(signal_sink),
+                app_proxy: Box::new(app_proxy),
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
@@ -948,7 +950,12 @@ impl RenderRoot {
 impl RenderRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
-        (self.signal_sink)(signal);
+        self.app_proxy.emit_render_root_signal(signal);
+    }
+
+    /// Send an app-wide signal to the runner of this app, which allows global actions to be triggered by a widget.
+    pub(crate) fn emit_app_signal(&mut self, signal: Box<dyn Any>) {
+        self.app_proxy.emit_app_signal(signal);
     }
 
     /// Does something in this state indicate that the rewrite passes need to be reran.
