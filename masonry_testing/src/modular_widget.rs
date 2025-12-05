@@ -3,8 +3,6 @@
 
 use std::any::TypeId;
 
-use tracing::trace_span;
-
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
@@ -14,6 +12,7 @@ use masonry_core::core::{
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
+use tracing::trace_span;
 
 pub(crate) type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &PointerEvent);

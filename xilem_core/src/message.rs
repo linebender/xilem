@@ -3,10 +3,10 @@
 
 //! Message routing and type erasure primitives.
 
-use anymore::AnyDebug;
-
 use alloc::boxed::Box;
 use core::fmt::Debug;
+
+use anymore::AnyDebug;
 
 /// The possible outcomes from a [`View::message`]
 ///

@@ -3,15 +3,19 @@
 
 //! Values accessible throughout the Xilem view tree.
 
+use alloc::boxed::Box;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::any::TypeId;
+use core::marker::PhantomData;
+
 use anymore::AnyDebug;
-use hashbrown::{HashMap, hash_map::Entry};
+use hashbrown::HashMap;
+use hashbrown::hash_map::Entry;
 
 use crate::{
     Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
-
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
-use core::{any::TypeId, marker::PhantomData};
 
 #[derive(Debug)]
 /// A message sent to Views to instruct them to rebuild themselves.
