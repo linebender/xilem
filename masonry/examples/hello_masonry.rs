@@ -50,9 +50,9 @@ fn main() {
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
-        .with_child(label.with_auto_id())
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(button.with_auto_id());
+        .with_fixed(label.with_auto_id())
+        .with_fixed_spacer(VERTICAL_WIDGET_SPACING)
+        .with_fixed(button.with_auto_id());
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()

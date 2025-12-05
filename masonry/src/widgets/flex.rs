@@ -6,7 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
+use masonry_core::core::{CollectionWidget, HasProperty};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -60,7 +60,7 @@ pub struct Flex {
 /// Optional parameters for an item in a [`Flex`] container (row or column).
 ///
 /// Generally, when you would like to add a flexible child to a container,
-/// you can simply call [`with_flex_child`](Flex::with_flex_child) or [`add_flex_child`](Flex::add_flex_child),
+/// you can simply call [`with`](Flex::with) or [`add`](Flex::add),
 /// passing the child and the desired flex factor as a `f64`, which has an impl of
 /// `Into<FlexParams>`.
 ///
@@ -154,10 +154,10 @@ impl Flex {
         self
     }
 
-    /// Builder-style variant of [`Flex::add_child`].
+    /// Builder-style variant of [`Flex::add_fixed`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
+    pub fn with_fixed(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
         let child = Child::Fixed {
             widget: child.erased().to_pod(),
             alignment: None,
@@ -167,7 +167,7 @@ impl Flex {
     }
 
     /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child(
+    pub fn with(
         mut self,
         child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
@@ -181,36 +181,23 @@ impl Flex {
     /// Builder-style method for adding a fixed-size spacer child to the container.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
-    pub fn with_spacer(mut self, len: Length) -> Self {
+    pub fn with_fixed_spacer(mut self, len: Length) -> Self {
         let new_child = Child::FixedSpacer(len, 0.0);
         self.children.push(new_child);
         self
     }
 
     /// Builder-style method for adding a `flex` spacer child to the container.
-    pub fn with_flex_spacer(mut self, flex: f64) -> Self {
+    pub fn with_spacer(mut self, flex: f64) -> Self {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            debug_panic!("with_spacer called with negative flex factor: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
         self.children.push(new_child);
         self
-    }
-}
-
-// --- MARK: METHODS
-impl Flex {
-    /// Returns the number of children (widgets and spacers) this flex container has.
-    pub fn len(&self) -> usize {
-        self.children.len()
-    }
-
-    /// Returns `true` if this flex container has no children (widgets or spacers).
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 }
 
@@ -257,10 +244,10 @@ impl Flex {
 
     /// Add a non-flex child widget.
     ///
-    /// See also [`with_child`].
+    /// See also [`with_fixed`].
     ///
-    /// [`with_child`]: Flex::with_child
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+    /// [`with_fixed`]: Flex::with_fixed
+    pub fn add_fixed(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let child = Child::Fixed {
             widget: child.erased().to_pod(),
             alignment: None,
@@ -269,34 +256,21 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add a flexible child widget.
-    pub fn add_flex_child(
-        this: &mut WidgetMut<'_, Self>,
-        child: NewWidget<impl Widget + ?Sized>,
-        params: impl Into<FlexParams>,
-    ) {
-        let child = child.erased().to_pod();
-        let child = new_flex_child(params.into(), child);
-
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-    }
-
     /// Add an empty spacer child with the given size.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
-    pub fn add_spacer(this: &mut WidgetMut<'_, Self>, len: Length) {
+    pub fn add_fixed_spacer(this: &mut WidgetMut<'_, Self>, len: Length) {
         let new_child = Child::FixedSpacer(len, 0.0);
         this.widget.children.push(new_child);
         this.ctx.request_layout();
     }
 
     /// Add an empty spacer child with a specific `flex` factor.
-    pub fn add_flex_spacer(this: &mut WidgetMut<'_, Self>, flex: f64) {
+    pub fn add_spacer(this: &mut WidgetMut<'_, Self>, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            debug_panic!("add_spacer called with negative flex factor: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -309,7 +283,7 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_child(
+    pub fn insert_fixed(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: NewWidget<impl Widget + ?Sized>,
@@ -322,27 +296,10 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Insert a flex child widget at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_flex_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-        params: impl Into<FlexParams>,
-    ) {
-        let child = child.erased().to_pod();
-        let child = new_flex_child(params.into(), child);
-        this.widget.children.insert(idx, child);
-        this.ctx.children_changed();
-    }
-
     /// Insert an empty spacer child with the given size at the given index.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
-    pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
+    pub fn insert_fixed_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
         let new_child = Child::FixedSpacer(len, 0.0);
         this.widget.children.insert(idx, new_child);
         this.ctx.request_layout();
@@ -353,11 +310,11 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_flex_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
+    pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            debug_panic!("insert_spacer called with negative flex factor: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -370,7 +327,7 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
-    pub fn set_child(
+    pub fn set_fixed(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: NewWidget<impl Widget + ?Sized>,
@@ -379,26 +336,6 @@ impl Flex {
             widget: child.erased().to_pod(),
             alignment: None,
         };
-        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
-        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
-            this.ctx.remove_child(widget);
-        }
-        this.ctx.children_changed();
-    }
-
-    /// Replace the child widget at the given index with a new flex one.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
-    pub fn set_flex_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-        params: impl Into<FlexParams>,
-    ) {
-        let child = child.erased().to_pod();
-        let child = new_flex_child(params.into(), child);
         let old_child = std::mem::replace(&mut this.widget.children[idx], child);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
             this.ctx.remove_child(widget);
@@ -413,7 +350,7 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
-    pub fn set_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
+    pub fn set_fixed_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
         let new_child = Child::FixedSpacer(len, 0.0);
         let old_child = std::mem::replace(&mut this.widget.children[idx], new_child);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
@@ -428,11 +365,11 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
-    pub fn set_flex_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
+    pub fn set_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("set_flex_spacer called with negative length: {}", flex);
+            debug_panic!("set_spacer called with negative flex factor: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -442,64 +379,94 @@ impl Flex {
         }
         this.ctx.request_layout();
     }
+}
 
-    /// Swap the index of two children.
+// --- MARK: COLLECTIONWIDGET
+impl CollectionWidget<FlexParams> for Flex {
+    /// Returns the number of children (widgets and spacers).
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    /// Returns `true` if there are no children (widgets or spacers).
+    fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    /// Returns a mutable reference to the child widget at the given index.
     ///
     /// # Panics
     ///
-    /// Panics if `a` or `b` are out of bounds.
-    pub fn swap_children(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
-        this.widget.children.swap(a, b);
+    /// Panics if `idx` is out of bounds.
+    ///
+    /// Panics if `idx` contains a spacer instead of a widget.
+    fn get_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: usize) -> WidgetMut<'t, dyn Widget> {
+        let child = match &mut this.widget.children[idx] {
+            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
+            Child::FixedSpacer(..) => panic!("The provided Flex idx contains a fixed spacer"),
+            Child::FlexedSpacer(..) => panic!("The provided Flex idx contains a flexed spacer"),
+        };
+        this.ctx.get_mut(child)
+    }
+
+    /// Appends a child widget to the collection.
+    fn add(
+        this: &mut WidgetMut<'_, Self>,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<FlexParams>,
+    ) {
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
+
+        this.widget.children.push(child);
         this.ctx.children_changed();
     }
 
-    /// Remove the child at `idx`.
-    ///
-    /// This child can be a widget or a spacer.
+    /// Inserts a child widget at the given index.
     ///
     /// # Panics
     ///
-    /// Panics if the index is larger than the number of children.
-    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let child = this.widget.children.remove(idx);
-        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
-            this.ctx.remove_child(widget);
-        } else {
-            // We need to explicitly request layout in case of spacer removal
-            this.ctx.request_layout();
-        }
-    }
-
-    /// Returns a mutable reference to the child widget at `idx`.
-    ///
-    /// Returns `None` if the child at `idx` is a spacer.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
-        idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
-        let child = match &mut this.widget.children[idx] {
-            Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
-            Child::FixedSpacer(..) => return None,
-            Child::FlexedSpacer(..) => return None,
-        };
-
-        Some(this.ctx.get_mut(child))
-    }
-
-    /// Updates the flex parameters for the child at `idx`,
-    ///
-    /// # Panics
-    ///
-    /// Panics if the element at `idx` is not a widget.
-    pub fn update_child_flex_params(
+    /// Panics if `idx` is larger than the number of children.
+    fn insert(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) {
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
+        this.widget.children.insert(idx, child);
+        this.ctx.children_changed();
+    }
+
+    /// Replaces the child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: impl Into<FlexParams>,
+    ) {
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = old_child {
+            this.ctx.remove_child(widget);
+        }
+        this.ctx.children_changed();
+    }
+
+    /// Set the child params at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    ///
+    /// Panics if `idx` contains a spacer instead of a widget.
+    fn set_params(this: &mut WidgetMut<'_, Self>, idx: usize, params: impl Into<FlexParams>) {
         let child = &mut this.widget.children[idx];
         let child_val = std::mem::replace(child, Child::FixedSpacer(Length::ZERO, 0.0));
         let widget = match child_val {
@@ -513,46 +480,33 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Updates the spacer at `idx`, if the spacer was a fixed spacer, it will be overwritten with a flex spacer
+    /// Swap the index of two children.
     ///
     /// # Panics
     ///
-    /// Panics if the element at `idx` is not a spacer.
-    pub fn update_spacer_flex(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
-        let child = &mut this.widget.children[idx];
-
-        match *child {
-            Child::FixedSpacer(_, _) | Child::FlexedSpacer(_, _) => {
-                *child = Child::FlexedSpacer(flex, 0.0);
-            }
-            _ => {
-                panic!("Can't update spacer parameters of a non-spacer element");
-            }
-        };
+    /// Panics if `a` or `b` are out of bounds.
+    fn swap(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
+        this.widget.children.swap(a, b);
         this.ctx.children_changed();
     }
 
-    /// Updates the spacer at `idx`, if the spacer was a flex spacer, it will be overwritten with a fixed spacer
+    /// Remove the child at the given index.
     ///
     /// # Panics
     ///
-    /// Panics if the element at `idx` is not a spacer.
-    pub fn update_spacer_fixed(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
-        let child = &mut this.widget.children[idx];
-
-        match *child {
-            Child::FixedSpacer(_, _) | Child::FlexedSpacer(_, _) => {
-                *child = Child::FixedSpacer(len, 0.0);
-            }
-            _ => {
-                panic!("Can't update spacer parameters of a non-spacer element");
-            }
-        };
-        this.ctx.children_changed();
+    /// Panics if `idx` is out of bounds.
+    fn remove(this: &mut WidgetMut<'_, Self>, idx: usize) {
+        let child = this.widget.children.remove(idx);
+        if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
+            this.ctx.remove_child(widget);
+        } else {
+            // We need to explicitly request layout in case of spacer removal
+            this.ctx.request_layout();
+        }
     }
 
-    /// Remove all children from the container.
-    pub fn clear(this: &mut WidgetMut<'_, Self>) {
+    /// Removes all children.
+    fn clear(this: &mut WidgetMut<'_, Self>) {
         if !this.widget.children.is_empty() {
             for child in this.widget.children.drain(..) {
                 if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
@@ -1105,10 +1059,10 @@ mod tests {
     fn flex_row_fixed_size_only() {
         let widget = NewWidget::new_with_props(
             Flex::row()
-                .with_child(Label::new("hello").with_auto_id())
-                .with_child(Label::new("world").with_auto_id())
-                .with_child(Label::new("foo").with_auto_id())
-                .with_child(Label::new("bar").with_auto_id()),
+                .with_fixed(Label::new("hello").with_auto_id())
+                .with_fixed(Label::new("world").with_auto_id())
+                .with_fixed(Label::new("foo").with_auto_id())
+                .with_fixed(Label::new("bar").with_auto_id()),
             (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
@@ -1151,10 +1105,10 @@ mod tests {
     fn flex_row_cross_axis_snapshots() {
         let widget = NewWidget::new_with_props(
             Flex::row()
-                .with_child(Label::new("hello").with_auto_id())
-                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-                .with_child(Label::new("foo").with_auto_id())
-                .with_flex_child(
+                .with_fixed(Label::new("hello").with_auto_id())
+                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("foo").with_auto_id())
+                .with(
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
@@ -1194,10 +1148,10 @@ mod tests {
     fn flex_row_main_axis_snapshots() {
         let widget = NewWidget::new_with_props(
             Flex::row()
-                .with_child(Label::new("hello").with_auto_id())
-                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-                .with_child(Label::new("foo").with_auto_id())
-                .with_flex_child(
+                .with_fixed(Label::new("hello").with_auto_id())
+                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("foo").with_auto_id())
+                .with(
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
@@ -1252,10 +1206,10 @@ mod tests {
     fn flex_col_cross_axis_snapshots() {
         let widget = NewWidget::new_with_props(
             Flex::column()
-                .with_child(Label::new("hello").with_auto_id())
-                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-                .with_child(Label::new("foo").with_auto_id())
-                .with_flex_child(
+                .with_fixed(Label::new("hello").with_auto_id())
+                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("foo").with_auto_id())
+                .with(
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
@@ -1295,10 +1249,10 @@ mod tests {
     fn flex_col_main_axis_snapshots() {
         let widget = NewWidget::new_with_props(
             Flex::column()
-                .with_child(Label::new("hello").with_auto_id())
-                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-                .with_child(Label::new("foo").with_auto_id())
-                .with_flex_child(
+                .with_fixed(Label::new("hello").with_auto_id())
+                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("foo").with_auto_id())
+                .with(
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
@@ -1353,10 +1307,10 @@ mod tests {
     fn edit_flex_container() {
         let image_1 = {
             let widget = Flex::column()
-                .with_child(Label::new("q").with_auto_id())
-                .with_child(Label::new("b").with_auto_id())
-                .with_child(Label::new("w").with_auto_id())
-                .with_child(Label::new("d").with_auto_id())
+                .with_fixed(Label::new("q").with_auto_id())
+                .with_fixed(Label::new("b").with_auto_id())
+                .with_fixed(Label::new("w").with_auto_id())
+                .with_fixed(Label::new("d").with_auto_id())
                 .with_auto_id();
             // -> qbwd
 
@@ -1365,32 +1319,32 @@ mod tests {
                 TestHarness::create_with_size(test_property_set(), widget, window_size);
 
             harness.edit_root_widget(|mut flex| {
-                Flex::set_child(&mut flex, 0, Label::new("a").with_auto_id());
+                Flex::set_fixed(&mut flex, 0, Label::new("a").with_auto_id());
                 // -> abwd
-                Flex::set_flex_child(
+                Flex::set(
                     &mut flex,
                     2,
                     Label::new("c").with_auto_id(),
                     FlexParams::default(),
                 );
                 // -> abcd
-                Flex::remove_child(&mut flex, 1);
+                Flex::remove(&mut flex, 1);
                 // -> acd
-                Flex::add_child(&mut flex, Label::new("x").with_auto_id());
+                Flex::add_fixed(&mut flex, Label::new("x").with_auto_id());
                 // -> acdx
-                Flex::add_flex_child(&mut flex, Label::new("y").with_auto_id(), 2.0);
+                Flex::add(&mut flex, Label::new("y").with_auto_id(), 2.0);
                 // -> acdxy
-                Flex::add_spacer(&mut flex, 5.px());
+                Flex::add_fixed_spacer(&mut flex, 5.px());
                 // -> acdxy_
-                Flex::add_flex_spacer(&mut flex, 1.0);
+                Flex::add_spacer(&mut flex, 1.0);
                 // -> acdxy__
-                Flex::insert_child(&mut flex, 2, Label::new("i").with_auto_id());
+                Flex::insert_fixed(&mut flex, 2, Label::new("i").with_auto_id());
                 // -> acidxy__
-                Flex::insert_flex_child(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
+                Flex::insert(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
                 // -> acjidxy__
-                Flex::insert_spacer(&mut flex, 2, 5.px());
+                Flex::insert_fixed_spacer(&mut flex, 2, 5.px());
                 // -> ac_jidxy__
-                Flex::insert_flex_spacer(&mut flex, 2, 1.0);
+                Flex::insert_spacer(&mut flex, 2, 1.0);
                 // -> ac__jidxy__
             });
 
@@ -1399,17 +1353,17 @@ mod tests {
 
         let image_2 = {
             let widget = Flex::column()
-                .with_child(Label::new("a").with_auto_id())
-                .with_child(Label::new("c").with_auto_id())
-                .with_flex_spacer(1.0)
-                .with_spacer(5.px())
-                .with_flex_child(Label::new("j").with_auto_id(), 2.0)
-                .with_child(Label::new("i").with_auto_id())
-                .with_child(Label::new("d").with_auto_id())
-                .with_child(Label::new("x").with_auto_id())
-                .with_flex_child(Label::new("y").with_auto_id(), 2.0)
-                .with_spacer(5.px())
-                .with_flex_spacer(1.0)
+                .with_fixed(Label::new("a").with_auto_id())
+                .with_fixed(Label::new("c").with_auto_id())
+                .with_spacer(1.0)
+                .with_fixed_spacer(5.px())
+                .with(Label::new("j").with_auto_id(), 2.0)
+                .with_fixed(Label::new("i").with_auto_id())
+                .with_fixed(Label::new("d").with_auto_id())
+                .with_fixed(Label::new("x").with_auto_id())
+                .with(Label::new("y").with_auto_id(), 2.0)
+                .with_fixed_spacer(5.px())
+                .with_spacer(1.0)
                 .with_auto_id();
 
             let window_size = Size::new(200.0, 150.0);
@@ -1425,15 +1379,15 @@ mod tests {
     #[test]
     fn get_flex_child() {
         let widget = Flex::column()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_child(Label::new("world").with_auto_id())
-            .with_spacer(1.px())
+            .with_fixed(Label::new("hello").with_auto_id())
+            .with_fixed(Label::new("world").with_auto_id())
+            .with_fixed_spacer(1.px())
             .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         harness.edit_root_widget(|mut flex| {
-            let mut child = Flex::child_mut(&mut flex, 1).unwrap();
+            let mut child = Flex::get_mut(&mut flex, 1);
             assert_eq!(
                 child
                     .try_downcast::<Label>()
@@ -1444,8 +1398,6 @@ mod tests {
                 "world"
             );
             drop(child);
-
-            assert!(Flex::child_mut(&mut flex, 2).is_none());
         });
 
         // TODO - test out-of-bounds access?
@@ -1453,7 +1405,7 @@ mod tests {
 
     #[test]
     fn divide_by_zero() {
-        let widget = Flex::column().with_flex_spacer(0.0).with_auto_id();
+        let widget = Flex::column().with_spacer(0.0).with_auto_id();
 
         // Running layout should not panic when the flex sum is zero.
         let window_size = Size::new(200.0, 150.0);

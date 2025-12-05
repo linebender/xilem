@@ -45,7 +45,7 @@ fn transforms_translation_rotation() {
         },
     );
     let widget = ZStack::new()
-        .with_child(transformed_widget, ChildAlignment::ParentAligned)
+        .with_fixed(transformed_widget, ChildAlignment::ParentAligned)
         .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
@@ -55,7 +55,7 @@ fn transforms_translation_rotation() {
 #[test]
 fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new_with_options(
-        blue_box(ZStack::new().with_child(
+        blue_box(ZStack::new().with_fixed(
             Button::with_text("Should be pressed").with_auto_id(),
             UnitPoint::BOTTOM_RIGHT,
         )),
@@ -65,7 +65,7 @@ fn transforms_pointer_events() {
         },
     );
     let widget = ZStack::new()
-        .with_child(transformed_widget, ChildAlignment::ParentAligned)
+        .with_fixed(transformed_widget, ChildAlignment::ParentAligned)
         .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);

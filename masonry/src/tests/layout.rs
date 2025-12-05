@@ -21,20 +21,20 @@ fn layout_simple() {
     let box_side = Length::px(BOX_WIDTH);
 
     let widget = Flex::column()
-        .with_child(
+        .with_fixed(
             Flex::row()
-                .with_child(NewWidget::new_with_tag(
+                .with_fixed(NewWidget::new_with_tag(
                     SizedBox::empty().width(box_side).height(box_side),
                     tag_1,
                 ))
-                .with_child(NewWidget::new_with_tag(
+                .with_fixed(NewWidget::new_with_tag(
                     SizedBox::empty().width(box_side).height(box_side),
                     tag_2,
                 ))
-                .with_flex_spacer(1.0)
+                .with_spacer(1.0)
                 .with_auto_id(),
         )
-        .with_flex_spacer(1.0)
+        .with_spacer(1.0)
         .with_auto_id();
 
     let harness = TestHarness::create(test_property_set(), widget);
@@ -177,8 +177,8 @@ fn skip_layout_when_cached() {
     // We choose a ZStack, because it should pass down the same constraints no matter what.
     let parent = NewWidget::new(
         ZStack::new()
-            .with_child(button, ChildAlignment::ParentAligned)
-            .with_child(sibling, ChildAlignment::ParentAligned),
+            .with(button, ChildAlignment::ParentAligned)
+            .with(sibling, ChildAlignment::ParentAligned),
     );
 
     let mut harness = TestHarness::create(test_property_set(), parent);

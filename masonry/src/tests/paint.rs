@@ -96,7 +96,7 @@ fn paint_order() {
     let grandparent = NewWidget::new(
         Flex::column()
             .main_axis_alignment(MainAxisAlignment::Center)
-            .with_child(parent),
+            .with_fixed(parent),
     );
 
     let mut harness = TestHarness::create_with_size(
@@ -142,7 +142,7 @@ fn paint_clipping() {
     let parent = NewWidget::new(
         Flex::column()
             .main_axis_alignment(MainAxisAlignment::Center)
-            .with_child(parent),
+            .with_fixed(parent),
     );
 
     let mut harness = TestHarness::create_with_size(

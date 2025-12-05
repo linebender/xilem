@@ -408,7 +408,7 @@ mod tests {
 
         let root = NewWidget::new(
             Flex::row()
-                .with_child(checkbox)
+                .with_fixed(checkbox)
                 .main_axis_alignment(MainAxisAlignment::Center),
         );
         let mut harness =

@@ -488,13 +488,13 @@ mod tests {
         let label5 = base_label().with_text_alignment(TextAlign::Center);
         let label6 = base_label().with_text_alignment(TextAlign::End);
         let flex = Flex::column()
-            .with_flex_child(label1.with_auto_id(), CrossAxisAlignment::Start)
-            .with_flex_child(label2.with_auto_id(), CrossAxisAlignment::Start)
-            .with_flex_child(label3.with_auto_id(), CrossAxisAlignment::Start)
+            .with(label1.with_auto_id(), CrossAxisAlignment::Start)
+            .with(label2.with_auto_id(), CrossAxisAlignment::Start)
+            .with(label3.with_auto_id(), CrossAxisAlignment::Start)
             // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
-            .with_flex_child(label4.with_auto_id(), CrossAxisAlignment::Center)
-            .with_flex_child(label5.with_auto_id(), CrossAxisAlignment::Center)
-            .with_flex_child(label6.with_auto_id(), CrossAxisAlignment::Center)
+            .with(label4.with_auto_id(), CrossAxisAlignment::Center)
+            .with(label5.with_auto_id(), CrossAxisAlignment::Center)
+            .with(label6.with_auto_id(), CrossAxisAlignment::Center)
             .with_gap(Length::ZERO)
             .with_auto_id();
 
@@ -507,8 +507,8 @@ mod tests {
     #[test]
     fn line_break_modes() {
         let widget = Flex::column()
-            .with_flex_spacer(1.0)
-            .with_child(
+            .with_spacer(1.0)
+            .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::WordWrap)),
@@ -516,8 +516,8 @@ mod tests {
                 .width(180.px())
                 .with_auto_id(),
             )
-            .with_spacer(20.px())
-            .with_child(
+            .with_fixed_spacer(20.px())
+            .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Clip)),
@@ -525,8 +525,8 @@ mod tests {
                 .width(180.px())
                 .with_auto_id(),
             )
-            .with_spacer(20.px())
-            .with_child(
+            .with_fixed_spacer(20.px())
+            .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Overflow)),
@@ -534,7 +534,7 @@ mod tests {
                 .width(180.px())
                 .with_auto_id(),
             )
-            .with_flex_spacer(1.0)
+            .with_spacer(1.0)
             .with_auto_id();
 
         let mut harness =

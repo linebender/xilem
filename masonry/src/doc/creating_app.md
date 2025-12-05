@@ -41,12 +41,12 @@ fn main() {
 
     let main_widget = Portal::new(
         Flex::column()
-            .with_child(
+            .with_fixed(
                 Flex::row()
-                    .with_flex_child(TextInput::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
+                    .with(TextInput::new(""), 1.0)
+                    .with_fixed(Button::new("Add task")),
             )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+            .with_fixed_spacer(VERTICAL_WIDGET_SPACING),
     );
 
     // ...
@@ -137,7 +137,7 @@ When handling `ButtonPress`:
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
 
-We use [`Flex::add_child()`][add_child] to add a new `Label` with the text of our new task to our list.
+We use [`Flex::add_fixed()`][add_fixed] to add a new `Label` with the text of our new task to our list.
 
 In our main function, we create a `Driver` and pass it to `event_loop_runner::run`:
 
@@ -190,12 +190,12 @@ fn main() {
 
     let main_widget = Portal::new(
         Flex::column()
-            .with_child(
+            .with_fixed(
                 Flex::row()
-                    .with_flex_child(TextInput::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
+                    .with(TextInput::new(""), 1.0)
+                    .with_fixed(Button::new("Add task")),
             )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+            .with_fixed_spacer(VERTICAL_WIDGET_SPACING),
     );
 
     use masonry::core::{ErasedAction, WidgetId};
@@ -218,7 +218,7 @@ fn main() {
                 ctx.render_root(window_id).edit_root_widget(|mut root| {
                     let mut portal = root.downcast::<Portal<Flex>>();
                     let mut flex = Portal::child_mut(&mut portal);
-                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                    Flex::add_fixed(&mut flex, Label::new(self.next_task.clone()));
                 });
             } else if action.is::<TextAction>() {
                 let action: TextAction = *action.downcast().unwrap();
@@ -285,4 +285,4 @@ Most of this documentation is written to help developers trying to build such a 
 [`ErasedAction`]: crate::core::ErasedAction
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
-[add_child]: crate::widgets::Flex::add_child
+[add_fixed]: crate::widgets::Flex::add_fixed

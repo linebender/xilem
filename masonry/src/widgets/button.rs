@@ -321,6 +321,7 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::CollectionWidget;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
@@ -438,19 +439,19 @@ mod tests {
 
         let grid = Grid::with_dimensions(2, 2)
             .with_spacing(40.px())
-            .with_child(
+            .with(
                 Button::with_text("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             )
-            .with_child(
+            .with(
                 Button::with_text("B").with_auto_id(),
                 GridParams::new(1, 0, 1, 1),
             )
-            .with_child(
+            .with(
                 Button::with_text("C").with_auto_id(),
                 GridParams::new(0, 1, 1, 1),
             )
-            .with_child(
+            .with(
                 Button::with_text("D").with_auto_id(),
                 GridParams::new(1, 1, 1, 1),
             );
@@ -464,25 +465,25 @@ mod tests {
 
         harness.edit_root_widget(|mut grid| {
             {
-                let mut button = Grid::child_mut(&mut grid, 0);
+                let mut button = Grid::get_mut(&mut grid, 0);
                 let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (10., 10.)));
             }
 
             {
-                let mut button = Grid::child_mut(&mut grid, 1);
+                let mut button = Grid::get_mut(&mut grid, 1);
                 let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(5.0));
             }
 
             {
-                let mut button = Grid::child_mut(&mut grid, 2);
+                let mut button = Grid::get_mut(&mut grid, 2);
                 let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (-10., -10.)).blur(-5.0));
             }
 
             {
-                let mut button = Grid::child_mut(&mut grid, 3);
+                let mut button = Grid::get_mut(&mut grid, 3);
                 let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (0., 0.)).blur(5.0));
             }
@@ -495,7 +496,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             // Copy-pasted from second case above.
             {
-                let mut button = Grid::child_mut(&mut grid, 1);
+                let mut button = Grid::get_mut(&mut grid, 1);
                 let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(2.5));
             }
@@ -553,7 +554,7 @@ mod tests {
     #[test]
     fn flex_child() {
         let child = Flex::row()
-            .with_child(Label::new("Some text").with_auto_id())
+            .with_fixed(Label::new("Some text").with_auto_id())
             .with_auto_id();
         validate_noninteractive_child(child);
     }

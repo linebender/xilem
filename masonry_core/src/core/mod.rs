@@ -34,7 +34,9 @@ pub use properties::{
 };
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
-pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, WidgetId};
+pub use widget::{
+    AllowRawMut, AsDynWidget, ChildrenIds, CollectionWidget, FromDynWidget, Widget, WidgetId,
+};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
 pub use widget_ref::WidgetRef;
