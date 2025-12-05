@@ -1,9 +1,12 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{DynMessage, Environment, ViewId};
-use alloc::{boxed::Box, vec::Vec};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
 use anymore::AnyDebug;
+
+use crate::{DynMessage, Environment, ViewId};
 
 /// The `MessageCtx` is used in [`View::message`](crate::View::message).
 ///

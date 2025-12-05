@@ -12,10 +12,11 @@ use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::app::RenderRootState;
-use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, WidgetState};
-use crate::core::{DefaultProperties, WidgetArenaNode};
+use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
+use crate::core::{
+    BoxConstraints, ChildrenIds, DefaultProperties, LayoutCtx, PropertiesMut, WidgetArenaNode,
+    WidgetState,
+};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
 

@@ -6,14 +6,12 @@
 //! This module is based on [`vello::util`](masonry_core::vello::util) module
 //! with modifications for transparent surfaces.
 
-use masonry_core::vello::{
-    Error,
-    wgpu::{self, MemoryBudgetThresholds, MemoryHints},
-};
+use masonry_core::vello::Error;
+use masonry_core::vello::wgpu::{self, MemoryBudgetThresholds, MemoryHints};
+use wgpu::util::{TextureBlitter, TextureBlitterBuilder};
 use wgpu::{
     BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance, PresentMode,
     Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView,
-    util::{TextureBlitter, TextureBlitterBuilder},
 };
 
 /// Simple render context that maintains wgpu state for rendering the pipeline.

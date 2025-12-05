@@ -5,7 +5,9 @@
 
 use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
-use xilem::{Color, EventLoop, WindowId, WindowView, Xilem, style::Style, view::*};
+use xilem::style::Style;
+use xilem::view::*;
+use xilem::{Color, EventLoop, WindowId, WindowView, Xilem};
 
 #[derive(Debug, Clone)]
 struct AppState {

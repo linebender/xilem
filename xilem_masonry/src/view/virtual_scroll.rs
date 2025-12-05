@@ -1,7 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{collections::HashMap, marker::PhantomData, ops::Range};
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::ops::Range;
 
 use masonry::core::{Widget, WidgetPod};
 use masonry::util::debug_panic;
@@ -87,9 +89,9 @@ where
 }
 
 mod private {
-    use masonry::widgets::VirtualScrollAction;
-
     use std::collections::HashMap;
+
+    use masonry::widgets::VirtualScrollAction;
 
     #[expect(
         unnameable_types,

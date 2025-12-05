@@ -1,9 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::properties::types::Length;
 use std::marker::PhantomData;
 
+use masonry::properties::types::Length;
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};

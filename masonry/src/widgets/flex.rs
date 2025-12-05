@@ -15,8 +15,7 @@ use crate::core::{
     AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::Length;
-use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::theme::DEFAULT_GAP;
 use crate::util::{debug_panic, fill, include_screenshot, stroke};

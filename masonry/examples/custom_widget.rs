@@ -15,13 +15,12 @@ use masonry::core::{
     TextEvent, Widget, WidgetId,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
-use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, ImageBrush, ImageFormat};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
-use masonry::{TextAlign, TextAlignOptions};
+use masonry::{TextAlign, TextAlignOptions, palette};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};

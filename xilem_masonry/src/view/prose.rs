@@ -8,8 +8,7 @@ use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
-use crate::core::MessageResult;
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{Color, Pod, TextAlign, ViewCtx};
 
 /// A view which displays selectable text.

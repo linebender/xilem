@@ -18,8 +18,9 @@ use masonry_core::core::{
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
-use masonry_core::vello::wgpu;
-use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
+use masonry_core::vello::{
+    AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu,
+};
 use tracing::{debug, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;

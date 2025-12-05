@@ -150,11 +150,9 @@ mod tests {
     use masonry_testing::TestHarness;
     use vello::kurbo::Size;
 
-    use crate::{
-        properties::types::AsUnit,
-        theme::default_property_set,
-        widgets::{Flex, LayoutChanged, ResizeObserver, SizedBox},
-    };
+    use crate::properties::types::AsUnit;
+    use crate::theme::default_property_set;
+    use crate::widgets::{Flex, LayoutChanged, ResizeObserver, SizedBox};
 
     #[test]
     fn detects_inner_resizing() {

@@ -3,13 +3,14 @@
 
 use std::marker::PhantomData;
 
+use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
+use masonry::widgets;
+
 use crate::core::{
     AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx};
-use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
-use masonry::widgets;
 
 /// An `IndexedStack` displays one of several children elements at a time.
 ///

@@ -4,14 +4,13 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::HasProperty;
-use masonry::properties::{ContentColor, DisabledContentColor, FocusedBorderColor, LineBreaking};
-use vello::peniko::Color;
-
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
+use masonry::properties::{ContentColor, DisabledContentColor, FocusedBorderColor, LineBreaking};
+use vello::peniko::Color;
 
 use crate::WidgetView;
 use crate::core::ViewArgument;

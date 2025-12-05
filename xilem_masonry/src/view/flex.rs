@@ -218,8 +218,7 @@ mod hidden {
     }
 }
 
-use hidden::AnyFlexChildState;
-use hidden::FlexState;
+use hidden::{AnyFlexChildState, FlexState};
 
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>

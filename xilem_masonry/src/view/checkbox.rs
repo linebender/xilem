@@ -3,13 +3,13 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
-use crate::{Pod, ViewCtx};
-
 use masonry::core::{ArcStr, NewWidget};
 use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets::{self, CheckboxToggled};
+
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// An element which can be in checked and unchecked state.
 ///

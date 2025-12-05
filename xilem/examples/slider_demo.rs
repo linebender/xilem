@@ -10,10 +10,8 @@
 
 use masonry::core::Axis;
 use masonry::peniko::Color;
-use masonry::properties::{
-    Background, BarColor, ThumbColor, ThumbRadius,
-    types::{AsUnit, CrossAxisAlignment},
-};
+use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::{Background, BarColor, ThumbColor, ThumbRadius};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;

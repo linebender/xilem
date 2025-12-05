@@ -15,8 +15,9 @@ use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::LineBreaking;
-use crate::properties::{Background, BarColor, BorderColor, BorderWidth, CornerRadius};
+use crate::properties::{
+    Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
+};
 use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::Label;
 
@@ -208,9 +209,10 @@ mod tests {
     use masonry_core::core::NewWidget;
 
     use super::*;
+    use crate::core::Properties;
+    use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
-    use crate::{core::Properties, palette};
 
     #[test]
     fn indeterminate_progressbar() {

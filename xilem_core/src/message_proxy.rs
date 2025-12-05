@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymore::AnyDebug;
-
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
+
+use anymore::AnyDebug;
 
 use crate::{SendMessage, ViewId};
 

@@ -12,16 +12,15 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
-use masonry_core::anymore::AnyDebug;
-use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
-use masonry_core::vello::peniko::Fill;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
+use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
+use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
+use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use masonry_core::core::{
     CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
     Modifiers, NewWidget, PointerButton, PointerButtonEvent, PointerEvent, PointerId, PointerInfo,
@@ -32,6 +31,7 @@ use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, Physical
 use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
+use masonry_core::vello::peniko::Fill;
 use masonry_core::vello::util::{RenderContext, block_on_wgpu};
 use masonry_core::vello::wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,

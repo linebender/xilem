@@ -74,9 +74,9 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 // TODO - Add logo
 
-pub use anymore;
-pub use vello::{kurbo, peniko, peniko::color::palette};
-pub use {accesskit, dpi, parley, ui_events, vello};
+pub use vello::peniko::color::palette;
+pub use vello::{kurbo, peniko};
+pub use {accesskit, anymore, dpi, parley, ui_events, vello};
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;

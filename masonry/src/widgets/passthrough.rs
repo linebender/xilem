@@ -113,11 +113,12 @@ impl Widget for Passthrough {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use vello::kurbo::Size;
+
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;
-    use vello::kurbo::Size;
 
     #[test]
     fn passthrough_replaces_child() {

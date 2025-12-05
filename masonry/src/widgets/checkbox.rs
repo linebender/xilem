@@ -9,8 +9,7 @@ use accesskit::{Node, Role, Toggled};
 use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::kurbo::Rect;
-use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
+use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
 
 use crate::core::keyboard::Key;
 use crate::core::{

@@ -415,8 +415,7 @@ mod tests {
 
     use super::*;
     use crate::core::Properties;
-    use crate::properties::types::CrossAxisAlignment;
-    use crate::properties::types::{AsUnit, Length};
+    use crate::properties::types::{AsUnit, CrossAxisAlignment, Length};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, SizedBox};
