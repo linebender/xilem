@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::Length;
 use masonry::widgets;
 
@@ -19,6 +19,7 @@ pub use masonry::widgets::GridParams;
 ///
 /// # Example
 /// ```ignore
+/// # use xilem_masonry as xilem;
 /// use masonry::widgets::GridParams;
 /// use xilem::view::{
 ///     text_button, grid, label, GridExt,
@@ -124,7 +125,7 @@ where
         widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
-            widget = widget.with_child(element.child.new_widget, element.params);
+            widget = widget.with(element.child.new_widget, element.params);
         }
         let pod = ctx.create_pod(widget);
         (
@@ -233,7 +234,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Mut<'_, Self>, R) {
         let ret = {
-            let mut child = widgets::Grid::child_mut(&mut this.parent, this.idx);
+            let mut child = widgets::Grid::get_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -247,7 +248,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::Grid::insert_child(
+            widgets::Grid::insert(
                 &mut self.element,
                 self.idx,
                 element.child.new_widget,
@@ -259,7 +260,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: GridElement) {
-        widgets::Grid::insert_child(
+        widgets::Grid::insert(
             &mut self.element,
             self.idx,
             element.child.new_widget,
@@ -294,7 +295,7 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
             };
             f(child)
         };
-        widgets::Grid::remove_child(&mut self.element, self.idx);
+        widgets::Grid::remove(&mut self.element, self.idx);
         ret
     }
 }
@@ -319,6 +320,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::view::{text_button, prose, grid, GridExt};
     /// # use xilem::{WidgetView, core::Edit};
@@ -345,6 +347,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::{view::{text_button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView, core::Edit};
@@ -459,13 +462,9 @@ where
     ) {
         {
             if self.params != prev.params {
-                widgets::Grid::update_child_grid_params(
-                    &mut element.parent,
-                    element.idx,
-                    self.params,
-                );
+                widgets::Grid::set_params(&mut element.parent, element.idx, self.params);
             }
-            let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
+            let mut child = widgets::Grid::get_mut(&mut element.parent, element.idx);
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
@@ -477,7 +476,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
+        let mut child = widgets::Grid::get_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
     }
 
@@ -488,7 +487,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
+        let mut child = widgets::Grid::get_mut(&mut element.parent, element.idx);
         self.view
             .message(view_state, message, child.downcast(), app_state)
     }

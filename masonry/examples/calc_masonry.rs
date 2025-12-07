@@ -14,7 +14,8 @@
 use std::str::FromStr;
 
 use masonry::core::{
-    ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget, WidgetId, WidgetOptions,
+    CollectionWidget, ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget,
+    WidgetId, WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
@@ -173,9 +174,9 @@ impl AppDriver for CalcState {
 
         ctx.render_root(window_id).edit_base_layer(|mut root| {
             let mut grid = root.downcast();
-            let mut flex = Grid::child_mut(&mut grid, 0);
+            let mut flex = Grid::get_mut(&mut grid, 0);
             let mut flex = flex.downcast();
-            let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+            let mut label = Flex::get_mut(&mut flex, 1);
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);
         });
@@ -240,9 +241,9 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
 pub fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     let display = Flex::column()
-        .with_flex_spacer(1.)
-        .with_child(display.with_auto_id())
-        .with_flex_spacer(1.)
+        .with_spacer(1.)
+        .with_fixed(display.with_auto_id())
+        .with_spacer(1.)
         .cross_axis_alignment(CrossAxisAlignment::End);
 
     fn button_params(x: i32, y: i32) -> GridParams {
@@ -251,30 +252,30 @@ pub fn build_calc() -> NewWidget<impl Widget> {
 
     let root_widget = Grid::with_dimensions(4, 6)
         .with_spacing(1.px())
-        .with_child(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
-        .with_child(
+        .with(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
+        .with(
             op_button_with_label('c', "CE".to_string()),
             button_params(0, 1),
         )
-        .with_child(op_button('C'), button_params(1, 1))
-        .with_child(op_button('⌫'), button_params(2, 1))
-        .with_child(op_button('÷'), button_params(3, 1))
-        .with_child(digit_button(7), button_params(0, 2))
-        .with_child(digit_button(8), button_params(1, 2))
-        .with_child(digit_button(9), button_params(2, 2))
-        .with_child(op_button('×'), button_params(3, 2))
-        .with_child(digit_button(4), button_params(0, 3))
-        .with_child(digit_button(5), button_params(1, 3))
-        .with_child(digit_button(6), button_params(2, 3))
-        .with_child(op_button('−'), button_params(3, 3))
-        .with_child(digit_button(1), button_params(0, 4))
-        .with_child(digit_button(2), button_params(1, 4))
-        .with_child(digit_button(3), button_params(2, 4))
-        .with_child(op_button('+'), button_params(3, 4))
-        .with_child(op_button('±'), button_params(0, 5))
-        .with_child(digit_button(0), button_params(1, 5))
-        .with_child(op_button('.'), button_params(2, 5))
-        .with_child(op_button('='), button_params(3, 5));
+        .with(op_button('C'), button_params(1, 1))
+        .with(op_button('⌫'), button_params(2, 1))
+        .with(op_button('÷'), button_params(3, 1))
+        .with(digit_button(7), button_params(0, 2))
+        .with(digit_button(8), button_params(1, 2))
+        .with(digit_button(9), button_params(2, 2))
+        .with(op_button('×'), button_params(3, 2))
+        .with(digit_button(4), button_params(0, 3))
+        .with(digit_button(5), button_params(1, 3))
+        .with(digit_button(6), button_params(2, 3))
+        .with(op_button('−'), button_params(3, 3))
+        .with(digit_button(1), button_params(0, 4))
+        .with(digit_button(2), button_params(1, 4))
+        .with(digit_button(3), button_params(2, 4))
+        .with(op_button('+'), button_params(3, 4))
+        .with(op_button('±'), button_params(0, 5))
+        .with(digit_button(0), button_params(1, 5))
+        .with(op_button('.'), button_params(2, 5))
+        .with(op_button('='), button_params(3, 5));
 
     NewWidget::new_with_props(
         root_widget,

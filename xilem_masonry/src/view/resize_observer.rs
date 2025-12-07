@@ -32,6 +32,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// To create a responsive version of a page, you can use `resize_observer`.
 ///
 /// ```rust,no_run
+/// # use xilem_masonry as xilem;
 /// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex, sized_box}, masonry::kurbo::Size, masonry::core::Axis};
 ///
 /// struct State {

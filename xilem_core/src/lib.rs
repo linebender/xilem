@@ -81,7 +81,7 @@ pub use self::view_sequence::{Count, ViewSequence};
 pub use self::view_sequences::{WithoutElements, without_elements};
 pub use self::views::{
     Fork, Frozen, Lens, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
-    map_action, map_message, map_state, memoize, one_of, run_once, run_once_raw,
+    map_action, map_message_result, map_state, memoize, one_of, run_once, run_once_raw,
 };
 
 // TODO - Remove this re-export and rewrite code importing it

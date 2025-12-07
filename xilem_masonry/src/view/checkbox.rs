@@ -15,6 +15,7 @@ use masonry::widgets::{self, CheckboxToggled};
 ///
 /// # Example
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::view::checkbox;
 /// # use xilem::WidgetView;
 /// # use xilem::core::Edit;

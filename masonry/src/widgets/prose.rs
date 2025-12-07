@@ -211,7 +211,7 @@ mod tests {
         .with_auto_id();
 
         let root_widget = Flex::row()
-            .with_child(SizedBox::new(prose).width(60.px()).with_auto_id())
+            .with_fixed(SizedBox::new(prose).width(60.px()).with_auto_id())
             .with_auto_id();
 
         let mut harness =
@@ -241,12 +241,12 @@ mod tests {
         let prose5 = base_prose(TextAlign::Center);
         let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
-            .with_flex_child(prose1.with_auto_id(), CrossAxisAlignment::Start)
-            .with_flex_child(prose2.with_auto_id(), CrossAxisAlignment::Start)
-            .with_flex_child(prose3.with_auto_id(), CrossAxisAlignment::Start)
-            .with_flex_child(prose4.with_auto_id(), CrossAxisAlignment::Center)
-            .with_flex_child(prose5.with_auto_id(), CrossAxisAlignment::Center)
-            .with_flex_child(prose6.with_auto_id(), CrossAxisAlignment::Center)
+            .with(prose1.with_auto_id(), CrossAxisAlignment::Start)
+            .with(prose2.with_auto_id(), CrossAxisAlignment::Start)
+            .with(prose3.with_auto_id(), CrossAxisAlignment::Start)
+            .with(prose4.with_auto_id(), CrossAxisAlignment::Center)
+            .with(prose5.with_auto_id(), CrossAxisAlignment::Center)
+            .with(prose6.with_auto_id(), CrossAxisAlignment::Center)
             .with_gap(Length::ZERO)
             .with_auto_id();
 

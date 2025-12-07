@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
+use masonry::core::{Axis, CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 pub use masonry::widgets::FlexParams;
@@ -45,11 +45,11 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
+/// # use xilem_masonry as xilem;
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
-/// use winit::error::EventLoopError;
 /// use xilem::masonry::core::Axis;
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
-/// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+/// use xilem::WidgetView;
 /// use xilem::core::Edit;
 ///
 /// /// A component to make a bigger than usual button.
@@ -79,12 +79,6 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     ))
 ///     .main_axis_alignment(MainAxisAlignment::Center)
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
-/// }
-///
-/// fn main() -> Result<(), EventLoopError> {
-///     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
-///     app.run_in(EventLoop::with_user_event())?;
-///     Ok(())
 /// }
 /// ```
 pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
@@ -252,11 +246,9 @@ where
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.drain() {
             widget = match child {
-                FlexElement::Child(child, params) => {
-                    widget.with_flex_child(child.new_widget, params)
-                }
-                FlexElement::FixedSpacer(size) => widget.with_spacer(size),
-                FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
+                FlexElement::Child(child, params) => widget.with(child.new_widget, params),
+                FlexElement::FixedSpacer(size) => widget.with_fixed_spacer(size),
+                FlexElement::FlexSpacer(flex) => widget.with_spacer(flex),
             }
         }
         let pod = ctx.create_pod(widget);
@@ -392,8 +384,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexE
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Mut<'_, Self>, R) {
         let ret = {
-            let mut child = widgets::Flex::child_mut(&mut this.parent, this.idx)
-                .expect("This is supposed to be a widget");
+            let mut child = widgets::Flex::get_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -406,18 +397,13 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
     fn insert(&mut self, element: FlexElement) {
         match element {
             FlexElement::Child(child, params) => {
-                widgets::Flex::insert_flex_child(
-                    &mut self.element,
-                    self.idx,
-                    child.new_widget,
-                    params,
-                );
+                widgets::Flex::insert(&mut self.element, self.idx, child.new_widget, params);
             }
             FlexElement::FixedSpacer(len) => {
-                widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
+                widgets::Flex::insert_fixed_spacer(&mut self.element, self.idx, len);
             }
             FlexElement::FlexSpacer(len) => {
-                widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+                widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
             }
         };
         self.idx += 1;
@@ -428,18 +414,13 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
-                    widgets::Flex::insert_flex_child(
-                        &mut self.element,
-                        self.idx,
-                        child.new_widget,
-                        params,
-                    );
+                    widgets::Flex::insert(&mut self.element, self.idx, child.new_widget, params);
                 }
                 FlexElement::FixedSpacer(len) => {
-                    widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
+                    widgets::Flex::insert_fixed_spacer(&mut self.element, self.idx, len);
                 }
                 FlexElement::FlexSpacer(len) => {
-                    widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+                    widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
                 }
             };
             self.idx += 1;
@@ -465,7 +446,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
             };
             f(child)
         };
-        widgets::Flex::remove_child(&mut self.element, self.idx);
+        widgets::Flex::remove(&mut self.element, self.idx);
         ret
     }
 
@@ -484,6 +465,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
 /// # Examples
 ///
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::view::{label, FlexSequence, FlexExt as _};
 /// use xilem::core::ViewArgument;
 ///
@@ -510,6 +492,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
@@ -538,6 +521,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
@@ -570,6 +554,7 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # Examples
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::masonry::core::Axis;
 /// use xilem::masonry::properties::types::AsUnit;
 /// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
@@ -642,14 +627,9 @@ where
     ) {
         {
             if self.params != prev.params {
-                widgets::Flex::update_child_flex_params(
-                    &mut element.parent,
-                    element.idx,
-                    self.params,
-                );
+                widgets::Flex::set_params(&mut element.parent, element.idx, self.params);
             }
-            let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
-                .expect("FlexWrapper always has a widget child");
+            let mut child = widgets::Flex::get_mut(&mut element.parent, element.idx);
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
@@ -661,8 +641,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
-            .expect("FlexWrapper always has a widget child");
+        let mut child = widgets::Flex::get_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
     }
 
@@ -673,8 +652,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
-            .expect("FlexWrapper always has a widget child");
+        let mut child = widgets::Flex::get_mut(&mut element.parent, element.idx);
         self.view
             .message(view_state, message, child.downcast(), app_state)
     }
@@ -721,10 +699,10 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for FlexSpacer {
         if self != prev {
             match self {
                 Self::Fixed(len) => {
-                    widgets::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
+                    widgets::Flex::set_fixed_spacer(&mut element.parent, element.idx, *len);
                 }
                 Self::Flex(flex) => {
-                    widgets::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
+                    widgets::Flex::set_spacer(&mut element.parent, element.idx, *flex);
                 }
             };
         }
@@ -757,6 +735,7 @@ impl FlexSpacer {
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, FlexSpacer};
@@ -782,6 +761,7 @@ where
     ///
     /// # Examples
     /// ```
+    /// # use xilem_masonry as xilem;
     /// use xilem::masonry::core::Axis;
     /// use xilem::view::{flex, flex_item, label};
     /// # use xilem::{WidgetView, core::ViewArgument};
@@ -870,7 +850,7 @@ where
                         },
                     );
                 });
-                widgets::Flex::remove_child(&mut element.parent, element.idx);
+                widgets::Flex::remove(&mut element.parent, element.idx);
                 // The Flex item view has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge (new item `FlexSpacer`) by convention
                 // This choice has no impact on functionality
@@ -884,10 +864,10 @@ where
                 let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx, ());
                 match spacer_element {
                     FlexElement::FixedSpacer(len) => {
-                        widgets::Flex::insert_spacer(&mut element.parent, element.idx, len);
+                        widgets::Flex::insert_fixed_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::FlexSpacer(len) => {
-                        widgets::Flex::insert_flex_spacer(&mut element.parent, element.idx, len);
+                        widgets::Flex::insert_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::Child(_, _) => unreachable!(),
                 };
@@ -902,7 +882,7 @@ where
                         idx: element.idx,
                     },
                 );
-                widgets::Flex::remove_child(&mut element.parent, element.idx);
+                widgets::Flex::remove(&mut element.parent, element.idx);
 
                 let (flex_item_element, child_state) = ctx
                     .with_id(ViewId::new(view_state.generation), |ctx| {
@@ -910,7 +890,7 @@ where
                     });
                 view_state.inner = Some(child_state);
                 if let FlexElement::Child(child, params) = flex_item_element {
-                    widgets::Flex::insert_flex_child(
+                    widgets::Flex::insert(
                         &mut element.parent,
                         element.idx,
                         child.new_widget,

@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
+use masonry_core::core::{CollectionWidget, HasProperty};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -40,7 +40,7 @@ impl IndexedStack {
     }
 
     /// Builder-style method to add a child widget.
-    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
+    pub fn with(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
         self.children.push(child.erased().to_pod());
         self
     }
@@ -53,12 +53,12 @@ impl IndexedStack {
         if self.children.is_empty() {
             assert!(
                 idx == 0,
-                "Called set_active_child on empty IndexedStack with non-zero index {idx}"
+                "Called set_active on empty IndexedStack with non-zero index {idx}"
             );
         } else {
             assert!(
                 idx < self.children.len(),
-                "Called set_active_child with invalid index {idx}"
+                "Called set_active with invalid index {idx}"
             );
         }
 
@@ -69,66 +69,14 @@ impl IndexedStack {
 
 // --- MARK: METHODS
 impl IndexedStack {
-    /// Returns the number of children in this stack.
-    pub fn len(&self) -> usize {
-        self.children.len()
-    }
-
-    /// Returns true if there are no children in this stack.
-    pub fn is_empty(&self) -> bool {
-        self.children.is_empty()
-    }
-
     /// Returns the index of the currently active child.
-    pub fn active_child_index(&self) -> usize {
+    pub fn active_child(&self) -> usize {
         self.active_child
     }
 }
 
 // --- MARK: WIDGETMUT
 impl IndexedStack {
-    /// Add a child widget to the end of the stack.
-    ///
-    /// See also [`with_child`](IndexedStack::with_child).
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
-        this.widget.children.push(child.erased().to_pod());
-        this.ctx.children_changed();
-    }
-
-    /// Insert a child widget at the given index.
-    ///
-    /// This lets you control the order of the children stored by the indexed stack.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-    ) {
-        this.widget.children.insert(idx, child.erased().to_pod());
-        if this.widget.active_child >= idx {
-            // adjust index to keep the same widget active
-            this.widget.active_child += 1;
-        }
-        this.ctx.children_changed();
-    }
-
-    /// Replace the child widget at the given index with a new one.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
-    pub fn set_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: NewWidget<impl Widget + ?Sized>,
-    ) {
-        let old_child = std::mem::replace(&mut this.widget.children[idx], child.erased().to_pod());
-        this.ctx.remove_child(old_child);
-    }
-
     /// Change the active child.
     ///
     /// # Panics
@@ -150,27 +98,95 @@ impl IndexedStack {
         this.widget.active_child = idx;
         this.ctx.request_layout();
     }
+}
 
-    /// Get a mutable reference to the child at `idx`.
+// --- MARK: COLLECTIONWIDGET
+impl CollectionWidget<()> for IndexedStack {
+    /// Returns the number of children.
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    /// Returns `true` if there are no children.
+    fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    /// Returns a mutable reference to the child widget at the given index.
     ///
     /// # Panics
     ///
     /// Panics if `idx` is out of bounds.
-    pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
-        idx: usize,
-    ) -> WidgetMut<'t, dyn Widget> {
+    fn get_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: usize) -> WidgetMut<'t, dyn Widget> {
         let child = &mut this.widget.children[idx];
         this.ctx.get_mut(child)
     }
 
-    /// Removes a child widget at the given index. If the active is removed,
-    /// the first child in the stack will be selected as active.
+    /// Appends a child widget to the collection.
+    fn add(
+        this: &mut WidgetMut<'_, Self>,
+        child: NewWidget<impl Widget + ?Sized>,
+        _params: impl Into<()>,
+    ) {
+        this.widget.children.push(child.erased().to_pod());
+        this.ctx.children_changed();
+    }
+
+    /// Inserts a child widget at the given index.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
-    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
+    /// Panics if `idx` is larger than the number of children.
+    fn insert(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        _params: impl Into<()>,
+    ) {
+        this.widget.children.insert(idx, child.erased().to_pod());
+        if this.widget.active_child >= idx {
+            // adjust index to keep the same widget active
+            this.widget.active_child += 1;
+        }
+        this.ctx.children_changed();
+    }
+
+    /// Replaces the child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn set(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+        _params: impl Into<()>,
+    ) {
+        let old_child = std::mem::replace(&mut this.widget.children[idx], child.erased().to_pod());
+        this.ctx.remove_child(old_child);
+    }
+
+    /// Not applicable.
+    fn set_params(_this: &mut WidgetMut<'_, Self>, _idx: usize, _params: impl Into<()>) {}
+
+    /// Swap the index of two children.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a` or `b` are out of bounds.
+    fn swap(this: &mut WidgetMut<'_, Self>, a: usize, b: usize) {
+        this.widget.children.swap(a, b);
+        this.ctx.children_changed();
+    }
+
+    /// Remove the child at the given index.
+    ///
+    /// If the active child is removed, the first child in the stack will be selected as active.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    fn remove(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if idx == this.widget.active_child {
             // This is valid even if we are removing the last child,
@@ -181,6 +197,14 @@ impl IndexedStack {
             this.widget.active_child -= 1;
         }
         this.ctx.remove_child(child);
+    }
+
+    /// Removes all children.
+    fn clear(this: &mut WidgetMut<'_, Self>) {
+        for child in this.widget.children.drain(..) {
+            this.ctx.remove_child(child);
+        }
+        this.widget.active_child = 0; // 0 is valid for the childrenless case
     }
 }
 
@@ -312,14 +336,14 @@ mod tests {
         assert_render_snapshot!(harness, "indexed_stack_empty");
 
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add_child(&mut stack, Button::with_text("A").with_auto_id());
+            IndexedStack::add(&mut stack, Button::with_text("A").with_auto_id(), ());
         });
         assert_render_snapshot!(harness, "indexed_stack_single");
 
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add_child(&mut stack, Button::with_text("B").with_auto_id());
-            IndexedStack::add_child(&mut stack, Button::with_text("C").with_auto_id());
-            IndexedStack::add_child(&mut stack, Button::with_text("D").with_auto_id());
+            IndexedStack::add(&mut stack, Button::with_text("B").with_auto_id(), ());
+            IndexedStack::add(&mut stack, Button::with_text("C").with_auto_id(), ());
+            IndexedStack::add(&mut stack, Button::with_text("D").with_auto_id(), ());
         });
         assert_render_snapshot!(harness, "indexed_stack_single"); // the active child should not change
 
@@ -332,9 +356,9 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = IndexedStack::new()
-            .with_child(Button::with_text("A").with_auto_id())
-            .with_child(Button::with_text("B").with_auto_id())
-            .with_child(Button::with_text("C").with_auto_id())
+            .with(Button::with_text("A").with_auto_id())
+            .with(Button::with_text("B").with_auto_id())
+            .with(Button::with_text("C").with_auto_id())
             .with_active_child(1)
             .with_auto_id();
         let window_size = Size::new(50.0, 50.0);
@@ -344,19 +368,19 @@ mod tests {
 
         // Remove the first (inactive) widget
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::remove_child(&mut stack, 0);
+            IndexedStack::remove(&mut stack, 0);
         });
         assert_render_snapshot!(harness, "indexed_stack_initial_builder"); // Should not be changed
 
         // Now remove the active widget
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::remove_child(&mut stack, 0);
+            IndexedStack::remove(&mut stack, 0);
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_removed_widget");
 
         // Add another widget at the end
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add_child(&mut stack, Button::with_text("D").with_auto_id());
+            IndexedStack::add(&mut stack, Button::with_text("D").with_auto_id(), ());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_removed_widget"); // Should not change
 
@@ -368,8 +392,8 @@ mod tests {
 
         // Insert back the first two at the start
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::insert_child(&mut stack, 0, Button::with_text("A").with_auto_id());
-            IndexedStack::insert_child(&mut stack, 1, Button::with_text("B").with_auto_id());
+            IndexedStack::insert(&mut stack, 0, Button::with_text("A").with_auto_id(), ());
+            IndexedStack::insert(&mut stack, 1, Button::with_text("B").with_auto_id(), ());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget"); // Should not change
 
@@ -381,7 +405,7 @@ mod tests {
 
         // Change the active widget
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::set_child(&mut stack, 1, Button::with_text("D").with_auto_id());
+            IndexedStack::set(&mut stack, 1, Button::with_text("D").with_auto_id(), ());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget");
     }

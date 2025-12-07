@@ -3,9 +3,6 @@
 
 //! A playground used in the development for new Xilem Masonry features.
 
-// On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
-
 use std::time::Duration;
 
 use masonry::core::Axis;
@@ -151,7 +148,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
             // the updates it performs will only be running whilst we are in that state.
             data.active.then(|| {
                 task(
-                    |proxy| async move {
+                    |proxy, _| async move {
                         let mut interval = time::interval(Duration::from_secs(1));
                         loop {
                             interval.tick().await;
@@ -199,7 +196,7 @@ struct AppData {
     observed_size: Size,
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = AppData {
         count: 0,
         text_input_contents: "Not quite a placeholder".into(),
@@ -215,26 +212,6 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[unsafe(no_mangle)]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }

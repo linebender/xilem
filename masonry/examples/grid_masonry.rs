@@ -126,10 +126,10 @@ pub fn make_grid(grid_spacing: f64) -> NewWidget<Grid> {
     // Arrange widgets in a 4 by 4 grid.
     let mut main_widget = Grid::with_dimensions(4, 4)
         .with_spacing(Length::px(grid_spacing))
-        .with_child(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
+        .with(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
-        main_widget = main_widget.with_child(button.with_auto_id(), button_input);
+        main_widget = main_widget.with(button.with_auto_id(), button_input);
     }
 
     NewWidget::new(main_widget)

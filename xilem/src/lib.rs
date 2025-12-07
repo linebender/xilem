@@ -155,43 +155,35 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 pub use masonry;
 pub use masonry::dpi;
 pub use masonry::palette;
 pub use tokio;
+pub use vello;
 pub use winit;
 pub use xilem_core as core;
+pub use xilem_masonry::style;
+pub use xilem_masonry::view;
 
 pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::{Blob, Color, ImageBrush, ImageFormat};
 pub use masonry::widgets::InsertNewline;
 pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
-pub use window_options::WindowOptions;
 
-pub mod style;
-pub mod view;
+pub use xilem_masonry::{
+    AnyWidgetView, InitialRootWidget, MasonryRoot, Pod, ViewCtx, WidgetView, WidgetViewSequence,
+};
 
-mod any_view;
 mod app;
 mod driver;
-mod masonry_root;
-mod one_of;
-mod pod;
-mod view_ctx;
-mod widget_view;
 mod window_options;
 mod window_view;
 
-pub use any_view::AnyWidgetView;
 pub use app::{AppState, ExitOnClose, Xilem};
 pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
-pub use masonry_root::{InitialRootWidget, MasonryRoot};
-pub use pod::Pod;
-pub use view_ctx::ViewCtx;
-pub use widget_view::{WidgetView, WidgetViewSequence};
+pub use window_options::WindowOptions;
 pub use window_view::{PodWindow, WindowView, window};
 
 #[cfg(windows)]

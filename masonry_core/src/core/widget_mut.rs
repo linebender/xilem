@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
+use crate::core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId};
 
 /// A rich mutable reference to a [`Widget`].
 ///
@@ -42,6 +42,11 @@ impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
 }
 
 impl<W: Widget + ?Sized> WidgetMut<'_, W> {
+    /// Get the [`WidgetId`] of the current widget.
+    pub fn id(&self) -> WidgetId {
+        self.ctx.widget_state.id
+    }
+
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;

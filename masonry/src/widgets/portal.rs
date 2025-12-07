@@ -532,34 +532,34 @@ mod tests {
 
         let widget = Portal::new(NewWidget::new(
             Flex::column()
-                .with_child(button("Item 1").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 2").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(NewWidget::new_with_tag(button("Item 3"), button_3))
-                .with_spacer(10.px())
-                .with_child(button("Item 4").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 5").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 6").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 7").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 8").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 9").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 10").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 11").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(button("Item 12").with_auto_id())
-                .with_spacer(10.px())
-                .with_child(NewWidget::new_with_tag(button("Item 13"), button_13))
-                .with_spacer(10.px())
-                .with_child(button("Item 14").with_auto_id())
-                .with_spacer(10.px()),
+                .with_fixed(button("Item 1").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 2").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(NewWidget::new_with_tag(button("Item 3"), button_3))
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 4").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 5").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 6").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 7").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 8").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 9").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 10").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 11").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 12").with_auto_id())
+                .with_fixed_spacer(10.px())
+                .with_fixed(NewWidget::new_with_tag(button("Item 13"), button_13))
+                .with_fixed_spacer(10.px())
+                .with_fixed(button("Item 14").with_auto_id())
+                .with_fixed_spacer(10.px()),
         ))
         .with_auto_id();
 
@@ -595,12 +595,12 @@ mod tests {
 
         let widget = Portal::new(
             Flex::column()
-                .with_spacer(500.px())
-                .with_child(NewWidget::new_with_tag(
+                .with_fixed_spacer(500.px())
+                .with_fixed(NewWidget::new_with_tag(
                     Button::with_text("Fully visible"),
                     button_tag,
                 ))
-                .with_spacer(500.px())
+                .with_fixed_spacer(500.px())
                 .with_auto_id(),
         )
         .with_auto_id();

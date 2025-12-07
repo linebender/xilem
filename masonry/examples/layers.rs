@@ -146,9 +146,9 @@ fn main() {
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
-        .with_flex_spacer(1.)
-        .with_child(overlay_box.with_auto_id())
-        .with_flex_spacer(1.);
+        .with_spacer(1.)
+        .with_fixed(overlay_box.with_auto_id())
+        .with_spacer(1.);
 
     let driver = Driver {};
 

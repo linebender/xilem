@@ -8,7 +8,7 @@ use crate::core::{
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx};
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::widgets;
 
 /// An `IndexedStack` displays one of several children elements at a time.
@@ -22,6 +22,7 @@ use masonry::widgets;
 ///
 /// # Example
 /// ```
+/// # use xilem_masonry as xilem;
 /// use xilem::view::{
 ///     text_button, flex_col, indexed_stack, label
 /// };
@@ -121,7 +122,7 @@ where
         let mut widget = widgets::IndexedStack::new();
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
-            widget = widget.with_child(element.child.new_widget);
+            widget = widget.with(element.child.new_widget);
         }
         widget = widget.with_active_child(self.active_child);
         let pod = ctx.create_pod(widget);
@@ -151,7 +152,7 @@ where
 
         // set the active child after updating the sequence to
         // ensure the index remains consistent with the children list
-        if self.active_child != element.widget.active_child_index() {
+        if self.active_child != element.widget.active_child() {
             widgets::IndexedStack::set_active_child(&mut element, self.active_child);
         }
     }
@@ -222,7 +223,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Index
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Mut<'_, Self>, R) {
         let ret = {
-            let mut child = widgets::IndexedStack::child_mut(&mut this.parent, this.idx);
+            let mut child = widgets::IndexedStack::get_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -236,10 +237,11 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<IndexedStackElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {
-            widgets::IndexedStack::insert_child(
+            widgets::IndexedStack::insert(
                 &mut self.element,
                 self.idx,
                 element.child.new_widget,
+                (),
             );
             self.idx += 1;
         }
@@ -247,7 +249,7 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
     }
 
     fn insert(&mut self, element: IndexedStackElement) {
-        widgets::IndexedStack::insert_child(&mut self.element, self.idx, element.child.new_widget);
+        widgets::IndexedStack::insert(&mut self.element, self.idx, element.child.new_widget, ());
         self.idx += 1;
     }
 
@@ -277,7 +279,7 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
             };
             f(child)
         };
-        widgets::IndexedStack::remove_child(&mut self.element, self.idx);
+        widgets::IndexedStack::remove(&mut self.element, self.idx);
         ret
     }
 }
