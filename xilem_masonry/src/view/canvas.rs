@@ -11,14 +11,13 @@ use vello::kurbo::Size;
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx};
 
+/// Access a raw vello [`Scene`] within a canvas that fills its parent
+///
 /// # Example
 ///
 /// ```
-/// use xilem::masonry::kurbo::{Rect, Size, Affine};
-/// use xilem::masonry::peniko::Fill;
-/// use xilem::masonry::vello::Scene;
-/// use xilem::view::canvas;
-/// use std::sync::Arc;
+/// # use xilem_masonry as xilem;
+/// use xilem::{view::canvas, masonry::{palette, kurbo::{Rect, Size, Affine}, peniko::Fill, vello::Scene}};
 /// # use xilem::{WidgetView, core::Edit};
 ///
 /// # fn fill_canvas<State: 'static>() -> impl WidgetView<Edit<State>> {
@@ -27,7 +26,7 @@ use crate::{Pod, ViewCtx};
 ///     scene.fill(
 ///         Fill::NonZero,
 ///         Affine::IDENTITY,
-///         xilem::palette::css::AQUA,
+///         palette::css::AQUA,
 ///         None,
 ///         &Rect::new(0.0, 0.0, size.width, size.height),
 ///     );
