@@ -5,13 +5,13 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use vello::Scene;
-use vello::kurbo::{Affine, Circle, Size};
-use vello::peniko::{Color, Fill};
-use winit::error::EventLoopError;
+use xilem::core::Edit;
+use xilem::vello::Scene;
+use xilem::vello::kurbo::{Affine, Circle, Size};
+use xilem::vello::peniko::{Color, Fill};
 use xilem::view::{canvas, sized_box, text_button, zstack};
+use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
 
 /// Simple but suboptimal pseudo-random function, you shouldn't use this in production
 fn rand_f32() -> f32 {
