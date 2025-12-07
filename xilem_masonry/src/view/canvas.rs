@@ -111,7 +111,7 @@ where
         match message.take_message::<CanvasSizeChanged>() {
             Some(_) => MessageResult::RequestRebuild,
             None => {
-                tracing::error!("Wrong message type in Checkbox::message, got {message:?}.");
+                tracing::error!("Wrong message type in Canvas::message, got {message:?}.");
                 MessageResult::Stale
             }
         }
