@@ -9,7 +9,7 @@ use xilem::core::Edit;
 use xilem::vello::Scene;
 use xilem::vello::kurbo::{Affine, Circle, Size};
 use xilem::vello::peniko::{Color, Fill};
-use xilem::view::{canvas, sized_box, text_button, zstack};
+use xilem::view::{canvas, text_button, zstack};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
@@ -41,12 +41,12 @@ impl Circles {
     }
     fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         zstack((
-            sized_box(canvas(|state: &mut Self, scene: &mut Scene, size: Size| {
+            canvas(|state: &mut Self, scene: &mut Scene, size: Size| {
                 for (circle, color) in &state.circles {
                     scene.fill(Fill::NonZero, Affine::IDENTITY, *color, None, &circle);
                 }
                 state.current_canvas_size = size;
-            })),
+            }),
             text_button("Add Circle", Self::push_random_circle),
         ))
     }

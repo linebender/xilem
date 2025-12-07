@@ -21,7 +21,7 @@ use crate::core::{
 /// That Scene is then used as the canvas' contents.
 #[derive(Default)]
 pub struct Canvas {
-    alt_text: ArcStr,
+    alt_text: Option<ArcStr>,
     size: Size,
     scene: Scene,
 }
@@ -37,7 +37,7 @@ impl Canvas {
     /// If it's too hard to describe through text, the alt text should be left unset.
     /// This allows accessibility clients to know that there is no accessible description of the canvas content.
     pub fn with_alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
-        self.alt_text = alt_text.into();
+        self.alt_text = Some(alt_text.into());
         self
     }
 }
@@ -62,8 +62,8 @@ impl Canvas {
     /// Set the text that will describe the canvas to screen readers.
     ///
     /// See [`Canvas::with_alt_text`] for details.
-    pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: impl Into<ArcStr>) {
-        this.widget.alt_text = alt_text.into();
+    pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: Option<impl Into<ArcStr>>) {
+        this.widget.alt_text = alt_text.map(Into::into);
         this.ctx.request_accessibility_update();
     }
 }
@@ -118,8 +118,10 @@ impl Widget for Canvas {
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        if !self.alt_text.is_empty() {
-            node.set_description(&*self.alt_text);
+        if let Some(alt_text) = &self.alt_text {
+            node.set_description(&**alt_text);
+        } else {
+            node.clear_description();
         }
     }
 
@@ -132,7 +134,7 @@ impl Widget for Canvas {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.alt_text.to_string())
+        self.alt_text.as_ref().map(ToString::to_string)
     }
 }
 

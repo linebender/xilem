@@ -41,7 +41,7 @@ where
 {
     Canvas {
         draw,
-        alt_text: ArcStr::default(),
+        alt_text: Option::default(),
         phantom: PhantomData,
     }
 }
@@ -50,7 +50,7 @@ where
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Canvas<State, F> {
     draw: F,
-    alt_text: ArcStr,
+    alt_text: Option<ArcStr>,
     phantom: PhantomData<fn() -> State>,
 }
 
@@ -60,7 +60,7 @@ impl<State, F> Canvas<State, F> {
     /// Users are strongly encouraged to provide alt text for accessibility tools
     /// to use.
     pub fn alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
-        self.alt_text = alt_text.into();
+        self.alt_text = Some(alt_text.into());
         self
     }
 }
@@ -77,7 +77,11 @@ where
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.create_pod(widgets::Canvas::default().with_alt_text(self.alt_text.clone()))
+            let widget = match &self.alt_text {
+                Some(alt_text) => widgets::Canvas::default().with_alt_text(alt_text.clone()),
+                None => widgets::Canvas::default(),
+            };
+            ctx.create_pod(widget)
         })
     }
 
