@@ -1,8 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::Arc;
-
+use masonry::core::ArcStr;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
@@ -21,7 +20,7 @@ use crate::{Pod, ViewCtx};
 /// # use xilem::WidgetView;
 ///
 /// # fn fill_canvas() -> impl WidgetView<()> + use<> {
-/// let my_canvas = canvas(Arc::new(|scene: &mut Scene, size: Size| {
+/// let my_canvas = canvas(|scene: &mut Scene, size: Size| {
 ///     // Drawing a simple rectangle that fills the canvas.
 ///     scene.fill(
 ///         Fill::NonZero,
@@ -30,22 +29,22 @@ use crate::{Pod, ViewCtx};
 ///         None,
 ///         &Rect::new(0.0, 0.0, size.width, size.height),
 ///     );
-/// }));
+/// });
 /// # my_canvas
 /// # }
 /// ```
-pub fn canvas(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Canvas {
+pub fn canvas(draw: fn(&mut Scene, Size)) -> Canvas {
     Canvas {
         draw,
-        alt_text: None,
+        alt_text: ArcStr::default(),
     }
 }
 
 /// The [`View`] created by [`canvas`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Canvas {
-    draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
-    alt_text: Option<String>,
+    draw: fn(&mut Scene, Size),
+    alt_text: ArcStr,
 }
 
 impl Canvas {
@@ -53,8 +52,8 @@ impl Canvas {
     ///
     /// Users are strongly encouraged to provide alt text for accessibility tools
     /// to use.
-    pub fn alt_text(mut self, alt_text: String) -> Self {
-        self.alt_text = Some(alt_text);
+    pub fn alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
+        self.alt_text = alt_text.into();
         self
     }
 }
@@ -66,13 +65,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
-        let mut widget = widgets::Canvas::from_arc(self.draw.clone());
-
-        if let Some(alt_text) = &self.alt_text {
-            widget = widget.with_alt_text(alt_text.to_owned());
-        }
-
-        let widget_pod = ctx.create_pod(widget);
+        let widget_pod = ctx.create_pod(widgets::Canvas::new(self.draw, self.alt_text.clone()));
         (widget_pod, ())
     }
 
@@ -84,13 +77,11 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
         mut element: Mut<'_, Self::Element>,
         _: Arg<'_, State>,
     ) {
-        if !Arc::ptr_eq(&self.draw, &prev.draw) {
-            widgets::Canvas::set_painter_arc(&mut element, self.draw.clone());
+        if !std::ptr::fn_addr_eq(self.draw, prev.draw) {
+            widgets::Canvas::set_draw(&mut element, self.draw);
         }
-        if self.alt_text != prev.alt_text
-            && let Some(alt_text) = &self.alt_text
-        {
-            widgets::Canvas::set_alt_text(element, alt_text.clone());
+        if self.alt_text != prev.alt_text {
+            widgets::Canvas::set_alt_text(element, self.alt_text.clone());
         }
     }
 

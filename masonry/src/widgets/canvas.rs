@@ -3,10 +3,8 @@
 
 //! A canvas widget.
 
-use std::sync::Arc;
-
 use accesskit::{Node, Role};
-use masonry_core::core::{ChildrenIds, NoAction};
+use masonry_core::core::{ArcStr, ChildrenIds, NoAction};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -25,22 +23,17 @@ use crate::core::{
 /// in run with a [`Scene`].
 /// That Scene is then used as the canvas' contents.
 pub struct Canvas {
-    draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
-    alt_text: Option<String>,
+    draw: fn(&mut Scene, Size),
+    alt_text: ArcStr,
 }
 
 // --- MARK: BUILDERS
 impl Canvas {
-    /// Create a new canvas with the given draw function.
-    pub fn new(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Self {
-        Self::from_arc(Arc::new(draw))
-    }
-
     /// Create a new canvas from a function already contained in an [`Arc`].
-    pub fn from_arc(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Self {
+    pub fn new(draw: fn(&mut Scene, Size), alt_text: impl Into<ArcStr>) -> Self {
         Self {
             draw,
-            alt_text: None,
+            alt_text: alt_text.into(),
         }
     }
 
@@ -52,8 +45,8 @@ impl Canvas {
     /// If the canvas is decorative users should set alt text to `""`.
     /// If it's too hard to describe through text, the alt text should be left unset.
     /// This allows accessibility clients to know that there is no accessible description of the canvas content.
-    pub fn with_alt_text(mut self, alt_text: impl Into<String>) -> Self {
-        self.alt_text = Some(alt_text.into());
+    pub fn with_alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
+        self.alt_text = alt_text.into();
         self
     }
 }
@@ -61,18 +54,7 @@ impl Canvas {
 // --- MARK: WIDGETMUT
 impl Canvas {
     /// Update the draw function.
-    pub fn set_painter(
-        this: &mut WidgetMut<'_, Self>,
-        draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static,
-    ) {
-        Self::set_painter_arc(this, Arc::new(draw));
-    }
-
-    /// Update the draw function.
-    pub fn set_painter_arc(
-        this: &mut WidgetMut<'_, Self>,
-        draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
-    ) {
+    pub fn set_draw(this: &mut WidgetMut<'_, Self>, draw: fn(&mut Scene, Size)) {
         this.widget.draw = draw;
         this.ctx.request_render();
     }
@@ -80,16 +62,8 @@ impl Canvas {
     /// Set the text that will describe the canvas to screen readers.
     ///
     /// See [`Canvas::with_alt_text`] for details.
-    pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: String) {
-        this.widget.alt_text = Some(alt_text);
-        this.ctx.request_accessibility_update();
-    }
-
-    /// Remove the canvas' alt text.
-    ///
-    /// See [`Canvas::with_alt_text`] for details.
-    pub fn remove_alt_text(mut this: WidgetMut<'_, Self>) {
-        this.widget.alt_text = None;
+    pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: impl Into<ArcStr>) {
+        this.widget.alt_text = alt_text.into();
         this.ctx.request_accessibility_update();
     }
 }
@@ -166,8 +140,8 @@ impl Widget for Canvas {
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        if let Some(text) = &self.alt_text {
-            node.set_description(text.clone());
+        if !self.alt_text.is_empty() {
+            node.set_description(&*self.alt_text);
         }
     }
 
@@ -180,7 +154,7 @@ impl Widget for Canvas {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        self.alt_text.clone()
+        Some(self.alt_text.to_string())
     }
 }
 
@@ -197,29 +171,32 @@ mod tests {
 
     #[test]
     fn simple_canvas() {
-        let canvas = Canvas::new(|scene, size| {
-            let scale = Affine::scale_non_uniform(size.width, size.height);
-            let mut path = BezPath::new();
-            path.move_to((0.1, 0.1));
-            path.line_to((0.9, 0.9));
-            path.line_to((0.9, 0.1));
-            path.close_path();
-            path = scale * path;
-            scene.fill(
-                Fill::NonZero,
-                Affine::IDENTITY,
-                Color::from_rgb8(100, 240, 150),
-                None,
-                &path,
-            );
-            scene.stroke(
-                &Stroke::new(4.),
-                Affine::IDENTITY,
-                Color::from_rgb8(200, 140, 50),
-                None,
-                &path,
-            );
-        });
+        let canvas = Canvas::new(
+            |scene, size| {
+                let scale = Affine::scale_non_uniform(size.width, size.height);
+                let mut path = BezPath::new();
+                path.move_to((0.1, 0.1));
+                path.line_to((0.9, 0.9));
+                path.line_to((0.9, 0.1));
+                path.close_path();
+                path = scale * path;
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    Color::from_rgb8(100, 240, 150),
+                    None,
+                    &path,
+                );
+                scene.stroke(
+                    &Stroke::new(4.),
+                    Affine::IDENTITY,
+                    Color::from_rgb8(200, 140, 50),
+                    None,
+                    &path,
+                );
+            },
+            "A triangle with a bright mint green fill and a gold brown border",
+        );
 
         let mut harness = TestHarness::create(
             DefaultProperties::default(),
