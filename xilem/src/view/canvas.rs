@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use masonry::core::ArcStr;
-use masonry::widgets;
+use masonry::widgets::{self, CanvasSizeChanged};
 use vello::Scene;
 use vello::kurbo::Size;
 
@@ -17,10 +19,10 @@ use crate::{Pod, ViewCtx};
 /// use xilem::masonry::vello::Scene;
 /// use xilem::view::canvas;
 /// use std::sync::Arc;
-/// # use xilem::WidgetView;
+/// # use xilem::{WidgetView, core::Edit};
 ///
-/// # fn fill_canvas() -> impl WidgetView<()> + use<> {
-/// let my_canvas = canvas(|scene: &mut Scene, size: Size| {
+/// # fn fill_canvas<State: 'static>() -> impl WidgetView<Edit<State>> {
+/// let my_canvas = canvas(|_state: &mut State, scene: &mut Scene, size: Size| {
 ///     // Drawing a simple rectangle that fills the canvas.
 ///     scene.fill(
 ///         Fill::NonZero,
@@ -33,21 +35,27 @@ use crate::{Pod, ViewCtx};
 /// # my_canvas
 /// # }
 /// ```
-pub fn canvas(draw: fn(&mut Scene, Size)) -> Canvas {
+pub fn canvas<State, F>(draw: F) -> Canvas<State, F>
+where
+    State: ViewArgument,
+    F: Fn(Arg<'_, State>, &mut Scene, Size) + Send + Sync + 'static,
+{
     Canvas {
         draw,
         alt_text: ArcStr::default(),
+        phantom: PhantomData,
     }
 }
 
 /// The [`View`] created by [`canvas`].
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Canvas {
-    draw: fn(&mut Scene, Size),
+pub struct Canvas<State, F> {
+    draw: F,
     alt_text: ArcStr,
+    phantom: PhantomData<fn() -> State>,
 }
 
-impl Canvas {
+impl<State, F> Canvas<State, F> {
     /// Sets alt text for the contents of the canvas.
     ///
     /// Users are strongly encouraged to provide alt text for accessibility tools
@@ -58,15 +66,20 @@ impl Canvas {
     }
 }
 
-impl ViewMarker for Canvas {}
+impl<State, F> ViewMarker for Canvas<State, F> {}
 
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
+impl<State, Action, F> View<State, Action, ViewCtx> for Canvas<State, F>
+where
+    State: ViewArgument,
+    F: Fn(Arg<'_, State>, &mut Scene, Size) + Send + Sync + 'static,
+{
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
-        let widget_pod = ctx.create_pod(widgets::Canvas::new(self.draw, self.alt_text.clone()));
-        (widget_pod, ())
+        ctx.with_leaf_action_widget(|ctx| {
+            ctx.create_pod(widgets::Canvas::default().with_alt_text(self.alt_text.clone()))
+        })
     }
 
     fn rebuild(
@@ -75,13 +88,11 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        state: Arg<'_, State>,
     ) {
-        if !std::ptr::fn_addr_eq(self.draw, prev.draw) {
-            widgets::Canvas::set_draw(&mut element, self.draw);
-        }
+        widgets::Canvas::update_scene(&mut element, |scene, size| (self.draw)(state, scene, size));
         if self.alt_text != prev.alt_text {
-            widgets::Canvas::set_alt_text(element, self.alt_text.clone());
+            widgets::Canvas::set_alt_text(&mut element, self.alt_text.clone());
         }
     }
 
@@ -94,10 +105,16 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Canvas {
         _element: Mut<'_, Self::Element>,
         _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        tracing::error!(
-            ?message,
-            "Message arrived in Canvas::message, but Canvas doesn't consume any messages, this is a bug"
+        debug_assert!(
+            message.remaining_path().is_empty(),
+            "id path should be empty in Canvas::message"
         );
-        MessageResult::Stale
+        match message.take_message::<CanvasSizeChanged>() {
+            Some(_) => MessageResult::RequestRebuild,
+            None => {
+                tracing::error!("Wrong message type in Checkbox::message, got {message:?}.");
+                MessageResult::Stale
+            }
+        }
     }
 }

@@ -4,39 +4,30 @@
 //! A canvas widget.
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds, NoAction};
+use masonry_core::core::{ArcStr, ChildrenIds};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
+    Widget, WidgetId, WidgetMut,
 };
-
-// TODO - Add background color?
 
 /// A widget allowing custom drawing.
 ///
 /// A canvas takes a painter callback; every time the canvas is repainted, that callback
 /// in run with a [`Scene`].
 /// That Scene is then used as the canvas' contents.
+#[derive(Default)]
 pub struct Canvas {
-    draw: fn(&mut Scene, Size),
     alt_text: ArcStr,
+    size: Size,
+    scene: Scene,
 }
 
 // --- MARK: BUILDERS
 impl Canvas {
-    /// Create a new canvas from a function already contained in an [`Arc`].
-    pub fn new(draw: fn(&mut Scene, Size), alt_text: impl Into<ArcStr>) -> Self {
-        Self {
-            draw,
-            alt_text: alt_text.into(),
-        }
-    }
-
     /// Set the text that will describe the canvas to screen readers.
     ///
     /// Users are encouraged to set alt text for the canvas.
@@ -51,66 +42,49 @@ impl Canvas {
     }
 }
 
+// --- MARK: METHODS
+impl Canvas {
+    /// Returns the current size of the canvas
+    pub fn size(&self) -> Size {
+        self.size
+    }
+}
+
 // --- MARK: WIDGETMUT
 impl Canvas {
-    /// Update the draw function.
-    pub fn set_draw(this: &mut WidgetMut<'_, Self>, draw: fn(&mut Scene, Size)) {
-        this.widget.draw = draw;
+    /// Update the canvas scene.
+    pub fn update_scene(this: &mut WidgetMut<'_, Self>, f: impl FnOnce(&mut Scene, Size)) {
+        this.widget.scene.reset();
+        f(&mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
 
     /// Set the text that will describe the canvas to screen readers.
     ///
     /// See [`Canvas::with_alt_text`] for details.
-    pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: impl Into<ArcStr>) {
+    pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: impl Into<ArcStr>) {
         this.widget.alt_text = alt_text.into();
         this.ctx.request_accessibility_update();
     }
 }
 
+/// The size of the canvas has changed.
+#[derive(Debug)]
+pub struct CanvasSizeChanged {
+    /// The new size of the canvas
+    pub size: Size,
+}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Canvas {
-    type Action = NoAction;
-
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
+    type Action = CanvasSizeChanged;
 
     // TODO - Do we want the Canvas to be transparent to pointer events?
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
 
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
-    }
-
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
@@ -119,6 +93,10 @@ impl Widget for Canvas {
     ) -> Size {
         // We use all the available space as possible.
         let size = bc.max();
+        if self.size != size {
+            self.size = size;
+            ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
+        }
 
         // We clip the contents we draw.
         ctx.set_clip_path(size.to_rect());
@@ -126,8 +104,8 @@ impl Widget for Canvas {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        (self.draw)(scene, ctx.size());
+    fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+        scene.append(&self.scene, None);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -171,8 +149,16 @@ mod tests {
 
     #[test]
     fn simple_canvas() {
-        let canvas = Canvas::new(
-            |scene, size| {
+        let canvas = Canvas::default()
+            .with_alt_text("A triangle with a bright mint green fill and a gold brown border");
+
+        let mut harness = TestHarness::create(
+            DefaultProperties::default(),
+            canvas.with_props(Properties::default()),
+        );
+
+        harness.edit_root_widget(|mut canvas| {
+            Canvas::update_scene(&mut canvas, |scene, size| {
                 let scale = Affine::scale_non_uniform(size.width, size.height);
                 let mut path = BezPath::new();
                 path.move_to((0.1, 0.1));
@@ -194,14 +180,8 @@ mod tests {
                     None,
                     &path,
                 );
-            },
-            "A triangle with a bright mint green fill and a gold brown border",
-        );
-
-        let mut harness = TestHarness::create(
-            DefaultProperties::default(),
-            canvas.with_props(Properties::default()),
-        );
+            });
+        });
 
         assert_render_snapshot!(harness, "canvas_simple");
     }
