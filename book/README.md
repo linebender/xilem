@@ -53,6 +53,6 @@ The book's content is organized in the `src/` directory:
 
 ## Contributing
 
-Contributions to The Xilem Book are welcome! Please see the main repository's contributing guidelines for more information.
+Contributions to The Xilem Book are welcome! Please see the main repository's [contributing guidelines](../README.md#community) for more information.
 
 Most chapters are currently placeholders waiting for content. Feel free to pick a chapter and start writing, or open an issue to discuss your contribution plans.
