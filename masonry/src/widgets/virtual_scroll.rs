@@ -1049,13 +1049,12 @@ mod tests {
     use kurbo::{Size, Vec2};
     use parley::StyleProperty;
 
+    use super::opt_iter_difference;
     use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::vello::kurbo;
     use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};
-
-    use super::opt_iter_difference;
 
     #[test]
     #[expect(

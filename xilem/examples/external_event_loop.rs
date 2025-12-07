@@ -6,8 +6,7 @@
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
 
-use masonry::properties::types::AsUnit;
-use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
 use masonry::theme::default_property_set;
 use masonry_winit::app::{AppDriver, MasonryUserEvent};
 use winit::application::ApplicationHandler;

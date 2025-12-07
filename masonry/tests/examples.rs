@@ -20,11 +20,12 @@ pub mod others {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use masonry::core::Widget;
     use masonry::kurbo::Size;
     use masonry::theme::default_property_set;
     use masonry_testing::{TestHarness, TestHarnessParams};
+
+    use super::*;
 
     // A series of tests to check that various widgets (the ones used in examples)
     // can handle being laid out and painted with a size of zero.

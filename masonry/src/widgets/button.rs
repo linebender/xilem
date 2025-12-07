@@ -25,8 +25,7 @@ use crate::properties::{
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
-
-use super::Label;
+use crate::widgets::Label;
 
 /// A button with a child widget.
 ///
