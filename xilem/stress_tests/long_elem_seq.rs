@@ -6,13 +6,11 @@
 use std::hint::black_box;
 
 use xilem::WidgetView;
-use xilem::core::ViewArgument;
+use xilem::core::{MessageResult, ViewArgument, map_message};
 use xilem::view::{
     checkbox, flex_row, label, portal, progress_bar, prose, sized_box, slider, spinner, split,
     text_button, text_input,
 };
-use xilem_core::MessageResult;
-use xilem_core::map_message;
 
 fn widgets<State: ViewArgument + Send + Sync, const N: usize>()
 -> impl WidgetView<State> + use<State, N> {
