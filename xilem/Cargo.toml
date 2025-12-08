@@ -33,7 +33,6 @@ name = "android.permission.INTERNET"
 
 [features]
 default = ["masonry/default", "masonry_winit/default"]
-compile-stress-test = []
 
 [dependencies]
 xilem_core.workspace = true

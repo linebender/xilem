@@ -90,6 +90,8 @@ reqwest = { version = "0.12.24", default-features = false, features = [
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compile_stress_test)'] }
+
 # LINEBENDER LINT SET - Cargo.toml - v7
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"

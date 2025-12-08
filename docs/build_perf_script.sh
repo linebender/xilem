@@ -11,7 +11,7 @@ set -e
 echo "== INITIAL BUILDS =="
 
 echo "-- Building long_elem_seq --"
-cargo build --quiet --test long_elem_seq --features compile-stress-test
+cargo rustc --quiet --package xilem --test long_elem_seq
 
 echo "-- Building calc --"
 cargo build --quiet --example calc
@@ -39,7 +39,8 @@ touch xilem/examples/calc.rs
 touch placehero/src/main.rs
 
 echo "-- Building long_elem_seq --"
-command time -f "Built long_elem_seq in %es" cargo build --quiet --test long_elem_seq --features compile-stress-test
+command time -f "Built long_elem_seq in %es" \
+    cargo rustc --quiet --package xilem --test long_elem_seq -- --cfg compile_stress_test
 
 echo "-- Building calc --"
 command time -f "Built calc in %es" cargo build --quiet --example calc

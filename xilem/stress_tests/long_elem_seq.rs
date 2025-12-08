@@ -34,7 +34,7 @@ fn widgets<State: ViewArgument + Send + Sync, const N: usize>()
     )
 }
 
-#[cfg(feature = "compile-stress-test")]
+#[cfg(compile_stress_test)]
 fn mega_component() -> impl WidgetView<()> + use<> {
     flex_row([
         // Because the line!() macro gives a different number every line,
@@ -341,7 +341,7 @@ fn mega_component() -> impl WidgetView<()> + use<> {
     ])
 }
 
-#[cfg(not(feature = "compile-stress-test"))]
+#[cfg(not(compile_stress_test))]
 fn mega_component() -> impl WidgetView<()> + use<> {
     flex_row(
         // We use only one to check it compiles
