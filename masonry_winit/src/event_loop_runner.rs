@@ -81,6 +81,9 @@ impl NewWindow {
     ///
     /// Use this when you need to specify a unique ID for the window, for example,
     /// for external tracking or state management.
+    ///
+    /// Every window you create should have a unique id.
+    /// You should never recycle ids from previous windows, even after deleting them.
     pub fn new_with_id(
         id: WindowId,
         attributes: WindowAttributes,
