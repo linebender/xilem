@@ -11,14 +11,13 @@ use crate::properties::types::Length;
 ///
 /// Equivalent to the css [gap] property.
 ///
-/// ## Note on spacers and `Flex`` widgets
+/// ## Note on spacers and `Flex` widgets
 ///
-/// This gap is between any two children, including `Flex`` spacers.
+/// This gap is between any two children, including `Flex` spacers.
 /// As such, using a non-zero gap and also adding may lead to counter-intuitive results.
 /// You should usually pick one or the other.
 ///
 /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Gap {
@@ -34,7 +33,7 @@ impl Property for Gap {
 
 impl Default for Gap {
     fn default() -> Self {
-        Self::static_default().clone()
+        *Self::static_default()
     }
 }
 
