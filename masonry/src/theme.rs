@@ -13,10 +13,12 @@ use crate::properties::types::Length;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, FocusedBorderColor, HoveredBorderColor, Padding, PlaceholderColor,
+    DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
     SelectionColor, UnfocusedSelectionColor,
 };
-use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
+use crate::widgets::{
+    Button, Checkbox, Flex, Grid, Label, ProgressBar, Spinner, TextArea, TextInput,
+};
 
 /// Default color for the app background.
 ///
@@ -90,6 +92,12 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // Flex
+    properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));
+
+    // Grid
+    properties.insert::<Grid, _>(Gap::new(DEFAULT_GAP));
 
     // TextInput
     properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));

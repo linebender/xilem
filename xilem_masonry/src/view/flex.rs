@@ -91,7 +91,6 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
-        gap: masonry::theme::DEFAULT_GAP,
         phantom: PhantomData,
     }
 }
@@ -130,7 +129,6 @@ pub struct Flex<Seq, State, Action = ()> {
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    gap: Length,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -154,26 +152,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     /// its main axis.
     pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
         self.fill_major_axis = fill_major_axis;
-        self
-    }
-
-    /// Set the spacing along the major axis between any two elements in logical pixels.
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
-    /// and the gap between the spacer and its neighbors.
-    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
-    /// its gap to zero to make the layout more predictable.
-    ///
-    /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    /// [`DEFAULT_GAP`]: masonry::theme::DEFAULT_GAP
-    #[track_caller]
-    pub fn gap(mut self, gap: Length) -> Self {
-        self.gap = gap;
         self
     }
 }
@@ -238,7 +216,6 @@ where
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
-            .with_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
@@ -278,9 +255,6 @@ where
         }
         if prev.fill_major_axis != self.fill_major_axis {
             widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
-        }
-        if prev.gap != self.gap {
-            widgets::Flex::set_gap(&mut element, self.gap);
         }
         let mut splice = FlexSplice::new(element, scratch);
         self.sequence

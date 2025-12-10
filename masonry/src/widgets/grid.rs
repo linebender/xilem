@@ -13,8 +13,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::Length;
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A widget that arranges its children in a grid.
@@ -27,7 +26,6 @@ pub struct Grid {
     children: Vec<Child>,
     grid_width: i32,
     grid_height: i32,
-    grid_spacing: Length,
 }
 
 struct Child {
@@ -59,14 +57,7 @@ impl Grid {
             children: Vec::new(),
             grid_width: width,
             grid_height: height,
-            grid_spacing: Length::ZERO,
         }
-    }
-
-    /// Builder-style method for setting the spacing between grid items.
-    pub fn with_spacing(mut self, spacing: Length) -> Self {
-        self.grid_spacing = spacing;
-        self
     }
 
     /// Builder-style method to add a child widget.
@@ -139,12 +130,6 @@ impl GridParams {
 
 // --- MARK: WIDGETMUT
 impl Grid {
-    /// Set the spacing between grid items.
-    pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: Length) {
-        this.widget.grid_spacing = spacing;
-        this.ctx.request_layout();
-    }
-
     // TODO - Some of these method names should maybe be changed.
     // "height" and "width" are misleading, since they suggest a pixel size.
     /// Set the number of columns of the grid.
@@ -278,6 +263,7 @@ impl HasProperty<BorderColor> for Grid {}
 impl HasProperty<BorderWidth> for Grid {}
 impl HasProperty<CornerRadius> for Grid {}
 impl HasProperty<Padding> for Grid {}
+impl HasProperty<Gap> for Grid {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Grid {
@@ -299,6 +285,7 @@ impl Widget for Grid {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        Gap::prop_changed(ctx, property_type);
     }
 
     fn layout(
@@ -309,6 +296,7 @@ impl Widget for Grid {
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let gap = props.get::<Gap>().gap;
 
         let bc = *bc;
         let bc = border.layout_down(bc);
@@ -326,7 +314,7 @@ impl Widget for Grid {
                 total_size
             );
         }
-        let gap = self.grid_spacing.get();
+        let gap = gap.get();
         let width_unit = (total_size.width + gap) / (self.grid_width as f64);
         let height_unit = (total_size.height + gap) / (self.grid_height as f64);
         for child in &mut self.children {
@@ -456,9 +444,9 @@ mod tests {
         });
         assert_render_snapshot!(harness, "grid_with_2x2_widget");
 
-        // Change the spacing
+        // Change the gap
         harness.edit_root_widget(|mut grid| {
-            Grid::set_spacing(&mut grid, 7.px());
+            grid.insert_prop(Gap::new(7.px()));
         });
         assert_render_snapshot!(harness, "grid_with_changed_spacing");
     }

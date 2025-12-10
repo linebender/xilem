@@ -16,8 +16,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::theme::DEFAULT_GAP;
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A container with either horizontal or vertical layout.
@@ -53,7 +52,6 @@ pub struct Flex {
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     children: Vec<Child>,
-    gap: Length,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -95,7 +93,6 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            gap: DEFAULT_GAP,
         }
     }
 
@@ -130,26 +127,6 @@ impl Flex {
     /// to fill the available space on its main axis.
     pub fn must_fill_main_axis(mut self, fill: bool) -> Self {
         self.fill_major_axis = fill;
-        self
-    }
-
-    /// Builder-style method for setting a gap along the
-    /// major axis between any two elements in logical pixels.
-    ///
-    /// By default this is [`DEFAULT_GAP`].
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
-    /// and the gap between the spacer and its neighbors.
-    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
-    /// its gap to zero to make the layout more predictable.
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    // TODO: Semantics - should this include fixed spacers?
-    pub fn with_gap(mut self, gap: Length) -> Self {
-        self.gap = gap;
         self
     }
 
@@ -224,20 +201,6 @@ impl Flex {
     /// its main axis.
     pub fn set_must_fill_main_axis(this: &mut WidgetMut<'_, Self>, fill: bool) {
         this.widget.fill_major_axis = fill;
-        this.ctx.request_layout();
-    }
-
-    /// Set the spacing along the major axis between any two elements in logical pixels.
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, using a non-zero gap and also adding spacers may lead to counter-intuitive results.
-    /// You should usually pick one or the other.
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: Length) {
-        this.widget.gap = gap;
         this.ctx.request_layout();
     }
 
@@ -643,6 +606,7 @@ impl HasProperty<BorderColor> for Flex {}
 impl HasProperty<BorderWidth> for Flex {}
 impl HasProperty<CornerRadius> for Flex {}
 impl HasProperty<Padding> for Flex {}
+impl HasProperty<Gap> for Flex {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {
@@ -664,6 +628,7 @@ impl Widget for Flex {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        Gap::prop_changed(ctx, property_type);
     }
 
     fn layout(
@@ -675,6 +640,7 @@ impl Widget for Flex {
         // SETUP
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let gap = props.get::<Gap>().gap;
 
         let bc = *bc;
         let bc = border.layout_down(bc);
@@ -690,7 +656,7 @@ impl Widget for Flex {
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
-        let mut major_non_flex = gap_count as f64 * self.gap.get();
+        let mut major_non_flex = gap_count as f64 * gap.get();
         let mut major_flex: f64 = 0.0;
         // We start with a small value to avoid divide-by-zero errors.
         let mut flex_sum = MIN_FLEX_SUM;
@@ -834,13 +800,13 @@ impl Widget for Flex {
                     ctx.place_child(widget, child_pos);
 
                     major += self.direction.major(child_size);
-                    major += self.gap.get();
+                    major += gap.get();
                     previous_was_widget = true;
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
-                    major += self.gap.get();
+                    major += gap.get();
                     previous_was_widget = false;
                 }
             }
