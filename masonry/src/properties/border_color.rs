@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
+use crate::peniko::BrushRef;
 use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's border.
@@ -39,6 +40,12 @@ impl Property for BorderColor {
 impl Default for BorderColor {
     fn default() -> Self {
         *Self::static_default()
+    }
+}
+
+impl<'a> From<&'a BorderColor> for BrushRef<'a> {
+    fn from(color: &'a BorderColor) -> Self {
+        Self::Solid(color.color)
     }
 }
 
