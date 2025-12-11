@@ -16,8 +16,8 @@ use crate::widgets::{Flex, SizedBox};
 
 #[test]
 fn request_paint() {
-    let target_tag = WidgetTag::new("target");
-    let parent_tag = WidgetTag::new("parent");
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new_with_tag(SizedBox::empty().record(), target_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));

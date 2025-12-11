@@ -527,8 +527,8 @@ mod tests {
 
     #[test]
     fn button_list() {
-        let button_3 = WidgetTag::new("button-3");
-        let button_13 = WidgetTag::new("button-13");
+        let button_3 = WidgetTag::named("button-3");
+        let button_13 = WidgetTag::named("button-13");
 
         let widget = Portal::new(NewWidget::new(
             Flex::column()
@@ -591,7 +591,7 @@ mod tests {
 
     #[test]
     fn scroll_into_view() {
-        let button_tag = WidgetTag::new("hidden-button");
+        let button_tag = WidgetTag::named("hidden-button");
 
         let widget = Portal::new(
             Flex::column()

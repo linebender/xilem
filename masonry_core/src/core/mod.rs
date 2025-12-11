@@ -52,6 +52,7 @@ pub use ui_events::{ScrollDelta, keyboard, pointer};
 pub(crate) use layout_cache::*;
 pub(crate) use widget_arena::{WidgetArena, WidgetArenaNode};
 pub(crate) use widget_state::WidgetState;
+pub(crate) use widget_tag::WidgetTagInner;
 
 /// Actions are emitted by Masonry widgets when a user input needs to be handled by the application.
 ///

@@ -17,8 +17,8 @@ use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, Tex
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
-const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
-const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
+const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::named("text-input");
+const LIST_TAG: WidgetTag<Flex> = WidgetTag::named("list");
 const WIDGET_SPACING: Length = Length::const_px(5.0);
 
 struct Driver {
