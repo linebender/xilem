@@ -186,12 +186,14 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::Properties;
     use parley::StyleProperty;
     use vello::kurbo::Size;
 
     use super::*;
     use crate::TextAlign;
-    use crate::properties::types::{AsUnit, CrossAxisAlignment, Length};
+    use crate::properties::Gap;
+    use crate::properties::types::{AsUnit, CrossAxisAlignment};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Flex, SizedBox, TextArea};
@@ -245,9 +247,8 @@ mod tests {
             .with(prose3.with_auto_id(), CrossAxisAlignment::Start)
             .with(prose4.with_auto_id(), CrossAxisAlignment::Center)
             .with(prose5.with_auto_id(), CrossAxisAlignment::Center)
-            .with(prose6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(Length::ZERO)
-            .with_auto_id();
+            .with(prose6.with_auto_id(), CrossAxisAlignment::Center);
+        let flex = NewWidget::new_with_props(flex, Properties::one(Gap::ZERO));
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 120.0));

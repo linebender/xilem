@@ -410,12 +410,14 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 
     use super::*;
     use crate::core::Properties;
-    use crate::properties::types::{AsUnit, CrossAxisAlignment, Length};
+    use crate::properties::Gap;
+    use crate::properties::types::{AsUnit, CrossAxisAlignment};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, SizedBox};
@@ -493,9 +495,8 @@ mod tests {
             // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
             .with(label4.with_auto_id(), CrossAxisAlignment::Center)
             .with(label5.with_auto_id(), CrossAxisAlignment::Center)
-            .with(label6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(Length::ZERO)
-            .with_auto_id();
+            .with(label6.with_auto_id(), CrossAxisAlignment::Center);
+        let flex = NewWidget::new_with_props(flex, Properties::one(Gap::ZERO));
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 200.0));

@@ -4,7 +4,6 @@
 use std::marker::PhantomData;
 
 use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
-use masonry::properties::types::Length;
 use masonry::widgets;
 
 use crate::core::{
@@ -44,7 +43,7 @@ pub use masonry::widgets::GridParams;
 ///     3,
 ///     2,
 /// )
-/// .spacing(GRID_GAP)
+/// .gap(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
@@ -54,7 +53,6 @@ pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
 ) -> Grid<Seq, State, Action> {
     Grid {
         sequence,
-        spacing: Length::ZERO,
         height,
         width,
         phantom: PhantomData,
@@ -67,7 +65,6 @@ pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
-    spacing: Length,
     width: i32,
     height: i32,
 
@@ -75,15 +72,6 @@ pub struct Grid<Seq, State, Action = ()> {
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
     /// Action to be inferred properly
     phantom: PhantomData<fn() -> (State, Action)>,
-}
-
-impl<Seq, State, Action> Grid<Seq, State, Action> {
-    /// Set the spacing (both vertical and horizontal) between grid items.
-    #[track_caller]
-    pub fn spacing(mut self, spacing: Length) -> Self {
-        self.spacing = spacing;
-        self
-    }
 }
 
 mod hidden {
@@ -122,7 +110,6 @@ where
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
-        widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
             widget = widget.with(element.child.new_widget, element.params);
@@ -150,9 +137,6 @@ where
         }
         if prev.width != self.width {
             widgets::Grid::set_width(&mut element, self.width);
-        }
-        if prev.spacing != self.spacing {
-            widgets::Grid::set_spacing(&mut element, self.spacing);
         }
 
         let mut splice = GridSplice::new(element, scratch);

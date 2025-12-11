@@ -14,14 +14,14 @@ use masonry::core::{
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::properties::types::Length;
-use masonry::properties::{BorderColor, BorderWidth};
+use masonry::properties::{BorderColor, BorderWidth, Gap};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 struct Driver {
-    grid_spacing: f64,
+    grid_gap: f64,
     window_id: WindowId,
 }
 
@@ -37,7 +37,7 @@ impl AppDriver for Driver {
 
         if action.is::<ButtonPress>() {
             let button = action.downcast::<ButtonPress>().unwrap().button;
-            self.grid_spacing += match button {
+            self.grid_gap += match button {
                 Some(PointerButton::Primary) => 1.0,
                 Some(PointerButton::Secondary) => -1.0,
                 _ => 0.5,
@@ -45,7 +45,7 @@ impl AppDriver for Driver {
 
             ctx.render_root(window_id).edit_base_layer(|mut root| {
                 let mut grid = root.downcast::<Grid>();
-                Grid::set_spacing(&mut grid, Length::px(self.grid_spacing));
+                grid.insert_prop(Gap::new(Length::px(self.grid_gap)));
             });
         }
     }
@@ -59,7 +59,7 @@ fn grid_button(params: GridParams) -> Button {
 }
 
 /// Create a grid with a bunch of buttons
-pub fn make_grid(grid_spacing: f64) -> NewWidget<Grid> {
+pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
     let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
@@ -124,23 +124,22 @@ pub fn make_grid(grid_spacing: f64) -> NewWidget<Grid> {
     ];
 
     // Arrange widgets in a 4 by 4 grid.
-    let mut main_widget = Grid::with_dimensions(4, 4)
-        .with_spacing(Length::px(grid_spacing))
-        .with(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
+    let mut main_widget =
+        Grid::with_dimensions(4, 4).with(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
         main_widget = main_widget.with(button.with_auto_id(), button_input);
     }
 
-    NewWidget::new(main_widget)
+    NewWidget::new_with_props(main_widget, Properties::one(Gap::new(Length::px(grid_gap))))
 }
 
 fn main() {
     let driver = Driver {
-        grid_spacing: 1.0,
+        grid_gap: 1.0,
         window_id: WindowId::next(),
     };
-    let main_widget = make_grid(driver.grid_spacing);
+    let main_widget = make_grid(driver.grid_gap);
 
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
