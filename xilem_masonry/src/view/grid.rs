@@ -48,25 +48,25 @@ pub use masonry::widgets::GridParams;
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
-    width: i32,
-    height: i32,
+    col_count: i32,
+    row_count: i32,
 ) -> Grid<Seq, State, Action> {
     Grid {
         sequence,
-        height,
-        width,
+        col_count,
+        row_count,
         phantom: PhantomData,
     }
 }
 
-/// The [`View`] created by [`grid`] from a sequence, which also consumes custom width and height.
+/// The [`View`] created by [`grid`] from a sequence.
 ///
 /// See `grid` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
-    width: i32,
-    height: i32,
+    row_count: i32,
+    col_count: i32,
 
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
@@ -109,7 +109,7 @@ where
         app_state: Arg<'_, State>,
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
+        let mut widget = widgets::Grid::with_dimensions(self.row_count, self.col_count);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
             widget = widget.with(element.child.new_widget, element.params);
@@ -132,11 +132,11 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) {
-        if prev.height != self.height {
-            widgets::Grid::set_height(&mut element, self.height);
+        if prev.col_count != self.col_count {
+            widgets::Grid::set_row_count(&mut element, self.col_count);
         }
-        if prev.width != self.width {
-            widgets::Grid::set_width(&mut element, self.width);
+        if prev.row_count != self.row_count {
+            widgets::Grid::set_column_count(&mut element, self.row_count);
         }
 
         let mut splice = GridSplice::new(element, scratch);
