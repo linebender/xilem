@@ -97,7 +97,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));
 
     // Grid
-    properties.insert::<Grid, _>(Gap::new(DEFAULT_GAP));
+    properties.insert::<Grid, _>(Gap::ZERO);
 
     // TextInput
     properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
