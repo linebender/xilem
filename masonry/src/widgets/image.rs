@@ -7,15 +7,14 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, ImageBrush};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::properties::ObjectFit;
 
@@ -32,6 +31,7 @@ use crate::properties::ObjectFit;
 /// You can change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
     image_data: ImageBrush,
+    alt_text: Option<ArcStr>,
 }
 
 // --- MARK: BUILDERS
@@ -43,7 +43,21 @@ impl Image {
     pub fn new(image_data: impl Into<ImageBrush>) -> Self {
         Self {
             image_data: image_data.into(),
+            alt_text: None,
         }
+    }
+
+    /// Set the text that will describe the image to screen readers.
+    ///
+    /// Users are encouraged to set alt text for the image.
+    /// If possible, the alt-text should succinctly describe what the image represents.
+    ///
+    /// If the image is decorative users should set alt text to `""`.
+    /// If it's too hard to describe through text, the alt text should be left unset.
+    /// This allows accessibility clients to know that there is no accessible description of the image content.
+    pub fn with_alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
+        self.alt_text = Some(alt_text.into());
+        self
     }
 }
 
@@ -54,6 +68,14 @@ impl Image {
     pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: impl Into<ImageBrush>) {
         this.widget.image_data = image_data.into();
         this.ctx.request_layout();
+    }
+
+    /// Set the text that will describe the image to screen readers.
+    ///
+    /// See [`Image::with_alt_text`] for details.
+    pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: Option<impl Into<ArcStr>>) {
+        this.widget.alt_text = alt_text.map(Into::into);
+        this.ctx.request_accessibility_update();
     }
 }
 
@@ -141,9 +163,11 @@ impl Widget for Image {
         &mut self,
         _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
-        _node: &mut Node,
+        node: &mut Node,
     ) {
-        // TODO - Handle alt text and such.
+        if let Some(alt_text) = &self.alt_text {
+            node.set_description(&**alt_text);
+        }
     }
 
     fn children_ids(&self) -> ChildrenIds {
