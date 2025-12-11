@@ -81,20 +81,17 @@ use xilem::view::{text_button, flex, label};
 use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 use xilem::core::Edit;
 
-#[derive(Default)]
-struct Counter {
-    num: i32,
-}
+struct Counter(i32);
 
 fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
     flex(Axis::Vertical, (
-        label(format!("{}", data.num)),
-        text_button("increment", |data: &mut Counter| data.num += 1),
+        label(format!("{}", data.0)),
+        text_button("increment", |data: &mut Counter| data.0 += 1),
     ))
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new_simple(Counter::default(), app_logic, WindowOptions::new("Counter app"));
+    let app = Xilem::new_simple(Counter(0), app_logic, WindowOptions::new("Counter app"));
     app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }
