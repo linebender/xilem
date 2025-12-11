@@ -3,7 +3,6 @@
 
 //! Basic types and traits Masonry is built on.
 
-mod axis;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -19,7 +18,6 @@ mod widget_state;
 mod widget_tag;
 
 use anymore::AnyDebug;
-pub use axis::Axis;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, LayoutCtx, MutateCtx, PaintCtx, QueryCtx, RawCtx, RegisterCtx,

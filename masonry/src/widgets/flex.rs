@@ -9,10 +9,10 @@ use accesskit::{Node, Role};
 use masonry_core::core::{CollectionWidget, HasProperty};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Size, Stroke};
+use vello::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
@@ -649,13 +649,15 @@ impl Widget for Flex {
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
+        let axis = self.direction;
+
         const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
-        let bc_major_min = self.direction.major(bc.min());
-        let bc_major_max = self.direction.major(bc.max());
+        let bc_major_min = bc.min().get_coord(axis);
+        let bc_major_max = bc.max().get_coord(axis);
 
         // ACCUMULATORS
-        let mut minor = self.direction.minor(bc.min());
+        let mut minor = bc.min().get_coord(axis.cross());
         let mut major_non_flex = gap_count as f64 * gap.get();
         let mut major_flex: f64 = 0.0;
         // We start with a small value to avoid divide-by-zero errors.
@@ -686,8 +688,8 @@ impl Widget for Flex {
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_non_flex += self.direction.major(child_size);
-                    minor = minor.max(self.direction.minor(child_size));
+                    major_non_flex += child_size.get_coord(axis);
+                    minor = minor.max(child_size.get_coord(axis.cross()));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
@@ -714,14 +716,14 @@ impl Widget for Flex {
                     let child_size = {
                         let desired_major = (*flex) * px_per_flex;
 
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, desired_major);
+                        let child_bc = loosened_bc.with_coord(axis, 0.0, desired_major);
                         ctx.run_layout(widget, &child_bc)
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_flex += self.direction.major(child_size);
-                    minor = minor.max(self.direction.minor(child_size));
+                    major_flex += child_size.get_coord(axis);
+                    minor = minor.max(child_size.get_coord(axis.cross()));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
@@ -741,7 +743,7 @@ impl Widget for Flex {
         } else {
             // If we are *not* expected to fill our available space this usually
             // means we don't have any extra, unless dictated by our constraints.
-            (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
+            (bc.min().get_coord(axis) - (major_non_flex + major_flex)).max(0.0)
         };
         // We only distribute free space around widgets, not spacers.
         let widget_count = self
@@ -777,10 +779,8 @@ impl Widget for Flex {
                             extra_height + (max_above_baseline - child_above_baseline)
                         }
                         CrossAxisAlignment::Fill => {
-                            let fill_size: Size = self
-                                .direction
-                                .pack(self.direction.major(child_size), minor)
-                                .into();
+                            let fill_size: Size =
+                                self.direction.pack_size(child_size.get_coord(axis), minor);
                             let child_bc = BoxConstraints::tight(fill_size);
                             // TODO: This is the second call of layout on the same child,
                             // which can lead to exponential increase in layout calls
@@ -789,17 +789,17 @@ impl Widget for Flex {
                             0.0
                         }
                         _ => {
-                            let extra_minor = minor - self.direction.minor(child_size);
+                            let extra_minor = minor - child_size.get_coord(axis.cross());
                             alignment.align(extra_minor)
                         }
                     };
 
-                    let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
+                    let child_pos: Point = axis.pack_point(major, child_minor_offset);
                     let child_pos = border.place_down(child_pos);
                     let child_pos = padding.place_down(child_pos);
                     ctx.place_child(widget, child_pos);
 
-                    major += self.direction.major(child_size);
+                    major += child_size.get_coord(axis);
                     major += gap.get();
                     previous_was_widget = true;
                 }
@@ -822,7 +822,7 @@ impl Widget for Flex {
             bc_major_min.max(major_non_flex)
         };
 
-        let my_size: Size = self.direction.pack(final_major, minor).into();
+        let my_size: Size = axis.pack_size(final_major, minor);
 
         let baseline = match self.direction {
             Axis::Horizontal => max_below_baseline,
