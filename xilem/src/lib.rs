@@ -4,7 +4,7 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=xilem
 // if the command is not recognized
-// cargg install cargo-rdme
+// cargo install cargo-rdme
 
 //! Xilem is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
 //! Like all of these, it uses lightweight view objects, diffing them to provide
