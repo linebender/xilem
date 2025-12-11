@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::Size;
+use vello::kurbo::{Axis, Size};
 
 /// Constraints for layout.
 ///
@@ -157,6 +157,20 @@ impl BoxConstraints {
         let size = size.into();
         (self.min.width <= size.width && size.width <= self.max.width)
             && (self.min.height <= size.height && size.height <= self.max.height)
+    }
+
+    /// Generate constraints with new values on the given axis.
+    pub fn with_coord(&self, axis: Axis, min_major: f64, major: f64) -> Self {
+        match axis {
+            Axis::Horizontal => Self::new(
+                Size::new(min_major, self.min().height),
+                Size::new(major, self.max().height),
+            ),
+            Axis::Vertical => Self::new(
+                Size::new(self.min().width, min_major),
+                Size::new(self.max().width, major),
+            ),
+        }
     }
 
     /// Find the `Size` within these `BoxConstraint`s that minimises the difference between the
