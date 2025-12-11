@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(missing_docs, reason = "TODO - Document these items")]
-
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -20,6 +18,10 @@ use crate::core::{
 use crate::window_view::{WindowView, WindowViewState};
 use crate::{AppState, ViewCtx};
 
+/// The composition root of Xilem's Masonry backend.
+///
+/// Owns the root state, the root view (kind of), the window state, the event loop proxy,
+/// the tokio runtime, etc.
 pub struct MasonryDriver<State: 'static, Logic> {
     state: State,
     logic: Logic,

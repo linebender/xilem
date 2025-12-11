@@ -22,7 +22,8 @@ use crate::widgets::ScrollBar;
 // TODO - Document which cases need request_layout, request_compose and request_render
 // Conceptually, a Portal is a widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
-#[expect(missing_docs, reason = "TODO")]
+
+/// A scrolling container with scrollbars and a child widget.
 pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
     content_size: Size,
@@ -43,7 +44,7 @@ pub struct Portal<W: Widget + ?Sized> {
 
 // --- MARK: BUILDERS
 impl<W: Widget + ?Sized> Portal<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Creates a scrolling container the given child widget.
     pub fn new(child: NewWidget<W>) -> Self {
         Self {
             child: child.to_pod(),
@@ -125,7 +126,7 @@ pub(crate) fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) ->
 
 // --- MARK: METHODS
 impl<W: Widget + ?Sized> Portal<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Return the scrolling "position" of the container.
     pub fn get_viewport_pos(&self) -> Point {
         self.viewport_pos
     }
@@ -181,14 +182,14 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get mutable reference to the horizontal scrollbar.
     pub fn horizontal_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
         this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get mutable reference to the vertical scrollbar.
     pub fn vertical_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
@@ -219,7 +220,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Set the scrolling "position" of the container.
+    ///
+    /// A position of zero means no scrolling at all.
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
         let portal_size = this.ctx.size();
         let content_size = this.ctx.get_mut(&mut this.widget.child).ctx.size();
@@ -239,13 +242,15 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         pos_changed
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Translate the scrolling "position" of the container.
     pub fn pan_viewport_by(this: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
         Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
     }
 
-    #[expect(missing_docs, reason = "TODO")]
-    // Note - Rect is in child coordinates
+    /// Change the scrolling "position" of the container to that target is scrolled into view.
+    ///
+    /// `target` is in child coordinates, meaning a target of `(0, 0, 10, 10)` will
+    /// scroll an item at the top-left of the child into view.
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
         let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.size());
 

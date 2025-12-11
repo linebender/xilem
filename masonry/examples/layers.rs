@@ -153,7 +153,6 @@ fn main() {
     let driver = Driver {};
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
         vec![NewWindow::new(
             Window::default_attributes().with_title("Hello Layers!"),
             main_widget.with_auto_id().erased(),

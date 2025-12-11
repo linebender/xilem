@@ -148,7 +148,6 @@ fn main() {
         .with_min_inner_size(window_size);
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
         vec![NewWindow::new_with_id(
             driver.window_id,
             window_attributes,

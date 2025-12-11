@@ -35,7 +35,10 @@ pub struct ScrollBar {
 
 // --- MARK: BUILDERS
 impl ScrollBar {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Create a new scrollbar.
+    ///
+    /// - `portal_size`: Size of the scrolling container in the relevant axis.
+    /// - `content_size`: Size of the child in the relevant axis. Usually exceeds `portal_size` in cases where the scrollbar is visible.
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
         Self {
             axis,
@@ -103,16 +106,18 @@ impl ScrollBar {
 
 // --- MARK: WIDGETMUT
 impl ScrollBar {
+    /// Update the sizes of the widgets being represented by the scrollbar.
+    /// - `portal_size`: Size of the scrolling container in the relevant axis.
+    /// - `content_size`: Size of the child in the relevant axis. Usually exceeds `portal_size` in cases where the scrollbar is visible.
     // TODO - Remove?
-    #[expect(missing_docs, reason = "TODO")]
     pub fn set_sizes(this: &mut WidgetMut<'_, Self>, portal_size: f64, content_size: f64) {
         this.widget.portal_size = portal_size;
         this.widget.content_size = content_size;
         this.ctx.request_render();
     }
 
+    /// Update the size of the child widget being represented by the scrollbar.
     // TODO - Remove?
-    #[expect(missing_docs, reason = "TODO")]
     pub fn set_content_size(this: &mut WidgetMut<'_, Self>, content_size: f64) {
         // TODO - cursor_progress
         this.widget.content_size = content_size;

@@ -139,7 +139,7 @@ where
         // Setting that seems like an imperative action?
         let pod =
             Pod::new(widgets::VirtualScroll::new(0).with_valid_range(self.valid_range.clone()));
-        ctx.record_action(pod.new_widget.id());
+        ctx.record_action_source(pod.new_widget.id());
         (
             pod,
             VirtualScrollState {
@@ -268,7 +268,7 @@ where
                 );
             });
         }
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

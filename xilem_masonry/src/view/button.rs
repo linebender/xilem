@@ -239,7 +239,7 @@ where
                 widgets::Button::child_mut(&mut element).downcast(),
             );
         });
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

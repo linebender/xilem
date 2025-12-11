@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(missing_docs, reason = "TODO - Document these items")]
-
 use std::future::Future;
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -74,6 +72,7 @@ where
     }
 }
 
+/// A view representing a task which will run until the view is no longer in the tree.
 pub struct Task<State, Action, F, H, M> {
     init_future: F,
     on_event: H,

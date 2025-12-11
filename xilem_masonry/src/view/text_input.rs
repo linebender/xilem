@@ -281,7 +281,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
-        ctx.record_action(id);
+        ctx.record_action_source(id);
 
         let mut pod = ctx.create_pod(text_input);
         pod.new_widget.options.disabled = self.disabled;
@@ -366,7 +366,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

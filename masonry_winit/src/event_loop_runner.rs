@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(missing_docs, reason = "TODO - Document these items")]
-
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::mpsc::Sender;
@@ -34,10 +32,20 @@ use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_
 use crate::app_driver::WindowId;
 use crate::vello_util::{RenderContext, RenderSurface};
 
+/// The custom event type that we inject into winit's [`EventLoop`](winit::event_loop::EventLoop).
+///
+/// This represents the types that can be emitted during the event loop, but aren't emitted
+/// by winit.
 #[derive(Debug)]
 pub enum MasonryUserEvent {
+    /// An accessibility API emitted an event.
+    ///
+    /// This is how [`accesskit_winit`] route its events to us.
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
+    /// An action was emitted by something other than the [`RenderRoot`].
+    ///
+    /// Higher-level GUI frameworks may send these to winit from background threads so that they get reported as if they had come from inside a [`RenderRoot`].
     Action(WindowId, ErasedAction, WidgetId),
 }
 
@@ -172,12 +180,15 @@ impl Window {
     }
 }
 
-/// The state of the Masonry application. If you run Masonry from an external Winit event loop, create a
+/// The state of the Masonry application.
+///
+/// If you run Masonry from an external Winit event loop, create a
 /// `MasonryState` via [`MasonryState::new`] and forward events to it via the appropriate method (e.g.,
 /// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
 pub struct MasonryState<'a> {
     /// The event loop is suspended when the app is e.g. in the background on Android.
     /// We aren't allowed to have any `Surface`s, and we also don't expect to receive any events.
+    /// See [`ApplicationHandler::suspended()`] for details.
     is_suspended: bool,
     render_cx: RenderContext,
     renderer: Option<Renderer>,
@@ -206,6 +217,7 @@ pub struct MasonryState<'a> {
     need_first_frame: Vec<HandleId>,
 }
 
+// TODO - Merge into MasonryState?
 struct MainState<'a> {
     masonry_state: MasonryState<'a>,
     app_driver: Box<dyn AppDriver>,
@@ -224,20 +236,23 @@ pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<MasonryUserEvent
 pub type EventLoopProxy = winit::event_loop::EventLoopProxy<MasonryUserEvent>;
 
 // --- MARK: RUN
+
+/// Run the app to completion.
+///
+/// This is usually one of the last functions called in your main function.
 pub fn run(
-    // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
-    // This is passed in mostly to allow configuring the Android app
-    mut loop_builder: EventLoopBuilder,
     new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
-    default_property_set: DefaultProperties,
+    default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
-    let event_loop = loop_builder.build()?;
+    let event_loop = EventLoop::with_user_event().build()?;
 
-    run_with(event_loop, new_windows, app_driver, default_property_set)
+    run_with(event_loop, new_windows, app_driver, default_properties)
 }
 
+/// Run the app with the provided event loop to completion.
 pub fn run_with(
+    // This is passed in mostly to allow configuring the Android app
     event_loop: EventLoop,
     new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
@@ -326,6 +341,11 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 }
 
 impl MasonryState<'_> {
+    /// Create the Masonry application's composition root.
+    ///
+    /// - `event_loop_proxy`: a queue provided by [`EventLoop::create_proxy`](winit::event_loop::EventLoop::create_proxy) to send custom events (mostly accessibility) to your event loop.
+    /// - `new_windows`: the initial list of windows.
+    /// - `default_properties`: the default properties for all the widgets of the app.
     pub fn new(
         event_loop_proxy: EventLoopProxy,
         new_windows: Vec<NewWindow>,
@@ -360,6 +380,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: RESUMED
+    /// Delegate method for [`ApplicationHandler::resumed()`].
     pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         if !self.is_suspended {
             // Short-circuiting since we have already
@@ -385,6 +406,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: SUSPENDED
+    /// Delegate method for [`ApplicationHandler::suspended()`].
     pub fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
         if self.is_suspended {
             // Short-circuiting since we have already
@@ -465,7 +487,7 @@ impl MasonryState<'_> {
         self.windows.insert(handle_id, window);
     }
 
-    pub fn close_window(&mut self, window_id: WindowId) {
+    pub(crate) fn close_window(&mut self, window_id: WindowId) {
         tracing::debug!(window_id = window_id.trace(), "closing window");
         let window_id = self
             .window_id_to_handle_id
@@ -623,6 +645,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: WINDOW_EVENT
+    /// Delegate method for [`ApplicationHandler::window_event()`].
     pub fn handle_window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -730,6 +753,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: DEVICE_EVENT
+    /// Delegate method for [`ApplicationHandler::device_event()`].
     pub fn handle_device_event(
         &mut self,
         _: &ActiveEventLoop,
@@ -740,6 +764,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: USER_EVENT
+    /// Delegate method for [`ApplicationHandler::user_event()`].
     pub fn handle_user_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -792,12 +817,16 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: EMPTY WINIT HANDLERS
+    /// Delegate method for [`ApplicationHandler::about_to_wait()`].
     pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
 
+    /// Delegate method for [`ApplicationHandler::new_events()`].
     pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
 
+    /// Delegate method for [`ApplicationHandler::exiting()`].
     pub fn handle_exiting(&mut self, _: &ActiveEventLoop) {}
 
+    /// Delegate method for [`ApplicationHandler::memory_warning()`].
     pub fn handle_memory_warning(&mut self, _: &ActiveEventLoop) {}
 
     // --- MARK: SIGNALS
@@ -938,18 +967,29 @@ impl MasonryState<'_> {
         self.windows.get_mut(&handle_id).unwrap()
     }
 
+    /// Returns true if app is currently suspended.
+    ///
+    /// See [`ApplicationHandler::suspended()`] for details.
+    ///
+    /// Short version: "suspended" is a notion that mostly applies to web and mobile apps,
+    /// usually when the app is about to be put in cache.
+    /// Suspended apps have no surfaces and receive no events.
     pub fn is_suspended(&self) -> bool {
         self.is_suspended
     }
 
     // TODO: Remove this method.
     // It's currently used to call register_fonts and set_focus_fallback.
+    #[doc(hidden)]
     pub fn roots(&mut self) -> impl Iterator<Item = &mut RenderRoot> {
         self.windows
             .values_mut()
             .map(|window| &mut window.render_root)
     }
 
+    /// Set how frames are presented to the user.
+    ///
+    /// This affects what users commonly know as "VSync".
     pub fn set_present_mode(&mut self, window_id: WindowId, present_mode: wgpu::PresentMode) {
         let handle_id = self.handle_id(window_id);
         let surface = self.surfaces.get_mut(&handle_id).unwrap();

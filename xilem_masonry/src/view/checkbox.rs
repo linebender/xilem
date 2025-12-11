@@ -112,14 +112,15 @@ where
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_style(StyleProperty::FontStack(self.font.clone()));
 
-        ctx.with_leaf_action_widget(|ctx| {
+        let element = ctx.with_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Checkbox::from_label(
                 self.checked,
                 NewWidget::new(label),
             ));
             pod.new_widget.options.disabled = self.disabled;
             pod
-        })
+        });
+        (element, ())
     }
 
     fn rebuild(
@@ -158,7 +159,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

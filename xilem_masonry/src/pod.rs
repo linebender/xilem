@@ -19,8 +19,8 @@ use crate::core::{Mut, SuperElement, ViewElement};
 ///
 /// [`transformed`]: crate::view::Transformed
 /// [`WidgetView::transform`]: crate::view::transformed
-#[expect(missing_docs, reason = "TODO - Document these items")]
 pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
+    #[expect(missing_docs, reason = "Self-explanatory")]
     pub new_widget: NewWidget<W>,
 }
 

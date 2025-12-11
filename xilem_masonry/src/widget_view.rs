@@ -8,10 +8,15 @@ use crate::core::{View, ViewArgument, ViewSequence};
 use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 
-#[expect(missing_docs, reason = "TODO - Document these items")]
+/// The trait for views representing the widget tree.
+///
+/// This is essentially a "trait wrapper" for `View<S, A, ViewCtx, Element = Pod<impl Widget>> + Send + Sync`.
+///
+/// Includes helper methods for common operations on widget views.
 pub trait WidgetView<State: ViewArgument, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
+    /// The widget this view represents.
     type Widget: Widget + FromDynWidget + ?Sized;
 
     /// Returns a boxed type erased [`AnyWidgetView`]

@@ -55,7 +55,6 @@ fn main() {
         .with_max_inner_size(window_size);
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
         vec![NewWindow::new(window_attributes, make_image().erased())],
         Driver,
         default_property_set(),
