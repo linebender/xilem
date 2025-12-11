@@ -162,11 +162,4 @@ Some files used for examples are under different licenses:
 - The data file (`status.csv`) in `xilem/resources/data/http_cats_status/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
 - The data file (`emoji.csv`) in `xilem/resources/data/emoji_names/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
 
-[Html.lazy]: https://guide.elm-lang.org/optimization/lazy.html
-[Html map]: https://package.elm-lang.org/packages/elm/html/latest/Html#map
-[Rc::make_mut]: https://doc.rust-lang.org/std/rc/struct.Rc.html#method.make_mut
-[AnyView]: https://developer.apple.com/documentation/swiftui/anyview
-[Panoramix]: https://github.com/PoignardAzur/panoramix
-[Xilem: an architecture for UI in Rust]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
-[xkbcommon]: https://github.com/xkbcommon/libxkbcommon
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
