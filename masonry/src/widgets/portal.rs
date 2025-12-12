@@ -247,7 +247,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
     }
 
-    /// Change the scrolling "position" of the container to that target is scrolled into view.
+    /// Change the scrolling "position" of the container so that `target` is scrolled into view.
     ///
     /// `target` is in child coordinates, meaning a target of `(0, 0, 10, 10)` will
     /// scroll an item at the top-left of the child into view.

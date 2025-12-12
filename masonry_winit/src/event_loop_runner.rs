@@ -40,7 +40,7 @@ use crate::vello_util::{RenderContext, RenderSurface};
 pub enum MasonryUserEvent {
     /// An accessibility API emitted an event.
     ///
-    /// This is how [`accesskit_winit`] route its events to us.
+    /// This is how [`accesskit_winit`] routes its events to us.
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
     /// An action was emitted by something other than the [`RenderRoot`].

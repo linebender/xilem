@@ -20,7 +20,7 @@ use crate::core::{Mut, SuperElement, ViewElement};
 /// [`transformed`]: crate::view::Transformed
 /// [`WidgetView::transform`]: crate::view::transformed
 pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
-    #[expect(missing_docs, reason = "Self-explanatory")]
+    /// The payload.
     pub new_widget: NewWidget<W>,
 }
 
