@@ -3,7 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{Axis, CollectionWidget, FromDynWidget, Widget, WidgetMut};
+use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
+use masonry::kurbo::Axis;
 use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 pub use masonry::widgets::FlexParams;
@@ -47,7 +48,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
-/// use xilem::masonry::core::Axis;
+/// use xilem::masonry::kurbo::Axis;
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::WidgetView;
 /// use xilem::core::Edit;
@@ -91,7 +92,6 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
-        gap: masonry::theme::DEFAULT_GAP,
         phantom: PhantomData,
     }
 }
@@ -130,7 +130,6 @@ pub struct Flex<Seq, State, Action = ()> {
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    gap: Length,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -154,26 +153,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     /// its main axis.
     pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
         self.fill_major_axis = fill_major_axis;
-        self
-    }
-
-    /// Set the spacing along the major axis between any two elements in logical pixels.
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
-    /// and the gap between the spacer and its neighbors.
-    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
-    /// its gap to zero to make the layout more predictable.
-    ///
-    /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    /// [`DEFAULT_GAP`]: masonry::theme::DEFAULT_GAP
-    #[track_caller]
-    pub fn gap(mut self, gap: Length) -> Self {
-        self.gap = gap;
         self
     }
 }
@@ -238,7 +217,6 @@ where
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
-            .with_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
@@ -278,9 +256,6 @@ where
         }
         if prev.fill_major_axis != self.fill_major_axis {
             widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
-        }
-        if prev.gap != self.gap {
-            widgets::Flex::set_gap(&mut element, self.gap);
         }
         let mut splice = FlexSplice::new(element, scratch);
         self.sequence
@@ -492,7 +467,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use xilem::masonry::core::Axis;
+    /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
     /// # use xilem::{WidgetView, core::ViewArgument};
@@ -521,7 +496,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use xilem::masonry::core::Axis;
+    /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
     /// # use xilem::{WidgetView, core::ViewArgument};
@@ -554,7 +529,7 @@ pub struct FlexItem<V, State, Action> {
 /// # Examples
 /// ```
 /// # use xilem_masonry as xilem;
-/// use xilem::masonry::core::Axis;
+/// use xilem::masonry::kurbo::Axis;
 /// use xilem::masonry::properties::types::AsUnit;
 /// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView, core::ViewArgument};
@@ -735,7 +710,7 @@ impl FlexSpacer {
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use xilem::masonry::core::Axis;
+    /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::view::{flex, FlexSpacer};
     /// # use xilem::{WidgetView, core::ViewArgument};
@@ -761,7 +736,7 @@ where
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use xilem::masonry::core::Axis;
+    /// use xilem::masonry::kurbo::Axis;
     /// use xilem::view::{flex, flex_item, label};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///

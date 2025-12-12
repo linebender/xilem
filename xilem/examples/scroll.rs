@@ -83,7 +83,7 @@ fn grid_blocks(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> 
         horizontal_count,
         vertical_count,
     )
-    .spacing(10.px())
+    .gap(10.px())
 }
 
 fn flex_blocks(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {

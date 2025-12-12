@@ -4,10 +4,10 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Rect, Size};
+use vello::kurbo::{Axis, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, AllowRawMut, Axis, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
+    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
     NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut,
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
@@ -62,14 +62,15 @@ impl ScrollBar {
         let size_ratio = self.portal_size / self.content_size;
         let size_ratio = size_ratio.clamp(0.0, 1.0);
 
-        let cursor_length = size_ratio * self.axis.major(layout_size);
+        let cursor_length = size_ratio * layout_size.get_coord(self.axis);
         let cursor_length = cursor_length.max(min_length);
 
-        let empty_space_length = (1.0 - size_ratio) * self.axis.major(layout_size);
+        let empty_space_length = (1.0 - size_ratio) * layout_size.get_coord(self.axis);
         let cursor_pos_major = self.cursor_progress * empty_space_length;
 
-        let cursor_pos = self.axis.pack(cursor_pos_major, 0.0);
-        let cursor_size = self.axis.pack(cursor_length, self.axis.minor(layout_size));
+        let cursor_pos = self.axis.pack_point(cursor_pos_major, 0.0);
+        let cursor_size_minor = layout_size.get_coord(self.axis.cross());
+        let cursor_size = self.axis.pack_size(cursor_length, cursor_size_minor);
 
         Rect::from_origin_size(cursor_pos, cursor_size)
     }
@@ -90,10 +91,10 @@ impl ScrollBar {
         // invariant: cursor_x == progress * (1 - size_ratio) * layout_width
         // invariant: cursor_x + anchor * cursor_width == mouse_x
 
-        let cursor_width = self.axis.major(cursor_rect.size());
-        let new_cursor_pos_major = self.axis.major_pos(mouse_pos) - anchor * cursor_width;
+        let cursor_width = cursor_rect.size().get_coord(self.axis);
+        let new_cursor_pos_major = mouse_pos.get_coord(self.axis) - anchor * cursor_width;
 
-        let empty_space_length = (1.0 - size_ratio) * self.axis.major(layout_size);
+        let empty_space_length = (1.0 - size_ratio) * layout_size.get_coord(self.axis);
         let new_cursor_progress = new_cursor_pos_major / empty_space_length;
 
         new_cursor_progress.clamp(0.0, 1.0)
@@ -137,8 +138,8 @@ impl Widget for ScrollBar {
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
                 let mouse_pos = ctx.local_position(state.position);
                 if cursor_rect.contains(mouse_pos) {
-                    let (z0, z1) = self.axis.major_span(cursor_rect);
-                    let mouse_major = self.axis.major_pos(mouse_pos);
+                    let (z0, z1) = cursor_rect.get_coords(self.axis);
+                    let mouse_major = mouse_pos.get_coord(self.axis);
                     self.grab_anchor = Some((mouse_major - z0) / (z1 - z0));
                 } else {
                     self.cursor_progress =
@@ -206,12 +207,10 @@ impl Widget for ScrollBar {
 
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
-        self.axis
-            .pack(
-                self.axis.major(bc.max()),
-                scrollbar_width + cursor_padding * 2.0,
-            )
-            .into()
+        self.axis.pack_size(
+            bc.max().get_coord(self.axis),
+            scrollbar_width + cursor_padding * 2.0,
+        )
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -220,7 +219,7 @@ impl Widget for ScrollBar {
         let cursor_padding = theme::SCROLLBAR_PAD;
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
 
-        let (inset_x, inset_y) = self.axis.pack(0.0, cursor_padding);
+        let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
             .get_cursor_rect(ctx.size(), cursor_min_length)
             .inset((-inset_x, -inset_y))
