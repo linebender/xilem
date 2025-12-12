@@ -65,8 +65,8 @@ pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
-    row_count: i32,
     col_count: i32,
+    row_count: i32,
 
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
@@ -109,7 +109,7 @@ where
         app_state: Arg<'_, State>,
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widgets::Grid::with_dimensions(self.row_count, self.col_count);
+        let mut widget = widgets::Grid::with_dimensions(self.col_count, self.row_count);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
             widget = widget.with(element.child.new_widget, element.params);
@@ -132,11 +132,11 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) {
-        if prev.col_count != self.col_count {
-            widgets::Grid::set_row_count(&mut element, self.col_count);
-        }
         if prev.row_count != self.row_count {
-            widgets::Grid::set_column_count(&mut element, self.row_count);
+            widgets::Grid::set_row_count(&mut element, self.row_count);
+        }
+        if prev.col_count != self.col_count {
+            widgets::Grid::set_column_count(&mut element, self.col_count);
         }
 
         let mut splice = GridSplice::new(element, scratch);
