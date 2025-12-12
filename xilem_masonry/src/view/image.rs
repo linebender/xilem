@@ -3,6 +3,7 @@
 
 //! The bitmap image widget.
 
+use masonry::core::ArcStr;
 use masonry::widgets;
 use vello::peniko::ImageBrush;
 
@@ -25,6 +26,7 @@ pub use masonry::properties::ObjectFit;
 pub fn image(image: impl Into<ImageBrush>) -> Image {
     Image {
         image: image.into(),
+        alt_text: None,
     }
 }
 
@@ -34,6 +36,7 @@ pub fn image(image: impl Into<ImageBrush>) -> Image {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
     image: ImageBrush,
+    alt_text: Option<ArcStr>,
 }
 
 impl Image {
@@ -45,8 +48,20 @@ impl Image {
     ) -> Prop<ObjectFit, Self, State, Action> {
         self.prop(fill)
     }
-}
 
+    /// Set the text that will describe the image to screen readers.
+    ///
+    /// Users are encouraged to set alt text for the image.
+    /// If possible, the alt-text should succinctly describe what the image represents.
+    ///
+    /// If the image is decorative users should set alt text to `""`.
+    /// If it's too hard to describe through text, the alt text should be left unset.
+    /// This allows accessibility clients to know that there is no accessible description of the image content.
+    pub fn alt_text(mut self, alt_text: impl Into<ArcStr>) -> Self {
+        self.alt_text = Some(alt_text.into());
+        self
+    }
+}
 impl ViewMarker for Image {}
 impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
     type Element = Pod<widgets::Image>;
@@ -66,6 +81,9 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
     ) {
         if prev.image != self.image {
             widgets::Image::set_image_data(&mut element, self.image.clone());
+        }
+        if self.alt_text != prev.alt_text {
+            widgets::Image::set_alt_text(&mut element, self.alt_text.clone());
         }
     }
 

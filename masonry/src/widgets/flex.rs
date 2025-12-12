@@ -9,16 +9,14 @@ use accesskit::{Node, Role};
 use masonry_core::core::{CollectionWidget, HasProperty};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Size, Stroke};
+use vello::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::Length;
-use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::theme::DEFAULT_GAP;
+use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A container with either horizontal or vertical layout.
@@ -54,7 +52,6 @@ pub struct Flex {
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     children: Vec<Child>,
-    gap: Length,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -96,7 +93,6 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            gap: DEFAULT_GAP,
         }
     }
 
@@ -131,26 +127,6 @@ impl Flex {
     /// to fill the available space on its main axis.
     pub fn must_fill_main_axis(mut self, fill: bool) -> Self {
         self.fill_major_axis = fill;
-        self
-    }
-
-    /// Builder-style method for setting a gap along the
-    /// major axis between any two elements in logical pixels.
-    ///
-    /// By default this is [`DEFAULT_GAP`].
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
-    /// and the gap between the spacer and its neighbors.
-    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
-    /// its gap to zero to make the layout more predictable.
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    // TODO: Semantics - should this include fixed spacers?
-    pub fn with_gap(mut self, gap: Length) -> Self {
-        self.gap = gap;
         self
     }
 
@@ -225,20 +201,6 @@ impl Flex {
     /// its main axis.
     pub fn set_must_fill_main_axis(this: &mut WidgetMut<'_, Self>, fill: bool) {
         this.widget.fill_major_axis = fill;
-        this.ctx.request_layout();
-    }
-
-    /// Set the spacing along the major axis between any two elements in logical pixels.
-    ///
-    /// Equivalent to the css [gap] property.
-    ///
-    /// This gap is between any two children, including spacers.
-    /// As such, using a non-zero gap and also adding spacers may lead to counter-intuitive results.
-    /// You should usually pick one or the other.
-    ///
-    /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: Length) {
-        this.widget.gap = gap;
         this.ctx.request_layout();
     }
 
@@ -644,6 +606,7 @@ impl HasProperty<BorderColor> for Flex {}
 impl HasProperty<BorderWidth> for Flex {}
 impl HasProperty<CornerRadius> for Flex {}
 impl HasProperty<Padding> for Flex {}
+impl HasProperty<Gap> for Flex {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {
@@ -665,6 +628,7 @@ impl Widget for Flex {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        Gap::prop_changed(ctx, property_type);
     }
 
     fn layout(
@@ -676,6 +640,7 @@ impl Widget for Flex {
         // SETUP
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let gap = props.get::<Gap>().gap;
 
         let bc = *bc;
         let bc = border.layout_down(bc);
@@ -684,14 +649,16 @@ impl Widget for Flex {
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
+        let axis = self.direction;
+
         const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
-        let bc_major_min = self.direction.major(bc.min());
-        let bc_major_max = self.direction.major(bc.max());
+        let bc_major_min = bc.min().get_coord(axis);
+        let bc_major_max = bc.max().get_coord(axis);
 
         // ACCUMULATORS
-        let mut minor = self.direction.minor(bc.min());
-        let mut major_non_flex = gap_count as f64 * self.gap.get();
+        let mut minor = bc.min().get_coord(axis.cross());
+        let mut major_non_flex = gap_count as f64 * gap.get();
         let mut major_flex: f64 = 0.0;
         // We start with a small value to avoid divide-by-zero errors.
         let mut flex_sum = MIN_FLEX_SUM;
@@ -721,8 +688,8 @@ impl Widget for Flex {
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_non_flex += self.direction.major(child_size);
-                    minor = minor.max(self.direction.minor(child_size));
+                    major_non_flex += child_size.get_coord(axis);
+                    minor = minor.max(child_size.get_coord(axis.cross()));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
@@ -749,14 +716,14 @@ impl Widget for Flex {
                     let child_size = {
                         let desired_major = (*flex) * px_per_flex;
 
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, desired_major);
+                        let child_bc = loosened_bc.with_coord(axis, 0.0, desired_major);
                         ctx.run_layout(widget, &child_bc)
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_flex += self.direction.major(child_size);
-                    minor = minor.max(self.direction.minor(child_size));
+                    major_flex += child_size.get_coord(axis);
+                    minor = minor.max(child_size.get_coord(axis.cross()));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
@@ -776,7 +743,7 @@ impl Widget for Flex {
         } else {
             // If we are *not* expected to fill our available space this usually
             // means we don't have any extra, unless dictated by our constraints.
-            (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
+            (bc.min().get_coord(axis) - (major_non_flex + major_flex)).max(0.0)
         };
         // We only distribute free space around widgets, not spacers.
         let widget_count = self
@@ -812,10 +779,8 @@ impl Widget for Flex {
                             extra_height + (max_above_baseline - child_above_baseline)
                         }
                         CrossAxisAlignment::Fill => {
-                            let fill_size: Size = self
-                                .direction
-                                .pack(self.direction.major(child_size), minor)
-                                .into();
+                            let fill_size: Size =
+                                self.direction.pack_size(child_size.get_coord(axis), minor);
                             let child_bc = BoxConstraints::tight(fill_size);
                             // TODO: This is the second call of layout on the same child,
                             // which can lead to exponential increase in layout calls
@@ -824,24 +789,24 @@ impl Widget for Flex {
                             0.0
                         }
                         _ => {
-                            let extra_minor = minor - self.direction.minor(child_size);
+                            let extra_minor = minor - child_size.get_coord(axis.cross());
                             alignment.align(extra_minor)
                         }
                     };
 
-                    let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
+                    let child_pos: Point = axis.pack_point(major, child_minor_offset);
                     let child_pos = border.place_down(child_pos);
                     let child_pos = padding.place_down(child_pos);
                     ctx.place_child(widget, child_pos);
 
-                    major += self.direction.major(child_size);
-                    major += self.gap.get();
+                    major += child_size.get_coord(axis);
+                    major += gap.get();
                     previous_was_widget = true;
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
-                    major += self.gap.get();
+                    major += gap.get();
                     previous_was_widget = false;
                 }
             }
@@ -857,7 +822,7 @@ impl Widget for Flex {
             bc_major_min.max(major_non_flex)
         };
 
-        let my_size: Size = self.direction.pack(final_major, minor).into();
+        let my_size: Size = axis.pack_size(final_major, minor);
 
         let baseline = match self.direction {
             Axis::Horizontal => max_below_baseline,

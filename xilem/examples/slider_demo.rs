@@ -8,12 +8,10 @@
 //! The result is displayed in a preview box, demonstrating how widgets can
 //! react to and manipulate a shared application state.
 
-use masonry::core::Axis;
+use masonry::kurbo::Axis;
 use masonry::peniko::Color;
-use masonry::properties::{
-    Background, BarColor, ThumbColor, ThumbRadius,
-    types::{AsUnit, CrossAxisAlignment},
-};
+use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::{Background, BarColor, ThumbColor, ThumbRadius};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;

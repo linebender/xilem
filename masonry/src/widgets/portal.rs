@@ -7,10 +7,10 @@ use accesskit::{Node, Role};
 use dpi::PhysicalPosition;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Rect, Size, Vec2};
+use vello::kurbo::{Axis, Point, Rect, Size, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
     LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
     PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
@@ -321,12 +321,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 scrollbar.moved = false;
 
                 let progress = scrollbar.cursor_progress;
-                self.viewport_pos = Axis::Horizontal
-                    .pack(
-                        progress * Axis::Horizontal.major(content_size - portal_size),
-                        Axis::Horizontal.minor_pos(self.viewport_pos),
-                    )
-                    .into();
+                self.viewport_pos = Point::new(
+                    progress * (content_size - portal_size).width,
+                    self.viewport_pos.y,
+                );
                 scrollbar_moved = true;
             }
         }
@@ -336,12 +334,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 scrollbar.moved = false;
 
                 let progress = scrollbar.cursor_progress;
-                self.viewport_pos = Axis::Vertical
-                    .pack(
-                        progress * Axis::Vertical.major(content_size - portal_size),
-                        Axis::Vertical.minor_pos(self.viewport_pos),
-                    )
-                    .into();
+                self.viewport_pos = Point::new(
+                    self.viewport_pos.x,
+                    progress * (content_size - portal_size).height,
+                );
                 scrollbar_moved = true;
             }
         }

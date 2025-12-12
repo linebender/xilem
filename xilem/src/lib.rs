@@ -30,8 +30,7 @@
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::masonry::core::Axis;
-//! use xilem::view::{text_button, flex, label};
+//! use xilem::view::{text_button, flex_col, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //! use xilem::core::Edit;
 //!
@@ -41,7 +40,7 @@
 //! }
 //!
 //! fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
-//!     flex(Axis::Vertical, (
+//!     flex_col((
 //!         label(format!("{}", data.num)),
 //!         text_button("increment", |data: &mut Counter| data.num += 1),
 //!     ))

@@ -25,8 +25,7 @@ use crate::properties::{
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
-
-use super::Label;
+use crate::widgets::Label;
 
 /// A button with a child widget.
 ///
@@ -326,8 +325,8 @@ mod tests {
 
     use super::*;
     use crate::core::{PointerButton, Properties, StyleProperty};
-    use crate::properties::ContentColor;
     use crate::properties::types::AsUnit;
+    use crate::properties::{ContentColor, Gap};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
@@ -438,7 +437,6 @@ mod tests {
         use crate::palette::css::ORANGE;
 
         let grid = Grid::with_dimensions(2, 2)
-            .with_spacing(40.px())
             .with(
                 Button::with_text("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
@@ -455,8 +453,12 @@ mod tests {
                 Button::with_text("D").with_auto_id(),
                 GridParams::new(1, 1, 1, 1),
             );
-        let root_widget =
-            NewWidget::new_with_props(grid, Properties::new().with(Padding::all(20.0)));
+        let root_widget = NewWidget::new_with_props(
+            grid,
+            Properties::new()
+                .with(Padding::all(20.0))
+                .with(Gap::new(40.px())),
+        );
 
         let mut test_params = TestHarnessParams::default();
         test_params.window_size = Size::new(300.0, 300.0);

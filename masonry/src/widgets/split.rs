@@ -6,10 +6,10 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
-use vello::kurbo::{Line, Point, Rect, Size};
+use vello::kurbo::{Axis, Line, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
     LayoutCtx, NewWidget, NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
@@ -205,7 +205,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
     /// Returns the minimum and maximum split coordinate of the provided size.
     fn split_side_limits(&self, size: Size) -> (f64, f64) {
-        let split_axis_size = self.split_axis.major(size);
+        let split_axis_size = size.get_coord(self.split_axis);
 
         let (min_limit, min_second) = self.min_size;
         let mut min_limit = min_limit.get();
@@ -493,7 +493,7 @@ where
         // Update our effective split point to respect our constraints
         self.split_point_effective = {
             let (min_limit, max_limit) = self.split_side_limits(reduced_size);
-            let reduced_axis_size = self.split_axis.major(reduced_size);
+            let reduced_axis_size = reduced_size.get_coord(self.split_axis);
             if reduced_axis_size.is_infinite() || reduced_axis_size <= f64::EPSILON {
                 0.5
             } else {

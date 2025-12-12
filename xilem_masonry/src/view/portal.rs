@@ -26,7 +26,7 @@ where
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Portal<V, State, Action> {
     child: V,
-    phantom: PhantomData<(State, Action)>,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
 impl<V, State, Action> ViewMarker for Portal<V, State, Action> {}

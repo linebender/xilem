@@ -4,14 +4,15 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::HasProperty;
-use masonry::properties::{ContentColor, DisabledContentColor, FocusedBorderColor, LineBreaking};
-use vello::peniko::Color;
-
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
+use masonry::properties::{
+    ContentColor, DisabledContentColor, FocusedBorderColor, Gap, LineBreaking,
+};
+use vello::peniko::Color;
 
 use crate::WidgetView;
 use crate::core::ViewArgument;
@@ -194,6 +195,14 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         Self::Widget: HasProperty<Padding>,
     {
         self.prop(padding.into())
+    }
+
+    /// Set the gap between the element's consecutive children.
+    fn gap(self, gap: impl Into<Gap>) -> Prop<Gap, Self, State, Action>
+    where
+        Self::Widget: HasProperty<Gap>,
+    {
+        self.prop(gap.into())
     }
 
     /// Set how line breaks will be handled when text overflows the available space.

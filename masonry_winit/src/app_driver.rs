@@ -25,9 +25,6 @@ pub struct WindowId(pub(crate) NonZeroU64);
 
 impl WindowId {
     /// Allocate a new, unique `WindowId`.
-    ///
-    /// You must ensure that a given `WindowId` is only ever used for one
-    /// window at a time.
     pub fn next() -> Self {
         static WINDOW_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
         let id = WINDOW_ID_COUNTER.fetch_add(1, Ordering::Relaxed);

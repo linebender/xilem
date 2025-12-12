@@ -22,7 +22,7 @@ use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::{AsUnit, CrossAxisAlignment};
 use masonry::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, HoveredBorderColor, Padding,
+    ActiveBackground, Background, BorderColor, BorderWidth, Gap, HoveredBorderColor, Padding,
 };
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
@@ -251,7 +251,6 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     }
 
     let root_widget = Grid::with_dimensions(4, 6)
-        .with_spacing(1.px())
         .with(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
         .with(
             op_button_with_label('c', "CE".to_string()),
@@ -281,7 +280,8 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         root_widget,
         Properties::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-            .with(Padding::all(2.0)),
+            .with(Padding::all(2.0))
+            .with(Gap::new(1.px())),
     )
 }
 

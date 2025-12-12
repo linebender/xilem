@@ -33,7 +33,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex, sized_box}, masonry::kurbo::Size, masonry::core::Axis};
+/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex, sized_box}, masonry::kurbo::{Size, Axis}};
 ///
 /// struct State {
 ///     available_size: Size,

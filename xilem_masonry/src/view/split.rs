@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::Axis;
+use masonry::kurbo::Axis;
 use masonry::properties::types::{AsUnit, Length};
 use masonry::widgets::{self, ceil_length};
 
