@@ -1,14 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::fmt::Debug;
-use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
-use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 
 use crate::app::MasonryState;
@@ -32,7 +29,7 @@ impl WindowId {
     }
 
     /// A serialized representation of the `WindowId` for debugging purposes.
-    pub fn trace(self) -> DisplayValue<NonZeroU64> {
+    pub fn trace(self) -> tracing::field::DisplayValue<NonZeroU64> {
         tracing::field::display(self.0)
     }
 }

@@ -10,7 +10,9 @@ use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use masonry_core::app::{
+    AppProxy, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+};
 use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
     DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WidgetId, WindowEvent,
@@ -128,6 +130,7 @@ impl Window {
         accesskit_adapter: Adapter,
         root_widget: NewWidget<dyn Widget>,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
+        app_signal_sender: Sender<Box<AppSignal>>,
         default_properties: Arc<DefaultProperties>,
         base_color: Color,
         size: PhysicalSize<u32>,
@@ -140,8 +143,10 @@ impl Window {
             event_reducer: WindowEventReducer::default(),
             render_root: RenderRoot::new(
                 root_widget,
-                move |signal| {
-                    signal_sender.clone().send((window_id, signal)).unwrap();
+                StateProxy {
+                    window_id,
+                    signal_sender,
+                    app_signal_sender,
                 },
                 RenderRootOptions {
                     default_properties,
@@ -197,13 +202,45 @@ pub struct MasonryState<'a> {
     // Is `Some` if the most recently displayed frame was an animation frame.
     last_anim: Option<Instant>,
     signal_receiver: mpsc::Receiver<(WindowId, RenderRootSignal)>,
+    app_signal_receiver: mpsc::Receiver<Box<AppSignal>>,
 
     signal_sender: Sender<(WindowId, RenderRootSignal)>,
+    app_signal_sender: Sender<Box<AppSignal>>,
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
+}
+
+#[derive(Clone)]
+pub(crate) struct StateProxy {
+    window_id: WindowId,
+    signal_sender: Sender<(WindowId, RenderRootSignal)>,
+    app_signal_sender: Sender<Box<AppSignal>>,
+}
+
+impl AppProxy for StateProxy {
+    fn emit_render_root_signal(&self, signal: RenderRootSignal) {
+        self.signal_sender.send((self.window_id, signal)).unwrap();
+    }
+
+    fn emit_app_signal(&self, signal: Box<dyn std::any::Any>) {
+        let Ok(signal) = signal.downcast::<AppSignal>() else {
+            return;
+        };
+        self.app_signal_sender.send(signal).unwrap();
+    }
+}
+
+/// Objects emitted by the [`RenderRoot`] to signal that something has changed
+/// or require app level external actions.
+#[expect(clippy::large_enum_variant, reason = "enum is already used boxed")]
+pub enum AppSignal {
+    /// A new window should be created.
+    CreateWindow(NewWindow),
+    /// The window with the given ID should be closed.
+    CloseWindow(WindowId),
 }
 
 struct MainState<'a> {
@@ -334,6 +371,7 @@ impl MasonryState<'_> {
         let render_cx = RenderContext::new();
 
         let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
+        let (app_signal_sender, app_signal_receiver) = mpsc::channel();
 
         MasonryState {
             is_suspended: true,
@@ -343,6 +381,7 @@ impl MasonryState<'_> {
             #[cfg(feature = "tracy")]
             frame: None,
             signal_receiver,
+            app_signal_receiver,
 
             last_anim: None,
             window_id_to_handle_id: HashMap::new(),
@@ -352,6 +391,7 @@ impl MasonryState<'_> {
             clipboard_cx: ClipboardContext::new().unwrap(),
 
             signal_sender,
+            app_signal_sender,
             default_properties: Arc::new(default_properties),
             exit: false,
             new_windows,
@@ -454,6 +494,7 @@ impl MasonryState<'_> {
             adapter,
             new_window.root_widget,
             self.signal_sender.clone(),
+            self.app_signal_sender.clone(),
             self.default_properties.clone(),
             new_window.base_color,
             size,
@@ -805,6 +846,17 @@ impl MasonryState<'_> {
         if self.is_suspended {
             tracing::warn!("Tried to handle a signal whilst suspended");
             return;
+        }
+
+        loop {
+            let Some(signal) = self.app_signal_receiver.try_iter().next() else {
+                break;
+            };
+
+            match *signal {
+                AppSignal::CreateWindow(new_window) => self.create_window(event_loop, new_window),
+                AppSignal::CloseWindow(window_id) => self.close_window(window_id),
+            }
         }
 
         let mut need_redraw = HashSet::<HandleId>::new();
