@@ -34,7 +34,6 @@
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //! use xilem::core::Edit;
 //!
-
 //! struct Counter(i32);
 //!
 //! fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
