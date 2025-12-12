@@ -83,7 +83,7 @@ use xilem::core::Edit;
 struct Counter(i32);
 
 fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
-    flex_col(Axis::Vertical, (
+    flex_col((
         label(format!("{}", data.0)),
         text_button("increment", |data: &mut Counter| data.0 += 1),
     ))
