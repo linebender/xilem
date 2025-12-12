@@ -120,8 +120,6 @@ impl Widget for Canvas {
     ) {
         if let Some(alt_text) = &self.alt_text {
             node.set_description(&**alt_text);
-        } else {
-            node.clear_description();
         }
     }
 
