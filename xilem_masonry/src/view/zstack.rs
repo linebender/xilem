@@ -41,7 +41,7 @@ pub fn zstack<State: ViewArgument, Action: 'static, Seq: ZStackSequence<State, A
         sequence,
         alignment: UnitPoint::CENTER,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// A view container that lays the child widgets on top of each other.

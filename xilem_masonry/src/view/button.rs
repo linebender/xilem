@@ -98,7 +98,7 @@ pub fn button<
         disabled: false,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// A button with default styled text.

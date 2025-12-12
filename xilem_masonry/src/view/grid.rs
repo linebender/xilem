@@ -57,7 +57,7 @@ pub fn grid<State: ViewArgument, Action: 'static, Seq: GridSequence<State, Actio
         width,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`grid`] from a sequence, which also consumes custom width and height.

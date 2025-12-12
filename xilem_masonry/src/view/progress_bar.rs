@@ -10,7 +10,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// This can be for showing progress of a task or a download.
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
-    WidgetView::<()>::as_impl_widget_view(ProgressBar { progress })
+    WidgetView::<()>::check_impl_widget_view(ProgressBar { progress })
 }
 
 /// The [`View`] created by [`progress_bar`].

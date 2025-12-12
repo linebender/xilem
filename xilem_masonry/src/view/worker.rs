@@ -71,7 +71,7 @@ where
         on_response,
         message: PhantomData,
     }
-    .as_impl_view()
+    .check_impl_view()
 }
 
 /// A version of [`worker`] which can store its message sender in the environment.
@@ -107,7 +107,7 @@ where
         on_response,
         message: PhantomData,
     }
-    .as_impl_view()
+    .check_impl_view()
 }
 
 /// An internal struct used to make [`env_worker`]/[`worker`] work.
@@ -158,7 +158,7 @@ where
         },
         message: PhantomData,
     }
-    .as_impl_view()
+    .check_impl_view()
 }
 
 /// The View type for [`worker`], [`env_worker`] and [`worker_raw`]. See its documentation for details.

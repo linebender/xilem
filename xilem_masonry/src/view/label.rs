@@ -33,7 +33,7 @@ use crate::{Pod, TextAlign, ViewCtx, WidgetView};
 /// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
-    WidgetView::<()>::as_impl_widget_view(Label {
+    WidgetView::<()>::check_impl_widget_view(Label {
         label: label.into(),
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,

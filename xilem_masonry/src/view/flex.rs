@@ -94,7 +94,7 @@ pub fn flex<State: ViewArgument, Action: 'static, Seq: FlexSequence<State, Actio
         fill_major_axis: false,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// A layout where the children are laid out in a row.

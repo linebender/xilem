@@ -34,7 +34,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// }
 /// ```
 pub fn spinner() -> Spinner {
-    WidgetView::<()>::as_impl_widget_view(Spinner)
+    WidgetView::<()>::check_impl_widget_view(Spinner)
 }
 
 /// The [`View`] created by [`spinner`].

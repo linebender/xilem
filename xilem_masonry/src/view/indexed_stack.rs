@@ -62,7 +62,7 @@ pub fn indexed_stack<
         active_child: 0,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`indexed_stack`] from a sequence.

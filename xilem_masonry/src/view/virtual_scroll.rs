@@ -64,7 +64,7 @@ where
         func,
         valid_range,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// Component for a [`VirtualScroll`] with unlimited children.

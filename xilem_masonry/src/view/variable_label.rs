@@ -13,7 +13,7 @@ use crate::{Pod, TextAlign, ViewCtx, WidgetView};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
-    WidgetView::<()>::as_impl_widget_view(VariableLabel {
+    WidgetView::<()>::check_impl_widget_view(VariableLabel {
         label: label(text),
         target_weight: FontWeight::NORMAL,
         over_millis: 0.,

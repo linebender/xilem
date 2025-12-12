@@ -29,7 +29,7 @@ where
         transform: Affine::IDENTITY,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The view for [`transformed`].

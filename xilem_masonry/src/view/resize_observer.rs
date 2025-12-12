@@ -72,7 +72,7 @@ where
         on_resize,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`resize_observer`].

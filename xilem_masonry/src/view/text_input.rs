@@ -105,7 +105,7 @@ where
         // not clipping
         clip: true,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`text_input`].

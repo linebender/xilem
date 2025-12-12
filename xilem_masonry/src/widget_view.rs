@@ -83,7 +83,7 @@ pub trait WidgetView<State: ViewArgument, Action: 'static = ()>:
     #[doc(hidden)]
     /// An identity function, that lets us assert that
     /// the receiver always implements WidgetView<..>
-    fn as_impl_widget_view(self) -> Self
+    fn check_impl_widget_view(self) -> Self
     where
         Self: Sized,
     {
@@ -121,7 +121,7 @@ pub trait WidgetViewSequence<State: ViewArgument, Action = ()>:
     #[doc(hidden)]
     /// An identity function, that lets us assert that
     /// the receiver always implements WidgetViewSequence<..>
-    fn as_impl_widget_view_seq(self) -> Self
+    fn check_impl_widget_view_seq(self) -> Self
     where
         Self: Sized,
     {

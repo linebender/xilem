@@ -25,7 +25,7 @@ pub fn prose<State: ViewArgument, Action: 'static>(
         weight: FontWeight::NORMAL,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// A version of [`prose`] suitable for including in the same line

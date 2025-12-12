@@ -50,7 +50,7 @@ where
         disabled: false,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`checkbox`] from a `label`, a bool value and a callback.

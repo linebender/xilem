@@ -51,7 +51,7 @@ where
         on_event,
         message: PhantomData,
     }
-    .as_impl_view()
+    .check_impl_view()
 }
 
 /// Launch a task which will run until the view is no longer in the tree.

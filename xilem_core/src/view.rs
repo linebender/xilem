@@ -167,7 +167,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
     #[doc(hidden)]
     /// An identity function, that lets us assert that
     /// the receiver always implements WidgetView<..>
-    fn as_impl_view(self) -> Self
+    fn check_impl_view(self) -> Self
     where
         Self: Sized,
     {

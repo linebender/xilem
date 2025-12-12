@@ -42,7 +42,7 @@ where
         disabled: false,
         phantom: PhantomData,
     }
-    .as_impl_widget_view()
+    .check_impl_widget_view()
 }
 
 impl<State, Action, F> Slider<State, Action, F> {
