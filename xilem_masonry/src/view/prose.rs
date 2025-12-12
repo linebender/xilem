@@ -9,10 +9,12 @@ use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
-use crate::{Color, Pod, TextAlign, ViewCtx};
+use crate::{Color, Pod, TextAlign, ViewCtx, WidgetView};
 
 /// A view which displays selectable text.
-pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> {
+pub fn prose<State: ViewArgument, Action: 'static>(
+    content: impl Into<ArcStr>,
+) -> Prose<State, Action> {
     Prose {
         content: content.into(),
         text_color: None,
@@ -23,6 +25,7 @@ pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> 
         weight: FontWeight::NORMAL,
         phantom: PhantomData,
     }
+    .check_impl_widget_view()
 }
 
 /// A version of [`prose`] suitable for including in the same line
@@ -31,7 +34,9 @@ pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> 
 /// Note that setting [`text_alignment`](Prose::text_alignment) on the result
 /// will be meaningless.
 #[doc(alias = "span")]
-pub fn inline_prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> {
+pub fn inline_prose<State: ViewArgument, Action: 'static>(
+    content: impl Into<ArcStr>,
+) -> Prose<State, Action> {
     prose(content).line_break_mode(LineBreaking::Overflow)
 }
 

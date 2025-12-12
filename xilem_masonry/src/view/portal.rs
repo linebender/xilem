@@ -11,7 +11,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// A view which puts `child` into a scrollable region.
 ///
 /// This corresponds to the Masonry [`Portal`](masonry::widgets::Portal) widget.
-pub fn portal<Child, State, Action>(child: Child) -> Portal<Child, State, Action>
+pub fn portal<Child, State, Action: 'static>(child: Child) -> Portal<Child, State, Action>
 where
     State: ViewArgument,
     Child: WidgetView<State, Action>,
@@ -20,6 +20,7 @@ where
         child,
         phantom: PhantomData,
     }
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`portal`].

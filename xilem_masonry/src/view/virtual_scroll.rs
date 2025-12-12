@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::Range;
 
-use masonry::core::{Widget, WidgetPod};
 use masonry::util::debug_panic;
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
@@ -19,7 +18,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// See its documentation for details.
 pub struct VirtualScroll<State, Action, ChildrenViews, F> {
-    phantom: PhantomData<fn() -> (WidgetPod<dyn Widget>, State, Action, ChildrenViews)>,
+    phantom: PhantomData<fn() -> (State, Action, ChildrenViews)>,
     func: F,
     valid_range: Range<i64>,
 }
@@ -56,14 +55,16 @@ pub fn virtual_scroll<State, Action, ChildrenViews, F>(
 ) -> VirtualScroll<State, Action, ChildrenViews, F>
 where
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, i64) -> ChildrenViews + 'static,
+    F: Fn(Arg<'_, State>, i64) -> ChildrenViews + Send + Sync + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,
         func,
         valid_range,
     }
+    .check_impl_widget_view()
 }
 
 /// Component for a [`VirtualScroll`] with unlimited children.
@@ -80,6 +81,7 @@ where
     ChildrenViews: WidgetView<State, Action>,
     F: Fn(Arg<'_, State>, i64) -> ChildrenViews + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,

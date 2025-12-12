@@ -4,13 +4,13 @@
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which displays a progress bar.
 ///
 /// This can be for showing progress of a task or a download.
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
-    ProgressBar { progress }
+    WidgetView::<()>::check_impl_widget_view(ProgressBar { progress })
 }
 
 /// The [`View`] created by [`progress_bar`].

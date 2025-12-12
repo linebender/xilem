@@ -42,7 +42,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     .split_point(0.25)
 /// ```
 ///
-pub fn split<State, Action, ChildA, ChildB>(
+pub fn split<State, Action: 'static, ChildA, ChildB>(
     child1: ChildA,
     child2: ChildB,
 ) -> Split<ChildA, ChildB, State, Action>
@@ -63,6 +63,7 @@ where
         child2,
         phantom: PhantomData,
     }
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`split`].

@@ -4,7 +4,7 @@
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// An indefinite spinner.
 ///
@@ -34,7 +34,7 @@ use crate::{Pod, ViewCtx};
 /// }
 /// ```
 pub fn spinner() -> Spinner {
-    Spinner
+    WidgetView::<()>::check_impl_widget_view(Spinner)
 }
 
 /// The [`View`] created by [`spinner`].

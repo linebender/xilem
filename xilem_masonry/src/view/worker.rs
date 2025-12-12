@@ -45,12 +45,14 @@ pub fn worker<F, H, M, S, V, State, Action, Fut>(
     Dummy,
 >
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
+    V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     S: Fn(Arg<'_, State>, UnboundedSender<V>) + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     const {
         assert!(
@@ -69,6 +71,7 @@ where
         on_response,
         message: PhantomData,
     }
+    .check_impl_view()
 }
 
 /// A version of [`worker`] which can store its message sender in the environment.
@@ -81,13 +84,15 @@ pub fn env_worker<F, H, M, S, V, Res, State, Action, Fut>(
     on_response: H,
 ) -> Worker<State, Action, F, H, M, S, V, Res>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
+    V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(Arg<'_, State>, &mut Res, UnboundedSender<V>),
+    S: Fn(Arg<'_, State>, &mut Res, UnboundedSender<V>) + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     Res: Resource,
     State: ViewArgument,
+    Action: 'static,
 {
     const {
         assert!(
@@ -102,6 +107,7 @@ where
         on_response,
         message: PhantomData,
     }
+    .check_impl_view()
 }
 
 /// An internal struct used to make [`env_worker`]/[`worker`] work.
@@ -133,12 +139,14 @@ pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
 >
 where
     // TODO(DJMcNab): Accept app_state here
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
+    V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     S: Fn(Arg<'_, State>, UnboundedSender<V>) + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     Worker {
         init_future,
@@ -150,6 +158,7 @@ where
         },
         message: PhantomData,
     }
+    .check_impl_view()
 }
 
 /// The View type for [`worker`], [`env_worker`] and [`worker_raw`]. See its documentation for details.
@@ -166,7 +175,6 @@ impl<State, Action, F, H, M, Fut, S, V, Res> View<State, Action, ViewCtx>
     for Worker<State, Action, F, H, M, S, V, Res>
 where
     Res: Resource,
-    Action: 'static,
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
     V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
@@ -174,6 +182,7 @@ where
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     type Element = NoElement;
 

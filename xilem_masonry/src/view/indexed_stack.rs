@@ -10,7 +10,7 @@ use crate::core::{
     AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// An `IndexedStack` displays one of several children elements at a time.
 ///
@@ -50,7 +50,11 @@ use crate::{Pod, ViewCtx};
 /// )
 /// .active(state.tab);
 /// ```
-pub fn indexed_stack<State: ViewArgument, Action, Seq: IndexedStackSequence<State, Action>>(
+pub fn indexed_stack<
+    State: ViewArgument,
+    Action: 'static,
+    Seq: IndexedStackSequence<State, Action>,
+>(
     sequence: Seq,
 ) -> IndexedStack<Seq, State, Action> {
     IndexedStack {
@@ -58,6 +62,7 @@ pub fn indexed_stack<State: ViewArgument, Action, Seq: IndexedStackSequence<Stat
         active_child: 0,
         phantom: PhantomData,
     }
+    .check_impl_widget_view()
 }
 
 /// The [`View`] created by [`indexed_stack`] from a sequence.
@@ -287,13 +292,13 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
 
 /// `IndexedStackSequence` is what allows an input to the indexed stack that contains all the stack elements.
 pub trait IndexedStackSequence<State: ViewArgument, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, IndexedStackElement>
+    ViewSequence<State, Action, ViewCtx, IndexedStackElement> + Send + Sync
 {
 }
 
 impl<Seq, State, Action> IndexedStackSequence<State, Action> for Seq
 where
-    Seq: ViewSequence<State, Action, ViewCtx, IndexedStackElement>,
+    Seq: ViewSequence<State, Action, ViewCtx, IndexedStackElement> + Send + Sync,
     State: ViewArgument,
 {
 }

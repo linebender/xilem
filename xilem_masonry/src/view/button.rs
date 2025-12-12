@@ -74,16 +74,19 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// ```
 pub fn button<
     State: ViewArgument,
-    Action,
+    Action: 'static,
     V: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>) -> Action + Send + 'static,
+    F: Fn(Arg<'_, State>) -> Action + Send + Sync + 'static,
 >(
     child: V,
     callback: F,
 ) -> Button<
     State,
     Action,
-    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action>
+    + Send
+    + Sync
+    + 'static,
     V,
 > {
     Button {
@@ -95,6 +98,7 @@ pub fn button<
         disabled: false,
         phantom: PhantomData,
     }
+    .check_impl_widget_view()
 }
 
 /// A button with default styled text.
@@ -102,7 +106,7 @@ pub fn button<
 /// This is equivalent to `button(label(text), callback)`, and is useful for
 /// making buttons quickly from string literals.
 /// For more advanced text styling, prefer [`button`].
-pub fn text_button<State: ViewArgument, Action>(
+pub fn text_button<State: ViewArgument, Action: 'static>(
     text: impl Into<ArcStr>,
     callback: impl Fn(Arg<'_, State>) -> Action + Send + Sync + 'static,
 ) -> Button<
@@ -127,7 +131,7 @@ pub fn text_button<State: ViewArgument, Action>(
 /// Similarly, there is not currently long-press support.
 ///
 /// For more documentation and examples, see [`button`].
-pub fn button_any_pointer<State: ViewArgument, Action, V: WidgetView<State, Action>>(
+pub fn button_any_pointer<State: ViewArgument, Action: 'static, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(Arg<'_, State>, Option<PointerButton>) -> Action + Send + Sync + 'static,
 ) -> Button<

@@ -7,7 +7,7 @@ use masonry::parley::{FontFamily, GenericFamily};
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
-use crate::{Pod, TextAlign, ViewCtx};
+use crate::{Pod, TextAlign, ViewCtx, WidgetView};
 
 /// A non-interactive text element.
 /// # Example
@@ -33,13 +33,13 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
-    Label {
+    WidgetView::<()>::check_impl_widget_view(Label {
         label: label.into(),
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
-    }
+    })
 }
 
 /// The [`View`] created by [`label`] from a text which `impl Into<`[`ArcStr`]`>`.

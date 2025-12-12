@@ -9,7 +9,7 @@ use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
-pub trait WidgetView<State: ViewArgument, Action = ()>:
+pub trait WidgetView<State: ViewArgument, Action: 'static = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
     type Widget: Widget + FromDynWidget + ?Sized;
@@ -79,9 +79,19 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
             phantom: std::marker::PhantomData,
         }
     }
+
+    #[doc(hidden)]
+    /// An identity function, that lets us assert that
+    /// the receiver always implements WidgetView<..>
+    fn check_impl_widget_view(self) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
 }
 
-impl<V, State, Action, W> WidgetView<State, Action> for V
+impl<V, State, Action: 'static, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
     W: Widget + FromDynWidget + ?Sized,
@@ -108,6 +118,15 @@ where
 pub trait WidgetViewSequence<State: ViewArgument, Action = ()>:
     ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
 {
+    #[doc(hidden)]
+    /// An identity function, that lets us assert that
+    /// the receiver always implements WidgetViewSequence<..>
+    fn check_impl_widget_view_seq(self) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
 }
 
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq
