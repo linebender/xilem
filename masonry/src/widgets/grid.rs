@@ -24,8 +24,8 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 #[doc = include_screenshot!("grid_with_changed_spacing.png", "Grid with buttons of various sizes.")]
 pub struct Grid {
     children: Vec<Child>,
-    grid_width: i32,
-    grid_height: i32,
+    grid_column_count: i32,
+    grid_row_count: i32,
 }
 
 struct Child {
@@ -52,11 +52,11 @@ pub struct GridParams {
 // --- MARK: BUILDERS
 impl Grid {
     /// Create a new grid with the given number of columns and rows.
-    pub fn with_dimensions(width: i32, height: i32) -> Self {
+    pub fn with_dimensions(columns: i32, rows: i32) -> Self {
         Self {
             children: Vec::new(),
-            grid_width: width,
-            grid_height: height,
+            grid_column_count: columns,
+            grid_row_count: rows,
         }
     }
 
@@ -130,17 +130,15 @@ impl GridParams {
 
 // --- MARK: WIDGETMUT
 impl Grid {
-    // TODO - Some of these method names should maybe be changed.
-    // "height" and "width" are misleading, since they suggest a pixel size.
     /// Set the number of columns of the grid.
-    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
-        this.widget.grid_width = width;
+    pub fn set_column_count(this: &mut WidgetMut<'_, Self>, columns: i32) {
+        this.widget.grid_column_count = columns;
         this.ctx.request_layout();
     }
 
     /// Set the number of rows of the grid.
-    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: i32) {
-        this.widget.grid_height = height;
+    pub fn set_row_count(this: &mut WidgetMut<'_, Self>, rows: i32) {
+        this.widget.grid_row_count = rows;
         this.ctx.request_layout();
     }
 }
@@ -315,8 +313,8 @@ impl Widget for Grid {
             );
         }
         let gap = gap.get();
-        let width_unit = (total_size.width + gap) / (self.grid_width as f64);
-        let height_unit = (total_size.height + gap) / (self.grid_height as f64);
+        let width_unit = (total_size.width + gap) / (self.grid_column_count as f64);
+        let height_unit = (total_size.height + gap) / (self.grid_row_count as f64);
         for child in &mut self.children {
             let cell_size = Size::new(
                 (child.width as f64 * width_unit - gap).max(0.0),
@@ -405,12 +403,12 @@ mod tests {
 
         // Expand it to a 4x4 grid
         harness.edit_root_widget(|mut grid| {
-            Grid::set_width(&mut grid, 4);
+            Grid::set_column_count(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "grid_expanded_4x1");
 
         harness.edit_root_widget(|mut grid| {
-            Grid::set_height(&mut grid, 4);
+            Grid::set_row_count(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "grid_expanded_4x4");
 
