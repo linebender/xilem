@@ -130,6 +130,9 @@ path = "examples/android/http_cats_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
+[[example]]
+name = "canvas"
+
 [[test]]
 name = "long_elem_seq"
 path = "stress_tests/long_elem_seq.rs"
