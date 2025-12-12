@@ -15,6 +15,8 @@ use crate::core::{Edit, map_state};
 use crate::window_options::WindowCallbacks;
 use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 
+// TODO - Rename to `AppLauncher` or something.
+
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]
 pub struct Xilem<State, Logic> {

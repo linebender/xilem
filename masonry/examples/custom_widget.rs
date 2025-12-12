@@ -201,7 +201,6 @@ fn main() {
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
         vec![NewWindow::new(
             window_attributes,
             NewWidget::new(CustomWidget(my_string)).erased(),

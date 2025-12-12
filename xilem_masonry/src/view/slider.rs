@@ -112,7 +112,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

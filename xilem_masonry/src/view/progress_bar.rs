@@ -25,7 +25,10 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for ProgressBar {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.create_pod(widgets::ProgressBar::new(self.progress)))
+        (
+            ctx.with_action_widget(|ctx| ctx.create_pod(widgets::ProgressBar::new(self.progress))),
+            (),
+        )
     }
 
     fn rebuild(
@@ -47,7 +50,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for ProgressBar {
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
-        ctx.teardown_leaf(element);
+        ctx.teardown_action_source(element);
     }
 
     fn message(

@@ -16,6 +16,7 @@ doc-valid-idents = [
     "RustNL",
     # TODO: Get this allowed in upstream clippy?
     "BiDi",
+    "VSync",
     # For better or for worse, we don't treat pass names as identifiers in our docs.
     # TODO: Maybe we should?
     "update_xxx",

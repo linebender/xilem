@@ -6,8 +6,7 @@ use masonry::core::{FromDynWidget, NewWidget, Widget, WidgetMut};
 use crate::ViewCtx;
 use crate::core::{Mut, SuperElement, ViewElement};
 
-/// A container for a yet to be inserted [Masonry](masonry) widget
-/// to be used with Xilem.
+/// A container for a [`Widget`] yet to be inserted in the widget tree.
 ///
 /// This exists because the nearest equivalent type in Masonry, [`NewWidget`], can't have
 /// [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
@@ -19,8 +18,8 @@ use crate::core::{Mut, SuperElement, ViewElement};
 ///
 /// [`transformed`]: crate::view::Transformed
 /// [`WidgetView::transform`]: crate::view::transformed
-#[expect(missing_docs, reason = "TODO - Document these items")]
 pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
+    /// A [`Widget`] yet to be inserted in the widget tree.
     pub new_widget: NewWidget<W>,
 }
 

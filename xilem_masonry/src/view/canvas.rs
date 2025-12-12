@@ -76,13 +76,16 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| {
-            let widget = match &self.alt_text {
-                Some(alt_text) => widgets::Canvas::default().with_alt_text(alt_text.clone()),
-                None => widgets::Canvas::default(),
-            };
-            ctx.create_pod(widget)
-        })
+        (
+            ctx.with_action_widget(|ctx| {
+                let widget = match &self.alt_text {
+                    Some(alt_text) => widgets::Canvas::default().with_alt_text(alt_text.clone()),
+                    None => widgets::Canvas::default(),
+                };
+                ctx.create_pod(widget)
+            }),
+            (),
+        )
     }
 
     fn rebuild(
