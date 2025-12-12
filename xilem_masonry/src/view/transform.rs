@@ -19,7 +19,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// Transformations apply in order.
 /// That is, calling [`rotate`](Transformed::rotate) then [`translate`](Transformed::translate)
 /// will move the rotated widget.
-pub fn transformed<Child, State, Action>(child: Child) -> Transformed<Child, State, Action>
+pub fn transformed<Child, State, Action: 'static>(child: Child) -> Transformed<Child, State, Action>
 where
     Child: WidgetView<State, Action>,
     State: ViewArgument,
@@ -29,13 +29,14 @@ where
         transform: Affine::IDENTITY,
         phantom: PhantomData,
     }
+    .as_impl_widget_view()
 }
 
 /// The view for [`transformed`].
 pub struct Transformed<V, State, Action> {
     child: V,
     transform: Affine,
-    phantom: PhantomData<(State, Action)>,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
 impl<V, State, Action> Transformed<V, State, Action> {

@@ -8,6 +8,7 @@ use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets::{self, CheckboxToggled};
 
+use crate::WidgetView as _;
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx};
 
@@ -30,13 +31,13 @@ use crate::{Pod, ViewCtx};
 /// })
 /// # }
 /// ```
-pub fn checkbox<F, State, Action>(
+pub fn checkbox<F, State, Action: 'static>(
     label: impl Into<ArcStr>,
     checked: bool,
     callback: F,
 ) -> Checkbox<State, Action, F>
 where
-    F: Fn(Arg<'_, State>, bool) -> Action + Send + 'static,
+    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
     State: ViewArgument,
 {
     Checkbox {
@@ -49,6 +50,7 @@ where
         disabled: false,
         phantom: PhantomData,
     }
+    .as_impl_widget_view()
 }
 
 /// The [`View`] created by [`checkbox`] from a `label`, a bool value and a callback.

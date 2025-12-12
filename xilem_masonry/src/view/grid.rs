@@ -46,7 +46,7 @@ pub use masonry::widgets::GridParams;
 /// .gap(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
-pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
+pub fn grid<State: ViewArgument, Action: 'static, Seq: GridSequence<State, Action>>(
     sequence: Seq,
     width: i32,
     height: i32,
@@ -57,6 +57,7 @@ pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
         width,
         phantom: PhantomData,
     }
+    .as_impl_widget_view()
 }
 
 /// The [`View`] created by [`grid`] from a sequence, which also consumes custom width and height.
@@ -286,19 +287,19 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
 
 /// `GridSequence` is what allows an input to the grid that contains all the grid elements.
 pub trait GridSequence<State: ViewArgument, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, GridElement>
+    ViewSequence<State, Action, ViewCtx, GridElement> + Send + Sync
 {
 }
 
 impl<Seq, State, Action> GridSequence<State, Action> for Seq
 where
-    Seq: ViewSequence<State, Action, ViewCtx, GridElement>,
+    Seq: ViewSequence<State, Action, ViewCtx, GridElement> + Send + Sync,
     State: ViewArgument,
 {
 }
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a grid item
-pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
+pub trait GridExt<State: ViewArgument, Action: 'static>: WidgetView<State, Action> {
     /// Applies [`impl Into<GridParams>`](`GridParams`) to this view. This allows the view
     /// to be placed as a child within a [`Grid`] [`View`].
     ///
@@ -352,7 +353,10 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State: ViewArgument, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
+impl<State: ViewArgument, Action: 'static, V: WidgetView<State, Action>> GridExt<State, Action>
+    for V
+{
+}
 
 /// A child widget within a [`Grid`] view.
 pub struct GridElement {

@@ -82,7 +82,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
 /// }
 /// ```
-pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex<State: ViewArgument, Action: 'static, Seq: FlexSequence<State, Action>>(
     axis: Axis,
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
@@ -94,6 +94,7 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
         fill_major_axis: false,
         phantom: PhantomData,
     }
+    .as_impl_widget_view()
 }
 
 /// A layout where the children are laid out in a row.
@@ -102,7 +103,7 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
 /// [`direction`](Flex::direction).
 /// We recommend reading that type's documentation for a detailed
 /// explanation of this component's layout model.
-pub fn flex_row<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_row<State: ViewArgument, Action: 'static, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Horizontal, sequence)
@@ -114,7 +115,7 @@ pub fn flex_row<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
 /// [`direction`](Flex::direction).
 /// We recommend reading that type's documentation for a detailed
 /// explanation of this component's layout model.
-pub fn flex_col<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_col<State: ViewArgument, Action: 'static, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Vertical, sequence)
@@ -451,17 +452,17 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
 /// }
 /// ```
 pub trait FlexSequence<State: ViewArgument, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, FlexElement>
+    ViewSequence<State, Action, ViewCtx, FlexElement> + Send + Sync
 {
 }
 
 impl<Seq, State: ViewArgument, Action> FlexSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, FlexElement>
+    Seq: ViewSequence<State, Action, ViewCtx, FlexElement> + Send + Sync
 {
 }
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer.
-pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
+pub trait FlexExt<State: ViewArgument, Action: 'static>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
     ///
     /// # Examples
@@ -515,7 +516,10 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State: ViewArgument, Action, V: WidgetView<State, Action>> FlexExt<State, Action> for V {}
+impl<State: ViewArgument, Action: 'static, V: WidgetView<State, Action>> FlexExt<State, Action>
+    for V
+{
+}
 
 /// A `WidgetView` that can be used within a [`Flex`] [`View`].
 pub struct FlexItem<V, State, Action> {

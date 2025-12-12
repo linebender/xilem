@@ -164,5 +164,15 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         crate::map_action(self, f)
     }
 
+    #[doc(hidden)]
+    /// An identity function, that lets us assert that
+    /// the receiver always implements WidgetView<..>
+    fn as_impl_view(self) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
+
     // fn debug_name?
 }

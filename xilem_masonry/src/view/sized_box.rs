@@ -43,6 +43,7 @@ where
         width: None,
         phantom: PhantomData,
     }
+    .as_impl_widget_view()
 }
 
 /// The [`View`] created by [`sized_box`].

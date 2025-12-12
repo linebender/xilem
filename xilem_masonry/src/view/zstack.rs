@@ -34,13 +34,14 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     ))
 /// }
 /// ```
-pub fn zstack<State: ViewArgument, Action, Seq: ZStackSequence<State, Action>>(
+pub fn zstack<State: ViewArgument, Action: 'static, Seq: ZStackSequence<State, Action>>(
     sequence: Seq,
 ) -> ZStack<Seq> {
     ZStack {
         sequence,
         alignment: UnitPoint::CENTER,
     }
+    .as_impl_widget_view()
 }
 
 /// A view container that lays the child widgets on top of each other.
@@ -157,7 +158,7 @@ where
 // --- MARK: ZStackExt
 
 /// A trait that extends a [`WidgetView`] with methods to provide parameters for a parent [`ZStack`].
-pub trait ZStackExt<State: ViewArgument, Action>: WidgetView<State, Action> {
+pub trait ZStackExt<State: ViewArgument, Action: 'static>: WidgetView<State, Action> {
     /// Applies [`ChildAlignment`] to this view.
     /// This allows the view to override the default alignment of the parent [`ZStack`].
     /// This can only be used on views that are direct children of a [`ZStack`].
@@ -171,7 +172,10 @@ pub trait ZStackExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State: ViewArgument, Action, V: WidgetView<State, Action>> ZStackExt<State, Action> for V {}
+impl<State: ViewArgument, Action: 'static, V: WidgetView<State, Action>> ZStackExt<State, Action>
+    for V
+{
+}
 
 /// A wrapper around a [`WidgetView`], with a specified [`ChildAlignment`].
 /// This struct is most often constructed indirectly using [`ZStackExt::alignment`].
@@ -329,13 +333,13 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
 
 /// A trait implementing `ViewSequence` for `ZStackElement`.
 pub trait ZStackSequence<State: ViewArgument, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, ZStackElement>
+    ViewSequence<State, Action, ViewCtx, ZStackElement> + Send + Sync
 {
 }
 
 impl<Seq, State, Action> ZStackSequence<State, Action> for Seq
 where
-    Seq: ViewSequence<State, Action, ViewCtx, ZStackElement>,
+    Seq: ViewSequence<State, Action, ViewCtx, ZStackElement> + Send + Sync,
     State: ViewArgument,
 {
 }

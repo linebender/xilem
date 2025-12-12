@@ -32,11 +32,12 @@ pub fn task<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> Task<State, Action, F, H, M>
 where
-    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut,
+    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: ViewArgument,
+    Action: 'static,
 {
     const {
         assert!(
@@ -50,6 +51,7 @@ where
         on_event,
         message: PhantomData,
     }
+    .as_impl_view()
 }
 
 /// Launch a task which will run until the view is no longer in the tree.

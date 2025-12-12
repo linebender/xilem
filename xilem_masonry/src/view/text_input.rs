@@ -80,7 +80,10 @@ type Callback<State, Action> =
 /// .insert_newline(InsertNewline::OnEnter)
 /// # }
 /// ```
-pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
+pub fn text_input<F, State, Action: 'static>(
+    contents: String,
+    on_changed: F,
+) -> TextInput<State, Action>
 where
     F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
     State: ViewArgument,
@@ -102,6 +105,7 @@ where
         // not clipping
         clip: true,
     }
+    .as_impl_widget_view()
 }
 
 /// The [`View`] created by [`text_input`].

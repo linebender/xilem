@@ -9,15 +9,15 @@ use crate::core::{
     Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::view::{Label, label};
-use crate::{Pod, TextAlign, ViewCtx};
+use crate::{Pod, TextAlign, ViewCtx, WidgetView};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
-    VariableLabel {
+    WidgetView::<()>::as_impl_widget_view(VariableLabel {
         label: label(text),
         target_weight: FontWeight::NORMAL,
         over_millis: 0.,
-    }
+    })
 }
 
 /// The [`View`] created by [`variable_label`].
