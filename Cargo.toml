@@ -6,6 +6,7 @@ members = [
     "xilem_masonry",
     "masonry",
     "masonry_core",
+    "masonry_screen_reader",
     "masonry_testing",
     "masonry_winit",
 
