@@ -60,7 +60,7 @@ Cases where this apply include:
 - Writing an alternative driver for Masonry (alike to [Masonry Winit][]).
 - Witing a library containing one or more custom widget (such as a 2d mapping widget).
 
-Masonry Core can also be used by by applications wishing to not use Masonry's provided
+Masonry Core can also be used by applications wishing to not use Masonry's provided
 set of widgets, so as to have more control.
 This can be especially useful if you wish to exactly match the appearance of an existing library,
 or enforce following a specific design guide, which Masonry's widgets may not always allow.
