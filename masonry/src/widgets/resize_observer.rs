@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn detects_inner_resizing() {
-        let tag = WidgetTag::new("inner_box");
+        let tag = WidgetTag::named("inner_box");
         let inner_box =
             NewWidget::new_with_tag(SizedBox::empty().width(100.px()).height(100.px()), tag);
         let observer = ResizeObserver::new(inner_box).with_auto_id();

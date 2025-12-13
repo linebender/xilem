@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{Properties, Widget, WidgetId, WidgetTag};
+use crate::core::{Properties, Widget, WidgetId, WidgetTag, WidgetTagInner};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -39,7 +39,7 @@ pub struct NewWidget<W: ?Sized> {
     /// The properties the widget will be created with.
     pub properties: Properties,
 
-    pub(crate) tag: &'static str,
+    pub(crate) tag: Option<WidgetTagInner>,
 }
 
 impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
@@ -92,14 +92,14 @@ impl<W: Widget> NewWidget<W> {
             action_type_name: std::any::type_name::<W::Action>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
-            tag: "",
+            tag: None,
         }
     }
 
     /// Create a new widget with a [`WidgetTag`].
     pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
         Self {
-            tag: tag.name,
+            tag: Some(tag.inner),
             ..Self::new(inner)
         }
     }
@@ -131,7 +131,7 @@ impl<W: Widget> NewWidget<W> {
             action_type_name: std::any::type_name::<W::Action>(),
             options,
             properties: props,
-            tag: "",
+            tag: None,
         }
     }
 }

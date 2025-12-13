@@ -23,7 +23,7 @@ use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 #[test]
 fn app_creation() {
-    let widget_tag = WidgetTag::new("widget");
+    let widget_tag = WidgetTag::named("widget");
     let widget = NewWidget::new_with_tag(SizedBox::empty().record(), widget_tag);
 
     let harness = TestHarness::create(test_property_set(), widget);
@@ -49,7 +49,7 @@ fn new_widget() {
 
     let mut harness = TestHarness::create(test_property_set(), flex);
 
-    let widget_tag = WidgetTag::new("widget");
+    let widget_tag = WidgetTag::named("widget");
     harness.edit_root_widget(|mut flex| {
         let widget = NewWidget::new_with_tag(SizedBox::empty().record(), widget_tag);
 
@@ -98,8 +98,8 @@ fn register_invalid_child() {
 
 #[test]
 fn disabled_widget_gets_no_event() {
-    let button_tag = WidgetTag::new("button");
-    let parent_tag = WidgetTag::new("parent");
+    let button_tag = WidgetTag::named("button");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new_with_tag(Button::with_text("").record(), button_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
 
@@ -128,9 +128,9 @@ fn disabled_widget_gets_no_event() {
 
 #[test]
 fn disable_parent() {
-    let button_tag = WidgetTag::new("button");
-    let parent_tag = WidgetTag::new("parent");
-    let grandparent_tag = WidgetTag::new("grandparent_tag");
+    let button_tag = WidgetTag::named("button");
+    let parent_tag = WidgetTag::named("parent");
+    let grandparent_tag = WidgetTag::named("grandparent_tag");
     let child = NewWidget::new_with_tag(Button::with_text("").record(), button_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
     let grandparent = NewWidget::new_with_tag(ModularWidget::new_parent(parent), grandparent_tag);
@@ -173,8 +173,8 @@ fn disable_parent() {
 
 #[test]
 fn stashed_widget_loses_focus() {
-    let button_tag = WidgetTag::new("button");
-    let parent_tag = WidgetTag::new("parent");
+    let button_tag = WidgetTag::named("button");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new_with_tag(Button::with_text("").record(), button_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
 
@@ -202,9 +202,9 @@ fn stashed_widget_loses_focus() {
 
 #[test]
 fn stash_parent() {
-    let button_tag = WidgetTag::new("button");
-    let parent_tag = WidgetTag::new("parent");
-    let grandparent_tag = WidgetTag::new("grandparent_tag");
+    let button_tag = WidgetTag::named("button");
+    let parent_tag = WidgetTag::named("parent");
+    let grandparent_tag = WidgetTag::named("grandparent_tag");
     let child = NewWidget::new_with_tag(Button::with_text("").record(), button_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
     let grandparent = NewWidget::new_with_tag(ModularWidget::new_parent(parent), grandparent_tag);
@@ -377,9 +377,9 @@ fn focus_order() {
 
 #[test]
 fn disable_focusable() {
-    let button1_tag = WidgetTag::new("button1");
-    let button2_tag = WidgetTag::new("button2");
-    let button3_tag = WidgetTag::new("button3");
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+    let button3_tag = WidgetTag::named("button3");
 
     let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
     let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
@@ -410,9 +410,9 @@ fn disable_focusable() {
 
 #[test]
 fn stash_focusable() {
-    let button1_tag = WidgetTag::new("button1");
-    let button2_tag = WidgetTag::new("button2");
-    let button3_tag = WidgetTag::new("button3");
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+    let button3_tag = WidgetTag::named("button3");
 
     let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
     let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
@@ -446,9 +446,9 @@ fn stash_focusable() {
 
 #[test]
 fn remove_focusable() {
-    let button1_tag = WidgetTag::new("button1");
-    let button2_tag = WidgetTag::new("button2");
-    let button3_tag = WidgetTag::new("button3");
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+    let button3_tag = WidgetTag::named("button3");
 
     let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
     let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
@@ -484,7 +484,7 @@ fn remove_focusable() {
 
 #[test]
 fn ime_commit() {
-    let textbox_tag = WidgetTag::new("textbox");
+    let textbox_tag = WidgetTag::named("textbox");
     let textbox = NewWidget::new_with_tag(TextArea::new_editable(""), textbox_tag);
 
     let mut harness = TestHarness::create(test_property_set(), textbox);
@@ -504,7 +504,7 @@ fn ime_commit() {
 
 #[test]
 fn ime_removed() {
-    let textbox_tag = WidgetTag::new("textbox");
+    let textbox_tag = WidgetTag::named("textbox");
     let textbox = NewWidget::new_with_tag(TextArea::new_editable(""), textbox_tag);
     let parent = NewWidget::new(SizedBox::new(textbox));
 
@@ -523,7 +523,7 @@ fn ime_removed() {
 
 #[test]
 fn ime_start_stop() {
-    let textbox_tag = WidgetTag::new("textbox");
+    let textbox_tag = WidgetTag::named("textbox");
     let textbox = NewWidget::new_with_tag(TextArea::new_editable("").record(), textbox_tag);
     let parent = NewWidget::new(ModularWidget::new_parent(textbox));
 
@@ -562,7 +562,7 @@ fn create_icon_widget() -> ModularWidget<()> {
 
 #[test]
 fn cursor_icon() {
-    let icon_tag = WidgetTag::new("icon");
+    let icon_tag = WidgetTag::named("icon");
     let label = NewWidget::new(Button::with_text("hello"));
     let icon_widget = NewWidget::new_with_tag(create_icon_widget(), icon_tag);
     let parent = NewWidget::new(Flex::row().with_fixed(label).with_fixed(icon_widget));
@@ -578,8 +578,8 @@ fn cursor_icon() {
 
 #[test]
 fn pointer_capture_affects_pointer_icon() {
-    let label_tag = WidgetTag::new("label");
-    let icon_tag = WidgetTag::new("icon");
+    let label_tag = WidgetTag::named("label");
+    let icon_tag = WidgetTag::named("icon");
     let label = NewWidget::new_with_tag(Button::with_text("hello"), label_tag);
     let icon_widget = NewWidget::new_with_tag(create_icon_widget(), icon_tag);
     let parent = NewWidget::new(Flex::row().with_fixed(label).with_fixed(icon_widget));
@@ -602,7 +602,7 @@ fn pointer_capture_affects_pointer_icon() {
 
 #[test]
 fn lose_hovered_on_pointer_leave_or_cancel() {
-    let button_tag = WidgetTag::new("button");
+    let button_tag = WidgetTag::named("button");
 
     let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
 
@@ -644,8 +644,8 @@ fn lose_hovered_on_pointer_leave_or_cancel() {
 fn change_hovered_when_widget_changes() {
     const BOX_SIZE: Length = Length::const_px(50.);
 
-    let child_tag = WidgetTag::new("child");
-    let parent_tag = WidgetTag::new("parent");
+    let child_tag = WidgetTag::named("child");
+    let parent_tag = WidgetTag::named("parent");
 
     let child = NewWidget::new_with_tag(
         ModularWidget::new(BOX_SIZE).layout_fn(|size, _, _, _| Size::new(size.get(), size.get())),
@@ -719,7 +719,7 @@ fn status_flag_update_order() {
     let sender2 = sender.clone();
     let sender3 = sender;
 
-    let parent1_tag = WidgetTag::new("parent1");
+    let parent1_tag = WidgetTag::named("parent1");
 
     let child = NewWidget::new(Label::new(""));
     let parent1 = NewWidget::new_with_tag(make_reporter_parent(child, sender1, 1), parent1_tag);

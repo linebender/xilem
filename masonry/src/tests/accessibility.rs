@@ -11,8 +11,8 @@ use crate::widgets::SizedBox;
 
 #[test]
 fn request_accessibility() {
-    let target_tag = WidgetTag::new("target");
-    let parent_tag = WidgetTag::new("parent");
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new_with_tag(SizedBox::empty().record(), target_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
@@ -43,7 +43,7 @@ fn request_accessibility() {
 
 #[test]
 fn access_node_children() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
 
     let child_1 = NewWidget::new(SizedBox::empty());
     let child_2 = NewWidget::new(SizedBox::empty());

@@ -11,7 +11,7 @@ use crate::widgets::SizedBox;
 
 #[test]
 fn mutate_order() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new(SizedBox::empty());
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
@@ -40,7 +40,7 @@ fn mutate_order() {
 
 #[test]
 fn cancel_mutate() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new(SizedBox::empty());
     let parent = NewWidget::new_with_tag(SizedBox::new(child), parent_tag);
 

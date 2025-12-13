@@ -9,7 +9,7 @@ use crate::widgets::{Flex, SizedBox};
 
 #[test]
 fn duplicate_widget_tag() {
-    let tag = WidgetTag::new("hello");
+    let tag = WidgetTag::named("hello");
 
     let target = NewWidget::new_with_tag(SizedBox::empty(), tag);
     let parent = NewWidget::new(Flex::row().with_fixed(target));

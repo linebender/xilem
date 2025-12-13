@@ -3,6 +3,7 @@
 
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::core::Widget;
 
@@ -10,21 +11,44 @@ use crate::core::Widget;
 ///
 /// Unlike [`WidgetId`](crate::core::WidgetId), using this type to access a widget lets you
 /// skip downcasting.
-/// This should mostly be useful for testing.
 ///
 /// You can only add one widget with a given tag to the entire widget tree.
 /// Trying to add another widget with the same tag will debug-panic or fail silently.
 /// Tags currently aren't garbage-collected even when the widget is removed from the tree.
 pub struct WidgetTag<W: Widget + ?Sized> {
-    pub(crate) name: &'static str,
+    pub(crate) inner: WidgetTagInner,
     pub(crate) _marker: PhantomData<W>,
 }
 
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub(crate) struct WidgetTagInner {
+    pub(crate) id: u64,
+    pub(crate) name: &'static str,
+}
+
 impl<W: Widget> WidgetTag<W> {
-    /// Create a new tag.
-    pub const fn new(name: &'static str) -> Self {
+    /// Create a new tag with the given name.
+    ///
+    /// Calling this method twice with the same string will return the same tag.
+    /// Users should avoid name collisions when adding widgets with named tags.
+    ///
+    /// This method can be called in const contexts (e.g. to initialize a static).
+    pub const fn named(name: &'static str) -> Self {
         Self {
-            name,
+            inner: WidgetTagInner { id: 0, name },
+            _marker: PhantomData,
+        }
+    }
+
+    /// Create a new unique tag.
+    ///
+    /// Calling this method twice will return two different tags.
+    pub fn unique() -> Self {
+        static TAG_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+        let id = TAG_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        Self {
+            inner: WidgetTagInner { id, name: "" },
             _marker: PhantomData,
         }
     }
@@ -42,14 +66,22 @@ impl<W: Widget + ?Sized> Copy for WidgetTag<W> {}
 
 impl<W: Widget + ?Sized> Debug for WidgetTag<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("WidgetTag")
-            .field("name", &self.name)
-            .finish()
+        f.debug_tuple("WidgetTag").field(&self.inner).finish()
     }
 }
 
 impl<W: Widget + ?Sized> Display for WidgetTag<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.name)
+        Display::fmt(&self.inner, f)
+    }
+}
+
+impl Display for WidgetTagInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if !self.name.is_empty() {
+            write!(f, "#{}", self.name)
+        } else {
+            write!(f, "#{}", self.id)
+        }
     }
 }

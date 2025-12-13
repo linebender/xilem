@@ -17,8 +17,8 @@ fn request_compose() {
         offset: Vec2,
     }
 
-    let child_tag = WidgetTag::new("child");
-    let parent_tag = WidgetTag::new("parent");
+    let child_tag = WidgetTag::named("child");
+    let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new_with_tag(SizedBox::empty().record(), child_tag);
 
     let child = ChildAndPos {
@@ -78,7 +78,7 @@ fn request_compose() {
 
 #[test]
 fn scroll_pixel_snap() {
-    let child_tag = WidgetTag::new("child");
+    let child_tag = WidgetTag::named("child");
     let child = NewWidget::new_with_tag(SizedBox::empty(), child_tag);
 
     let parent = ModularWidget::new_parent(child)
