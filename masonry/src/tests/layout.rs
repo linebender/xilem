@@ -16,8 +16,8 @@ use crate::widgets::{Button, ChildAlignment, Flex, SizedBox, ZStack};
 fn layout_simple() {
     const BOX_WIDTH: f64 = 50.;
 
-    let tag_1 = WidgetTag::new("box1");
-    let tag_2 = WidgetTag::new("box2");
+    let tag_1 = WidgetTag::named("box1");
+    let tag_2 = WidgetTag::named("box2");
     let box_side = Length::px(BOX_WIDTH);
 
     let widget = Flex::column()
@@ -101,7 +101,7 @@ fn call_place_child_before_layout() {
 
 #[test]
 fn run_layout_on_stashed() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
     let widget =
         ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, bc| {
             let size = ctx.run_layout(child, bc);
@@ -123,7 +123,7 @@ fn run_layout_on_stashed() {
 
 #[test]
 fn stash_then_run_layout() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
     let widget =
         ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, bc| {
             // We check that stashing a widget is effective "immediately"
@@ -143,7 +143,7 @@ fn stash_then_run_layout() {
 
 #[test]
 fn unstash_then_run_layout() {
-    let parent_tag = WidgetTag::new("parent");
+    let parent_tag = WidgetTag::named("parent");
     let widget =
         ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, bc| {
             // We check that unstashing a widget is effective "immediately"
@@ -165,8 +165,8 @@ fn unstash_then_run_layout() {
 
 #[test]
 fn skip_layout_when_cached() {
-    let button_tag = WidgetTag::new("button");
-    let sibling_tag = WidgetTag::new("sibling");
+    let button_tag = WidgetTag::named("button");
+    let sibling_tag = WidgetTag::named("sibling");
 
     let button = NewWidget::new_with_tag(Button::with_text("Foobar").record(), button_tag);
     let sibling = NewWidget::new_with_tag(
@@ -196,7 +196,7 @@ fn skip_layout_when_cached() {
 
 #[test]
 fn pixel_snapping() {
-    let child_tag = WidgetTag::new("child");
+    let child_tag = WidgetTag::named("child");
     let child = NewWidget::new_with_tag(SizedBox::empty().size(10.3.px(), 10.3.px()), child_tag);
     let pos = Point::new(5.1, 5.3);
     let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, bc| {
@@ -219,8 +219,8 @@ fn pixel_snapping() {
 fn layout_insets() {
     const BOX_WIDTH: f64 = 50.;
 
-    let child_tag = WidgetTag::new("child");
-    let parent_tag = WidgetTag::new("parent");
+    let child_tag = WidgetTag::named("child");
+    let parent_tag = WidgetTag::named("parent");
 
     let child_widget = ModularWidget::new(()).layout_fn(|_, ctx, _, _| {
         // this widget paints twenty points above and below its layout bounds

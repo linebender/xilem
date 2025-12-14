@@ -29,7 +29,7 @@ fn create_capture_target() -> ModularWidget<()> {
 
 #[test]
 fn pointer_event() {
-    let button_tag = WidgetTag::new("button");
+    let button_tag = WidgetTag::named("button");
 
     let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
 
@@ -47,9 +47,9 @@ fn pointer_event() {
 
 #[test]
 fn pointer_event_bubbling() {
-    let button_tag = WidgetTag::new("button");
-    let parent_tag = WidgetTag::new("parent");
-    let grandparent_tag = WidgetTag::new("grandparent");
+    let button_tag = WidgetTag::named("button");
+    let parent_tag = WidgetTag::named("parent");
+    let grandparent_tag = WidgetTag::named("grandparent");
 
     let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(button).record(), parent_tag);
@@ -73,7 +73,7 @@ fn pointer_event_bubbling() {
 
 #[test]
 fn pointer_capture_and_cancel() {
-    let target_tag = WidgetTag::new("target");
+    let target_tag = WidgetTag::named("target");
 
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
@@ -96,7 +96,7 @@ fn pointer_capture_and_cancel() {
 
 #[test]
 fn synthetic_cancel() {
-    let target_tag = WidgetTag::new("target");
+    let target_tag = WidgetTag::named("target");
 
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target.record(), target_tag);
@@ -121,8 +121,8 @@ fn synthetic_cancel() {
 
 #[test]
 fn pointer_capture_suppresses_neighbors() {
-    let target_tag = WidgetTag::new("target");
-    let other_tag = WidgetTag::new("other");
+    let target_tag = WidgetTag::named("target");
+    let other_tag = WidgetTag::named("other");
 
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
@@ -198,7 +198,7 @@ fn try_capture_pointer_on_text_event() {
 
 #[test]
 fn pointer_cancel_on_window_blur() {
-    let target_tag = WidgetTag::new("target");
+    let target_tag = WidgetTag::named("target");
 
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target.record(), target_tag);
@@ -222,9 +222,9 @@ fn pointer_cancel_on_window_blur() {
 
 #[test]
 fn click_anchors_focus() {
-    let child_3 = WidgetTag::new("child_3");
-    let child_4 = WidgetTag::new("child_4");
-    let other = WidgetTag::new("other");
+    let child_3 = WidgetTag::named("child_3");
+    let child_4 = WidgetTag::named("child_4");
+    let other = WidgetTag::named("other");
 
     let parent = Flex::column()
         .with_fixed(NewWidget::new_with_tag(
@@ -263,7 +263,7 @@ fn click_anchors_focus() {
 
 #[test]
 fn text_event() {
-    let target_tag = WidgetTag::new("target");
+    let target_tag = WidgetTag::named("target");
 
     let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
 
@@ -284,9 +284,9 @@ fn text_event() {
 
 #[test]
 fn text_event_bubbling() {
-    let target_tag = WidgetTag::new("target");
-    let parent_tag = WidgetTag::new("parent");
-    let grandparent_tag = WidgetTag::new("grandparent");
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
+    let grandparent_tag = WidgetTag::named("grandparent");
 
     let target = NewWidget::new_with_tag(
         ModularWidget::new(()).accepts_focus(true).record(),
@@ -313,8 +313,8 @@ fn text_event_bubbling() {
 
 #[test]
 fn text_event_fallback() {
-    let target_tag = WidgetTag::new("target");
-    let other_tag = WidgetTag::new("other");
+    let target_tag = WidgetTag::named("target");
+    let other_tag = WidgetTag::named("other");
 
     let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
     let other = NewWidget::new_with_tag(TextArea::new_editable(""), other_tag);
@@ -347,11 +347,11 @@ fn text_event_fallback() {
 
 #[test]
 fn tab_focus() {
-    let child_1 = WidgetTag::new("child_1");
-    let child_2 = WidgetTag::new("child_2");
-    let child_3 = WidgetTag::new("child_3");
-    let child_4 = WidgetTag::new("child_4");
-    let child_5 = WidgetTag::new("child_5");
+    let child_1 = WidgetTag::named("child_1");
+    let child_2 = WidgetTag::named("child_2");
+    let child_3 = WidgetTag::named("child_3");
+    let child_4 = WidgetTag::named("child_4");
+    let child_5 = WidgetTag::named("child_5");
 
     let parent = Flex::column()
         .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_1))
@@ -396,9 +396,9 @@ fn tab_focus() {
 
 #[test]
 fn access_event_bubbling() {
-    let target_tag = WidgetTag::new("target");
-    let parent_tag = WidgetTag::new("parent");
-    let grandparent_tag = WidgetTag::new("grandparent");
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
+    let grandparent_tag = WidgetTag::named("grandparent");
 
     let target = NewWidget::new_with_tag(ModularWidget::new(()).record(), target_tag);
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(target).record(), parent_tag);
@@ -432,8 +432,8 @@ fn access_event_bubbling() {
 
 #[test]
 fn accessibility_focus() {
-    let child_2 = WidgetTag::new("child_2");
-    let child_3 = WidgetTag::new("child_3");
+    let child_2 = WidgetTag::named("child_2");
+    let child_3 = WidgetTag::named("child_3");
 
     let parent = Flex::column()
         .with_fixed(NewWidget::new(Button::with_text("")))
@@ -473,7 +473,7 @@ fn accessibility_focus() {
 
 #[test]
 fn downcast_untyped_action() {
-    let target_tag = WidgetTag::new("arbitrary_submitter");
+    let target_tag = WidgetTag::named("arbitrary_submitter");
 
     #[derive(Debug)]
     struct ArbitraryAction;

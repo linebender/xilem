@@ -1499,7 +1499,7 @@ impl RegisterCtx<'_> {
             action_type_name,
         );
 
-        if !tag.is_empty() {
+        if let Some(tag) = tag {
             let entry = self.global_state.widget_tags.entry(tag);
 
             let Entry::Vacant(vacant_entry) = entry else {
