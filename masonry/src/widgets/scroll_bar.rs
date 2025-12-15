@@ -60,17 +60,25 @@ impl ScrollBar {
         self.cursor_progress
     }
 
-    fn get_cursor_rect(&self, layout_size: Size, min_length: f64) -> Rect {
-        // TODO - handle invalid sizes
+    /// Returns `(cursor_length, empty_space_length)`.
+    ///
+    /// `cursor_Length` is guaranteed to be at least `min_length`
+    /// and the remainder of the layout length is `empty_space_length`.
+    fn lengths(&self, layout_size: Size, min_length: f64) -> (f64, f64) {
         let size_ratio = self.portal_size / self.content_size;
         let size_ratio = size_ratio.clamp(0.0, 1.0);
 
-        let cursor_length = size_ratio * layout_size.get_coord(self.axis);
-        let cursor_length = cursor_length.max(min_length);
+        let cursor_length = (size_ratio * layout_size.get_coord(self.axis)).max(min_length);
+        let empty_space_length = layout_size.get_coord(self.axis) - cursor_length;
 
-        let empty_space_length = (1.0 - size_ratio) * layout_size.get_coord(self.axis);
+        (cursor_length, empty_space_length)
+    }
+
+    fn cursor_rect(&self, layout_size: Size, min_length: f64) -> Rect {
+        // TODO - handle invalid sizes
+        let (cursor_length, empty_space_length) = self.lengths(layout_size, min_length);
+
         let cursor_pos_major = self.cursor_progress * empty_space_length;
-
         let cursor_pos = self.axis.pack_point(cursor_pos_major, 0.0);
         let cursor_size_minor = layout_size.get_coord(self.axis.cross());
         let cursor_size = self.axis.pack_size(cursor_length, cursor_size_minor);
@@ -86,18 +94,9 @@ impl ScrollBar {
         mouse_pos: Point,
     ) -> f64 {
         // TODO - handle invalid sizes
-        let size_ratio = self.portal_size / self.content_size;
-        let size_ratio = size_ratio.clamp(0.0, 1.0);
+        let (cursor_length, empty_space_length) = self.lengths(layout_size, min_length);
 
-        let cursor_rect = self.get_cursor_rect(layout_size, min_length);
-
-        // invariant: cursor_x == progress * (1 - size_ratio) * layout_width
-        // invariant: cursor_x + anchor * cursor_width == mouse_x
-
-        let cursor_width = cursor_rect.size().get_coord(self.axis);
-        let new_cursor_pos_major = mouse_pos.get_coord(self.axis) - anchor * cursor_width;
-
-        let empty_space_length = (1.0 - size_ratio) * layout_size.get_coord(self.axis);
+        let new_cursor_pos_major = mouse_pos.get_coord(self.axis) - anchor * cursor_length;
         let new_cursor_progress = new_cursor_pos_major / empty_space_length;
 
         new_cursor_progress.clamp(0.0, 1.0)
@@ -140,12 +139,12 @@ impl Widget for ScrollBar {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
-                let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
+                let cursor_rect = self.cursor_rect(ctx.size(), cursor_min_length);
                 let mouse_pos = ctx.local_position(state.position);
                 if cursor_rect.contains(mouse_pos) {
-                    let (z0, z1) = cursor_rect.get_coords(self.axis);
+                    let (c0, c1) = cursor_rect.get_coords(self.axis);
                     let mouse_major = mouse_pos.get_coord(self.axis);
-                    self.grab_anchor = Some((mouse_major - z0) / (z1 - z0));
+                    self.grab_anchor = Some((mouse_major - c0) / (c1 - c0));
                 } else {
                     self.cursor_progress =
                         self.progress_from_mouse_pos(ctx.size(), cursor_min_length, 0.5, mouse_pos);
@@ -226,7 +225,7 @@ impl Widget for ScrollBar {
 
         let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
-            .get_cursor_rect(ctx.size(), cursor_min_length)
+            .cursor_rect(ctx.size(), cursor_min_length)
             .inset((-inset_x, -inset_y))
             .to_rounded_rect(radius);
 
