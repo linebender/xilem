@@ -12,7 +12,6 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::util::debug_panic;
 
 /// A widget representing the top-level stack of visible layers owned by [`RenderRoot`](crate::app::RenderRoot).
 ///

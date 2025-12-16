@@ -20,7 +20,6 @@ use crate::core::{
     NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId,
     WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
-use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
 use crate::util::{TypeSet, get_debug_color};
