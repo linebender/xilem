@@ -219,9 +219,9 @@ impl Placehero {
                 "Could not find account @{acct} on this server. \
                  You might need to include the server name of the account, if it's on a different server."
             )))
-        } else if let Some(timline) = self.timeline.as_mut() {
+        } else if let Some(timeline) = self.timeline.as_mut() {
             OneOf::E(map_state(
-                timline.view(self.mastodon.clone()),
+                timeline.view(self.mastodon.clone()),
                 // In the current edition of the app, the timeline is never removed
                 // If it ever is, we'll need to be more careful here.
                 // The patterns are still in flux.

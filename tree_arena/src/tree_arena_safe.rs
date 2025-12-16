@@ -14,7 +14,7 @@ use crate::NodeId;
 struct TreeNode<T> {
     id: NodeId,
     item: T,
-    children: HashMap<NodeId, TreeNode<T>>,
+    children: HashMap<NodeId, Self>,
 }
 
 /// A container type for a tree of items.

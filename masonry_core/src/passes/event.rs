@@ -10,7 +10,6 @@ use crate::core::{
     PointerInfo, PointerScrollEvent, PointerType, PointerUpdate, PropertiesMut, TextEvent, Widget,
     WidgetId,
 };
-use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::passes::update::find_next_focusable;
 use crate::passes::{enter_span, merge_state_up};

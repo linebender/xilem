@@ -405,7 +405,7 @@ fn reparent_root_into_non_root() {
 }
 
 #[derive(PartialEq, Debug)]
-struct Node<T>(u64, T, Vec<Node<T>>);
+struct Node<T>(u64, T, Vec<Self>);
 
 fn add_tree<T>(arena: &mut TreeArena<T>, root: Node<T>) {
     let mut roots = arena.roots_mut();

@@ -31,8 +31,8 @@ parley.workspace = true
 smallvec.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 tracing = { workspace = true, features = ["default"] }
-tracing-core = { version = "0.1.33", default-features = false }
-tracing-subscriber = { version = "0.3.20", features = ["env-filter", "time"] }
+tracing-core = { version = "0.1.35", default-features = false }
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "time"] }
 tracing-tracy = { version = "0.11.4", optional = true }
 tree_arena.workspace = true
 ui-events.workspace = true
@@ -47,7 +47,7 @@ web-time.workspace = true
 assert_matches = "1.5.0"
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }
-insta = { version = "1.43.2" }
+insta = { version = "1.44.3" }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.17", features = ["profile-with-tracing"] }

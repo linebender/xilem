@@ -34,7 +34,7 @@ vello.workspace = true
 assert_matches = "1.5.0"
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }
-insta = { version = "1.43.2" }
+insta = { version = "1.44.3" }
 masonry_testing = { workspace = true, features = ["default"] }
 masonry_winit = { workspace = true, features = ["default"] }
 
