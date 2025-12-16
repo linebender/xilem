@@ -74,7 +74,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
         ))
         .with_fixed_spacer(WIDGET_SPACING);
 
-    NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
+    NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)).constrain_horizontal(true))
 }
 
 fn main() {
