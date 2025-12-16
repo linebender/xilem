@@ -58,15 +58,15 @@ parley = { version = "0.7.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.
 peniko = "0.5.0"
 winit = "0.30.12"
-tracing = { version = "0.1.41", default-features = false }
+tracing = { version = "0.1.43", default-features = false }
 tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"
 ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
 ui-events-winit = { version = "0.2.0", default-features = false }
 smallvec = "1.15.1"
-hashbrown = "0.16.0"
+hashbrown = "0.16.1"
 dpi = "0.1.2"
-image = { version = "0.25.8", default-features = false }
+image = { version = "0.25.9", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.10.0"
 accesskit = "0.21.1"
@@ -77,7 +77,7 @@ accesskit_winit = { version = "0.29.2", default-features = false, features = [
 ] }
 accesskit_consumer = "0.31.0"
 time = "0.3.44"
-reqwest = { version = "0.12.24", default-features = false, features = [
+reqwest = { version = "0.12.26", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
     "rustls-tls",

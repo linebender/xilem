@@ -10,8 +10,8 @@ default = ["xilem/default"]
 
 [dependencies]
 reqwest = { workspace = true }
-html5gum = "0.8.0"
-megalodon = "1.0.3"
+html5gum = "0.8.3"
+megalodon = "1.1.1"
 tracing.workspace = true
 xilem = { workspace = true }
 image = { workspace = true, features = ["jpeg", "png"] }

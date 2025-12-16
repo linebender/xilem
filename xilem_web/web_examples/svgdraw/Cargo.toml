@@ -16,6 +16,6 @@ workspace = true
 
 [dependencies]
 console_error_panic_hook = "0.1.7"
-wasm-bindgen = "0.2.104"
-web-sys = "0.3.81"
+wasm-bindgen = "0.2.106"
+web-sys = "0.3.83"
 xilem_web = { path = "../.." }
