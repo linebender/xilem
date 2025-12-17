@@ -73,9 +73,9 @@ impl<T: Widget> AsDynWidget for T {
 
 /// A trait that lets functions either downcast to a `Sized` widget or keep a `dyn Widget`.
 pub trait FromDynWidget {
-    /// Downcasts `widget` if `Self: Sized`, else return it as-is.
+    /// Downcasts `widget` if `Self: Sized`, else returns it as-is.
     fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
-    /// Downcasts `widget` if `Self: Sized`, else return it as-is.
+    /// Downcasts `widget` if `Self: Sized`, else returns it as-is.
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
 }
 
