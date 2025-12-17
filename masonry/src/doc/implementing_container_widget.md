@@ -31,7 +31,9 @@ It stores handles for its children using a type called [`WidgetPod`], and its `W
 As an example, let's write a `VerticalStack` widget, which lays out its children in a vertical line:
 
 ```rust,ignore
-struct VerticalStack {
+use masonry::core::{Widget, WidgetPod};
+
+pub struct VerticalStack {
     children: Vec<WidgetPod<dyn Widget>>,
     gap: f64,
 }
@@ -82,23 +84,27 @@ When debug assertions are on, Masonry will actively try to detect cases where yo
 For our `VerticalStack`, we'll lay out our children in a vertical line, with a gap between each child; we give each child an equal share of the available height:
 
 ```rust,ignore
-use masonry::core::{
-    BoxConstraints, LayoutCtx, PropertiesMut, Widget
-};
+use masonry::core::{BoxConstraints, LayoutCtx, PropertiesMut};
 use masonry::kurbo::{Point, Size};
 
 impl Widget for VerticalStack {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let total_width = bc.max().width;
         let total_height = bc.max().height;
         let total_child_height = total_height - self.gap * (self.children.len() - 1) as f64;
         let child_height = total_child_height / self.children.len() as f64;
 
         let mut y_offset = 0.0;
-        for child in &self.children {
-            let child_bc = BoxConstraints::new(Size::new(0., 0.), Size::new(total_width, child_height));
+        for child in &mut self.children {
+            let child_bc =
+                BoxConstraints::new(Size::new(0., 0.), Size::new(total_width, child_height));
 
             let child_size = ctx.run_layout(child, &child_bc);
             ctx.place_child(child, Point::new(0.0, y_offset));
@@ -136,9 +142,7 @@ For instance, if a widget in a list changes size, its siblings and parents must 
 In the case of our `VerticalStack`, we don't implement any transform-only changes, so we don't need to do anything in compose:
 
 ```rust,ignore
-use masonry::core::{
-    BoxConstraints, ComposeCtx, Widget
-};
+use masonry::core::ComposeCtx;
 
 impl Widget for VerticalStack {
     // ...
@@ -152,15 +156,13 @@ impl Widget for VerticalStack {
 The `register_children` method must call [`RegisterCtx::register_child`] for each child:
 
 ```rust,ignore
-use masonry::core::{
-    RegisterCtx, Widget
-};
+use masonry::core::RegisterCtx;
 
 impl Widget for VerticalStack {
     // ...
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
-        for child in &self.children {
+        for child in &mut self.children {
             ctx.register_child(child);
         }
     }
@@ -179,6 +181,8 @@ Not doing so is a logical bug, and may also trigger debug assertions.
 "All its children", in this context, means the children whose ids are returned by the `children_ids` method:
 
 ```rust,ignore
+use masonry::core::ChildrenIds;
+
 impl Widget for VerticalStack {
     // ...
 
@@ -203,9 +207,11 @@ Widgets will usually be added or removed through a [`WidgetMut`] wrapper.
 Let's write `WidgetMut` methods for our `VerticalStack`:
 
 ```rust,ignore
+use masonry::core::{NewWidget, WidgetMut};
+
 impl VerticalStack {
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
-        this.widget.children.push(child);
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<dyn Widget>) {
+        this.widget.children.push(child.to_pod());
         this.ctx.children_changed();
     }
 
@@ -221,6 +227,8 @@ impl VerticalStack {
 }
 ```
 
+<!-- TODO - Explain what NewWidget is -->
+
 If you want to add or remove a child during other passes, the simplest solution is to use the `mutate_self_later` context method.
 That mutate takes a callback, and schedules it to be run with a `WidgetMut` wrapper to the current widget.
 
@@ -232,7 +240,16 @@ Now that we've implemented our container-specific methods, we should also implem
 In the case of our `VerticalStack`, all of them can be left empty:
 
 ```rust,ignore
+use masonry::accesskit::{Node, Role};
+use masonry::core::{
+    AccessCtx, AccessEvent, EventCtx, NoAction, PaintCtx, PointerEvent, PropertiesRef, TextEvent,
+    Update, UpdateCtx,
+};
+use masonry::vello::Scene;
+
 impl Widget for VerticalStack {
+    type Action = NoAction;
+
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
