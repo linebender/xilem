@@ -93,6 +93,12 @@ We should avoid `use super::xxx` imports, except for specific cases like unit te
 
 Most imports in the code base should use the canonical top-level import.
 
+### Avoid glob imports
+
+We should avoid `use foo::*` imports, because they make it harder for people reading the code outside an IDE to track where a given imports come from.
+
+Glob re-exports (e.g. `pub use my_module::*`) are fine and encouraged from `mod.rs` files.
+
 ### No prelude
 
 Masonry should have no prelude. Examples and documentation should deliberately have a list of imports that cover everything users will need, so users can copy-paste these lists.
