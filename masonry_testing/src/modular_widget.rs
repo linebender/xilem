@@ -5,10 +5,10 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, MeasureCtx,
-    NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef,
-    find_widget_under_pointer,
+    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
+    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
+    PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod, WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
@@ -446,6 +446,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } else {
             ChildrenIds::new()
         }
+    }
+
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
     }
 
     fn accepts_pointer_interaction(&self) -> bool {
