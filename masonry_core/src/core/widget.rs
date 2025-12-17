@@ -284,6 +284,10 @@ pub trait Widget: AsDynWidget + Any {
     /// This method takes a mutable reference to a node which is already initialized
     /// with some information about the current widget (coordinates, status flags), and
     /// and mutates that node to set widget-specific information.
+    ///
+    /// **Note:** A new node is created each time this method is called.
+    /// Changes to the node don't persist between accessibility passes, and must instead
+    /// be re-applied by this method every time it's called.
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
