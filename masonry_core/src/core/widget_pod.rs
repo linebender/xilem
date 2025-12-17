@@ -139,8 +139,7 @@ impl<W: Widget> NewWidget<W> {
 impl<W: Widget + ?Sized> NewWidget<W> {
     /// Type-erase the contained widget.
     ///
-    /// Convert a `NewWidget` pointing to a widget of a specific concrete type
-    /// `NewWidget` pointing to a `dyn Widget`.
+    /// Convert a `NewWidget` pointing to a `dyn Widget`.
     pub fn erased(self) -> NewWidget<dyn Widget> {
         NewWidget {
             widget: self.widget.as_box_dyn(),
