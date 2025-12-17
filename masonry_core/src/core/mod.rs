@@ -6,6 +6,7 @@
 mod box_constraints;
 mod contexts;
 mod events;
+mod layer;
 mod layout_cache;
 mod properties;
 mod text;
@@ -27,6 +28,7 @@ pub use widget_mut::*;
 pub use widget_pod::*;
 pub use widget_ref::*;
 pub use widget_tag::*;
+pub use layer::{Layer, LayerType};
 
 pub use cursor_icon::CursorIcon;
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
