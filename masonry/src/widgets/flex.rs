@@ -651,7 +651,6 @@ impl Widget for Flex {
 
         let axis = self.direction;
 
-        const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
         let bc_major_min = bc.min().get_coord(axis);
         let bc_major_max = bc.max().get_coord(axis);
@@ -660,8 +659,7 @@ impl Widget for Flex {
         let mut minor = bc.min().get_coord(axis.cross());
         let mut major_non_flex = gap_count as f64 * gap.get();
         let mut major_flex: f64 = 0.0;
-        // We start with a small value to avoid divide-by-zero errors.
-        let mut flex_sum = MIN_FLEX_SUM;
+        let mut flex_sum: f64 = 0.;
         // Values used if any child has `CrossAxisAlignment::Baseline`.
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
@@ -707,7 +705,11 @@ impl Widget for Flex {
         }
 
         let remaining_major = (bc_major_max - major_non_flex).max(0.0);
-        let px_per_flex = remaining_major / flex_sum;
+        let px_per_flex = if flex_sum > 0. {
+            remaining_major / flex_sum
+        } else {
+            0.
+        };
 
         // MEASURE FLEX CHILDREN
         for child in &mut self.children {
@@ -812,11 +814,11 @@ impl Widget for Flex {
             }
         }
 
-        if flex_sum > MIN_FLEX_SUM && bc_major_max.is_infinite() {
+        if flex_sum > 0. && bc_major_max.is_infinite() {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
-        let final_major = if flex_sum > MIN_FLEX_SUM || self.fill_major_axis {
+        let final_major = if flex_sum > 0. || self.fill_major_axis {
             bc_major_max.max(major_non_flex)
         } else {
             bc_major_min.max(major_non_flex)
