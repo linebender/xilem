@@ -73,9 +73,9 @@ impl<T: Widget> AsDynWidget for T {
 
 /// A trait that lets functions either downcast to a `Sized` widget or keep a `dyn Widget`.
 pub trait FromDynWidget {
-    /// Downcast `widget` if `Self: Sized`, else return it as-is.
+    /// Downcasts `widget` if `Self: Sized`, else return it as-is.
     fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
-    /// Downcast `widget` if `Self: Sized`, else return it as-is.
+    /// Downcasts `widget` if `Self: Sized`, else return it as-is.
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
 }
 
@@ -144,7 +144,7 @@ pub trait Widget: AsDynWidget + Any {
     where
         Self: Sized;
 
-    /// Handle a pointer event.
+    /// Handles a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
     /// event will bubble to each of its parents.
@@ -156,7 +156,7 @@ pub trait Widget: AsDynWidget + Any {
     ) {
     }
 
-    /// Handle a text event.
+    /// Handles a text event.
     ///
     /// Text events will target the [focused widget], then bubble to each parent.
     ///
@@ -169,7 +169,7 @@ pub trait Widget: AsDynWidget + Any {
     ) {
     }
 
-    /// Handle an event from the platform's accessibility API.
+    /// Handles an event from the platform's accessibility API.
     ///
     /// Accessibility events target a specific widget id, then bubble to each parent.
     fn on_access_event(
@@ -209,7 +209,7 @@ pub trait Widget: AsDynWidget + Any {
 
     // TODO - Reorder methods to match 02_implementing_widget.md
 
-    /// Register child widgets with Masonry.
+    /// Registers child widgets with Masonry.
     ///
     /// Leaf widgets can implement this with an empty body.
     ///
@@ -218,7 +218,7 @@ pub trait Widget: AsDynWidget + Any {
     /// All the children returned by `children_ids` should be visited.
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
 
-    /// Handle an update to the widget's state.
+    /// Handles an update to the widget's state.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`Update`] enum) that are generally related to
@@ -226,10 +226,10 @@ pub trait Widget: AsDynWidget + Any {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {}
 
     // TODO - Remove default implementation
-    /// Handle a property being added, changed, or removed.
+    /// Handles a property being added, changed, or removed.
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {}
 
-    /// Compute layout and return the widget's size.
+    /// Computes layout and return the widget's size.
     ///
     /// A leaf widget should determine its size (subject to the provided
     /// constraints) and return it.
@@ -264,7 +264,7 @@ pub trait Widget: AsDynWidget + Any {
     /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}
 
-    /// Paint the widget appearance.
+    /// Paints the widget appearance.
     ///
     /// Container widgets can paint a background before recursing to their
     /// children. To draw on top of children, see [`Widget::post_paint`].
@@ -276,10 +276,10 @@ pub trait Widget: AsDynWidget + Any {
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     }
 
-    /// Return what kind of "thing" the widget fundamentally is.
+    /// Returns what kind of "thing" the widget fundamentally is.
     fn accessibility_role(&self) -> Role;
 
-    /// Describe the widget's contents for accessibility APIs.
+    /// Describes the widget's contents for accessibility APIs.
     ///
     /// This method takes a mutable reference to a node which is already initialized
     /// with some information about the current widget (coordinates, status flags), and
@@ -291,7 +291,7 @@ pub trait Widget: AsDynWidget + Any {
         node: &mut Node,
     );
 
-    /// Return ids of this widget's children.
+    /// Returns ids of this widget's children.
     ///
     /// Leaf widgets return an empty array. Container widgets return ids of
     /// their children.
@@ -340,7 +340,7 @@ pub trait Widget: AsDynWidget + Any {
     // TODO - Write a generic default implementation once
     // `const std::any::type_name` is stable.
     // See https://github.com/rust-lang/rust/issues/63084
-    /// Return a span for tracing.
+    /// Returns a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child
     /// widget visited, and popped when control flow goes back to the parent. This method
@@ -349,7 +349,7 @@ pub trait Widget: AsDynWidget + Any {
         trace_span!("Widget", r#type = self.short_type_name(), id = id.trace())
     }
 
-    /// Return a small string representing important info about this widget instance.
+    /// Returns a small string representing important info about this widget instance.
     ///
     /// When using [`WidgetRef`]'s [`Debug`] implementation, widgets
     /// will be displayed as a tree of values. Widgets which return a non-null value in
@@ -359,7 +359,7 @@ pub trait Widget: AsDynWidget + Any {
         None
     }
 
-    /// Return the cursor icon for this widget.
+    /// Returns the cursor icon for this widget.
     ///
     /// This will be called when the mouse moves or [`request_cursor_icon_change`](crate::core::MutateCtx::request_cursor_icon_change) is called.
     ///
@@ -371,7 +371,7 @@ pub trait Widget: AsDynWidget + Any {
 
     // --- Auto-generated implementations ---
 
-    /// Return the first innermost widget composed by this (including `self`), that contains/intersects with `pos` and accepts pointer interaction, if any.
+    /// Returns the first innermost widget composed by this (including `self`), that contains/intersects with `pos` and accepts pointer interaction, if any.
     ///
     /// In case of overlapping children, the last child as determined by [`Widget::children_ids`] is chosen. No widget is
     /// returned if `pos` is outside the widget's clip path.
@@ -389,14 +389,14 @@ pub trait Widget: AsDynWidget + Any {
         find_widget_under_pointer(self.as_dyn(), ctx, pos)
     }
 
-    /// Get the (verbose) type name of the widget for debugging purposes.
+    /// Gets the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
     #[doc(hidden)]
     fn type_name(&self) -> &'static str {
         std::any::type_name::<Self>()
     }
 
-    /// Get the (abridged) type name of the widget for debugging purposes.
+    /// Gets the (abridged) type name of the widget for debugging purposes.
     /// You should not override this method.
     #[doc(hidden)]
     fn short_type_name(&self) -> &'static str {
@@ -409,7 +409,7 @@ pub trait Widget: AsDynWidget + Any {
             .unwrap_or(name)
     }
 
-    /// Convenience method to create wrap this in a [`NewWidget`].
+    /// Convenience method to wrap this in a [`NewWidget`].
     fn with_auto_id(self) -> NewWidget<Self>
     where
         Self: Sized,
@@ -419,7 +419,7 @@ pub trait Widget: AsDynWidget + Any {
 
     // TODO - We eventually want to remove the ability to reserve widget ids.
     // See https://github.com/linebender/xilem/issues/1255
-    /// Convenience method to create wrap this in a [`NewWidget`] with the given id.
+    /// Convenience method to wrap this in a [`NewWidget`] with the given id.
     fn with_id(self, id: WidgetId) -> NewWidget<Self>
     where
         Self: Sized,
@@ -427,7 +427,7 @@ pub trait Widget: AsDynWidget + Any {
         NewWidget::new_with_id(self, id)
     }
 
-    /// Convenience method to create wrap this in a [`NewWidget`] with the given [`Properties`].
+    /// Convenience method to wrap this in a [`NewWidget`] with the given [`Properties`].
     fn with_props(self, props: Properties) -> NewWidget<Self>
     where
         Self: Sized,
@@ -495,7 +495,7 @@ pub fn find_widget_under_pointer<'c>(
 pub trait AllowRawMut: Widget {}
 
 impl WidgetId {
-    /// Allocate a new, unique `WidgetId`.
+    /// Allocates a new, unique `WidgetId`.
     ///
     /// All widgets are assigned ids automatically; you should only create
     /// an explicit id if you need to know it ahead of time, for instance
@@ -510,7 +510,7 @@ impl WidgetId {
     }
 
     // TODO - Remove
-    /// Create a reserved `WidgetId`, suitable for reuse.
+    /// Creates a reserved `WidgetId`, suitable for reuse.
     ///
     /// The caller is responsible for ensuring that this ID is in fact assigned
     /// to a single widget at any time, or your code may become haunted.
@@ -611,21 +611,21 @@ pub trait CollectionWidget<Params>: Widget {
         params: impl Into<Params>,
     );
 
-    /// Set the child params at the given index.
+    /// Sets the child params at the given index.
     ///
     /// # Panics
     ///
     /// Panics if `idx` is out of bounds.
     fn set_params(this: &mut WidgetMut<'_, Self>, idx: usize, params: impl Into<Params>);
 
-    /// Swap the index of two children.
+    /// Swaps the index of two children.
     ///
     /// # Panics
     ///
     /// Panics if `a` or `b` are out of bounds.
     fn swap(this: &mut WidgetMut<'_, Self>, a: usize, b: usize);
 
-    /// Remove the child at the given index.
+    /// Removes the child at the given index.
     ///
     /// # Panics
     ///

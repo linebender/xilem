@@ -36,7 +36,7 @@ pub struct Image {
 
 // --- MARK: BUILDERS
 impl Image {
-    /// Create an image drawing widget from an image buffer.
+    /// Creates an image drawing widget from an image buffer.
     ///
     /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
@@ -47,7 +47,7 @@ impl Image {
         }
     }
 
-    /// Set the text that will describe the image to screen readers.
+    /// Sets the text that will describe the image to screen readers.
     ///
     /// Users are encouraged to set alt text for the image.
     /// If possible, the alt-text should succinctly describe what the image represents.
@@ -63,14 +63,14 @@ impl Image {
 
 // --- MARK: WIDGETMUT
 impl Image {
-    /// Set new `ImageBrush`.
+    /// Sets new `ImageBrush`.
     #[inline]
     pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: impl Into<ImageBrush>) {
         this.widget.image_data = image_data.into();
         this.ctx.request_layout();
     }
 
-    /// Set the text that will describe the image to screen readers.
+    /// Sets the text that will describe the image to screen readers.
     ///
     /// See [`Image::with_alt_text`] for details.
     pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: Option<impl Into<ArcStr>>) {

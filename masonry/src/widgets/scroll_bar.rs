@@ -35,7 +35,7 @@ pub struct ScrollBar {
 
 // --- MARK: BUILDERS
 impl ScrollBar {
-    /// Create a new scrollbar.
+    /// Creates a new scrollbar.
     ///
     /// - `portal_size`: Size of the scrolling container in the relevant axis.
     /// - `content_size`: Size of the child in the relevant axis. Usually exceeds `portal_size` in cases where the scrollbar is visible.
@@ -105,7 +105,7 @@ impl ScrollBar {
 
 // --- MARK: WIDGETMUT
 impl ScrollBar {
-    /// Update the sizes of the widgets being represented by the scrollbar.
+    /// Updates the sizes of the widgets being represented by the scrollbar.
     /// - `portal_size`: Size of the scrolling container in the relevant axis.
     /// - `content_size`: Size of the child in the relevant axis. Usually exceeds `portal_size` in cases where the scrollbar is visible.
     // TODO - Remove?
@@ -115,7 +115,7 @@ impl ScrollBar {
         this.ctx.request_render();
     }
 
-    /// Update the size of the child widget being represented by the scrollbar.
+    /// Updates the size of the child widget being represented by the scrollbar.
     // TODO - Remove?
     pub fn set_content_size(this: &mut WidgetMut<'_, Self>, content_size: f64) {
         // TODO - cursor_progress

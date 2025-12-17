@@ -23,7 +23,7 @@ impl Property for PlaceholderColor {
 }
 
 impl PlaceholderColor {
-    /// Create new `PlaceholderColor` with given value.
+    /// Creates new `PlaceholderColor` with given value.
     pub const fn new(color: AlphaColor<Srgb>) -> Self {
         Self { color }
     }

@@ -123,7 +123,7 @@ impl Recording {
 }
 
 impl<W: Widget> Recorder<W> {
-    /// Wrap child widget in a Recorder that records all method calls.
+    /// Wraps child widget in a Recorder that records all method calls.
     pub fn new(child: W, recording: &Recording) -> Self {
         Self {
             child,
@@ -131,17 +131,17 @@ impl<W: Widget> Recorder<W> {
         }
     }
 
-    /// Get the events this widget recorded.
+    /// Returns the events this widget recorded.
     pub fn recording(&self) -> &Recording {
         &self.recording
     }
 
-    /// Get a reference to the child that's being recorded.
+    /// Returns a reference to the child that's being recorded.
     pub fn inner(&self) -> &W {
         &self.child
     }
 
-    /// Get an exclusive reference to the child that's being recorded.
+    /// Returns an exclusive reference to the child that's being recorded.
     pub fn inner_mut(&mut self) -> &mut W {
         &mut self.child
     }

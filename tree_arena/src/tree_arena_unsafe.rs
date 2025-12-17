@@ -137,7 +137,7 @@ impl<T> DataMap<T> {
         Some(unsafe { node_cell.get().as_ref()? })
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -159,7 +159,7 @@ impl<T> DataMap<T> {
         })
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a mutable reference to the item if present.
     ///
@@ -192,7 +192,7 @@ impl<T> DataMap<T> {
         })
     }
 
-    /// Construct the path of items from the given item to the root of the tree.
+    /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
@@ -227,7 +227,7 @@ impl<T> DataMap<T> {
 }
 
 impl<T> TreeArena<T> {
-    /// Create a new empty tree
+    /// Creates a new empty tree
     pub fn new() -> Self {
         Self {
             data_map: DataMap::new(),
@@ -262,7 +262,7 @@ impl<T> TreeArena<T> {
         }
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -273,7 +273,7 @@ impl<T> TreeArena<T> {
         self.data_map.find_inner(id.into())
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a mutable reference to the item if present.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
@@ -281,7 +281,7 @@ impl<T> TreeArena<T> {
         self.data_map.find_mut_inner(id.into())
     }
 
-    /// Construct the path of items from the given item to the root of the tree.
+    /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
@@ -378,7 +378,7 @@ impl<T> ArenaRef<'_, T> {
 }
 
 impl<'arena, T> ArenaRefList<'arena, T> {
-    /// Check if id is a descendant of self
+    /// Checks if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
@@ -410,9 +410,9 @@ impl<'arena, T> ArenaRefList<'arena, T> {
             .unwrap_or_default()
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     ///
-    /// Return a new [`ArenaRef`]
+    /// Returns a new [`ArenaRef`].
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has(id) {
@@ -422,7 +422,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
         }
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     ///
     /// This is the same as [`item`](Self::item), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
@@ -435,7 +435,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
         }
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -484,7 +484,7 @@ impl<T> ArenaMut<'_, T> {
 }
 
 impl<'arena, T> ArenaMutList<'arena, T> {
-    /// Check if id is a descendant of self
+    /// Checks if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
@@ -496,7 +496,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.reborrow().has(id)
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     ///
     /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
@@ -509,7 +509,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         }
     }
 
-    /// Get a mutable handle to the element of the list with the given id.
+    /// Returns a mutable handle to the element of the list with the given id.
     ///
     /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
@@ -523,7 +523,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         }
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     ///
     /// This is the same as [`item`](Self::item), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
@@ -536,7 +536,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         }
     }
 
-    /// Get a mutable handle to the element of the list with the given id.
+    /// Returns a mutable handle to the element of the list with the given id.
     ///
     /// This is the same as [`item_mut`](Self::item_mut), except it consumes
     /// the handle. This is sometimes necessary to accommodate the borrow checker.
@@ -590,7 +590,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     // TODO - How to handle when a subtree is removed?
     // Move children to the root?
     // Should this be must use?
-    /// Remove the item with the given id from the arena.
+    /// Removes the item with the given id from the arena.
     ///
     /// If the id isn't in the list (even if it's e.g. a descendant), does nothing
     /// and returns `None`.
@@ -636,7 +636,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         }
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -647,7 +647,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.reborrow().find(id)
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///

@@ -31,7 +31,7 @@ struct Layer {
 
 // --- MARK: IMPL LAYER_STACK
 impl LayerStack {
-    /// Create a stack with the provided base layer.
+    /// Creates a stack with the provided base layer.
     pub(crate) fn new(root: NewWidget<impl Widget + ?Sized>) -> Self {
         let layer = Layer {
             widget: root.erased().to_pod(),
@@ -60,7 +60,7 @@ impl LayerStack {
 
 // --- MARK: IMPL WIDGETMUT
 impl LayerStack {
-    /// Add a new layer at the end of the stack, with the given widget as its root, at the given position.
+    /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
     pub(crate) fn add_layer(
         this: &mut WidgetMut<'_, Self>,
         root: NewWidget<impl Widget + ?Sized>,
@@ -74,7 +74,7 @@ impl LayerStack {
         this.ctx.children_changed();
     }
 
-    /// Get a mutable reference to the root widget of the layer at `idx`.
+    /// Returns a mutable reference to the root widget of the layer at `idx`.
     ///
     /// # Panics
     ///

@@ -28,7 +28,7 @@ pub struct Canvas {
 
 // --- MARK: BUILDERS
 impl Canvas {
-    /// Set the text that will describe the canvas to screen readers.
+    /// Sets the text that will describe the canvas to screen readers.
     ///
     /// Users are encouraged to set alt text for the canvas.
     /// If possible, the alt-text should succinctly describe what the canvas represents.
@@ -52,14 +52,14 @@ impl Canvas {
 
 // --- MARK: WIDGETMUT
 impl Canvas {
-    /// Update the canvas scene.
+    /// Updates the canvas scene.
     pub fn update_scene(this: &mut WidgetMut<'_, Self>, f: impl FnOnce(&mut Scene, Size)) {
         this.widget.scene.reset();
         f(&mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
 
-    /// Set the text that will describe the canvas to screen readers.
+    /// Sets the text that will describe the canvas to screen readers.
     ///
     /// See [`Canvas::with_alt_text`] for details.
     pub fn set_alt_text(this: &mut WidgetMut<'_, Self>, alt_text: Option<impl Into<ArcStr>>) {

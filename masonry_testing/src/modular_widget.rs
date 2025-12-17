@@ -60,7 +60,7 @@ pub struct ModularWidget<S> {
 }
 
 impl<S> ModularWidget<S> {
-    /// Create a new `ModularWidget`.
+    /// Creates a new `ModularWidget`.
     ///
     /// By default none of its methods do anything, and its layout method returns
     /// a static 100x100 size.
@@ -90,7 +90,7 @@ impl<S> ModularWidget<S> {
 }
 
 impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
-    /// Create a new `ModularWidget` with some methods already set to handle a single child.
+    /// Creates a new `ModularWidget` with some methods already set to handle a single child.
     pub fn new_parent(child: NewWidget<W>) -> Self {
         let child = child.to_pod();
         Self::new(child)
@@ -107,7 +107,7 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
 }
 
 impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
-    /// Create a new `ModularWidget` with some methods already set to handle multiple children.
+    /// Creates a new `ModularWidget` with some methods already set to handle multiple children.
     ///
     /// Layout will just stack all children on the same position and return the size of the largest.
     pub fn new_multi_parent(children: Vec<NewWidget<W>>) -> Self {

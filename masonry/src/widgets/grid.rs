@@ -51,7 +51,7 @@ pub struct GridParams {
 
 // --- MARK: BUILDERS
 impl Grid {
-    /// Create a new grid with the given number of columns and rows.
+    /// Creates a new grid with the given number of columns and rows.
     pub fn with_dimensions(columns: i32, rows: i32) -> Self {
         Self {
             children: Vec::new(),
@@ -90,7 +90,7 @@ fn new_grid_child(params: GridParams, child: NewWidget<impl Widget + ?Sized>) ->
 
 // --- MARK: IMPL GRIDPARAMS
 impl GridParams {
-    /// Create grid parameters with the given values.
+    /// Creates grid parameters with the given values.
     ///
     /// # Panics
     ///
@@ -130,13 +130,13 @@ impl GridParams {
 
 // --- MARK: WIDGETMUT
 impl Grid {
-    /// Set the number of columns of the grid.
+    /// Sets the number of columns of the grid.
     pub fn set_column_count(this: &mut WidgetMut<'_, Self>, columns: i32) {
         this.widget.grid_column_count = columns;
         this.ctx.request_layout();
     }
 
-    /// Set the number of rows of the grid.
+    /// Sets the number of rows of the grid.
     pub fn set_row_count(this: &mut WidgetMut<'_, Self>, rows: i32) {
         this.widget.grid_row_count = rows;
         this.ctx.request_layout();
@@ -208,7 +208,7 @@ impl CollectionWidget<GridParams> for Grid {
         this.ctx.remove_child(old_child.widget);
     }
 
-    /// Set the child params at the given index.
+    /// Sets the child params at the given index.
     ///
     /// # Panics
     ///
@@ -219,7 +219,7 @@ impl CollectionWidget<GridParams> for Grid {
         this.ctx.request_layout();
     }
 
-    /// Swap the index of two children.
+    /// Swaps the index of two children.
     ///
     /// This also swaps the [`GridParams`] `x` and `y` with the other child.
     ///
@@ -238,7 +238,7 @@ impl CollectionWidget<GridParams> for Grid {
         this.ctx.children_changed();
     }
 
-    /// Remove the child at the given index.
+    /// Removes the child at the given index.
     ///
     /// # Panics
     ///

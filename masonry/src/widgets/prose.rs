@@ -38,14 +38,14 @@ pub struct Prose {
 
 // --- MARK: BUILDERS
 impl Prose {
-    /// Create a new `Prose` with the given text.
+    /// Creates a new `Prose` with the given text.
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
         Self::from_text_area(TextArea::new_immutable(text).with_auto_id())
     }
 
-    /// Create a new `Prose` from a styled text area.
+    /// Creates a new `Prose` from a styled text area.
     pub fn from_text_area(text: NewWidget<TextArea<false>>) -> Self {
         Self {
             text: text.to_pod(),
@@ -67,7 +67,7 @@ impl Prose {
 
 // --- MARK: METHODS
 impl Prose {
-    /// Read the underlying text area. Useful for getting its ID.
+    /// Returns the `WidgetPod` of the underlying text area. Useful for getting its ID.
     // This is a bit of a hack, to work around `from_text_area_pod` not being
     // able to set padding.
     pub fn text_area_pod(&self) -> &WidgetPod<TextArea<false>> {
@@ -77,7 +77,7 @@ impl Prose {
 
 // --- MARK: WIDGETMUT
 impl Prose {
-    /// Edit the underlying text area.
+    /// Returns the underlying text area.
     ///
     /// Used to modify most properties of the text.
     pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<false>> {

@@ -42,12 +42,12 @@ impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
 }
 
 impl<W: Widget + ?Sized> WidgetMut<'_, W> {
-    /// Get the [`WidgetId`] of the current widget.
+    /// Returns the [`WidgetId`] of the current widget.
     pub fn id(&self) -> WidgetId {
         self.ctx.widget_state.id
     }
 
-    /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
+    /// Returns a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;
         WidgetMut {
@@ -72,7 +72,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.changed_properties.contains(&TypeId::of::<P>())
     }
 
-    /// Get value of property `T`.
+    /// Returns the value of property `T`.
     ///
     /// If the widget has an entry for `P`, returns that entry.
     /// If the default property set has an entry for `P`, returns that entry.
@@ -81,7 +81,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.properties.get::<T>()
     }
 
-    /// Set property `T` to given value. Returns the previous value if `T` was already set locally.
+    /// Sets property `T` to given value. Returns the previous value if `T` was already set locally.
     ///
     /// Does not affect default properties.
     ///
@@ -94,7 +94,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         value
     }
 
-    /// Remove property `T`. Returns the previous value if `T` was set locally.
+    /// Removes property `T`. Returns the previous value if `T` was set locally.
     ///
     /// Does not affect default properties.
     ///
@@ -107,14 +107,14 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         value
     }
 
-    /// Set the local transform of this widget.
+    /// Sets the local transform of this widget.
     ///
     /// It behaves similarly as CSS transforms.
     pub fn set_transform(&mut self, transform: Affine) {
         self.ctx.set_transform(transform);
     }
 
-    /// Attempt to downcast to `WidgetMut` of concrete widget type.
+    /// Attempts to downcast to `WidgetMut` of concrete widget type.
     pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
         &mut self,
     ) -> Option<WidgetMut<'_, W2>> {

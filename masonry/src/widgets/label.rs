@@ -63,7 +63,7 @@ pub struct Label {
 
 // --- MARK: BUILDERS
 impl Label {
-    /// Create a new label with the given text.
+    /// Creates a new label with the given text.
     ///
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
@@ -84,7 +84,7 @@ impl Label {
         }
     }
 
-    /// Set a style property for the new label.
+    /// Sets a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
@@ -95,7 +95,7 @@ impl Label {
         self
     }
 
-    /// Set a style property for the new label, returning the old value.
+    /// Sets a style property for the new label, returning the old value.
     ///
     /// Most users should prefer [`with_style`](Self::with_style) instead.
     pub fn try_with_style(
@@ -106,7 +106,7 @@ impl Label {
         (self, old)
     }
 
-    /// Set the alignment of the text.
+    /// Sets the alignment of the text.
     ///
     /// Text alignment might have unexpected results when the label has no horizontal constraints.
     /// To modify this on an active label, use [`set_text_alignment`](Self::set_text_alignment).
@@ -115,7 +115,7 @@ impl Label {
         self
     }
 
-    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
+    /// Sets whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
     ///
     /// Hinting is a process where text is drawn "snapped" to pixel boundaries to improve fidelity.
     /// The default is true, i.e. hinting is enabled by default.
@@ -150,7 +150,7 @@ impl Label {
 
 // --- MARK: METHODS
 impl Label {
-    /// Get the current text of this label.
+    /// Returns a reference to the current text of this label.
     ///
     /// To update the text of an active label, use [`set_text`](Self::set_text).
     pub fn text(&self) -> &ArcStr {
@@ -176,7 +176,7 @@ impl Label {
         old
     }
 
-    /// Keep only the styles for which `f` returns true.
+    /// Keeps only the styles for which `f` returns true.
     ///
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
@@ -189,7 +189,7 @@ impl Label {
         this.ctx.request_layout();
     }
 
-    /// Remove the style with the discriminant `property`.
+    /// Removes the style with the discriminant `property`.
     ///
     /// To get the discriminant requires constructing a valid `StyleProperty` for the
     /// the desired property and passing it to [`core::mem::discriminant`].
@@ -210,7 +210,7 @@ impl Label {
         old
     }
 
-    /// Replace the text of this widget.
+    /// Replaces the text of this widget.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         this.widget.text = new_text.into();
 

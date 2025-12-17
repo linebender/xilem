@@ -116,7 +116,7 @@ impl<T> Clone for ArenaRefList<'_, T> {
 impl<T> Copy for ArenaRefList<'_, T> {}
 
 impl<T> TreeArena<T> {
-    /// Create an empty tree.
+    /// Creates an empty tree.
     pub fn new() -> Self {
         Self {
             roots: HashMap::new(),
@@ -154,7 +154,7 @@ impl<T> TreeArena<T> {
         }
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -165,7 +165,7 @@ impl<T> TreeArena<T> {
         self.roots().find_inner(id.into())
     }
 
-    /// Find an item in the tree.
+    /// Finds an item in the tree.
     ///
     /// Returns a mutable reference to the item if present.
     ///
@@ -176,7 +176,7 @@ impl<T> TreeArena<T> {
         self.roots_mut().find_mut_inner(id.into())
     }
 
-    /// Construct the path of items from the given item to the root of the tree.
+    /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
@@ -327,7 +327,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
         self.children.contains_key(&id)
     }
 
-    /// Get a handle to the element of the list with the given id.
+    /// Returns a handle to the element of the list with the given id.
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         self.children
@@ -335,7 +335,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
             .map(|child| child.arena_ref(self.parent_id, self.parents_map.parents_map))
     }
 
-    /// Get a handle to the element of the list with the given id.
+    /// Returns a handle to the element of the list with the given id.
     ///
     /// This is the same as [`item`](Self::item), except it consumes
     /// self. This is sometimes necessary to accommodate the borrow checker.
@@ -346,7 +346,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
             .map(|child| child.arena_ref(self.parent_id, self.parents_map.parents_map))
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -385,7 +385,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.children.contains_key(&id)
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         self.children
@@ -393,7 +393,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .map(|child| child.arena_ref(self.parent_id, self.parents_map.parents_map))
     }
 
-    /// Get a mutable handle to the element of the list with the given id.
+    /// Returns a mutable handle to the element of the list with the given id.
     pub fn item_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
         self.children
@@ -401,7 +401,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .map(|child| child.arena_mut(self.parent_id, self.parents_map.parents_map))
     }
 
-    /// Get a shared handle to the element of the list with the given id.
+    /// Returns a shared handle to the element of the list with the given id.
     ///
     /// This is the same as [`item`](Self::item), except it consumes
     /// self. This is sometimes necessary to accommodate the borrow checker.
@@ -412,7 +412,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .map(|child| child.arena_ref(self.parent_id, self.parents_map.parents_map))
     }
 
-    /// Get a mutable handle to the element of the list with the given id.
+    /// Returns a mutable handle to the element of the list with the given id.
     ///
     /// This is the same as [`item_mut`](Self::item_mut), except it consumes
     /// self. This is sometimes necessary to accommodate the borrow checker.
@@ -426,7 +426,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     // TODO - Remove the child_id argument once creation of widgets is figured out.
     // Return the id instead.
     // TODO - Add #[must_use]
-    /// Insert a child into the tree under the common parent of this list's items.
+    /// Inserts a child into the tree under the common parent of this list's items.
     ///
     /// If this list was returned from [`TreeArena::roots_mut()`], create a new tree root.
     ///
@@ -464,7 +464,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
 
     // TODO - How to handle when a subtree is removed?
     // Move children to the root?
-    /// Remove the item with the given id from the arena.
+    /// Removes the item with the given id from the arena.
     ///
     /// If the id isn't in the list (even if it's e.g. a descendant), does nothing
     /// and returns `None`.
@@ -512,7 +512,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         }
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -523,7 +523,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.reborrow().find(id)
     }
 
-    /// Find an arena item among the list's items and their descendants.
+    /// Finds an arena item among the list's items and their descendants.
     ///
     /// Returns a mutable reference to the item if present.
     ///
@@ -565,7 +565,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
 }
 
 impl ArenaMapRef<'_> {
-    /// Construct the path of items from the given item to the root of the tree.
+    /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.
@@ -617,7 +617,7 @@ impl ArenaMapMut<'_> {
         }
     }
 
-    /// Construct the path of items from the given item to the root of the tree.
+    /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
     /// the root.

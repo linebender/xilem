@@ -48,23 +48,23 @@ impl ViewId {
 /// [`View::rebuild`]: crate::View::rebuild
 /// [`View::message`]: crate::View::message
 pub trait ViewPathTracker {
-    /// Access the [`Environment`] associated with this context.
+    /// Accesses the [`Environment`] associated with this context.
     ///
     /// I hope that we can remove the "context" generic entirely, and so this is here
     /// on a temporary basis.
     fn environment(&mut self) -> &mut Environment;
-    /// Add `id` to the end of current view path
+    /// Adds `id` to the end of current view path
     fn push_id(&mut self, id: ViewId);
-    /// Remove the most recently `push`ed id from the current view path
+    /// Removes the most recently `push`ed id from the current view path
     fn pop_id(&mut self);
 
     /// The path to the current view in the view tree
     fn view_path(&mut self) -> &[ViewId];
 
-    /// Run `f` in a context with `id` pushed to the current view path
-    fn with_id<R>(&mut self, id: ViewId, f: impl FnOnce(&mut Self) -> R) -> R {
+    /// Runs `builder` in a context with `id` pushed to the current view path
+    fn with_id<R>(&mut self, id: ViewId, builder: impl FnOnce(&mut Self) -> R) -> R {
         self.push_id(id);
-        let res = f(self);
+        let res = builder(self);
         self.pop_id();
         res
     }

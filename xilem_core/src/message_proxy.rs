@@ -27,7 +27,7 @@ use crate::{SendMessage, ViewId};
 ///
 /// [`View`]: crate::View
 pub trait RawProxy: Send + Sync + 'static {
-    /// Send a `message` to the view at `path` in this driver.
+    /// Sends a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
     /// them, of the type they expect.
@@ -45,7 +45,7 @@ pub trait RawProxy: Send + Sync + 'static {
     ///
     /// [`View`]: crate::View
     fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError>;
-    /// Get the debug formatter for this proxy type.
+    /// Returns the debug formatter for this proxy type.
     fn dyn_debug(&self) -> &dyn Debug;
 }
 
@@ -83,7 +83,7 @@ impl<M: AnyDebug + Send> MessageProxy<M> {
         }
     }
 
-    /// Send `message` to the [`View`] which created this `MessageProxy`
+    /// Sends `message` to the [`View`] which created this `MessageProxy`
     ///
     /// # Errors
     ///

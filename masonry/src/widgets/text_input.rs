@@ -49,14 +49,14 @@ pub struct TextInput {
 
 // --- MARK: BUILDERS
 impl TextInput {
-    /// Create a new `TextInput` with the given text.
+    /// Creates a new `TextInput` with the given text.
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
         Self::from_text_area(TextArea::new_editable(text).with_auto_id())
     }
 
-    /// Create a new `TextInput` from a styled text area.
+    /// Creates a new `TextInput` from a styled text area.
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
@@ -67,7 +67,7 @@ impl TextInput {
         }
     }
 
-    /// Set the text alignment for both the input text and placeholder.
+    /// Sets the text alignment for both the input text and placeholder.
     pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.text_alignment = text_alignment;
         self
@@ -98,7 +98,7 @@ impl TextInput {
 
 // --- MARK: METHODS
 impl TextInput {
-    /// Read the underlying text area.
+    /// Reads the underlying text area.
     ///
     /// Useful for getting its ID, as most actions from the text input will be sent by the child.
     pub fn area_pod(&self) -> &WidgetPod<TextArea<true>> {
@@ -108,14 +108,14 @@ impl TextInput {
 
 // --- MARK: WIDGETMUT
 impl TextInput {
-    /// Edit the underlying text area.
+    /// Edits the underlying text area.
     ///
     /// Used to modify most properties of the text.
     pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<true>> {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
-    /// Edit the child label representing the placeholder text.
+    /// Edits the child label representing the placeholder text.
     pub fn placeholder_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.placeholder)
     }
@@ -138,7 +138,7 @@ impl TextInput {
         this.ctx.request_layout();
     }
 
-    /// Set the text alignment for both the input text and placeholder.
+    /// Sets the text alignment for both the input text and placeholder.
     pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
         this.widget.text_alignment = text_alignment;
         TextArea::set_text_alignment(&mut Self::text_mut(this), text_alignment);

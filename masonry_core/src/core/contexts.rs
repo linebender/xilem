@@ -228,7 +228,7 @@ impl_context_method!(
 // --- MARK: WIDGET_MUT
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
-    /// Return a [`WidgetMut`] to a child widget.
+    /// Returns a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget + FromDynWidget + ?Sized>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
@@ -292,7 +292,7 @@ impl MutateCtx<'_> {
 // --- MARK: WIDGET_REF
 // Methods to get a child WidgetRef from a parent.
 impl<'w> QueryCtx<'w> {
-    /// Return a [`WidgetRef`] to a child widget.
+    /// Returns a [`WidgetRef`] to a child widget.
     pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
         let child_node = self
             .children
@@ -326,7 +326,7 @@ impl_context_method!(
     AccessCtx<'_>,
     RawCtx<'_>,
     {
-        /// Get the Parley contexts needed to build and paint text sections.
+        /// Returns the Parley contexts needed to build and paint text sections.
         ///
         /// Most users should embed a pre-built label widget
         /// (such as `masonry::widgets::Label`)
@@ -353,7 +353,7 @@ impl_context_method!(
 
 // --- MARK: EVENT HANDLING
 impl EventCtx<'_> {
-    /// Capture the pointer in the current widget.
+    /// Captures the pointer in the current widget.
     ///
     /// [Pointer capture] is only allowed during a [`Down`] event. It is a logic error to
     /// capture the pointer during any other event.
@@ -395,7 +395,7 @@ impl EventCtx<'_> {
         self.global_state.needs_pointer_pass = true;
     }
 
-    /// Release the pointer previously [captured] through [`capture_pointer`].
+    /// Releases the pointer previously [captured] through [`capture_pointer`].
     ///
     /// [captured]: crate::doc::masonry_concepts#pointer-capture
     /// [`capture_pointer`]: EventCtx::capture_pointer
@@ -413,7 +413,7 @@ impl EventCtx<'_> {
         self.global_state.needs_pointer_pass = true;
     }
 
-    /// Send a signal to parent widgets to scroll this widget into view.
+    /// Sends a signal to parent widgets to scroll this widget into view.
     pub fn request_scroll_to_this(&mut self) {
         let rect = self.widget_state.layout_rect();
         self.global_state
@@ -421,7 +421,7 @@ impl EventCtx<'_> {
             .push((self.widget_state.id, rect));
     }
 
-    /// Send a signal to parent widgets to scroll this area into view.
+    /// Sends a signal to parent widgets to scroll this area into view.
     ///
     /// `rect` is in local coordinates.
     pub fn request_scroll_to(&mut self, rect: Rect) {
@@ -430,14 +430,14 @@ impl EventCtx<'_> {
             .push((self.widget_state.id, rect));
     }
 
-    /// Set the event as "handled", which stops its propagation to parent
+    /// Sets the event as "handled", which stops its propagation to parent
     /// widgets.
     pub fn set_handled(&mut self) {
         trace!("set_handled");
         self.is_handled = true;
     }
 
-    /// Determine whether the event has been handled.
+    /// Determines whether the event has been handled.
     pub fn is_handled(&self) -> bool {
         self.is_handled
     }
@@ -449,7 +449,7 @@ impl EventCtx<'_> {
         self.target
     }
 
-    /// Request [text focus].
+    /// Requests [text focus].
     ///
     /// Because only one widget can be focused at a time, multiple focus requests
     /// from different widgets during a single event cycle means that the last
@@ -466,7 +466,7 @@ impl EventCtx<'_> {
         self.global_state.next_focused_widget = Some(id);
     }
 
-    /// Transfer [text focus] to the widget with the given `WidgetId`.
+    /// Transfers [text focus] to the widget with the given `WidgetId`.
     ///
     /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn set_focus(&mut self, target: WidgetId) {
@@ -474,7 +474,7 @@ impl EventCtx<'_> {
         self.global_state.next_focused_widget = Some(target);
     }
 
-    /// Give up [text focus].
+    /// Gives up [text focus].
     ///
     /// This should only be called by a widget that currently has focus.
     ///
@@ -492,7 +492,7 @@ impl EventCtx<'_> {
         }
     }
 
-    /// Translate window position to widget local position.
+    /// Translates window position to widget local position.
     pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
         let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
         self.widget_state.window_transform.inverse() * Point { x, y }
@@ -538,7 +538,7 @@ impl LayoutCtx<'_> {
         }
     }
 
-    /// Compute the layout of a child widget.
+    /// Computes the layout of a child widget.
     ///
     /// Container widgets must call this on every child as part of
     /// their [`layout`] method.
@@ -560,7 +560,7 @@ impl LayoutCtx<'_> {
         new_size
     }
 
-    /// Set the position of a child widget, in the parent's coordinate space.
+    /// Sets the position of a child widget, in the parent's coordinate space.
     /// This will affect the parent's display rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
@@ -597,7 +597,7 @@ impl LayoutCtx<'_> {
             .union(self.get_child_state(child).paint_rect());
     }
 
-    /// Set explicit paint [`Insets`] for this widget.
+    /// Sets explicit paint [`Insets`] for this widget.
     ///
     /// You are not required to set explicit paint bounds unless you need
     /// to paint outside of your layout bounds. In this case, the argument
@@ -609,7 +609,7 @@ impl LayoutCtx<'_> {
     }
 
     // TODO - This is currently redundant with the code in LayoutCtx::place_child
-    /// Given a child and its parent's size, determine the
+    /// Given a child and its parent's size, determines the
     /// appropriate paint `Insets` for the parent.
     ///
     /// This is a convenience method; it allows the parent to correctly
@@ -636,7 +636,7 @@ impl LayoutCtx<'_> {
         union_paint_rect - parent_bounds
     }
 
-    /// Set an explicit baseline position for this widget.
+    /// Sets an explicit baseline position for this widget.
     ///
     /// The baseline position is used to align widgets that contain text,
     /// such as buttons, labels, and other controls. It may also be used
@@ -680,7 +680,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_rect()
     }
 
-    /// Get the given child's paint rect.
+    /// Returns the given child's paint rect.
     ///
     /// # Panics
     ///
@@ -693,7 +693,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).paint_rect()
     }
 
-    /// Get the given child's size.
+    /// Returns the given child's size.
     ///
     /// # Panics
     ///
@@ -723,7 +723,7 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_paint = true;
     }
 
-    /// Remove the widget's clip path.
+    /// Removes the widget's clip path.
     ///
     /// See [`LayoutCtx::set_clip_path`] for details.
     pub fn clear_clip_path(&mut self) {
@@ -737,7 +737,7 @@ impl LayoutCtx<'_> {
     }
 
     #[doc(hidden)]
-    /// Return the widget's size at the beginning of the layout pass.
+    /// Returns the widget's size at the beginning of the layout pass.
     ///
     /// **TODO** This method should be removed after the layout refactor.
     pub fn old_size(&self) -> Size {
@@ -752,7 +752,7 @@ impl ComposeCtx<'_> {
         self.widget_state.needs_compose
     }
 
-    /// Set the scroll translation for the child widget.
+    /// Sets the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
     ///
@@ -786,7 +786,7 @@ impl ComposeCtx<'_> {
         }
     }
 
-    /// Set the scroll translation for the child widget.
+    /// Sets the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
     ///
@@ -889,7 +889,7 @@ impl_context_method!(
             self.widget_state.clip_path
         }
 
-        /// Convert a point from the widget's coordinate space to the window's.
+        /// Converts a point from the widget's coordinate space to the window's.
         ///
         /// The returned point is relative to the content area; it excludes window chrome.
         pub fn to_window(&self, widget_point: Point) -> Point {
@@ -901,7 +901,7 @@ impl_context_method!(
 impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
     // TODO - Once Masonry uses physical coordinates, add this method everywhere.
     // See https://github.com/linebender/xilem/issues/1264
-    /// Get DPI scaling factor.
+    /// Returns DPI scaling factor.
     ///
     /// This is not required for most widgets, and should be used only for precise
     /// rendering, such as rendering single pixel lines or selecting image variants.
@@ -1041,7 +1041,7 @@ impl_context_method!(
 
 // --- MARK: UPDATE FLAGS
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
-    /// Request a [`paint`](crate::core::Widget::paint) and an
+    /// Requests a [`paint`](crate::core::Widget::paint) and an
     /// [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
@@ -1052,7 +1052,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a paint pass, specifically for the [`paint`](crate::core::Widget::paint) method.
+    /// Requests a paint pass, specifically for the [`paint`](crate::core::Widget::paint) method.
     ///
     /// Unlike [`request_render`](Self::request_render), this does not request an
     /// [`accessibility`](crate::core::Widget::accessibility) pass or a call to
@@ -1065,14 +1065,14 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.needs_paint = true;
     }
 
-    /// Request a paint pass for the [`post_paint`](crate::core::Widget::post_paint) method.
+    /// Requests a paint pass for the [`post_paint`](crate::core::Widget::post_paint) method.
     pub fn request_post_paint(&mut self) {
         trace!("request_post_paint");
         self.widget_state.request_post_paint = true;
         self.widget_state.needs_paint = true;
     }
 
-    /// Request an [`accessibility`](crate::core::Widget::accessibility) pass.
+    /// Requests an [`accessibility`](crate::core::Widget::accessibility) pass.
     ///
     /// This doesn't request a [`paint`](crate::core::Widget::paint) pass.
     /// If you want to request both an accessibility pass and a paint pass,
@@ -1083,7 +1083,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a [`layout`] pass.
+    /// Requests a [`layout`] pass.
     ///
     /// Call this method if the widget has changed in a way that requires a layout pass.
     ///
@@ -1095,7 +1095,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     }
 
     // TODO - Document better
-    /// Request a [`compose`] pass.
+    /// Requests a [`compose`] pass.
     ///
     /// The compose pass is often cheaper than the layout pass,
     /// because it can only transform individual widgets' position.
@@ -1107,7 +1107,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.request_compose = true;
     }
 
-    /// Request an animation frame.
+    /// Requests an animation frame.
     pub fn request_anim_frame(&mut self) {
         trace!("request_anim_frame");
         self.widget_state.request_anim = true;
@@ -1123,7 +1123,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.global_state.needs_pointer_pass = true;
     }
 
-    /// Indicate that your children have changed.
+    /// Indicates that your children have changed.
     ///
     /// Widgets must call this method after adding a new child.
     ///
@@ -1135,7 +1135,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.request_layout();
     }
 
-    /// Indicate that a child is about to be removed from the tree.
+    /// Indicates that a child is about to be removed from the tree.
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
@@ -1185,7 +1185,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.children_changed();
     }
 
-    /// Set the disabled state for this widget.
+    /// Sets the disabled state for this widget.
     ///
     /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
     /// still be disabled by an ancestor. See [`is_disabled`] for more information.
@@ -1196,7 +1196,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.is_explicitly_disabled = disabled;
     }
 
-    /// Set the transform for this widget.
+    /// Sets the transform for this widget.
     ///
     /// It behaves similarly as CSS transforms
     pub fn set_transform(&mut self, transform: Affine) {
@@ -1217,7 +1217,7 @@ impl_context_method!(
     RawCtx<'_>,
     {
         // TODO - Remove from LayoutCtx/ComposeCtx
-        /// Mark child widget as stashed.
+        /// Marks child widget as stashed.
         ///
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
         ///
@@ -1235,7 +1235,7 @@ impl_context_method!(
         }
 
         // TODO - Remove from MutateCtx?
-        /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
+        /// Queues a callback that will be called with a [`WidgetMut`] for this widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_self_later(
@@ -1249,7 +1249,7 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
-        /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
+        /// Queues a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
@@ -1264,7 +1264,7 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
-        /// Get direct reference to the stored child, and a context handle for that child.
+        /// Returns direct reference to the stored child, and a context handle for that child.
         pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<Child>,
@@ -1286,7 +1286,7 @@ impl_context_method!(
             (widget, child_ctx)
         }
 
-        /// Get direct mutable reference to the stored child, and a context handle for that child.
+        /// Returns direct mutable reference to the stored child, and a context handle for that child.
         ///
         /// This context lets you set pass flags for the child widget, which may be tricky.
         /// In general, you should avoid setting the flags of a pass that runs before the
@@ -1320,7 +1320,7 @@ impl_context_method!(
             (widget, child_ctx)
         }
 
-        /// Submit an action, which indicates that this widget requires something be handled
+        /// Submits an action, which indicates that this widget requires something be handled
         /// by the application, such as user input.
         ///
         /// The `Action` type parameter should always be the `Self::Action` associated type
@@ -1350,7 +1350,7 @@ impl_context_method!(
             ));
         }
 
-        /// Submit a type-erased action.
+        /// Submits a type-erased action.
         ///
         /// Unlike [`Self::submit_action`], this method lets you submit an action with an
         /// arbitrary type, which may not match `Self::Action`.
@@ -1363,7 +1363,7 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
-        /// Set the IME cursor area.
+        /// Sets the IME cursor area.
         ///
         /// When this widget is [focused] and [accepts text input], the reported IME area is sent
         /// to the platform. The area can be used by the platform to, for example, place a
@@ -1377,14 +1377,14 @@ impl_context_method!(
             self.widget_state.ime_area = Some(ime_area);
         }
 
-        /// Remove the IME cursor area.
+        /// Removes the IME cursor area.
         ///
         /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
         pub fn clear_ime_area(&mut self) {
             self.widget_state.ime_area = None;
         }
 
-        /// Set the contents of the platform clipboard.
+        /// Sets the contents of the platform clipboard.
         ///
         /// For example, text widgets should call this for "cut" and "copy" user interactions.
         /// Note that we currently don't support the "Primary" selection buffer on X11/Wayland.
@@ -1394,7 +1394,7 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::ClipboardStore(contents));
         }
 
-        /// Start a window drag.
+        /// Starts a window drag.
         ///
         /// Moves the window with the left mouse button until the button is released.
         pub fn drag_window(&mut self) {
@@ -1402,7 +1402,7 @@ impl_context_method!(
             self.global_state.emit_signal(RenderRootSignal::DragWindow);
         }
 
-        /// Start a window resize.
+        /// Starts a window resize.
         ///
         /// Resizes the window with the left mouse button until the button is released.
         pub fn drag_resize_window(&mut self, direction: ResizeDirection) {
@@ -1411,33 +1411,33 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::DragResizeWindow(direction));
         }
 
-        /// Toggle the maximized state of the window.
+        /// Toggles the maximized state of the window.
         pub fn toggle_maximized(&mut self) {
             trace!("toggle_maximized");
             self.global_state
                 .emit_signal(RenderRootSignal::ToggleMaximized);
         }
 
-        /// Minimize the window.
+        /// Minimizes the window.
         pub fn minimize(&mut self) {
             trace!("minimize");
             self.global_state.emit_signal(RenderRootSignal::Minimize);
         }
 
-        /// Exit the application.
+        /// Exits the application.
         pub fn exit(&mut self) {
             trace!("exit");
             self.global_state.emit_signal(RenderRootSignal::Exit);
         }
 
-        /// Show the window menu at a specified position.
+        /// Shows the window menu at a specified position.
         pub fn show_window_menu(&mut self, position: LogicalPosition<f64>) {
             trace!("show_window_menu");
             self.global_state
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Create a new layer at a specified position.
+        /// Creates a new layer at a specified position.
         pub fn create_layer<W: Widget + ?Sized>(
             &mut self,
             root_widget: NewWidget<W>,
@@ -1448,14 +1448,14 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::NewLayer(root_widget.erased(), position));
         }
 
-        /// Remove the layer with the specified widget as root.
+        /// Removes the layer with the specified widget as root.
         pub fn remove_layer(&mut self, root_widget_id: WidgetId) {
             trace!("remove_layer");
             self.global_state
                 .emit_signal(RenderRootSignal::RemoveLayer(root_widget_id));
         }
 
-        /// Reposition the layer with the specified widget as root.
+        /// Repositions the layer with the specified widget as root.
         pub fn reposition_layer(&mut self, root_widget_id: WidgetId, position: Point) {
             trace!("reposition_layer");
             self.global_state
@@ -1465,7 +1465,7 @@ impl_context_method!(
 );
 
 impl RegisterCtx<'_> {
-    /// Register a child widget.
+    /// Registers a child widget.
     ///
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].

@@ -38,7 +38,7 @@ pub struct Button {
 
 // --- MARK: BUILDERS
 impl Button {
-    /// Create a new button with a child widget.
+    /// Creates a new button with a child widget.
     ///
     /// The child widget probably shouldn't be interactive,
     /// to avoid behaviour which might be confusing to the user.
@@ -57,7 +57,7 @@ impl Button {
         }
     }
 
-    /// Create a new button with a label widget.
+    /// Creates a new button with a label widget.
     ///
     /// # Examples
     ///
@@ -74,7 +74,7 @@ impl Button {
 
 // --- MARK: WIDGETMUT
 impl Button {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         this.ctx.remove_child(std::mem::replace(
             &mut this.widget.child,
@@ -82,7 +82,7 @@ impl Button {
         ));
     }
 
-    /// Get a mutable reference to the child.
+    /// Returns a mutable reference to the child.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }

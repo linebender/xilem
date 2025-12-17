@@ -45,7 +45,7 @@ pub struct Checkbox {
 
 // --- MARK: BUILDERS
 impl Checkbox {
-    /// Create a new `Checkbox` with a text label.
+    /// Creates a new `Checkbox` with a text label.
     pub fn new(checked: bool, text: impl Into<ArcStr>) -> Self {
         Self {
             checked,
@@ -53,7 +53,7 @@ impl Checkbox {
         }
     }
 
-    /// Create a new `Checkbox` with the given label.
+    /// Creates a new `Checkbox` with the given label.
     pub fn from_label(checked: bool, label: NewWidget<Label>) -> Self {
         Self {
             checked,
@@ -64,21 +64,21 @@ impl Checkbox {
 
 // --- MARK: WIDGETMUT
 impl Checkbox {
-    /// Check or uncheck the box.
+    /// Checks or unchecks the box.
     pub fn set_checked(this: &mut WidgetMut<'_, Self>, checked: bool) {
         this.widget.checked = checked;
         // Checked state impacts appearance and accessibility node
         this.ctx.request_render();
     }
 
-    /// Set the text.
+    /// Sets the text.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
         Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    /// Get a mutable reference to the label.
+    /// Returns a mutable reference to the label.
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
     }

@@ -34,7 +34,7 @@ pub struct AnimatedF32 {
 }
 
 impl AnimatedF32 {
-    /// Create a value which is not changing.
+    /// Creates a value which is not changing.
     pub fn stable(value: f32) -> Self {
         assert!(value.is_finite(), "invalid animated value");
         Self {
@@ -44,7 +44,7 @@ impl AnimatedF32 {
         }
     }
 
-    /// Move this value to the `target` over `over_millis` milliseconds.
+    /// Moves this value to the `target` over `over_millis` milliseconds.
     /// Might change the current value, if `over_millis` is zero.
     ///
     /// `over_millis` should be non-negative.
@@ -75,7 +75,7 @@ impl AnimatedF32 {
         }
     }
 
-    /// Advance this animation by `by_millis` milliseconds.
+    /// Advances this animation by `by_millis` milliseconds.
     ///
     /// Returns the status of the animation after this advancement.
     pub fn advance(&mut self, by_millis: f32) -> AnimationStatus {
@@ -127,12 +127,12 @@ pub struct VariableLabel {
 
 // --- MARK: BUILDERS
 impl VariableLabel {
-    /// Create a new variable label from the given text.
+    /// Creates a new variable label from the given text.
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self::from_label(NewWidget::new(Label::new(text)))
     }
 
-    /// Create a new variable label from the given label.
+    /// Creates a new variable label from the given label.
     ///
     /// Uses the label's text and style values.
     pub fn from_label(label: NewWidget<Label>) -> Self {
@@ -142,7 +142,7 @@ impl VariableLabel {
         }
     }
 
-    /// Set the initial font weight for this text.
+    /// Sets the initial font weight for this text.
     pub fn with_initial_weight(mut self, weight: f32) -> Self {
         self.weight = AnimatedF32::stable(weight);
         self
@@ -151,17 +151,17 @@ impl VariableLabel {
 
 // --- MARK: WIDGETMUT
 impl VariableLabel {
-    /// Get the underlying label for this widget.
+    /// Returns the underlying label for this widget.
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
     }
 
-    /// Set the text of this label.
+    /// Sets the text of this label.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
         Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    /// Set the weight which this font will target.
+    /// Sets the weight which this font will target.
     pub fn set_target_weight(this: &mut WidgetMut<'_, Self>, target: f32, over_millis: f32) {
         this.widget.weight.move_to(target, over_millis);
         this.ctx.request_layout();

@@ -38,7 +38,7 @@ pub struct Passthrough {
 
 // --- MARK: BUILDERS
 impl Passthrough {
-    /// Create a new `Passthrough` with the given initial child.
+    /// Creates a new `Passthrough` with the given initial child.
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             inner: child.erased().to_pod(),
@@ -48,7 +48,7 @@ impl Passthrough {
 
 // --- MARK: METHODS
 impl Passthrough {
-    /// Get the [`WidgetId`] of the hosted child.
+    /// Returns the [`WidgetId`] of the hosted child.
     pub fn inner_id(&self) -> WidgetId {
         self.inner.id()
     }
@@ -56,13 +56,13 @@ impl Passthrough {
 
 // --- MARK: WIDGETMUT
 impl Passthrough {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let old = std::mem::replace(&mut this.widget.inner, child.erased().to_pod());
         this.ctx.remove_child(old);
     }
 
-    /// Get a mutable reference to the hosted child.
+    /// Returns a mutable reference to the hosted child.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.inner)
     }

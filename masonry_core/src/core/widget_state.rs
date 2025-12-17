@@ -282,7 +282,7 @@ impl WidgetState {
         }
     }
 
-    /// Update to incorporate state changes from a child.
+    /// Updates state to incorporate state changes from a child.
     ///
     /// This method is idempotent and can be called multiple times.
     //
@@ -328,7 +328,7 @@ impl WidgetState {
         Rect::from_points(self.origin, self.end_point)
     }
 
-    /// The axis aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
+    /// The axis-aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.
@@ -350,7 +350,7 @@ impl WidgetState {
         self.window_transform.translation().to_point()
     }
 
-    /// Return the result of intersecting the widget's clip path (if any) with the given rect.
+    /// Returns the result of intersecting the widget's clip path (if any) with the given rect.
     ///
     /// Both the argument and the result are in window coordinates.
     ///

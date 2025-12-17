@@ -38,7 +38,7 @@ impl Padding {
     /// A padding of zero for all edges.
     pub const ZERO: Self = Self::all(0.);
 
-    /// Constructs a new `Padding` with equal amount of padding for all edges.
+    /// Creates a new `Padding` with equal amount of padding for all edges.
     pub const fn all(padding: f64) -> Self {
         Self {
             top: padding,
@@ -48,7 +48,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with the same amount of padding for the horizontal edges,
+    /// Creates a new `Padding` with the same amount of padding for the horizontal edges,
     /// and zero padding for the vertical edges.
     pub const fn horizontal(padding: f64) -> Self {
         Self {
@@ -59,7 +59,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with the same amount of padding for the vertical edges,
+    /// Creates a new `Padding` with the same amount of padding for the vertical edges,
     /// and zero padding for the horizontal edges.
     pub const fn vertical(padding: f64) -> Self {
         Self {
@@ -70,7 +70,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with the same padding from both vertical edges, then both horizontal edges.
+    /// Creates a new `Padding` with the same padding from both vertical edges, then both horizontal edges.
     pub const fn from_vh(vertical: f64, horizontal: f64) -> Self {
         Self {
             top: vertical,
@@ -80,7 +80,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the top edge and zero padding for all other edges.
+    /// Creates a new `Padding` with padding only at the top edge and zero padding for all other edges.
     pub const fn top(padding: f64) -> Self {
         Self {
             top: padding,
@@ -90,7 +90,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
+    /// Creates a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
     pub const fn bottom(padding: f64) -> Self {
         Self {
             top: 0.,
@@ -100,7 +100,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the leleftading edge and zero padding for all other edges.
+    /// Creates a new `Padding` with padding only at the leleftading edge and zero padding for all other edges.
     pub const fn left(padding: f64) -> Self {
         Self {
             top: 0.,
@@ -110,7 +110,7 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the right edge and zero padding for all other edges.
+    /// Creates a new `Padding` with padding only at the right edge and zero padding for all other edges.
     pub const fn right(padding: f64) -> Self {
         Self {
             top: 0.,

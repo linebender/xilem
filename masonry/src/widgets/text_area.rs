@@ -91,7 +91,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 
 // --- MARK: BUILDERS
 impl TextArea<true> {
-    /// Create a new `TextArea` which can be edited.
+    /// Creates a new `TextArea` which can be edited.
     ///
     /// Useful for creating a styled [`TextInput`](super::TextInput).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
@@ -102,7 +102,7 @@ impl TextArea<true> {
 }
 
 impl TextArea<false> {
-    /// Create a new `TextArea` which cannot be edited by the user.
+    /// Creates a new `TextArea` which cannot be edited by the user.
     ///
     /// Useful for creating a styled [`Prose`](super::Prose).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
@@ -113,7 +113,7 @@ impl TextArea<false> {
 }
 
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
-    /// Create a new `TextArea` with the given text and default settings.
+    /// Creates a new `TextArea` with the given text and default settings.
     ///
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
@@ -134,7 +134,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         }
     }
 
-    /// Set a style property for the new text area.
+    /// Sets a style property for the new text area.
     ///
     /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
     /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
@@ -154,7 +154,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set a style property for the new text area, returning the old value.
+    /// Sets a style property for the new text area, returning the old value.
     ///
     /// Most users should prefer [`with_style`](Self::with_style) instead.
     pub fn try_with_style(
@@ -180,7 +180,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    /// Sets the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
@@ -191,7 +191,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
+    /// Sets whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
     ///
     /// Hinting is a process where text is drawn "snapped" to pixel boundaries to improve fidelity.
     /// The default is true, i.e. hinting is enabled by default.
@@ -237,7 +237,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
 // --- MARK: METHODS
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
-    /// Get the current text of this text area.
+    /// Returns the current text of this text area.
     ///
     /// To update the text of an active text area, use [`reset_text`](Self::reset_text).
     ///
@@ -251,7 +251,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self.editor.raw_text().is_empty()
     }
 
-    /// Get the IME area from the editor, accounting for padding.
+    /// Returns the IME area from the editor, accounting for padding.
     ///
     /// This should only be called when the editor layout is available.
     fn ime_area(&self) -> Rect {
@@ -265,7 +265,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
 // --- MARK: WIDGETMUT
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
-    /// Set font styling for an active text area.
+    /// Sets font styling for an active text area.
     ///
     /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
     /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
@@ -290,7 +290,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         old
     }
 
-    /// [Retain](std::vec::Vec::retain) only the styles for which `f` returns true.
+    /// [Retains](std::vec::Vec::retain) only the styles for which `f` returns true.
     ///
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
@@ -302,7 +302,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_layout();
     }
 
-    /// Remove the style with the discriminant `property`.
+    /// Removes the style with the discriminant `property`.
     ///
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
@@ -322,7 +322,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         old
     }
 
-    /// Set the text displayed in this widget.
+    /// Sets the text displayed in this widget.
     ///
     /// This is likely to be disruptive if the user is focused on this widget,
     /// as it does not retain selections, and may cause undesirable interactions with IME.
@@ -342,7 +342,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_layout();
     }
 
-    /// Control [word wrapping](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap) for the text area.
+    /// Sets [word wrapping](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap) for the text area.
     ///
     /// When enabled, the text will be laid out to fit within the available width.
     /// If word wrapping is disabled, the text will likely flow past the available area.
@@ -363,7 +363,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_layout();
     }
 
-    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    /// Sets the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
@@ -380,7 +380,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_accessibility_update();
     }
 
-    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
+    /// Sets whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
     ///
     /// The runtime equivalent of [`with_hint`](Self::with_hint).
     /// For full documentation, see that method.
@@ -389,7 +389,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_paint_only();
     }
 
-    /// Set the selection to the given byte range.
+    /// Sets the selection to the given byte range.
     ///
     /// No-op if either index is not a char boundary.
     pub fn select_byte_range(this: &mut WidgetMut<'_, Self>, start: usize, end: usize) {
@@ -401,7 +401,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_render();
     }
 
-    /// Set the selection to the first instance of the given text.
+    /// Sets the selection to the first instance of the given text.
     ///
     /// This is mostly useful for testing.
     ///

@@ -16,6 +16,9 @@ use crate::core::{
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
+// TODO - Rename "active" widget to "visible" widget?
+// Active already means something else.
+
 /// A widget that displays only one of its children at a time.
 ///
 /// This is useful for switching between multiple views while keeping
@@ -34,7 +37,7 @@ pub struct IndexedStack {
 
 // --- MARK: BUILDERS
 impl IndexedStack {
-    /// Create a new stack with no children.
+    /// Creates a new stack with no children.
     pub fn new() -> Self {
         Self::default()
     }
@@ -77,7 +80,7 @@ impl IndexedStack {
 
 // --- MARK: WIDGETMUT
 impl IndexedStack {
-    /// Change the active child.
+    /// Sets the active child.
     ///
     /// # Panics
     ///
@@ -169,7 +172,7 @@ impl CollectionWidget<()> for IndexedStack {
     /// Not applicable.
     fn set_params(_this: &mut WidgetMut<'_, Self>, _idx: usize, _params: impl Into<()>) {}
 
-    /// Swap the index of two children.
+    /// Swaps the index of two children.
     ///
     /// # Panics
     ///
@@ -179,7 +182,7 @@ impl CollectionWidget<()> for IndexedStack {
         this.ctx.children_changed();
     }
 
-    /// Remove the child at the given index.
+    /// Removes the child at the given index.
     ///
     /// If the active child is removed, the first child in the stack will be selected as active.
     ///
