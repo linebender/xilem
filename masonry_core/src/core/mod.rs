@@ -6,6 +6,7 @@
 mod box_constraints;
 mod contexts;
 mod events;
+mod layer;
 mod layout_cache;
 mod properties;
 mod text;
@@ -27,6 +28,7 @@ pub use cursor_icon::CursorIcon;
 pub use events::{
     AccessEvent, Handled, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme,
 };
+pub use layer::{Layer, LayerType};
 pub use properties::{
     DefaultProperties, HasProperty, Properties, PropertiesMut, PropertiesRef, Property,
 };
