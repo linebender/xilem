@@ -61,27 +61,35 @@ impl<W: Widget + ?Sized> Portal<W> {
         }
     }
 
-    // TODO - rewrite doc
-    /// Builder-style method for deciding whether to constrain the child vertically.
+    /// Builder-style method for constraining the child vertically.
     ///
     /// The default is `false`.
     ///
-    /// This setting affects how a `Portal` lays out its child.
+    /// This setting affects how a [`Portal`] lays out its child.
     ///
     /// - When it is `false` (the default), the child does not receive any upper
-    ///   bound on its height: the idea is that the child can be as tall as it
-    ///   wants, and the viewport will somehow get moved around to see all of it.
-    /// - When it is `true`, the viewport's maximum height will be passed down
-    ///   as an upper bound on the height of the child, and the viewport will set
-    ///   its own height to be the same as its child's height.
+    ///   bound on its height. The child can be as tall as it wants,
+    ///   and the viewport gets moved around to see all of it.
+    /// - When it is `true`, the [`Portal`]'s maximum height will be passed down
+    ///   as an upper bound on the height of the child. There will be no vertical scrollbar
+    ///   and the mouse wheel can't be used to vertically scroll either.
     pub fn constrain_vertical(mut self, constrain: bool) -> Self {
         self.constrain_vertical = constrain;
         self
     }
 
-    /// Builder-style method for deciding whether to constrain the child horizontally.
+    /// Builder-style method for constraining the child horizontally.
     ///
     /// The default is `false`.
+    ///
+    /// This setting affects how a [`Portal`] lays out its child.
+    ///
+    /// - When it is `false` (the default), the child does not receive any upper
+    ///   bound on its width. The child can be as wide as it wants,
+    ///   and the viewport gets moved around to see all of it.
+    /// - When it is `true`, the [`Portal`]'s maximum width will be passed down
+    ///   as an upper bound on the width of the child. There will be no horizontal scrollbar
+    ///   and the mouse wheel can't be used to horizontally scroll either.
     pub fn constrain_horizontal(mut self, constrain: bool) -> Self {
         self.constrain_horizontal = constrain;
         self
@@ -196,14 +204,17 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         this.ctx.get_mut(&mut this.widget.scrollbar_vertical)
     }
 
-    // TODO - rewrite doc
     /// Set whether to constrain the child horizontally.
+    ///
+    /// See [`Portal::constrain_horizontal`] for more details.
     pub fn set_constrain_horizontal(this: &mut WidgetMut<'_, Self>, constrain: bool) {
         this.widget.constrain_horizontal = constrain;
         this.ctx.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
+    ///
+    /// See [`Portal::constrain_vertical`] for more details.
     pub fn set_constrain_vertical(this: &mut WidgetMut<'_, Self>, constrain: bool) {
         this.widget.constrain_vertical = constrain;
         this.ctx.request_layout();
@@ -286,7 +297,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let delta = match delta {
+                let mut delta = match delta {
                     ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
                     ScrollDelta::LineDelta(x, y) => {
                         -Vec2 {
@@ -296,22 +307,31 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     }
                     _ => Vec2::ZERO,
                 } * ctx.get_scale_factor();
-                self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
-                ctx.request_compose();
-
-                {
-                    let (scrollbar, mut scrollbar_ctx) =
-                        ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-                    scrollbar.cursor_progress =
-                        self.viewport_pos.x / (content_size - portal_size).width;
-                    scrollbar_ctx.request_render();
+                // Ignore scroll deltas in directions that are constrained
+                if self.constrain_horizontal {
+                    delta.x = 0.;
                 }
-                {
-                    let (scrollbar, mut scrollbar_ctx) =
-                        ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                    scrollbar.cursor_progress =
-                        self.viewport_pos.y / (content_size - portal_size).height;
-                    scrollbar_ctx.request_render();
+                if self.constrain_vertical {
+                    delta.y = 0.;
+                }
+                if delta.x != 0. || delta.y != 0. {
+                    self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
+                    ctx.request_compose();
+
+                    {
+                        let (scrollbar, mut scrollbar_ctx) =
+                            ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                        scrollbar.cursor_progress =
+                            self.viewport_pos.x / (content_size - portal_size).width;
+                        scrollbar_ctx.request_render();
+                    }
+                    {
+                        let (scrollbar, mut scrollbar_ctx) =
+                            ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                        scrollbar.cursor_progress =
+                            self.viewport_pos.y / (content_size - portal_size).height;
+                        scrollbar_ctx.request_render();
+                    }
                 }
             }
             _ => (),
@@ -412,9 +432,17 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        // TODO - How Portal handles BoxConstraints is due for a rework
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };
-        let max_child_size = bc.max();
+        let max_child_size = Size::new(
+            match self.constrain_horizontal {
+                true => bc.max().width,
+                false => f64::INFINITY,
+            },
+            match self.constrain_vertical {
+                true => bc.max().height,
+                false => f64::INFINITY,
+            },
+        );
 
         let child_bc = BoxConstraints::new(min_child_size, max_child_size);
 
