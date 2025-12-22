@@ -64,7 +64,7 @@ console_error_panic_hook = "0.1.7"
 ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
 ui-events-winit = { version = "0.2.0", default-features = false }
 smallvec = "1.15.1"
-hashbrown = "0.16.1"
+hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
 dpi = "0.1.2"
 image = { version = "0.25.9", default-features = false }
 web-time = "1.1.0"
