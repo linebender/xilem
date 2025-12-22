@@ -3,8 +3,6 @@
 
 //! A label with support for animated variable font properties
 
-#![expect(unreachable_pub, reason = "We don't expose the animation types yet")]
-
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
@@ -114,6 +112,7 @@ pub enum AnimationStatus {
 }
 
 impl AnimationStatus {
+    /// Return true if animation has finished.
     pub fn is_completed(self) -> bool {
         matches!(self, Self::Completed)
     }
