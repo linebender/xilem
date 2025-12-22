@@ -35,7 +35,7 @@ pub struct Align {
 
 // --- MARK: BUILDERS
 impl Align {
-    /// Create widget with alignment.
+    /// Creates widget with alignment.
     ///
     /// Note that the `align` parameter is specified as a `UnitPoint` in
     /// terms of left and right. This is inadequate for bidi-aware layout
@@ -49,22 +49,22 @@ impl Align {
         }
     }
 
-    /// Create centered widget.
+    /// Creates centered widget.
     pub fn centered(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::CENTER, child)
     }
 
-    /// Create right-aligned widget.
+    /// Creates right-aligned widget.
     pub fn right(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::RIGHT, child)
     }
 
-    /// Create left-aligned widget.
+    /// Creates left-aligned widget.
     pub fn left(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::LEFT, child)
     }
 
-    /// Align only in the horizontal axis, keeping the child's size in the vertical.
+    /// Aligns only in the horizontal axis, keeping the child's size in the vertical.
     pub fn horizontal(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             align,
@@ -74,7 +74,7 @@ impl Align {
         }
     }
 
-    /// Align only in the vertical axis, keeping the child's size in the horizontal.
+    /// Aligns only in the vertical axis, keeping the child's size in the horizontal.
     pub fn vertical(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             align,
@@ -87,7 +87,7 @@ impl Align {
 
 // --- MARK: WIDGETMUT
 impl Align {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         this.ctx.remove_child(std::mem::replace(
             &mut this.widget.child,
@@ -95,7 +95,7 @@ impl Align {
         ));
     }
 
-    /// Get mutable reference to the child widget.
+    /// Returns mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }

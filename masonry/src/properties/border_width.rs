@@ -26,7 +26,7 @@ impl Property for BorderWidth {
 }
 
 impl BorderWidth {
-    /// Create new `BorderWidth` with given value.
+    /// Creates new `BorderWidth` with given value.
     pub const fn all(width: f64) -> Self {
         Self { width }
     }

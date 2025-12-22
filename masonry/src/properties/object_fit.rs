@@ -51,7 +51,7 @@ impl ObjectFit {
         ctx.request_layout();
     }
 
-    /// Calculate an origin and scale for an image with a given `ObjectFit`.
+    /// Calculates an origin and scale for an image with a given `ObjectFit`.
     ///
     /// This takes some properties of a widget and an object fit and returns an affine matrix
     /// used to position and scale the image in the widget.

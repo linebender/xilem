@@ -25,7 +25,7 @@ pub struct MessageCtx {
 }
 
 impl MessageCtx {
-    /// Remove the first element from the id path which this message needs to be routed to.
+    /// Removes the first element from the id path which this message needs to be routed to.
     ///
     /// This mirrors [`ViewPathTracker::with_id`](crate::ViewPathTracker::with_id).
     /// Returns `None` if there are no more elements in the id path (for views
@@ -49,7 +49,7 @@ impl MessageCtx {
         &self.full_id_path[..self.id_path_index]
     }
 
-    /// Take the message, downcasting it to the specified type.
+    /// Takes the message, downcasting it to the specified type.
     ///
     /// If the message is not of the specified type, returns `None`.
     ///
@@ -62,7 +62,7 @@ impl MessageCtx {
         self.maybe_take_message(|_| true)
     }
 
-    /// Downcast the message to the specified type, taking it if `f` returns true.
+    /// Downcasts the message to the specified type, taking it if `f` returns true.
     ///
     /// If the message is not of the specified type, returns `None`.
     ///
@@ -97,7 +97,7 @@ impl MessageCtx {
         }
     }
 
-    /// Take the message, or returns `None` if it's already been taken.
+    /// Takes the message, or returns `None` if it's already been taken.
     ///
     /// This method is an escape hatch for [`take_message`](Self::take_message)
     /// and [`maybe_take_message`](Self::maybe_take_message).
@@ -110,7 +110,7 @@ impl MessageCtx {
 
 /// Methods used by implementations of the Xilem pattern, not directly by View implementations.
 impl MessageCtx {
-    /// Create a new message context.
+    /// Creates a new message context.
     ///
     /// End-users of Xilem do not need to use this function.
     ///
@@ -125,7 +125,7 @@ impl MessageCtx {
         }
     }
 
-    /// Unwrap this `MessageCtx` into its constituent parts.
+    /// Unwraps this `MessageCtx` into its constituent parts.
     pub fn finish(self) -> (Environment, Vec<ViewId>, Option<DynMessage>) {
         let Self {
             environment,

@@ -41,7 +41,7 @@ pub struct SizedBox {
 
 // --- MARK: BUILDERS
 impl SizedBox {
-    /// Construct container with child, and both width and height not set.
+    /// Creates container with child, and both width and height unset.
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             child: Some(child.erased().to_pod()),
@@ -50,7 +50,7 @@ impl SizedBox {
         }
     }
 
-    /// Construct container without child, and both width and height not set.
+    /// Creates container without child, and both width and height unset.
     ///
     /// If the widget is unchanged, it will render nothing, which can be useful if you want to draw a
     /// widget some of the time.
@@ -63,26 +63,26 @@ impl SizedBox {
         }
     }
 
-    /// Set container's width.
+    /// Sets container's width.
     pub fn width(mut self, width: Length) -> Self {
         self.width = Some(width.get());
         self
     }
 
-    /// Set container's height.
+    /// Sets container's height.
     pub fn height(mut self, height: Length) -> Self {
         self.height = Some(height.get());
         self
     }
 
-    /// Set container's width and height.
+    /// Sets container's width and height.
     pub fn size(mut self, width: Length, height: Length) -> Self {
         self.width = Some(width.get());
         self.height = Some(height.get());
         self
     }
 
-    /// Expand container to fit the parent.
+    /// Expands container to fit the parent.
     ///
     /// Only call this method if you want your widget to occupy all available
     /// space. If you only care about expanding in one of width or height, use
@@ -98,7 +98,7 @@ impl SizedBox {
         self
     }
 
-    /// Expand the container on the x-axis.
+    /// Expands the container on the x-axis.
     ///
     /// This will force the child to have maximum width.
     pub fn expand_width(mut self) -> Self {
@@ -106,7 +106,7 @@ impl SizedBox {
         self
     }
 
-    /// Expand the container on the y-axis.
+    /// Expands the container on the y-axis.
     ///
     /// This will force the child to have maximum height.
     pub fn expand_height(mut self) -> Self {
@@ -114,7 +114,7 @@ impl SizedBox {
         self
     }
 
-    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the width directly. Intended for toolkits abstracting over `SizedBox`.
     ///
     /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_width(mut self, value: Option<f64>) -> Self {
@@ -122,7 +122,7 @@ impl SizedBox {
         self
     }
 
-    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the height directly. Intended for toolkits abstracting over `SizedBox`.
     ///
     /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_height(mut self, value: Option<f64>) -> Self {
@@ -161,7 +161,7 @@ impl SizedBox {
 
 // --- MARK: WIDGETMUT
 impl SizedBox {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
@@ -170,7 +170,7 @@ impl SizedBox {
         this.ctx.children_changed();
     }
 
-    /// Remove the child widget.
+    /// Removes the child widget.
     ///
     /// (If this widget has no child, this method does nothing.)
     pub fn remove_child(this: &mut WidgetMut<'_, Self>) {
@@ -179,38 +179,38 @@ impl SizedBox {
         }
     }
 
-    /// Set container's width.
+    /// Sets container's width.
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: Length) {
         this.widget.width = Some(width.get());
         this.ctx.request_layout();
     }
 
-    /// Set container's height.
+    /// Sets container's height.
     pub fn set_height(this: &mut WidgetMut<'_, Self>, height: Length) {
         this.widget.height = Some(height.get());
         this.ctx.request_layout();
     }
 
-    /// Set container's width and height.
+    /// Sets container's width and height.
     pub fn set_size(this: &mut WidgetMut<'_, Self>, width: Length, height: Length) {
         this.widget.width = Some(width.get());
         this.widget.height = Some(height.get());
         this.ctx.request_layout();
     }
 
-    /// Unset container's width.
+    /// Unsets container's width.
     pub fn unset_width(this: &mut WidgetMut<'_, Self>) {
         this.widget.width = None;
         this.ctx.request_layout();
     }
 
-    /// Unset container's height.
+    /// Unsets container's height.
     pub fn unset_height(this: &mut WidgetMut<'_, Self>) {
         this.widget.height = None;
         this.ctx.request_layout();
     }
 
-    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the width directly. Intended for toolkits abstracting over `SizedBox`.
     ///
     /// If `Some`, the value should be non-negative and not NaN.
     pub fn set_raw_width(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
@@ -218,7 +218,7 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
-    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the height directly. Intended for toolkits abstracting over `SizedBox`.
     ///
     /// If `Some`, the value should be non-negative and not NaN.
     pub fn set_raw_height(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
@@ -226,7 +226,7 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
-    /// Get mutable reference to the child widget, if any.
+    /// Returns mutable reference to the child widget, if any.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))

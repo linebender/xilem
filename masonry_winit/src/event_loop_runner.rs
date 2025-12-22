@@ -78,14 +78,14 @@ pub struct NewWindow {
 }
 
 impl NewWindow {
-    /// Create a new window with an automatically assigned [`WindowId`].
+    /// Creates a new window with an automatically assigned [`WindowId`].
     ///
     /// See the documentation on the fields of this type for details of the parameters.
     pub fn new(attributes: WindowAttributes, root_widget: NewWidget<dyn Widget + 'static>) -> Self {
         Self::new_with_id(WindowId::next(), attributes, root_widget)
     }
 
-    /// Create a new window with a custom assigned [`WindowId`].
+    /// Creates a new window with a custom assigned [`WindowId`].
     ///
     /// Use this when you need to specify a unique ID for the window, for example,
     /// for external tracking or state management.
@@ -105,7 +105,7 @@ impl NewWindow {
         }
     }
 
-    /// Set the base color of the new window.
+    /// Sets the base color of the new window.
     ///
     /// The base color is the color of the background which all widgets in the window draw on top of.
     /// Masonry's current default theme assumes that this will be a very dark color for sufficient contrast.
@@ -237,7 +237,7 @@ pub type EventLoopProxy = winit::event_loop::EventLoopProxy<MasonryUserEvent>;
 
 // --- MARK: RUN
 
-/// Run the app to completion.
+/// Runs the app to completion.
 ///
 /// This is usually one of the last functions called in your main function.
 pub fn run(
@@ -250,7 +250,7 @@ pub fn run(
     run_with(event_loop, new_windows, app_driver, default_properties)
 }
 
-/// Run the app with the provided event loop to completion.
+/// Runs the app with the provided event loop to completion.
 pub fn run_with(
     // This is passed in mostly to allow configuring the Android app
     event_loop: EventLoop,
@@ -341,7 +341,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 }
 
 impl MasonryState<'_> {
-    /// Create the Masonry application's composition root.
+    /// Creates the Masonry application's composition root.
     ///
     /// - `event_loop_proxy`: a queue provided by [`EventLoop::create_proxy`](winit::event_loop::EventLoop::create_proxy) to send custom events (mostly accessibility) to your event loop.
     /// - `new_windows`: the initial list of windows.
@@ -987,7 +987,7 @@ impl MasonryState<'_> {
             .map(|window| &mut window.render_root)
     }
 
-    /// Set how frames are presented to the user.
+    /// Sets how frames are presented to the user.
     ///
     /// This affects what users commonly know as "VSync".
     pub fn set_present_mode(&mut self, window_id: WindowId, present_mode: wgpu::PresentMode) {

@@ -287,7 +287,7 @@ pub(crate) struct InspectorState {
 }
 
 impl RenderRoot {
-    /// Create a new `RenderRoot` with the given options.
+    /// Creates a new `RenderRoot` with the given options.
     ///
     /// The provided root widget will always stay the root widget.
     /// (It cannot be changed later for another widget, only its children can change.)
@@ -427,7 +427,7 @@ impl RenderRoot {
     }
 
     // --- MARK: WINDOW_EVENT
-    /// Handle a window event.
+    /// Handles a window event.
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
             WindowEvent::Rescale(scale_factor) => {
@@ -465,7 +465,7 @@ impl RenderRoot {
     }
 
     // --- MARK: PUB FUNCTIONS
-    /// Handle a pointer event.
+    /// Handles a pointer event.
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
         let handled = run_on_pointer_event_pass(self, &event);
@@ -475,7 +475,7 @@ impl RenderRoot {
         handled
     }
 
-    /// Handle a text event.
+    /// Handles a text event.
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         let _span = info_span!("text_event");
         let handled = run_on_text_event_pass(self, &event);
@@ -491,7 +491,7 @@ impl RenderRoot {
         handled
     }
 
-    /// Handle an accesskit event.
+    /// Handles an accesskit event.
     pub fn handle_access_event(&mut self, event: ActionRequest) {
         let _span = info_span!("access_event");
         let Ok(id) = event.target.0.try_into() else {
@@ -522,7 +522,7 @@ impl RenderRoot {
         ret
     }
 
-    /// Redraw the window.
+    /// Redraws the window.
     ///
     /// Returns an update to the accessibility tree and a Vello scene representing
     /// the widget tree's current state.
@@ -538,19 +538,19 @@ impl RenderRoot {
         (scene, tree_update)
     }
 
-    /// Get the current icon that the mouse should display.
+    /// Returns the current icon that the mouse should display.
     pub fn cursor_icon(&self) -> CursorIcon {
         self.global_state.cursor_icon
     }
 
     // --- MARK: ACCESS WIDGETS
-    /// Get a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
     pub fn get_layer_root(&self, layer_idx: usize) -> WidgetRef<'_, dyn Widget> {
         self.get_widget(self.layer_root_id(layer_idx))
             .expect("layer root not in widget tree")
     }
 
-    /// Get a [`WidgetRef`] to a specific widget.
+    /// Returns a [`WidgetRef`] to a specific widget.
     pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         let node_ref = self.widget_arena.nodes.find(id)?;
 
@@ -572,7 +572,7 @@ impl RenderRoot {
         Some(WidgetRef { ctx, widget })
     }
 
-    /// Get a [`WidgetRef`] to the widget with the given tag.
+    /// Returns a [`WidgetRef`] to the widget with the given tag.
     pub fn get_widget_with_tag<W: Widget + FromDynWidget + ?Sized>(
         &self,
         tag: WidgetTag<W>,
@@ -588,7 +588,7 @@ impl RenderRoot {
         self.widget_arena.has(id)
     }
 
-    /// Get a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
+    /// Returns a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_base_layer<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
@@ -600,7 +600,7 @@ impl RenderRoot {
         res
     }
 
-    /// Get a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     ///
@@ -620,7 +620,7 @@ impl RenderRoot {
         res
     }
 
-    /// Get a [`WidgetMut`] to a specific widget.
+    /// Returns a [`WidgetMut`] to a specific widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     ///
@@ -644,7 +644,7 @@ impl RenderRoot {
         res
     }
 
-    /// Get a [`WidgetMut`] to the widget with the given tag.
+    /// Returns a [`WidgetMut`] to the widget with the given tag.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     #[track_caller]
@@ -664,7 +664,7 @@ impl RenderRoot {
         res
     }
 
-    /// Add a new layer at the end of the stack, with the given widget as its root, at the given position.
+    /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
         tracing::debug!("added layer to stack");
         mutate_widget(self, self.root_id(), |mut layer_stack| {
@@ -709,7 +709,7 @@ impl RenderRoot {
         self.run_rewrite_passes();
     }
 
-    /// Get the current size of the window.
+    /// Returns the current size of the window.
     pub fn size(&self) -> PhysicalSize<u32> {
         self.size
     }
@@ -720,7 +720,7 @@ impl RenderRoot {
     }
 
     // --- MARK: REWRITE PASSES
-    /// Run all rewrite passes on widget tree.
+    /// Runs all rewrite passes on widget tree.
     ///
     /// Rewrite passes are passes which occur after external events, and
     /// update flags and internal values to a consistent state.
@@ -838,7 +838,7 @@ impl RenderRoot {
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
-    /// Require that each widget gets relayouted.
+    /// Requires that each widget gets relayouted.
     ///
     /// This is used if something ambient changes and we expect that
     /// many widgets will depend on in it their layout.
@@ -879,12 +879,12 @@ impl RenderRoot {
         !state.is_stashed && !state.is_disabled
     }
 
-    /// Return the [`WidgetId`] of the [focused widget](crate::doc::masonry_concepts#text-focus).
+    /// Returns the [`WidgetId`] of the [focused widget](crate::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetId> {
         self.global_state.focused_widget
     }
 
-    /// Return the [`WidgetId`] of the widget which [captures pointer events](crate::doc::masonry_concepts#pointer-capture).
+    /// Returns the [`WidgetId`] of the widget which [captures pointer events](crate::doc::masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetId> {
         self.global_state.pointer_capture_target
     }
@@ -943,7 +943,7 @@ impl RenderRoot {
 }
 
 impl RenderRootState {
-    /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
+    /// Sends a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         (self.signal_sink)(signal);
     }

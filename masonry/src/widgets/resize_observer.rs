@@ -46,7 +46,7 @@ pub struct ResizeObserver {
 
 // --- MARK: BUILDERS
 impl ResizeObserver {
-    /// Create a new resize observer, which will send [`LayoutChanged`] whenever child's
+    /// Creates a new resize observer, which will send [`LayoutChanged`] whenever child's
     /// size changes.
     ///
     /// If this size will be used to modify the content of the child, it should generally
@@ -62,13 +62,13 @@ impl ResizeObserver {
 
 // --- MARK: WIDGETMUT
 impl ResizeObserver {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let old_child = mem::replace(&mut this.widget.child, child.erased().to_pod());
         this.ctx.remove_child(old_child);
     }
 
-    /// Force this layout observer to send a new action.
+    /// Forces this layout observer to send a new action.
     ///
     /// It's hard to imagine reasonable use cases for this method, but it's provided for completeness.
     pub fn force_resend(this: &mut WidgetMut<'_, Self>) {
@@ -76,7 +76,7 @@ impl ResizeObserver {
         this.ctx.request_layout();
     }
 
-    /// Get mutable reference to the child widget.
+    /// Returns mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }

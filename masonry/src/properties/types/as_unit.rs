@@ -11,7 +11,7 @@ use crate::properties::types::Length;
 
 /// Utility trait for wrapping numbers in logical units.
 pub trait AsUnit {
-    /// Create a length, in logical pixels.
+    /// Creates a length, in logical pixels.
     ///
     /// # Panics
     ///

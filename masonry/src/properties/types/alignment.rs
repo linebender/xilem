@@ -41,7 +41,7 @@ pub enum MainAxisAlignment {
 
 impl CrossAxisAlignment {
     /// Given the difference between the size of the container and the size
-    /// of the child (on their minor axis) return the necessary offset for
+    /// of the child (on their minor axis), returns the necessary offset for
     /// this alignment.
     pub fn align(self, val: f64) -> f64 {
         match self {

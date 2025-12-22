@@ -92,7 +92,7 @@ impl ZStack {
 
 // --- MARK: WIDGETMUT
 impl ZStack {
-    /// Change the alignment of the `ZStack`.
+    /// Changes the alignment of the `ZStack`.
     ///
     /// See also [`with_alignment`][Self::with_alignment].
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<UnitPoint>) {
@@ -166,7 +166,7 @@ impl CollectionWidget<ChildAlignment> for ZStack {
         this.ctx.remove_child(old_child.widget);
     }
 
-    /// Set the child alignment at the given index.
+    /// Sets the child alignment at the given index.
     ///
     /// # Panics
     ///
@@ -177,7 +177,7 @@ impl CollectionWidget<ChildAlignment> for ZStack {
         this.ctx.request_layout();
     }
 
-    /// Swap the index of two children.
+    /// Swaps the index of two children.
     ///
     /// # Panics
     ///
@@ -187,7 +187,7 @@ impl CollectionWidget<ChildAlignment> for ZStack {
         this.ctx.children_changed();
     }
 
-    /// Remove the child at the given index.
+    /// Removes the child at the given index.
     ///
     /// # Panics
     ///

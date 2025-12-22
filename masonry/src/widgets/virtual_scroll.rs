@@ -250,7 +250,7 @@ impl std::fmt::Debug for VirtualScroll {
 
 // --- MARK: BUILDERS
 impl VirtualScroll {
-    /// Create a new virtual scrolling list.
+    /// Creates a new virtual scrolling list.
     ///
     /// The item at `initial_anchor` will have its top aligned with the top of
     /// the scroll area to start with.
@@ -274,7 +274,7 @@ impl VirtualScroll {
         }
     }
 
-    /// Set the range of child ids which are valid.
+    /// Sets the range of child ids which are valid.
     ///
     /// Note that this is a half-open range, so the end id of the range is not valid.
     ///
@@ -371,7 +371,8 @@ impl VirtualScroll {
             tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
         };
     }
-    /// Remove the child widget with id `idx`.
+
+    /// Removes the child widget with id `idx`.
     ///
     /// This will log an error if there was no child at the given index.
     /// This should only happen if the driver does not meet the usage contract.
@@ -403,7 +404,7 @@ impl VirtualScroll {
         }
     }
 
-    /// Modify the child widget at `idx`.
+    /// Returns mutable reference to the child widget at `idx`.
     ///
     /// # Panics
     ///
@@ -421,7 +422,7 @@ impl VirtualScroll {
         this.ctx.get_mut(child)
     }
 
-    /// Set the valid range of ids.
+    /// Sets the valid range of ids.
     ///
     /// That is, the children which the virtual scrolling area will request within.
     /// Runtime equivalent of [`with_valid_range`](Self::with_valid_range).
@@ -436,7 +437,7 @@ impl VirtualScroll {
         this.ctx.request_layout();
     }
 
-    /// Forcefully align the top of the item at `idx` with the top of the
+    /// Forcefully aligns the top of the item at `idx` with the top of the
     /// virtual scroll area.
     ///
     /// That is, scroll to the item at `idx`, losing any scroll progress by the user.
@@ -449,7 +450,7 @@ impl VirtualScroll {
         this.ctx.request_layout();
     }
 
-    /// Ensure that the correct follow-up passes are requested after the scroll position changes.
+    /// Ensures that the correct follow-up passes are requested after the scroll position changes.
     ///
     /// `size` is the current viewport's size.
     fn post_scroll(&mut self, size: Size) -> PostScrollResult {
@@ -494,7 +495,7 @@ impl VirtualScroll {
         ctx.request_compose();
     }
 
-    /// Lock scrolling so that:
+    /// Locks scrolling so that:
     /// 1) Every part of the last valid item can be seen.
     /// 2) The last item never scrolls completely out of view (currently, the bottom of the last item can be halfway down the screen)
     ///
@@ -505,7 +506,7 @@ impl VirtualScroll {
         self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.min(max_scroll);
     }
 
-    /// Lock scrolling so that the top of the first valid item doesn't go above the top of the virtual scrolling area.
+    /// Locks scrolling so that the top of the first valid item doesn't go above the top of the virtual scrolling area.
     fn cap_scroll_range_up(&mut self) {
         self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.max(0.0);
     }

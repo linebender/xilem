@@ -42,7 +42,7 @@ impl Default for Spinner {
 
 // --- MARK: BUILDERS
 impl Spinner {
-    /// Create a spinner widget
+    /// Creates a spinner widget
     pub fn new() -> Self {
         Self::default()
     }

@@ -54,7 +54,7 @@ impl Default for BoxShadow {
 }
 
 impl BoxShadow {
-    /// Create a new shadow with the given color and offset.
+    /// Creates a new shadow with the given color and offset.
     pub fn new(color: AlphaColor<Srgb>, offset: impl Into<Point>) -> Self {
         Self {
             color,

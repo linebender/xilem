@@ -22,7 +22,7 @@ use crate::view::Prop;
 ///
 /// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
 pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action> + Sized {
-    /// Set the element's content color.
+    /// Sets the element's content color.
     ///
     /// "Content color" usually means text or text decorations.
     fn color(self, color: Color) -> Prop<ContentColor, Self, State, Action>
@@ -32,7 +32,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(ContentColor { color })
     }
 
-    /// Set the element's content color when disabled.
+    /// Sets the element's content color when disabled.
     ///
     /// "Content color" usually means text or text decorations.
     fn disabled_color(self, color: Color) -> Prop<DisabledContentColor, Self, State, Action>
@@ -42,7 +42,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(DisabledContentColor(ContentColor { color }))
     }
 
-    /// Set the element's background to a color/gradient.
+    /// Sets the element's background to a color/gradient.
     fn background(self, background: Background) -> Prop<Background, Self, State, Action>
     where
         Self::Widget: HasProperty<Background>,
@@ -50,7 +50,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(background)
     }
 
-    /// Set the element's background to a color.
+    /// Sets the element's background to a color.
     fn background_color(self, color: Color) -> Prop<Background, Self, State, Action>
     where
         Self::Widget: HasProperty<Background>,
@@ -58,7 +58,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(Background::Color(color))
     }
 
-    /// Set the element's background to a gradient.
+    /// Sets the element's background to a gradient.
     fn background_gradient(self, gradient: Gradient) -> Prop<Background, Self, State, Action>
     where
         Self::Widget: HasProperty<Background>,
@@ -66,7 +66,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(Background::Gradient(gradient))
     }
 
-    /// Set the element's background when pressed to a color/gradient.
+    /// Sets the element's background when pressed to a color/gradient.
     fn active_background(
         self,
         background: Background,
@@ -77,7 +77,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(ActiveBackground(background))
     }
 
-    /// Set the element's background when pressed to a color.
+    /// Sets the element's background when pressed to a color.
     fn active_background_color(self, color: Color) -> Prop<ActiveBackground, Self, State, Action>
     where
         Self::Widget: HasProperty<ActiveBackground>,
@@ -85,7 +85,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(ActiveBackground(Background::Color(color)))
     }
 
-    /// Set the element's background when pressed to a gradient.
+    /// Sets the element's background when pressed to a gradient.
     fn active_background_gradient(
         self,
         gradient: Gradient,
@@ -96,7 +96,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(ActiveBackground(Background::Gradient(gradient)))
     }
 
-    /// Set the element's background when disabled to a color/gradient.
+    /// Sets the element's background when disabled to a color/gradient.
     fn disabled_background(
         self,
         background: Background,
@@ -107,7 +107,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(DisabledBackground(background))
     }
 
-    /// Set the element's background when disabled to a color.
+    /// Sets the element's background when disabled to a color.
     fn disabled_background_color(
         self,
         color: Color,
@@ -118,7 +118,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(DisabledBackground(Background::Color(color)))
     }
 
-    /// Set the element's background when disabled to a gradient.
+    /// Sets the element's background when disabled to a gradient.
     fn disabled_background_gradient(
         self,
         gradient: Gradient,
@@ -129,7 +129,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(DisabledBackground(Background::Gradient(gradient)))
     }
 
-    /// Set the element's border color and width.
+    /// Sets the element's border color and width.
     fn border(
         self,
         color: Color,
@@ -141,7 +141,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(BorderColor { color }).prop(BorderWidth { width })
     }
 
-    /// Set the element's border color.
+    /// Sets the element's border color.
     fn border_color(self, color: Color) -> Prop<BorderColor, Self, State, Action>
     where
         Self::Widget: HasProperty<BorderColor>,
@@ -149,7 +149,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(BorderColor { color })
     }
 
-    /// Set the element's border color when hovered.
+    /// Sets the element's border color when hovered.
     fn hovered_border_color(self, color: Color) -> Prop<HoveredBorderColor, Self, State, Action>
     where
         Self::Widget: HasProperty<HoveredBorderColor>,
@@ -157,7 +157,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(HoveredBorderColor(BorderColor { color }))
     }
 
-    /// Set the element's border color when focused.
+    /// Sets the element's border color when focused.
     fn focused_border_color(self, color: Color) -> Prop<FocusedBorderColor, Self, State, Action>
     where
         Self::Widget: HasProperty<FocusedBorderColor>,
@@ -165,7 +165,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(FocusedBorderColor(BorderColor { color }))
     }
 
-    /// Set the element's border width.
+    /// Sets the element's border width.
     fn border_width(self, width: f64) -> Prop<BorderWidth, Self, State, Action>
     where
         Self::Widget: HasProperty<BorderWidth>,
@@ -173,7 +173,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(BorderWidth { width })
     }
 
-    /// Set the element's box shadow.
+    /// Sets the element's box shadow.
     fn box_shadow(self, box_shadow: BoxShadow) -> Prop<BoxShadow, Self, State, Action>
     where
         Self::Widget: HasProperty<BoxShadow>,
@@ -181,7 +181,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(box_shadow)
     }
 
-    /// Set the element's corner radius.
+    /// Sets the element's corner radius.
     fn corner_radius(self, radius: f64) -> Prop<CornerRadius, Self, State, Action>
     where
         Self::Widget: HasProperty<CornerRadius>,
@@ -189,7 +189,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(CornerRadius { radius })
     }
 
-    /// Set the element's padding.
+    /// Sets the element's padding.
     fn padding(self, padding: impl Into<Padding>) -> Prop<Padding, Self, State, Action>
     where
         Self::Widget: HasProperty<Padding>,
@@ -197,7 +197,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(padding.into())
     }
 
-    /// Set the gap between the element's consecutive children.
+    /// Sets the gap between the element's consecutive children.
     fn gap(self, gap: impl Into<Gap>) -> Prop<Gap, Self, State, Action>
     where
         Self::Widget: HasProperty<Gap>,
@@ -205,7 +205,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
         self.prop(gap.into())
     }
 
-    /// Set how line breaks will be handled when text overflows the available space.
+    /// Sets how line breaks will be handled when text overflows the available space.
     fn line_break_mode(
         self,
         line_break_mode: LineBreaking,

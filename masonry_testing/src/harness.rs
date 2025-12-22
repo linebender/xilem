@@ -388,7 +388,7 @@ impl<W: Widget> TestHarness<W> {
 
     // --- MARK: PROCESS EVENTS
 
-    /// Send a [`WindowEvent`] to the simulated window.
+    /// Sends a [`WindowEvent`] to the simulated window.
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
@@ -397,7 +397,7 @@ impl<W: Widget> TestHarness<W> {
         handled
     }
 
-    /// Send a [`PointerEvent`] to the simulated window.
+    /// Sends a [`PointerEvent`] to the simulated window.
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
@@ -406,7 +406,7 @@ impl<W: Widget> TestHarness<W> {
         handled
     }
 
-    /// Send a [`TextEvent`] to the simulated window.
+    /// Sends a [`TextEvent`] to the simulated window.
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
@@ -415,7 +415,7 @@ impl<W: Widget> TestHarness<W> {
         handled
     }
 
-    /// Send an [`ActionRequest`] to the simulated window.
+    /// Sends an [`ActionRequest`] to the simulated window.
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_access_event(&mut self, event: ActionRequest) {
@@ -627,12 +627,12 @@ impl<W: Widget> TestHarness<W> {
         RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
     }
 
-    /// Get a reference to the current state of the accessibility tree.
+    /// Returns a reference to the current state of the accessibility tree.
     pub fn access_tree(&self) -> &accesskit_consumer::Tree {
         &self.access_tree
     }
 
-    /// Get a reference to the current value of a node of the accessibility tree.
+    /// Returns a reference to the current value of a node of the accessibility tree.
     pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::Node<'_>> {
         self.access_tree.state().node_by_id(id.into())
     }
@@ -656,7 +656,7 @@ impl<W: Widget> TestHarness<W> {
         }));
     }
 
-    /// Send a [`Down`](PointerEvent::Down) event to the window.
+    /// Sends a [`Down`](PointerEvent::Down) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
         self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
@@ -666,7 +666,7 @@ impl<W: Widget> TestHarness<W> {
         }));
     }
 
-    /// Send an [`Up`](PointerEvent::Up) event to the window.
+    /// Sends an [`Up`](PointerEvent::Up) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(button);
         self.process_pointer_event(PointerEvent::Up(PointerButtonEvent {
@@ -676,7 +676,7 @@ impl<W: Widget> TestHarness<W> {
         }));
     }
 
-    /// Send a [`Scroll`](PointerEvent::Scroll) event to the window.
+    /// Sends a [`Scroll`](PointerEvent::Scroll) event to the window.
     pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
         self.process_pointer_event(PointerEvent::Scroll(PointerScrollEvent {
             pointer: PRIMARY_MOUSE,
@@ -685,7 +685,7 @@ impl<W: Widget> TestHarness<W> {
         }));
     }
 
-    /// Send events that lead to a given widget being clicked.
+    /// Sends events that lead to a given widget being clicked.
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     ///
@@ -702,7 +702,7 @@ impl<W: Widget> TestHarness<W> {
         self.mouse_button_release(PointerButton::Primary);
     }
 
-    /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
+    /// Uses [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
     ///
     /// # Panics
     ///
@@ -735,7 +735,7 @@ impl<W: Widget> TestHarness<W> {
         self.mouse_move(widget_center);
     }
 
-    /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
+    /// Uses [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
     ///
     /// This does fewer checks than [`mouse_move_to`](Self::mouse_move_to), which in most cases should be preferred.
     /// However, `mouse_move_to` does not allow moving to non-interactive widgets, which can sometimes be desirable.
@@ -760,7 +760,7 @@ impl<W: Widget> TestHarness<W> {
         self.mouse_move(widget_center);
     }
 
-    /// Try to get the target widget into the viewport.
+    /// Tries to get the target widget into the viewport.
     ///
     /// This will send an accesskit [`ScrollIntoView`] action to the widget,
     /// which will usually send [`RequestPanToChild`] events to the widget's parents.
@@ -779,7 +779,7 @@ impl<W: Widget> TestHarness<W> {
 
     // TODO - Handle complicated IME
     // TODO - Mock Winit keyboard events
-    /// Send a [`TextEvent`] for each character in the given string.
+    /// Sends a [`TextEvent`] for each character in the given string.
     pub fn keyboard_type_chars(&mut self, text: &str) {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
@@ -789,7 +789,7 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
-    /// Send a [`TextEvent`] representing the user pressing the `Tab` key, either with or without the `Shift` key pressed.
+    /// Sends a [`TextEvent`] representing the user pressing the `Tab` key, either with or without the `Shift` key pressed.
     pub fn press_tab_key(&mut self, shift: bool) {
         let modifiers = if shift {
             Modifiers::SHIFT
@@ -844,7 +844,7 @@ impl<W: Widget> TestHarness<W> {
         let _ = self.render_root.set_focus_fallback(id);
     }
 
-    /// Run an animation pass on the widget tree.
+    /// Runs an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
         self.render_root
             .handle_window_event(WindowEvent::AnimFrame(Duration::from_millis(ms)));
@@ -860,17 +860,17 @@ impl<W: Widget> TestHarness<W> {
 
     // --- MARK: GETTERS
 
-    /// Return a [`WidgetRef`] to the root widget.
+    /// Returns a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, W> {
         self.render_root.get_layer_root(0).downcast().unwrap()
     }
 
-    /// Return the [`WidgetId`] of the root widget.
+    /// Returns the [`WidgetId`] of the root widget.
     pub fn root_id(&self) -> WidgetId {
         self.render_root.get_layer_root(0).id()
     }
 
-    /// Return a [`WidgetRef`] to the widget with the given id.
+    /// Returns a [`WidgetRef`] to the widget with the given id.
     ///
     /// # Panics
     ///
@@ -882,7 +882,7 @@ impl<W: Widget> TestHarness<W> {
             .unwrap_or_else(|| panic!("could not find widget {id}"))
     }
 
-    /// Return a [`WidgetRef`] to the widget with the given tag.
+    /// Returns a [`WidgetRef`] to the widget with the given tag.
     ///
     /// # Panics
     ///
@@ -897,7 +897,7 @@ impl<W: Widget> TestHarness<W> {
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
     }
 
-    /// Drain the events recorded by the [`Recorder`] widget with the given tag.
+    /// Drains the events recorded by the [`Recorder`] widget with the given tag.
     ///
     /// # Panics
     ///
@@ -907,7 +907,7 @@ impl<W: Widget> TestHarness<W> {
         self.get_widget(tag).inner().recording().drain()
     }
 
-    /// Flush the events recorded by the [`Recorder`] widget with the given tag.
+    /// Flushes the events recorded by the [`Recorder`] widget with the given tag.
     ///
     /// # Panics
     ///
@@ -917,36 +917,36 @@ impl<W: Widget> TestHarness<W> {
         self.get_widget(tag).inner().recording().clear();
     }
 
-    /// Try to return a [`WidgetRef`] to the widget with the given id.
+    /// Tries to return a [`WidgetRef`] to the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root.get_widget(id)
     }
 
-    /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    /// Returns a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_layer_root(0)
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
-    /// Return the id of the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    /// Returns the id of the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget_id(&self) -> Option<WidgetId> {
         self.render_root.focused_widget()
     }
 
-    /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
+    /// Returns a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_widget(self.render_root.pointer_capture_target()?)
     }
 
-    /// Return the id of the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
+    /// Returns the id of the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
         self.render_root.pointer_capture_target()
     }
 
-    /// Call the provided visitor on every widget in the widget tree.
+    /// Calls the provided visitor on every widget in the widget tree.
     pub fn inspect_widgets(&mut self, mut f: impl FnMut(WidgetRef<'_, dyn Widget>)) {
         fn inspect(
             widget: WidgetRef<'_, dyn Widget>,
@@ -961,7 +961,7 @@ impl<W: Widget> TestHarness<W> {
         inspect(self.render_root.get_layer_root(0), &mut f);
     }
 
-    /// Get a [`WidgetMut`] to the root widget.
+    /// Returns a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
@@ -973,7 +973,7 @@ impl<W: Widget> TestHarness<W> {
         ret
     }
 
-    /// Get a [`WidgetMut`] to a specific widget.
+    /// Returns a [`WidgetMut`] to a specific widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_widget_with_id<R>(
@@ -986,7 +986,7 @@ impl<W: Widget> TestHarness<W> {
         ret
     }
 
-    /// Get a [`WidgetMut`] to the widget with the given tag.
+    /// Returns a [`WidgetMut`] to the widget with the given tag.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     #[track_caller]
@@ -1000,7 +1000,7 @@ impl<W: Widget> TestHarness<W> {
         ret
     }
 
-    /// Pop the oldest [`ErasedAction`] emitted by the widget tree, downcasting it to `T`.
+    /// Pops the oldest [`ErasedAction`] emitted by the widget tree, downcasting it to `T`.
     ///
     /// # Panics
     ///
@@ -1018,12 +1018,12 @@ impl<W: Widget> TestHarness<W> {
         Some((*action, widget))
     }
 
-    /// Pop the oldest [`ErasedAction`] emitted by the widget tree.
+    /// Pops the oldest [`ErasedAction`] emitted by the widget tree.
     pub fn pop_action_erased(&mut self) -> Option<(ErasedAction, WidgetId)> {
         self.action_queue.pop_front()
     }
 
-    /// Return the app's current cursor icon.
+    /// Returns the app's current cursor icon.
     ///
     /// The cursor icon is the icon that would be displayed to indicate the mouse
     /// position in a visual environment.
@@ -1031,14 +1031,14 @@ impl<W: Widget> TestHarness<W> {
         self.render_root.cursor_icon()
     }
 
-    /// Return whether the app has an IME session in progress.
+    /// Returns whether the app has an IME session in progress.
     ///
     /// This usually means that a widget which [accepts text input](Widget::accepts_text_input) is focused.
     pub fn has_ime_session(&self) -> bool {
         self.has_ime_session
     }
 
-    /// Return the rectangle of the IME session.
+    /// Returns the rectangle of the IME session.
     ///
     /// This is usually the layout rectangle of the focused widget.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
@@ -1052,12 +1052,12 @@ impl<W: Widget> TestHarness<W> {
         self.clipboard.clone()
     }
 
-    /// Return the size of the simulated window.
+    /// Returns the size of the simulated window.
     pub fn window_size(&self) -> PhysicalSize<u32> {
         self.window_size
     }
 
-    /// Return the title of the simulated window.
+    /// Returns the title of the simulated window.
     pub fn title(&self) -> String {
         self.title.clone()
     }

@@ -58,7 +58,7 @@ impl OverlayBox {
 
 // --- MARK: WIDGETMUT
 impl OverlayBox {
-    /// Get mutable reference to the child widget, if any.
+    /// Returns mutable reference to the child widget, if any.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }

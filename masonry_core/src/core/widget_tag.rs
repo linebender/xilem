@@ -27,7 +27,7 @@ pub(crate) struct WidgetTagInner {
 }
 
 impl<W: Widget> WidgetTag<W> {
-    /// Create a new tag with the given name.
+    /// Creates a new tag with the given name.
     ///
     /// Calling this method twice with the same string will return the same tag.
     /// Users should avoid name collisions when adding widgets with named tags.
@@ -40,7 +40,7 @@ impl<W: Widget> WidgetTag<W> {
         }
     }
 
-    /// Create a new unique tag.
+    /// Creates a new unique tag.
     ///
     /// Calling this method twice will return two different tags.
     pub fn unique() -> Self {

@@ -40,7 +40,7 @@ impl ViewPathTracker for ViewCtx {
 }
 
 impl ViewCtx {
-    /// Return the list of ids of [`WidgetView`](crate::WidgetView)s that must be traversed to get the widget with the given id.
+    /// Returns the list of ids of [`WidgetView`](crate::WidgetView)s that must be traversed to get the widget with the given id.
     ///
     /// Only applies to widgets on which [`Self::record_action_source`] was called.
     pub fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
@@ -63,13 +63,13 @@ impl ViewCtx {
         value
     }
 
-    /// Record that the actions from the widget `id` should be routed to this view.
+    /// Records that the actions from the widget `id` should be routed to this view.
     pub fn record_action_source(&mut self, id: WidgetId) {
         let path = self.id_path.clone();
         self.widget_map.insert(id, path);
     }
 
-    /// Remove this widget's id path from the routing map.
+    /// Removes this widget's id path from the routing map.
     pub fn teardown_action_source<W: Widget + FromDynWidget + ?Sized>(
         &mut self,
         widget: WidgetMut<'_, W>,
@@ -87,7 +87,7 @@ impl ViewCtx {
         self.proxy.clone()
     }
 
-    /// Create a new `ViewCtx` for rebuilding the widget tree.
+    /// Creates a new `ViewCtx` for rebuilding the widget tree.
     ///
     /// You almost never need to call this method unless you're building your own framework.
     pub fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {

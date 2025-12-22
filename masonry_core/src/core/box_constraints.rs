@@ -32,14 +32,14 @@ impl BoxConstraints {
         max: Size::new(f64::INFINITY, f64::INFINITY),
     };
 
-    /// Create a new box constraints object.
+    /// Creates a new box constraints object.
     ///
-    /// Create constraints based on minimum and maximum size.
+    /// Creates constraints based on minimum and maximum size.
     pub fn new(min: Size, max: Size) -> Self {
         Self { min, max }
     }
 
-    /// Create a "tight" box constraints object.
+    /// Creates a "tight" box constraints object.
     ///
     /// A "tight" constraint can only be satisfied by a single size.
     pub fn tight(size: Size) -> Self {
@@ -49,9 +49,9 @@ impl BoxConstraints {
         }
     }
 
-    /// Create a "loose" version of the constraints.
+    /// Creates a "loose" version of the constraints.
     ///
-    /// Make a version with zero minimum size, but the same maximum size.
+    /// Returns a version with zero minimum size, but the same maximum size.
     pub fn loosen(&self) -> Self {
         Self {
             min: Size::ZERO,
@@ -59,7 +59,7 @@ impl BoxConstraints {
         }
     }
 
-    /// Clamp a given size so that it fits within the constraints.
+    /// Clamps a given size so that it fits within the constraints.
     pub fn constrain(&self, size: impl Into<Size>) -> Size {
         size.into().clamp(self.min, self.max)
     }
@@ -84,7 +84,7 @@ impl BoxConstraints {
         self.max.height.is_finite()
     }
 
-    /// Return the max in each axis if bounded, else the value given in `size`.
+    /// Returns the max in each axis if bounded, else the value given in `size`.
     pub fn bounded_or(&self, size: Size) -> Size {
         Size {
             width: if self.is_width_bounded() {
@@ -100,7 +100,7 @@ impl BoxConstraints {
         }
     }
 
-    /// Check to see if these constraints are legit.
+    /// Checks to see if these constraints are legit.
     ///
     /// In Debug mode, logs a warning if `BoxConstraints` are invalid.
     pub fn debug_check(&self, name: &str) {
@@ -137,7 +137,7 @@ impl BoxConstraints {
         }
     }
 
-    /// Shrink min and max constraints by size
+    /// Shrinks min and max constraints by size
     pub fn shrink(&self, diff: impl Into<Size>) -> Self {
         let diff = diff.into();
         let min = Size::new(
@@ -152,14 +152,14 @@ impl BoxConstraints {
         Self::new(min, max)
     }
 
-    /// Test whether these constraints contain the given `Size`.
+    /// Tests whether these constraints contain the given `Size`.
     pub fn contains(&self, size: impl Into<Size>) -> bool {
         let size = size.into();
         (self.min.width <= size.width && size.width <= self.max.width)
             && (self.min.height <= size.height && size.height <= self.max.height)
     }
 
-    /// Generate constraints with new values on the given axis.
+    /// Generates constraints with new values on the given axis.
     pub fn with_coord(&self, axis: Axis, min_major: f64, major: f64) -> Self {
         match axis {
             Axis::Horizontal => Self::new(
@@ -173,7 +173,7 @@ impl BoxConstraints {
         }
     }
 
-    /// Find the `Size` within these `BoxConstraint`s that minimises the difference between the
+    /// Finds the `Size` within these `BoxConstraint`s that minimises the difference between the
     /// returned `Size`'s aspect ratio and `aspect_ratio`, where *aspect ratio* is defined as
     /// `height / width`.
     ///

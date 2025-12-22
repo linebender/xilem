@@ -126,7 +126,7 @@ pub(crate) fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) ->
 
 // --- MARK: METHODS
 impl<W: Widget + ?Sized> Portal<W> {
-    /// Return the scrolling "position" of the container.
+    /// Returns the scrolling "position" of the container.
     pub fn get_viewport_pos(&self) -> Point {
         self.viewport_pos
     }
@@ -171,25 +171,25 @@ impl<W: Widget + ?Sized> Portal<W> {
 
 // --- MARK: WIDGETMUT
 impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
-    /// Replace the child widget with a new one.
+    /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<W>) {
         this.ctx
             .remove_child(std::mem::replace(&mut this.widget.child, child.to_pod()));
     }
 
-    /// Get mutable reference to the child widget.
+    /// Returns mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 
-    /// Get mutable reference to the horizontal scrollbar.
+    /// Returns mutable reference to the horizontal scrollbar.
     pub fn horizontal_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
         this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
     }
 
-    /// Get mutable reference to the vertical scrollbar.
+    /// Returns mutable reference to the vertical scrollbar.
     pub fn vertical_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
@@ -197,19 +197,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     }
 
     // TODO - rewrite doc
-    /// Set whether to constrain the child horizontally.
+    /// Sets whether to constrain the child horizontally.
     pub fn set_constrain_horizontal(this: &mut WidgetMut<'_, Self>, constrain: bool) {
         this.widget.constrain_horizontal = constrain;
         this.ctx.request_layout();
     }
 
-    /// Set whether to constrain the child vertically.
+    /// Sets whether to constrain the child vertically.
     pub fn set_constrain_vertical(this: &mut WidgetMut<'_, Self>, constrain: bool) {
         this.widget.constrain_vertical = constrain;
         this.ctx.request_layout();
     }
 
-    /// Set whether the child's size must be greater than or equal the size of
+    /// Sets whether the child's size must be greater than or equal the size of
     /// the `Portal`.
     ///
     /// See [`content_must_fill`] for more details.
@@ -220,7 +220,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         this.ctx.request_layout();
     }
 
-    /// Set the scrolling "position" of the container.
+    /// Sets the scrolling "position" of the container.
     ///
     /// A position of zero means no scrolling at all.
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
@@ -242,12 +242,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         pos_changed
     }
 
-    /// Translate the scrolling "position" of the container.
+    /// Translates the scrolling "position" of the container.
     pub fn pan_viewport_by(this: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
         Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
     }
 
-    /// Change the scrolling "position" of the container so that `target` is scrolled into view.
+    /// Changes the scrolling "position" of the container so that `target` is scrolled into view.
     ///
     /// `target` is in child coordinates, meaning a target of `(0, 0, 10, 10)` will
     /// scroll an item at the top-left of the child into view.

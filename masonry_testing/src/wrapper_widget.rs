@@ -18,7 +18,7 @@ pub struct WrapperWidget {
 }
 
 impl WrapperWidget {
-    /// Create a new `WrapperWidget`.
+    /// Creates a new `WrapperWidget`.
     ///
     /// The `child` is the initial child widget.
     pub fn new(child: NewWidget<impl Widget>) -> Self {
@@ -27,20 +27,20 @@ impl WrapperWidget {
         }
     }
 
-    /// Get mutable reference to the child widget.
+    /// Returns mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 }
 
 impl WrapperWidget {
-    /// Replace the container's child widget.
+    /// Replaces the container's child widget.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
         // FIXME - Take NewWidget argument
         Self::set_child_pod(this, NewWidget::new(child).erased().to_pod());
     }
 
-    /// Replace the container's child widget with a `WidgetPod`.
+    /// Replaces the container's child widget with a `WidgetPod`.
     pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
         let old_child = std::mem::replace(&mut this.widget.child, child);
         this.ctx.remove_child(old_child);

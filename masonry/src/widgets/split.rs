@@ -48,7 +48,7 @@ where
 
 // --- MARK: BUILDERS
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
-    /// Create a new split panel.
+    /// Creates a new split panel.
     pub fn new(child1: NewWidget<ChildA>, child2: NewWidget<ChildB>) -> Self {
         Self {
             split_axis: Axis::Horizontal,
@@ -220,7 +220,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         (min_limit, max_limit)
     }
 
-    /// Set a new chosen split point.
+    /// Sets a new chosen split point.
     fn update_split_point(&mut self, size: Size, mouse_pos: Point) {
         let (min_limit, max_limit) = self.split_side_limits(size);
         self.split_point_chosen = match self.split_axis {
@@ -300,35 +300,35 @@ where
     ChildA: Widget + FromDynWidget + ?Sized,
     ChildB: Widget + FromDynWidget + ?Sized,
 {
-    /// Replace the first child widget with a new one.
+    /// Replaces the first child widget with a new one.
     pub fn set_child1(this: &mut WidgetMut<'_, Self>, child: NewWidget<ChildA>) {
         this.ctx
             .remove_child(std::mem::replace(&mut this.widget.child1, child.to_pod()));
     }
 
-    /// Replace the second child widget with a new one.
+    /// Replaces the second child widget with a new one.
     pub fn set_child2(this: &mut WidgetMut<'_, Self>, child: NewWidget<ChildB>) {
         this.ctx
             .remove_child(std::mem::replace(&mut this.widget.child2, child.to_pod()));
     }
 
-    /// Get a mutable reference to the first child widget.
+    /// Returns a mutable reference to the first child widget.
     pub fn child1_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildA> {
         this.ctx.get_mut(&mut this.widget.child1)
     }
 
-    /// Get a mutable reference to the second child widget.
+    /// Returns a mutable reference to the second child widget.
     pub fn child2_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildB> {
         this.ctx.get_mut(&mut this.widget.child2)
     }
 
-    /// Set the split axis.
+    /// Sets the split axis.
     pub fn set_split_axis(this: &mut WidgetMut<'_, Self>, split_axis: Axis) {
         this.widget.split_axis = split_axis;
         this.ctx.request_layout();
     }
 
-    /// Set the split point as a fraction of the split axis.
+    /// Sets the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
     /// The default split point is `0.5`.
@@ -341,7 +341,7 @@ where
         this.ctx.request_layout();
     }
 
-    /// Set the minimum size for both sides of the split axis.
+    /// Sets the minimum size for both sides of the split axis.
     ///
     /// The value will be rounded up to the nearest integer.
     pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: Length, second: Length) {
@@ -349,7 +349,7 @@ where
         this.ctx.request_layout();
     }
 
-    /// Set the size of the splitter bar.
+    /// Sets the size of the splitter bar.
     ///
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
@@ -358,7 +358,7 @@ where
         this.ctx.request_layout();
     }
 
-    /// Set the minimum size of the splitter bar area.
+    /// Sets the minimum size of the splitter bar area.
     ///
     /// The minimum splitter bar area defines the minimum size of the area
     /// where mouse hit detection is done for the splitter bar.
@@ -374,7 +374,7 @@ where
         this.ctx.request_layout();
     }
 
-    /// Set whether the split point can be changed by dragging.
+    /// Sets whether the split point can be changed by dragging.
     pub fn set_draggable(this: &mut WidgetMut<'_, Self>, draggable: bool) {
         this.widget.draggable = draggable;
         // Bar mutability impacts appearance, but not accessibility node
@@ -382,7 +382,7 @@ where
         this.ctx.request_paint_only();
     }
 
-    /// Set whether the splitter bar is drawn as a solid rectangle.
+    /// Sets whether the splitter bar is drawn as a solid rectangle.
     ///
     /// If this is `false` (the default), the bar will be drawn as two parallel lines.
     pub fn set_bar_solid(this: &mut WidgetMut<'_, Self>, solid: bool) {

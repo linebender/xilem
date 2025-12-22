@@ -37,7 +37,7 @@ pub struct ProgressBar {
 
 // --- MARK: BUILDERS
 impl ProgressBar {
-    /// Create a new `ProgressBar`.
+    /// Creates a new `ProgressBar`.
     ///
     /// The progress value will be clamped to [0, 1].
     ///
@@ -72,7 +72,7 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT
 impl ProgressBar {
-    /// Set the progress displayed by the bar.
+    /// Sets the progress displayed by the bar.
     ///
     /// The progress value will be clamped to [0, 1].
     ///

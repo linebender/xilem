@@ -50,7 +50,7 @@ impl<'a> From<&'a BorderColor> for BrushRef<'a> {
 }
 
 impl BorderColor {
-    /// Create new `BorderColor` with given value.
+    /// Creates new `BorderColor` with given value.
     pub const fn new(color: AlphaColor<Srgb>) -> Self {
         Self { color }
     }

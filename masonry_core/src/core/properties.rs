@@ -77,12 +77,12 @@ pub struct DefaultProperties {
 pub trait HasProperty<P: Property> {}
 
 impl Properties {
-    /// Create an empty collection of properties.
+    /// Creates an empty collection of properties.
     pub fn new() -> Self {
         Self { map: AnyMap::new() }
     }
 
-    /// Create a collection with a single property.
+    /// Creates a collection with a single property.
     pub fn one<P: Property>(value: P) -> Self {
         Self::new().with(value)
     }
@@ -95,17 +95,17 @@ impl Properties {
         self
     }
 
-    /// Get value of property `P`.
+    /// Returns value of property `P`.
     pub fn get<P: Property>(&self) -> Option<&P> {
         self.map.get::<P>()
     }
 
-    /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    /// Sets property `P` to given value. Returns the previous value if `P` was already set.
     pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
         self.map.insert(value)
     }
 
-    /// Remove property `P`. Returns the previous value if `P` was set.
+    /// Removes property `P`. Returns the previous value if `P` was set.
     pub fn remove<P: Property>(&mut self) -> Option<P> {
         self.map.remove::<P>()
     }
@@ -155,7 +155,7 @@ impl PropertiesRef<'_> {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`.
+    /// Returns value of property `P`.
     ///
     /// If the widget has an entry for `P`, returns its value.
     /// If the default property map has an entry for `P`, returns its value.
@@ -179,7 +179,7 @@ impl PropertiesMut<'_> {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`.
+    /// Returns value of property `P`.
     ///
     /// If the widget has an entry for `P`, returns its value.
     /// If the default property map has an entry for `P`, returns its value.
@@ -194,7 +194,7 @@ impl PropertiesMut<'_> {
         }
     }
 
-    /// Set local property `P` to given value. Returns the previous value if `P` was already set.
+    /// Sets local property `P` to given value. Returns the previous value if `P` was already set.
     ///
     /// Does not affect default properties.
     ///
@@ -205,7 +205,7 @@ impl PropertiesMut<'_> {
         self.map.insert(value)
     }
 
-    /// Remove local property `P`. Returns the previous value if `P` was set.
+    /// Removes local property `P`. Returns the previous value if `P` was set.
     ///
     /// Does not affect default properties.
     ///
@@ -216,7 +216,7 @@ impl PropertiesMut<'_> {
         self.map.remove::<P>()
     }
 
-    /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.
+    /// Returns a `PropertiesMut` for the same underlying properties with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
@@ -226,7 +226,7 @@ impl PropertiesMut<'_> {
 }
 
 impl DefaultProperties {
-    /// Create an empty property map with no default values.
+    /// Creates an empty property map with no default values.
     ///
     /// A completely empty property map is probably not what you want.
     /// It means buttons will be displayed without borders or backgrounds, text inputs won't
@@ -239,7 +239,7 @@ impl DefaultProperties {
         }
     }
 
-    /// Set the default value of property `P` for widget `W`.
+    /// Sets the default value of property `P` for widget `W`.
     ///
     /// Widgets for which the property `P` isn't set will get `value` instead.
     pub fn insert<W: Widget, P: Property>(&mut self, value: P) -> Option<P> {

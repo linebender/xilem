@@ -69,17 +69,17 @@ impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
 // --- MARK: IMPLS
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
-    /// Get a [`QueryCtx`] with information about the current widget.
+    /// Gets a [`QueryCtx`] with information about the current widget.
     pub fn ctx(&self) -> &'_ QueryCtx<'w> {
         &self.ctx
     }
 
-    /// Get the actual referenced `Widget`.
+    /// Gets the actual referenced `Widget`.
     pub fn inner(self) -> &'w W {
         self.widget
     }
 
-    /// Get the [`WidgetId`] of the current widget.
+    /// Gets the [`WidgetId`] of the current widget.
     pub fn id(&self) -> WidgetId {
         self.ctx.widget_state.id
     }
@@ -91,7 +91,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.properties.contains::<T>()
     }
 
-    /// Get value of property `P`.
+    /// Gets value of property `P`.
     ///
     /// If the widget has an entry for `P`, returns that entry.
     /// If the default property set has an entry for `P`, returns that entry.
@@ -100,7 +100,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.properties.get::<T>()
     }
 
-    /// Attempt to downcast to `WidgetRef` of concrete widget type.
+    /// Attempts to downcast to `WidgetRef` of concrete widget type.
     pub fn downcast<W2: Widget + FromDynWidget + ?Sized>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             ctx: self.ctx,
@@ -108,7 +108,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         })
     }
 
-    /// Return widget's children.
+    /// Returns refs to widget's children.
     pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
         let parent_id = self.ctx.widget_state.id;
         self.widget
@@ -145,7 +145,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 }
 
 impl<'w, W: Widget> WidgetRef<'w, W> {
-    /// Return a type-erased `WidgetRef`.
+    /// Returns a type-erased `WidgetRef`.
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
             ctx: self.ctx,
@@ -155,7 +155,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
 }
 
 impl WidgetRef<'_, dyn Widget> {
-    /// Recursively find child widget with given id.
+    /// Recursively finds child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<Self> {
         if self.ctx.widget_state.id == id {
             Some(*self)
@@ -166,7 +166,7 @@ impl WidgetRef<'_, dyn Widget> {
         }
     }
 
-    /// Recursively find the innermost widget at the given position, using
+    /// Recursively finds the innermost widget at the given position, using
     /// [`Widget::find_widget_under_pointer`] to descend the widget tree. If `self` does not contain the
     /// given position in its layout rect or clip path, this returns `None`.
     ///

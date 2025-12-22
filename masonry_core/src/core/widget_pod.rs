@@ -75,14 +75,14 @@ enum WidgetPodInner<W: ?Sized> {
 }
 
 impl<W: Widget> NewWidget<W> {
-    /// Create a new widget.
+    /// Creates a new widget.
     ///
     /// You can also get the same result with [`Widget::with_auto_id()`].
     pub fn new(inner: W) -> Self {
         Self::new_with_id(inner, WidgetId::next())
     }
 
-    /// Create a new widget with pre-determined id.
+    /// Creates a new widget with pre-determined id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
         Self {
             widget: Box::new(inner),
@@ -96,7 +96,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with a [`WidgetTag`].
+    /// Creates a new widget with a [`WidgetTag`].
     pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
         Self {
             tag: Some(tag.inner),
@@ -105,7 +105,7 @@ impl<W: Widget> NewWidget<W> {
     }
 
     // TODO - Replace with builder methods?
-    /// Create a new widget with custom [`Properties`].
+    /// Creates a new widget with custom [`Properties`].
     pub fn new_with_props(inner: W, props: Properties) -> Self {
         Self {
             properties: props,
@@ -113,7 +113,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with custom [`WidgetOptions`].
+    /// Creates a new widget with custom [`WidgetOptions`].
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
         Self {
             options,
@@ -121,7 +121,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with custom [`WidgetOptions`] and custom [`Properties`].
+    /// Creates a new widget with custom [`WidgetOptions`] and custom [`Properties`].
     pub fn new_with(inner: W, id: WidgetId, options: WidgetOptions, props: Properties) -> Self {
         Self {
             widget: Box::new(inner),
@@ -137,10 +137,8 @@ impl<W: Widget> NewWidget<W> {
 }
 
 impl<W: Widget + ?Sized> NewWidget<W> {
-    /// Type-erase the contained widget.
-    ///
-    /// Convert a `NewWidget` pointing to a widget of a specific concrete type
-    /// `NewWidget` pointing to a `dyn Widget`.
+    /// Converts a `NewWidget` pointing to a widget of a specific concrete type
+    /// to a `NewWidget` pointing to a `dyn Widget`.
     pub fn erased(self) -> NewWidget<dyn Widget> {
         NewWidget {
             widget: self.widget.as_box_dyn(),
@@ -154,7 +152,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         }
     }
 
-    /// Create a `WidgetPod` which will be added to the widget tree.
+    /// Creates a `WidgetPod` which will be added to the widget tree.
     pub fn to_pod(self) -> WidgetPod<W> {
         WidgetPod {
             id: self.id,
@@ -162,7 +160,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         }
     }
 
-    /// Get the id of the widget.
+    /// Returns the id of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
     }
@@ -170,7 +168,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
 
 impl<W: Widget> WidgetPod<W> {
     // FIXME - Remove
-    /// Create a new widget pod.
+    /// Creates a new widget pod.
     pub fn new(inner: W) -> Self {
         NewWidget::new(inner).to_pod()
     }
@@ -188,7 +186,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
         }
     }
 
-    /// Get the id of the widget.
+    /// Returns the id of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
     }

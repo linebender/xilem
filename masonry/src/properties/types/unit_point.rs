@@ -32,7 +32,7 @@ impl UnitPoint {
     /// `(1.0, 1.0)`
     pub const BOTTOM_RIGHT: Self = Self::new(1.0, 1.0);
 
-    /// Create a new `UnitPoint`.
+    /// Creates a new `UnitPoint`.
     ///
     /// The `u` and `v` coordinates describe the point, with (0.0, 0.0) being
     /// the top-left, and (1.0, 1.0) being the bottom-right.
@@ -40,7 +40,7 @@ impl UnitPoint {
         Self { u, v }
     }
 
-    /// Given a rectangle, resolve the point within the rectangle.
+    /// Given a rectangle, resolves the point within the rectangle.
     pub const fn resolve(self, rect: Rect) -> Point {
         Point::new(
             rect.x0 + self.u * (rect.x1 - rect.x0),

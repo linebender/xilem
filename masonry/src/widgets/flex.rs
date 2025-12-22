@@ -85,7 +85,7 @@ enum Child {
 
 // --- MARK: BUILDERS
 impl Flex {
-    /// Create a new `Flex` oriented along the provided axis.
+    /// Creates a new `Flex` oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
         Self {
             direction: axis,
@@ -96,7 +96,7 @@ impl Flex {
         }
     }
 
-    /// Create a new horizontal stack.
+    /// Creates a new horizontal container.
     ///
     /// The child widgets are laid out horizontally, from left to right.
     ///
@@ -104,7 +104,7 @@ impl Flex {
         Self::for_axis(Axis::Horizontal)
     }
 
-    /// Create a new vertical stack.
+    /// Creates a new vertical container.
     ///
     /// The child widgets are laid out vertically, from top to bottom.
     pub fn column() -> Self {
@@ -179,32 +179,32 @@ impl Flex {
 
 // --- MARK: WIDGETMUT
 impl Flex {
-    /// Set the flex direction (see [`Axis`]).
+    /// Sets the flex direction (see [`Axis`]).
     pub fn set_direction(this: &mut WidgetMut<'_, Self>, direction: Axis) {
         this.widget.direction = direction;
         this.ctx.request_layout();
     }
 
-    /// Set the children's [`CrossAxisAlignment`].
+    /// Sets the children's [`CrossAxisAlignment`].
     pub fn set_cross_axis_alignment(this: &mut WidgetMut<'_, Self>, alignment: CrossAxisAlignment) {
         this.widget.cross_alignment = alignment;
         this.ctx.request_layout();
     }
 
-    /// Set the children's [`MainAxisAlignment`].
+    /// Sets the children's [`MainAxisAlignment`].
     pub fn set_main_axis_alignment(this: &mut WidgetMut<'_, Self>, alignment: MainAxisAlignment) {
         this.widget.main_alignment = alignment;
         this.ctx.request_layout();
     }
 
-    /// Set whether the container must expand to fill the available space on
+    /// Sets whether the container must expand to fill the available space on
     /// its main axis.
     pub fn set_must_fill_main_axis(this: &mut WidgetMut<'_, Self>, fill: bool) {
         this.widget.fill_major_axis = fill;
         this.ctx.request_layout();
     }
 
-    /// Add a non-flex child widget.
+    /// Adds a non-flex child widget.
     ///
     /// See also [`with_fixed`].
     ///
@@ -218,7 +218,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add an empty spacer child with the given size.
+    /// Adds an empty spacer child with the given size.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     pub fn add_fixed_spacer(this: &mut WidgetMut<'_, Self>, len: Length) {
@@ -227,7 +227,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Add an empty spacer child with a specific `flex` factor.
+    /// Adds an empty spacer child with a specific `flex` factor.
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
@@ -240,7 +240,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Insert a non-flex child widget at the given index.
+    /// Inserts a non-flex child widget at the given index.
     ///
     /// # Panics
     ///
@@ -258,7 +258,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Insert an empty spacer child with the given size at the given index.
+    /// Inserts an empty spacer child with the given size at the given index.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     pub fn insert_fixed_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
@@ -267,7 +267,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Add an empty spacer child with a specific `flex` factor.
+    /// Adds an empty spacer child with a specific `flex` factor.
     ///
     /// # Panics
     ///
@@ -284,7 +284,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Replace the child widget at the given index with a new non-flex one.
+    /// Replaces the child widget at the given index with a new non-flex one.
     ///
     /// # Panics
     ///
@@ -305,7 +305,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Replace the child widget at the given index with an empty spacer.
+    /// Replaces the child widget at the given index with an empty spacer.
     ///
     /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     ///
@@ -321,7 +321,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Replace the child widget at the given index
+    /// Replaces the child widget at the given index
     /// with an empty spacer with a specific `flex` factor.
     ///
     /// # Panics
@@ -421,7 +421,7 @@ impl CollectionWidget<FlexParams> for Flex {
         this.ctx.children_changed();
     }
 
-    /// Set the child params at the given index.
+    /// Sets the child params at the given index.
     ///
     /// # Panics
     ///
@@ -442,7 +442,7 @@ impl CollectionWidget<FlexParams> for Flex {
         this.ctx.children_changed();
     }
 
-    /// Swap the index of two children.
+    /// Swaps the index of two children.
     ///
     /// # Panics
     ///
@@ -452,7 +452,7 @@ impl CollectionWidget<FlexParams> for Flex {
         this.ctx.children_changed();
     }
 
-    /// Remove the child at the given index.
+    /// Removes the child at the given index.
     ///
     /// # Panics
     ///
@@ -483,7 +483,7 @@ impl CollectionWidget<FlexParams> for Flex {
 
 // --- MARK: OTHER IMPLS
 impl FlexParams {
-    /// Create custom `FlexParams` with a specific `flex_factor` and an optional
+    /// Creates custom `FlexParams` with a specific `flex_factor` and an optional
     /// [`CrossAxisAlignment`].
     ///
     /// You likely only need to create these manually if you need to specify

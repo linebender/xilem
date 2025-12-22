@@ -27,7 +27,7 @@ impl Length {
     /// A length of zero.
     pub const ZERO: Self = Self { value: 0. };
 
-    /// Create a length, in logical pixels.
+    /// Creates a length, in logical pixels.
     ///
     /// # Panics
     ///
@@ -49,7 +49,7 @@ impl Length {
         Self { value }
     }
 
-    /// Create a length, in logical pixels.
+    /// Creates a length, in logical pixels.
     ///
     /// Can be called from const contexts.
     ///
@@ -64,7 +64,7 @@ impl Length {
         Self { value }
     }
 
-    /// Get the value, in logical pixels.
+    /// Returns the value, in logical pixels.
     pub const fn get(self) -> f64 {
         self.value
     }
