@@ -95,7 +95,7 @@ Most imports in the code base should use the canonical top-level import.
 
 ### Avoid glob imports
 
-We should avoid `use foo::*` imports, because they make it harder for people reading the code outside an IDE to track where a given imports come from.
+We should avoid `use foo::*` imports, because they make it harder for people reading the code outside an IDE to track where a given import comes from.
 
 Glob re-exports (e.g. `pub use my_module::*`) are fine and encouraged from `mod.rs` files.
 
