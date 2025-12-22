@@ -25,8 +25,9 @@ use masonry_core::util::include_screenshot_reference;
 /// Contains the items implemented in "Creating a new widget" and other tutorials.
 #[doc(hidden)]
 pub mod color_rectangle;
-
-// TODO - Add vertical_stack module.
+/// Contains the items implemented in "Creating a container widget".
+#[doc(hidden)]
+pub mod vertical_stack;
 
 #[doc = include_str!("./creating_app.md")]
 #[doc = super::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
