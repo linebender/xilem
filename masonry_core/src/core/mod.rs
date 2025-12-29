@@ -18,7 +18,7 @@ mod widget_tag;
 
 pub use contexts::*;
 pub use events::*;
-pub use layer::{Layer, LayerType};
+pub use layer::*;
 pub use properties::*;
 pub use text::*;
 pub use widget::*;
