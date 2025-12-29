@@ -21,6 +21,7 @@ mod widget_tag;
 pub use box_constraints::*;
 pub use contexts::*;
 pub use events::*;
+pub use layer::*;
 pub use properties::*;
 pub use text::*;
 pub use widget::*;
@@ -28,7 +29,6 @@ pub use widget_mut::*;
 pub use widget_pod::*;
 pub use widget_ref::*;
 pub use widget_tag::*;
-pub use layer::{Layer, LayerType};
 
 pub use cursor_icon::CursorIcon;
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
