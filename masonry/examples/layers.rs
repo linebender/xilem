@@ -25,6 +25,7 @@ use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 use tracing::{Span, trace_span};
+use vello::kurbo::Vec2;
 
 struct Driver;
 
@@ -44,7 +45,7 @@ struct OverlayBox {
     overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
     layer_root_id: Option<WidgetId>,
     last_mouse_move: Option<Instant>,
-    tooltip_position: Point,
+    last_cursor_pos: Point,
 }
 
 // --- MARK: BUILDERS
@@ -59,7 +60,7 @@ impl OverlayBox {
             overlayer,
             layer_root_id: None,
             last_mouse_move: None,
-            tooltip_position: Point::ZERO,
+            last_cursor_pos: Point::ZERO,
         }
     }
 }
@@ -75,7 +76,7 @@ impl Widget for OverlayBox {
         event: &PointerEvent,
     ) {
         if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
-            self.tooltip_position = current.logical_point();
+            self.last_cursor_pos = current.logical_point();
             self.last_mouse_move = Some(Instant::now());
             ctx.request_anim_frame();
         }
@@ -92,7 +93,8 @@ impl Widget for OverlayBox {
             if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
                 let (overlay, layer_type) = (self.overlayer)();
                 self.layer_root_id = Some(overlay.id());
-                ctx.create_layer(layer_type, overlay, self.tooltip_position);
+                let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
+                ctx.create_layer(layer_type, overlay, layer_pos);
             } else {
                 ctx.request_anim_frame();
             }
