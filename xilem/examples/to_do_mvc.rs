@@ -51,12 +51,17 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
             task_list.next_task = new_value;
         },
     )
-    .text_size(16.)
+    //.text_size(16.)
     .placeholder("What needs to be done?")
     .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });
+
+    let input_box2 = text_input(String::new(), |task_list: &mut TaskList, new_value| {
+        task_list.next_task = new_value;
+    })
+    .placeholder("What needs to be done?");
 
     let input_line = flex_row((
         input_box.flex(1.0),
@@ -120,6 +125,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
         header_text,
         FlexSpacer::Fixed(DEFAULT_GAP),
         input_line,
+        input_box2,
         FlexSpacer::Fixed(DEFAULT_GAP),
         tasks,
         FlexSpacer::Fixed(DEFAULT_GAP),
