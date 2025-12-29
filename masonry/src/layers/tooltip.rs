@@ -27,7 +27,7 @@ pub struct Tooltip {
 
 // --- MARK: BUILDERS
 impl Tooltip {
-    /// TODO - Doc
+    /// Creates a new `Tooltip`.
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             child: child.erased().to_pod(),
