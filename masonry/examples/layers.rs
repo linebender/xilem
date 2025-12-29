@@ -42,7 +42,7 @@ impl AppDriver for Driver {
 
 struct OverlayBox {
     child: WidgetPod<dyn Widget>,
-    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
+    overlayer: Box<dyn Fn(Point) -> (NewWidget<dyn Widget>, LayerType)>,
     layer_root_id: Option<WidgetId>,
     last_mouse_move: Option<Instant>,
     last_cursor_pos: Point,
@@ -53,7 +53,7 @@ impl OverlayBox {
     /// Construct container with child, and both width and height not set.
     fn new(
         child: NewWidget<impl Widget + ?Sized>,
-        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
+        overlayer: Box<dyn Fn(Point) -> (NewWidget<dyn Widget>, LayerType)>,
     ) -> Self {
         Self {
             child: child.erased().to_pod(),
@@ -91,7 +91,7 @@ impl Widget for OverlayBox {
         if let Some(last_mouse_move) = self.last_mouse_move {
             let now = Instant::now();
             if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
-                let (overlay, layer_type) = (self.overlayer)();
+                let (overlay, layer_type) = (self.overlayer)(self.last_cursor_pos);
                 self.layer_root_id = Some(overlay.id());
                 let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
                 ctx.create_layer(layer_type, overlay, layer_pos);
@@ -151,12 +151,15 @@ fn main() {
         // Ideally there's be an Into in Parley for this
         .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
 
-    let overlayer = || {
+    let overlayer = |pos| {
         let tooltip = NewWidget::new_with_props(
-            Tooltip::new(NewWidget::new_with_props(
-                Label::new("Tooltip!!!"),
-                Properties::one(ContentColor::new(Color::BLACK)),
-            )),
+            Tooltip::new(
+                NewWidget::new_with_props(
+                    Label::new("Tooltip!!!"),
+                    Properties::one(ContentColor::new(Color::BLACK)),
+                ),
+                pos,
+            ),
             Properties::from((
                 BorderWidth::all(1.),
                 BorderColor::new(Color::BLACK),

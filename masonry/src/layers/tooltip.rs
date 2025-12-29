@@ -4,10 +4,10 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{HasProperty, Layer, NoAction};
+use masonry_core::core::{HasProperty, Layer, NoAction, PointerUpdate};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Size};
+use vello::kurbo::{Affine, Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
@@ -24,14 +24,21 @@ use crate::util::{fill, stroke};
 /// A [`Layer`] representing a simple tooltip showing some content until the mouse moves.
 pub struct Tooltip {
     child: WidgetPod<dyn Widget>,
+    pointer_pos: Point,
 }
+
+/// How much the user can move their mouse before the tooltip disappears.
+const TOOLTIP_TOLERANCE: f64 = 4.0;
 
 // --- MARK: BUILDERS
 impl Tooltip {
     /// Creates a new `Tooltip`.
-    pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
+    ///
+    /// `pointer_pos` is the current position of the pointer that created this tooltip (usually the mouse).
+    pub fn new(child: NewWidget<impl Widget + ?Sized>, pointer_pos: Point) -> Self {
         Self {
             child: child.erased().to_pod(),
+            pointer_pos,
         }
     }
 }
@@ -236,13 +243,17 @@ impl Layer for Tooltip {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        let remove_tooltip = matches!(
-            event,
-            PointerEvent::Down(_)
-                | PointerEvent::Up(_)
-                | PointerEvent::Move(_)
-                | PointerEvent::Leave(_)
-        );
+        let remove_tooltip = match event {
+            PointerEvent::Down(_) | PointerEvent::Up(_) | PointerEvent::Leave(_) => true,
+
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
+                let current_pos = current.logical_point();
+                let mouse_has_moved = current_pos.distance(self.pointer_pos) > TOOLTIP_TOLERANCE;
+                mouse_has_moved
+            }
+
+            _ => false,
+        };
 
         if remove_tooltip {
             ctx.remove_layer(ctx.widget_id());
