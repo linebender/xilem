@@ -588,6 +588,30 @@ impl MasonryState<'_> {
             antialiasing_method: AaConfig::Area,
         };
 
+        let surface_texture = match surface.surface.get_current_texture() {
+            Ok(texture) => texture,
+            Err(wgpu::SurfaceError::Outdated) => {
+                let size = window.handle.inner_size();
+                render_cx.resize_surface(surface, size.width, size.height);
+
+                match surface.surface.get_current_texture() {
+                    Ok(texture) => texture,
+                    Err(err) => {
+                        // This is a common occurrence on X11 and Xwayland with NVIDIA drivers
+                        // when opening and resizing the window.
+                        tracing::error!(
+                            "Couldn't get swap chain texture after configuring. Cause: '{err}'"
+                        );
+                        return;
+                    }
+                }
+            }
+            Err(err) => {
+                tracing::error!("Couldn't get swap chain texture, operation unrecoverable: {err}");
+                return;
+            }
+        };
+
         let _render_span = tracing::info_span!("Rendering using Vello").entered();
         renderer
             .get_or_insert_with(|| {
@@ -616,11 +640,6 @@ impl MasonryState<'_> {
                 &render_params,
             )
             .expect("failed to render to surface");
-
-        let Ok(surface_texture) = surface.surface.get_current_texture() else {
-            tracing::error!("failed to acquire next swapchain texture");
-            return;
-        };
 
         // Copy the new surface content to the surface.
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
