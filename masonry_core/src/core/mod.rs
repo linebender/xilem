@@ -6,6 +6,7 @@
 mod box_constraints;
 mod contexts;
 mod events;
+mod layer;
 mod layout_cache;
 mod properties;
 mod text;
@@ -20,6 +21,7 @@ mod widget_tag;
 pub use box_constraints::*;
 pub use contexts::*;
 pub use events::*;
+pub use layer::*;
 pub use properties::*;
 pub use text::*;
 pub use widget::*;
