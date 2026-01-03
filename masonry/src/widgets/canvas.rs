@@ -144,10 +144,13 @@ mod tests {
     use masonry_testing::assert_render_snapshot;
 
     use super::*;
-    use crate::core::{DefaultProperties, Properties};
+    use crate::core::{DefaultProperties, Properties, render_text};
     use crate::kurbo::{Affine, BezPath, Stroke};
+    use crate::parley::{
+        Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
+    };
     use crate::peniko::{Color, Fill};
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, TestHarnessParams};
 
     #[test]
     fn simple_canvas() {
@@ -186,5 +189,46 @@ mod tests {
         });
 
         assert_render_snapshot!(harness, "canvas_simple");
+    }
+
+    #[test]
+    fn text_canvas() {
+        let canvas =
+            Canvas::default().with_alt_text("The text 'Canvas' with a bright mint green fill");
+
+        let mut harness_params = TestHarnessParams::DEFAULT;
+        harness_params.window_size = Size::new(200., 200.);
+        let mut harness = TestHarness::create_with(
+            DefaultProperties::default(),
+            canvas.with_props(Properties::default()),
+            harness_params,
+        );
+
+        harness.edit_root_widget(|mut canvas| {
+            Canvas::update_scene(&mut canvas, |ctx, scene, size| {
+                let (fcx, lcx) = ctx.text_contexts();
+                let mut text_layout_builder = lcx.ranged_builder(fcx, "Canvas", 1., true);
+                text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
+                    FontFamily::Generic(GenericFamily::Serif),
+                )));
+                text_layout_builder.push_default(StyleProperty::FontSize(size.height as f32));
+                let mut text_layout = text_layout_builder.build("Canvas");
+                text_layout.break_all_lines(None);
+                text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+                let scale = Affine::scale_non_uniform(
+                    size.width / text_layout.width() as f64,
+                    size.height / text_layout.height() as f64,
+                );
+                render_text(
+                    scene,
+                    scale,
+                    &text_layout,
+                    &[Color::from_rgb8(100, 240, 150).into()],
+                    true,
+                );
+            });
+        });
+
+        assert_render_snapshot!(harness, "canvas_text");
     }
 }
