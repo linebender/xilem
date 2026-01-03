@@ -97,7 +97,7 @@ where
         state: Arg<'_, State>,
     ) {
         widgets::Canvas::update_scene(&mut element, |ctx, scene, size| {
-            (self.draw)(state, ctx, scene, size)
+            (self.draw)(state, ctx, scene, size);
         });
         if self.alt_text != prev.alt_text {
             widgets::Canvas::set_alt_text(&mut element, self.alt_text.clone());
