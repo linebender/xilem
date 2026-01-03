@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::ArcStr;
+use masonry::core::{ArcStr, MutateCtx};
 use masonry::widgets::{self, CanvasSizeChanged};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -21,7 +21,7 @@ use crate::{Pod, ViewCtx};
 /// # use xilem::{WidgetView, core::Edit};
 ///
 /// # fn fill_canvas<State: 'static>() -> impl WidgetView<Edit<State>> {
-/// let my_canvas = canvas(|_state: &mut State, scene: &mut Scene, size: Size| {
+/// let my_canvas = canvas(|_state: &mut State, _ctx, scene: &mut Scene, size: Size| {
 ///     // Drawing a simple rectangle that fills the canvas.
 ///     scene.fill(
 ///         Fill::NonZero,
@@ -37,7 +37,7 @@ use crate::{Pod, ViewCtx};
 pub fn canvas<State, F>(draw: F) -> Canvas<State, F>
 where
     State: ViewArgument,
-    F: Fn(Arg<'_, State>, &mut Scene, Size) + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
 {
     Canvas {
         draw,
@@ -70,7 +70,7 @@ impl<State, F> ViewMarker for Canvas<State, F> {}
 impl<State, Action, F> View<State, Action, ViewCtx> for Canvas<State, F>
 where
     State: ViewArgument,
-    F: Fn(Arg<'_, State>, &mut Scene, Size) + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
@@ -96,7 +96,9 @@ where
         mut element: Mut<'_, Self::Element>,
         state: Arg<'_, State>,
     ) {
-        widgets::Canvas::update_scene(&mut element, |scene, size| (self.draw)(state, scene, size));
+        widgets::Canvas::update_scene(&mut element, |ctx, scene, size| {
+            (self.draw)(state, ctx, scene, size);
+        });
         if self.alt_text != prev.alt_text {
             widgets::Canvas::set_alt_text(&mut element, self.alt_text.clone());
         }
