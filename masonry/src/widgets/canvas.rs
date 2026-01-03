@@ -4,7 +4,7 @@
 //! A canvas widget.
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds};
+use masonry_core::core::{ArcStr, ChildrenIds, MutateCtx};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -53,9 +53,12 @@ impl Canvas {
 // --- MARK: WIDGETMUT
 impl Canvas {
     /// Updates the canvas scene.
-    pub fn update_scene(this: &mut WidgetMut<'_, Self>, f: impl FnOnce(&mut Scene, Size)) {
+    pub fn update_scene(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(&mut MutateCtx<'_>, &mut Scene, Size),
+    ) {
         this.widget.scene.reset();
-        f(&mut this.widget.scene, this.widget.size);
+        f(&mut this.ctx, &mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
 
@@ -158,7 +161,7 @@ mod tests {
         );
 
         harness.edit_root_widget(|mut canvas| {
-            Canvas::update_scene(&mut canvas, |scene, size| {
+            Canvas::update_scene(&mut canvas, |_ctx, scene, size| {
                 let scale = Affine::scale_non_uniform(size.width, size.height);
                 let mut path = BezPath::new();
                 path.move_to((0.1, 0.1));
