@@ -64,7 +64,10 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
     properties.insert::<Button, _>(CornerRadius { radius: 6. });
     properties.insert::<Button, _>(BorderWidth {
-        width: BORDER_WIDTH,
+        top: BORDER_WIDTH,
+        left: BORDER_WIDTH,
+        right: BORDER_WIDTH,
+        bottom: BORDER_WIDTH,
     });
 
     properties.insert::<Button, _>(Background::Color(ZYNC_800));
@@ -77,7 +80,10 @@ pub fn default_property_set() -> DefaultProperties {
     // Checkbox
     properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
     properties.insert::<Checkbox, _>(BorderWidth {
-        width: BORDER_WIDTH,
+        top: BORDER_WIDTH,
+        left: BORDER_WIDTH,
+        right: BORDER_WIDTH,
+        bottom: BORDER_WIDTH,
     });
 
     properties.insert::<Checkbox, _>(Background::Color(ZYNC_800));
@@ -103,7 +109,10 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
     properties.insert::<TextInput, _>(CornerRadius { radius: 4. });
     properties.insert::<TextInput, _>(BorderWidth {
-        width: BORDER_WIDTH,
+        top: BORDER_WIDTH,
+        left: BORDER_WIDTH,
+        right: BORDER_WIDTH,
+        bottom: BORDER_WIDTH,
     });
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
     properties.insert::<TextInput, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
@@ -147,7 +156,10 @@ pub fn default_property_set() -> DefaultProperties {
     // ProgressBar
     properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
     properties.insert::<ProgressBar, _>(BorderWidth {
-        width: BORDER_WIDTH,
+        top: BORDER_WIDTH,
+        left: BORDER_WIDTH,
+        right: BORDER_WIDTH,
+        bottom: BORDER_WIDTH,
     });
 
     properties.insert::<ProgressBar, _>(Background::Color(ZYNC_900));

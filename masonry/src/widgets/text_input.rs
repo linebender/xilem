@@ -20,7 +20,7 @@ use crate::properties::{
     DisabledBackground, FocusedBorderColor, Padding, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
 };
-use crate::util::{fill, stroke};
+use crate::util::fill;
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -326,7 +326,7 @@ impl Widget for TextInput {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        border_width.paint(scene, &border_rect, border_color.color, ctx.size());
     }
 
     fn accessibility_role(&self) -> Role {

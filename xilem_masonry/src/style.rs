@@ -133,12 +133,12 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
     fn border(
         self,
         color: Color,
-        width: f64,
+        width: impl Into<BorderWidth>, // Change f64 to this
     ) -> Prop<BorderWidth, Prop<BorderColor, Self, State, Action>, State, Action>
     where
         Self::Widget: HasProperty<BorderColor> + HasProperty<BorderWidth>,
     {
-        self.prop(BorderColor { color }).prop(BorderWidth { width })
+        self.prop(BorderColor { color }).prop(width.into())
     }
 
     /// Sets the element's border color.
@@ -166,11 +166,13 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
     }
 
     /// Sets the element's border width.
-    fn border_width(self, width: f64) -> Prop<BorderWidth, Self, State, Action>
+    fn border_width(self, width: impl Into<BorderWidth>) -> Prop<BorderWidth, Self, State, Action>
     where
         Self::Widget: HasProperty<BorderWidth>,
     {
-        self.prop(BorderWidth { width })
+        // width.into() automatically converts f64, (f64, f64), etc.
+        // into your new 4-sided BorderWidth struct
+        self.prop(width.into())
     }
 
     /// Sets the element's box shadow.

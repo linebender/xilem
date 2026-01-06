@@ -18,7 +18,7 @@ use crate::core::{
 use crate::properties::{
     Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
 };
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, include_screenshot};
 use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
@@ -169,8 +169,7 @@ impl Widget for ProgressBar {
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         fill(scene, &progress_rect, bar_color.0);
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        border_width.paint(scene, &border_rect, border_color.color, ctx.size());
     }
 
     fn accessibility_role(&self) -> Role {

@@ -17,7 +17,7 @@ use crate::core::{
 };
 use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::util::{debug_panic, fill, include_screenshot};
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -862,8 +862,7 @@ impl Widget for Flex {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-
+        border_width.paint(scene, &border_rect, border_color.color, ctx.size());
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
@@ -1030,7 +1029,7 @@ mod tests {
                 .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
                 .with_fixed(Label::new("bar").with_auto_id()),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::uniform(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1079,7 +1078,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::uniform(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1122,7 +1121,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::uniform(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1180,7 +1179,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::uniform(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1223,7 +1222,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::uniform(2.0), BorderColor::new(ACCENT_COLOR)).into(),
         );
 
         let window_size = Size::new(200.0, 150.0);

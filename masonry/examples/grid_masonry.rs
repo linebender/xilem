@@ -70,7 +70,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
 
     let props = Properties::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
-        .with(BorderWidth::all(1.0));
+        .with(BorderWidth::uniform(1.0));
     let label = SizedBox::new(NewWidget::new_with(
         label,
         WidgetId::next(),

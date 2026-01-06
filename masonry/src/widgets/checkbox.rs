@@ -23,7 +23,7 @@ use crate::properties::{
     HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, include_screenshot};
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
@@ -258,7 +258,7 @@ impl Widget for Checkbox {
         // Paint the checkbox box background and border
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        border_width.paint(scene, &border_rect, border_color.color, size);
 
         // Paint the checkmark if checked
         if self.checked {

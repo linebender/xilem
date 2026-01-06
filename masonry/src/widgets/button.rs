@@ -24,7 +24,7 @@ use crate::properties::{
     DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, include_screenshot};
 use crate::widgets::Label;
 
 /// A button with a child widget.
@@ -272,7 +272,7 @@ impl Widget for Button {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        border_width.paint(scene, &border_rect, border_color.color, size);
     }
 
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -421,7 +421,12 @@ mod tests {
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
-            button.insert_prop(BorderWidth { width: 5.0 });
+            button.insert_prop(BorderWidth {
+                top: 5.0,
+                left: 5.0,
+                right: 5.0,
+                bottom: 5.0,
+            });
             button.insert_prop(CornerRadius { radius: 20.0 });
             button.insert_prop(Padding::from_vh(3., 8.));
 

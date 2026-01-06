@@ -14,7 +14,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::util::{debug_panic, fill, include_screenshot};
 
 /// A widget that arranges its children in a grid.
 ///
@@ -343,8 +343,7 @@ impl Widget for Grid {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-
+        border_width.paint(scene, &border_rect, border_color.color, ctx.size());
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
