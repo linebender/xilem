@@ -60,6 +60,9 @@ fn default_tracing_subscriber_native(
 
     // We skip the layer which stores to a file in `--release` mode for performance.
     let log_file_layer = if cfg!(debug_assertions) {
+        // TODO - Replace with a more targeted subscriber.
+        // See https://github.com/linebender/xilem/issues/1556
+
         let id = std::time::SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -190,14 +193,7 @@ pub fn try_init_test_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
 /// Initialise tracing with a default subscriber for an end-user application.
 pub fn try_init_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
-    // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
-    // DEBUG should print a few logs per low-density event.
-    // INFO should only print logs for noteworthy things.
-    let default_level = if cfg!(debug_assertions) {
-        LevelFilter::DEBUG
-    } else {
-        LevelFilter::INFO
-    };
+    let default_level = LevelFilter::INFO;
 
     verify_subscriber_has_not_been_set()?;
 
