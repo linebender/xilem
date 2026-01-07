@@ -82,6 +82,7 @@ reqwest = { version = "0.12.26", default-features = false, features = [
     # and this is likely to be easiest to get working.
     "rustls-tls",
 ] }
+divan = "0.1.21"
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry
