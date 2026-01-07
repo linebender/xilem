@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_core
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! Masonry Core provides the base GUI engine for Masonry.
 //!
 //! Masonry's widgets are implemented in the Masonry crate, which re-exports this crate as `masonry::core`.
@@ -72,7 +76,6 @@
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-// TODO - Add logo
 
 pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
