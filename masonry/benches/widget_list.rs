@@ -16,12 +16,11 @@ use masonry_testing::{TestHarness, TestHarnessParams};
 fn widget_list(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
         let root_widget = NewWidget::new(Flex::column());
-        let harness = TestHarness::create_with(
+        TestHarness::create_with(
             default_property_set(),
             root_widget,
             TestHarnessParams::default(),
-        );
-        harness
+        )
     });
 
     bencher.bench_refs(|harness| {
