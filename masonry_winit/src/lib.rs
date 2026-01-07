@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_winit
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! This is the [Winit][winit] backend for the [Masonry][] GUI framework.
 //!
 //! See [Masonry's documentation][] for more details, examples and resources.
@@ -85,8 +89,6 @@
     reason = "Having a main function is a deliberate part of the root doc."
 )]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-
-// TODO - Add logo
 
 mod app_driver;
 mod convert_winit_event;

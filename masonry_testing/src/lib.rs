@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_testing
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! Headless runner for testing [Masonry](https://docs.rs/masonry/latest/) applications.
 //!
 //! The primary type from this crate is [`TestHarness`][], which creates a host for any [Widget][].

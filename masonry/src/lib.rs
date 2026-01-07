@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! Masonry is a foundational framework for building GUI libraries in Rust.
 //!
 //! The developers of Masonry are developing [Xilem][], a reactive UI library built on top of Masonry.
@@ -197,8 +201,6 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
-
-// TODO - Add logo
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
