@@ -365,7 +365,7 @@ fn update_stashed_for_widget(
         // Items may have been changed while they were stashed in ways that require a
         // relayout and a re-render.
         if !stashed {
-            state.needs_layout = true;
+            state.set_needs_layout(true);
             state.request_layout = true;
             state.request_paint = true;
             state.needs_paint = true;

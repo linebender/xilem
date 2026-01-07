@@ -11,10 +11,11 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
 };
-use crate::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
+use crate::kurbo::{Affine, Axis, Cap, Line, Point, Size, Stroke, Vec2};
+use crate::layout::LenReq;
 use crate::properties::ContentColor;
 use crate::theme;
 use crate::util::include_screenshot;
@@ -22,10 +23,6 @@ use crate::util::include_screenshot;
 /// An animated spinner widget for showing a loading state.
 ///
 /// You can customize the look of this spinner with the [`ContentColor`] property.
-/// To customize the spinner's size, you can place it inside a [`SizedBox`]
-/// that has a fixed width and height.
-///
-/// [`SizedBox`]: crate::widgets::SizedBox
 ///
 #[doc = include_screenshot!("spinner_init.png", "Spinner frame.")]
 pub struct Spinner {
@@ -82,21 +79,29 @@ impl Widget for Spinner {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
-        } else {
-            bc.constrain(Size::new(
-                theme::BASIC_WIDGET_HEIGHT,
-                theme::BASIC_WIDGET_HEIGHT,
-            ))
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match len_req {
+            // For intrinsic length we try to keep a square aspect ratio,
+            // and when the cross length is unknown we fall back to the theme's default.
+            LenReq::MinContent | LenReq::MaxContent => {
+                cross_length.unwrap_or(theme::BASIC_WIDGET_HEIGHT.dp(scale))
+            }
+            LenReq::FitContent(space) => space,
         }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let color = props.get::<ContentColor>();

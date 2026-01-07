@@ -9,15 +9,16 @@ use vello::Scene;
 
 use crate::TextAlign;
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NewWidget, NoAction,
-    PaintCtx, Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
+    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Point, Rect, Size};
+use crate::kurbo::{Affine, Axis, Point, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
-    DisabledBackground, FocusedBorderColor, Padding, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
+    DisabledBackground, FocusedBorderColor, LineBreaking, Padding, PlaceholderColor,
+    SelectionColor, UnfocusedSelectionColor,
 };
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
@@ -36,6 +37,9 @@ use crate::widgets::{Label, TextArea};
 /// This is because `TextInput` largely serves as a wrapper around a [`TextArea`].
 pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
+
+    // TODO: We want placeholder to match wordwrap property of main text.
+    // TODO: We want placeholder to clip even when wordwrap is enabled.
     placeholder: WidgetPod<Label>,
     placeholder_text: ArcStr,
 
@@ -59,7 +63,7 @@ impl TextInput {
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
-            placeholder: NewWidget::new_with_props(Label::new(""), Properties::new()).to_pod(),
+            placeholder: Label::new("").with_props(LineBreaking::Clip).to_pod(),
             placeholder_text: "".into(),
             text_alignment: TextAlign::default(),
             clip: false,
@@ -78,7 +82,7 @@ impl TextInput {
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
-        self.placeholder = NewWidget::new_with_props(label, Properties::new()).to_pod();
+        self.placeholder = label.with_props(LineBreaking::Clip).to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -248,38 +252,77 @@ impl Widget for TextInput {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
+        let border_length = border.length(axis).dp(scale);
+        let padding_length = padding.length(axis).dp(scale);
+
+        match len_req {
+            LenReq::MaxContent | LenReq::MinContent => {
+                let cross = axis.cross();
+                let cross_space = cross_length.map(|cross_length| {
+                    let cross_border_length = border.length(cross).dp(scale);
+                    let cross_padding_length = padding.length(cross).dp(scale);
+                    (cross_length - cross_border_length - cross_padding_length).max(0.)
+                });
+
+                let auto_size = SizeDef::req(axis, len_req);
+                let context_size = LayoutSize::maybe(cross, cross_space);
+
+                let text_length =
+                    ctx.compute_length(&mut self.text, auto_size, context_size, axis, cross_space);
+
+                text_length + border_length + padding_length
+            }
+            // We always want to use all the offered space,
+            // even on the block axis as we have multi-line display.
+            LenReq::FitContent(space) => space.max(border_length + padding_length),
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
         let shadow = props.get::<BoxShadow>();
 
-        let bc = *bc;
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let space = border.size_down(size, scale);
+        let space = padding.size_down(space, scale);
 
-        // TODO: Set minimum to deal with alignment
-        let size = ctx.run_layout(&mut self.text, &bc);
+        ctx.run_layout(&mut self.text, space);
+
+        let child_origin = Point::ORIGIN;
+        let child_origin = border.origin_down(child_origin, scale);
+        let child_origin = padding.origin_down(child_origin, scale);
+
+        ctx.place_child(&mut self.text, child_origin);
+
         let baseline = ctx.child_baseline_offset(&self.text);
-
-        let (size, baseline) = padding.layout_up(size, baseline);
-        let (size, baseline) = border.layout_up(size, baseline);
-
-        let pos = Point::ORIGIN;
-        let pos = border.place_down(pos);
-        let pos = padding.place_down(pos);
-        ctx.place_child(&mut self.text, pos);
+        let baseline = border.baseline_up(baseline, scale);
+        let baseline = padding.baseline_up(baseline, scale);
+        ctx.set_baseline_offset(baseline);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
-
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
         if text_is_empty {
-            let _ = ctx.run_layout(&mut self.placeholder, &bc);
-            ctx.place_child(&mut self.placeholder, pos);
+            ctx.run_layout(&mut self.placeholder, space);
+            ctx.place_child(&mut self.placeholder, child_origin);
         }
 
         if shadow.is_visible() {
@@ -287,16 +330,12 @@ impl Widget for TextInput {
         }
 
         if self.clip {
-            // TODO: Ideally, this clip would be the "inside edge" of our border path
-            // In the current implementation, that would currently clip our own border
-            // and so isn't viable.
-            // The BorderColor (etc.) properties don't currently support the border
-            // being drawn in post_post, which I think would be ideal for this use case.
-            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
+            // TODO: We actually want to clip space not size, but we can't here right now.
+            //       Need either a set_clip_path_for_specific_child or TextArea clip support.
+            ctx.set_clip_path(size.to_rect());
+        } else {
+            ctx.clear_clip_path();
         }
-
-        ctx.set_baseline_offset(baseline);
-        size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

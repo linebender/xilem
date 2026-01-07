@@ -56,7 +56,8 @@ A container widget needs to pay special attention to these methods:
 trait Widget {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
+    fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> f64;
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>);
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
@@ -68,14 +69,16 @@ Let's go over them one by one.
 
 ### `layout`
 
-Like with a leaf widget, the `layout` method must compute and return the size of the container widget.
+Like with a leaf widget, the `measure` method must compute and return the length of the container widget.
 
-Before that, it must call [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of its own children:
+Before that, it must call [`MeasureCtx::compute_length`] for each of its own children.
+For a vertical stack, we want to sum these on the vertical axis and take the largest on the horizontal axis.
 
-- `LayoutCtx::run_layout` recursively calls `Widget::layout` on the child. It takes a [`BoxConstraints`] argument, which represents how much space the parent "gives" to the child.
+Then later in `layout`, it must call [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of its own children:
+
+- `LayoutCtx::run_layout` recursively calls `Widget::layout` on the child.
+  It takes a [`Size`] argument, which is the chosen size of the child.
 - `LayoutCtx::place_child` sets the child's position relative to the container.
-
-Generally, containers first get the size of all their children, then use that information and the parent constraints to both compute their own size and spread the children within the available space.
 
 The `layout` method *must* iterate over all its children.
 Not doing so is a logical bug.
@@ -84,36 +87,69 @@ When debug assertions are on, Masonry will actively try to detect cases where yo
 For our `VerticalStack`, we'll lay out our children in a vertical line, with a gap between each child; we give each child an equal share of the available height:
 
 ```rust,ignore
-use masonry::core::{BoxConstraints, LayoutCtx, PropertiesMut};
-use masonry::kurbo::{Point, Size};
+use masonry::core::{LayoutCtx, MeasureCtx, PropertiesRef};
+use masonry::kurbo::{Axis, Point, Size};
+use masonry::layout::{LayoutSize, LenDef, LenReq, SizeDef};
 
 impl Widget for VerticalStack {
     // ...
 
+    fn measure(
+        &mut self,
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let (len_req, min_result) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
+            LenReq::FitContent(space) => (LenReq::MinContent, space),
+        };
+
+        let auto_size = SizeDef::req(axis, len_req);
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+        
+        let mut length: f64 = 0.;
+        for child in &mut self.children {
+            let child_length = ctx.compute_length(child, auto_size, context_size, axis, cross_length);
+            match axis {
+                Axis::Horizontal => length = length.max(child_length),
+                Axis::Vertical => length += child_length,
+            }
+        }
+
+        if axis == Axis::Vertical {
+            let gap_count = (self.children.len() - 1) as f64;
+            length += gap_count * self.gap;
+        }
+
+        min_result.max(length)
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let total_width = bc.max().width;
-        let total_height = bc.max().height;
-        let total_child_height = total_height - self.gap * (self.children.len() - 1) as f64;
-        let child_height = total_child_height / self.children.len() as f64;
+        _props: &PropertiesRef<'_>,
+        size: Size,
+    ) {
+        let gap_count = (self.children.len() - 1) as f64;
+        let total_child_vertical_space = size.height - self.gap * gap_count;
+        let child_vertical_space = total_child_vertical_space / self.children.len() as f64;
+
+        let width_def = LenDef::FitContent(size.width);
+        let height_def = LenDef::FitContent(child_vertical_space.max(0.));
+        let auto_size = SizeDef::new(width_def, height_def);
+        let context_size = size.into();
 
         let mut y_offset = 0.0;
         for child in &mut self.children {
-            let child_bc =
-                BoxConstraints::new(Size::new(0., 0.), Size::new(total_width, child_height));
-
-            let child_size = ctx.run_layout(child, &child_bc);
+            let child_size = ctx.compute_size(child, auto_size, context_size);
+            ctx.run_layout(child, child_size);
             ctx.place_child(child, Point::new(0.0, y_offset));
 
             y_offset += child_size.height + self.gap;
         }
-
-        let total_height = y_offset - self.gap;
-        Size::new(total_width, total_height)
     }
 
     // ...
@@ -122,12 +158,9 @@ impl Widget for VerticalStack {
 
 There are a few things to note here:
 
-- We use `bc.max()` to get the total space available to the container.
-- Our children get maximum constraints based on their share of the available space, and a minimum of 0.
-- We compute the size of each child, and use the computed height to get the offset for the next child. That height might smaller **or greater** than the child's available height.
-- We compute the height of the container by summing the heights of all children and adding the gap between them. That total height might be smaller **or greater** than the container's available height.
-- We return the total size of the container.
-
+- We refer to `LenReq::FitContent` to get the total space available to the container.
+- We compute the height of the container by summing the heights of all children and adding the gap between them.
+  We compute the width of the container by taking the largest child width.
 
 ### `compose`
 
@@ -283,10 +316,11 @@ So for instance, if `VerticalStack::children_ids()` returns a list of three chil
 Pass methods in container widgets should only implement the logic that is specific to the container itself.
 For instance, a container widget with a background color should implement `paint` to draw the background.
 
+[`Size`]: crate::kurbo::Size
 [`Widget`]: crate::core::Widget
 [`WidgetPod`]: crate::core::WidgetPod
 [`WidgetMut`]: crate::core::WidgetMut
+[`MeasureCtx::compute_length`]: crate::core::MeasureCtx::compute_length
 [`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
 [`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
-[`BoxConstraints`]: crate::core::BoxConstraints
 [`RegisterCtx::register_child`]: crate::core::RegisterCtx::register_child

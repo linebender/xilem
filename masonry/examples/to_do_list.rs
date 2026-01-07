@@ -12,6 +12,7 @@ use masonry::dpi::LogicalSize;
 use masonry::layout::Length;
 use masonry::peniko::color::AlphaColor;
 use masonry::properties::Padding;
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -67,14 +68,21 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
     );
     let button = NewWidget::new(Button::with_text("Add task"));
 
-    let list = Flex::column()
+    let portal = Portal::new(NewWidget::new_with_tag(
+        Flex::column().cross_axis_alignment(CrossAxisAlignment::Start),
+        LIST_TAG,
+    ))
+    .with_auto_id();
+
+    let root = Flex::column()
         .with_fixed(NewWidget::new_with_props(
             Flex::row().with(text_input, 1.0).with_fixed(button),
             Properties::new().with(Padding::all(WIDGET_SPACING.get())),
         ))
-        .with_fixed_spacer(WIDGET_SPACING);
+        .with_fixed_spacer(WIDGET_SPACING)
+        .with(portal, 1.0);
 
-    NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
+    NewWidget::new(root)
 }
 
 fn main() {

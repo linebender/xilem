@@ -11,12 +11,24 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NoAction, PaintCtx,
+    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::{Affine, Size};
+use crate::kurbo::{Affine, Axis, Size};
+use crate::layout::LenReq;
 use crate::peniko::{BlendMode, ImageBrush};
 use crate::properties::ObjectFit;
+
+// TODO: Make this a configurable option of the widget.
+/// The scale that the image is native to.
+///
+/// Used to calculate the intrinsic logical size of the image.
+///
+/// For example you might have a 256 px icon meant for crisp details on 8K screens.
+/// Then the image could have an intrinsic scale of e.g. 4.0,
+/// meaning that its intrinsic logical size is 64px.
+/// That way the image looks good at any scale and doesn't shift the layout around.
+const IMAGE_SCALE: f64 = 1.0;
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
 
@@ -38,7 +50,7 @@ pub struct Image {
 impl Image {
     /// Creates an image drawing widget from an image buffer.
     ///
-    /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
+    /// By default, the Image will scale to fit its container ([`ObjectFit::Fill`]).
     #[inline]
     pub fn new(image_data: impl Into<ImageBrush>) -> Self {
         Self {
@@ -79,6 +91,25 @@ impl Image {
     }
 }
 
+impl Image {
+    /// Returns the intrinsic length of the given `axis`.
+    ///
+    /// The returned length is in device pixels.
+    ///
+    /// This takes into account both [`IMAGE_SCALE`] and `scale`, and so the result
+    /// isn't just the image data length which would be const across scale factors.
+    ///
+    /// This method's result will be stable in relation to other widgets at any scale factor.
+    ///
+    /// Basically it provides logical pixels in device pixel space.
+    fn intrinsic_length(&self, axis: Axis, scale: f64) -> f64 {
+        match axis {
+            Axis::Horizontal => self.image_data.image.width as f64 * scale / IMAGE_SCALE,
+            Axis::Vertical => self.image_data.image.height as f64 * scale / IMAGE_SCALE,
+        }
+    }
+}
+
 impl HasProperty<ObjectFit> for Image {}
 
 // --- MARK: IMPL WIDGET
@@ -99,55 +130,83 @@ impl Widget for Image {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // If either the width or height is constrained calculate a value so that the image fits
-        // in the size exactly. If it is unconstrained by both width and height take the size of
-        // the image.
-        let image_size = Size::new(
-            self.image_data.image.width as f64,
-            self.image_data.image.height as f64,
-        );
-        if image_size.is_zero_area() {
-            let size = bc.min();
-            return size;
-        }
-        let image_aspect_ratio = image_size.height / image_size.width;
+        _ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
         let object_fit = props.get::<ObjectFit>();
 
+        let ar = {
+            let (numerator, denominator) = match axis {
+                Axis::Horizontal => (self.image_data.image.width, self.image_data.image.height),
+                Axis::Vertical => (self.image_data.image.height, self.image_data.image.width),
+            };
+            if denominator > 0 {
+                numerator as f64 / denominator as f64
+            } else {
+                1.
+            }
+        };
+
+        let intrinsic_length = self.intrinsic_length(axis, scale);
+        let (space, space_or_intrinsic) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (f64::INFINITY, intrinsic_length),
+            LenReq::FitContent(space) => (space, space),
+        };
+
         match object_fit {
-            ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
-            ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
-            ObjectFit::Fill => bc.max(),
-            ObjectFit::FitHeight => {
-                Size::new(bc.max().height / image_aspect_ratio, bc.max().height)
-            }
-            ObjectFit::FitWidth => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
-            ObjectFit::None => image_size,
-            ObjectFit::ScaleDown => {
-                let mut size = image_size;
-
-                if !bc.contains(size) {
-                    size = bc.constrain_aspect_ratio(image_aspect_ratio, size.width);
-                }
-
-                size
-            }
+            // Use all available space or if cross is known attempt to maintain AR,
+            // but don't exceed available space (will letterbox cross).
+            ObjectFit::Contain => cross_length
+                .map(|cl| (cl * ar).min(space))
+                .unwrap_or(space_or_intrinsic),
+            // Always use all available space.
+            ObjectFit::Cover | ObjectFit::Fill => space_or_intrinsic,
+            // Always use all available vertical space.
+            // Greedily take all horizontal space unless cross is known.
+            ObjectFit::FitHeight => match axis {
+                Axis::Horizontal => cross_length
+                    .map(|cl| (cl * ar).min(space))
+                    .unwrap_or(space_or_intrinsic),
+                Axis::Vertical => space_or_intrinsic,
+            },
+            // Always use all available horizontal space.
+            // Greedily take all vertical space unless cross is known.
+            ObjectFit::FitWidth => match axis {
+                Axis::Horizontal => space_or_intrinsic,
+                Axis::Vertical => cross_length
+                    .map(|cl| (cl * ar).min(space))
+                    .unwrap_or(space_or_intrinsic),
+            },
+            // None == intrinsic size
+            ObjectFit::None => intrinsic_length,
+            // ScaleDown == min(Contain, None)
+            ObjectFit::ScaleDown => cross_length
+                .map(|cl| (cl * ar).min(space))
+                .unwrap_or(space_or_intrinsic)
+                .min(intrinsic_length),
         }
     }
 
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
+
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let object_fit = props.get::<ObjectFit>();
+        // For drawing we want to scale the actual image data lengths, which means
+        // we need to avoid using Image::intrinsic_length which does not match the data.
         let image_size = Size::new(
             self.image_data.image.width as f64,
             self.image_data.image.height as f64,
         );
-        let transform = object_fit.affine_to_fill(ctx.size(), image_size);
+        let transform = object_fit.affine(ctx.size(), image_size);
 
         let clip_rect = ctx.size().to_rect();
         scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);

@@ -6,11 +6,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, NoAction,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::LenReq;
 use crate::util::include_screenshot;
 use crate::widgets::TextArea;
 
@@ -136,21 +137,26 @@ impl Widget for Prose {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // TODO: Set minimum to deal with alignment
-        let size = ctx.run_layout(&mut self.text, bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        ctx.redirect_measurement(&mut self.text, axis, cross_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.text, size);
         ctx.place_child(&mut self.text, Point::ORIGIN);
+
         if self.clip {
             ctx.set_clip_path(size.to_rect());
         } else {
             ctx.clear_clip_path();
         }
-        size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {

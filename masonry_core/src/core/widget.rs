@@ -11,13 +11,14 @@ use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
+use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
+    AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, MeasureCtx, NewWidget,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
 };
+use crate::layout::LenReq;
 
 /// A unique identifier for a single [`Widget`].
 ///
@@ -117,8 +118,8 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 /// [`on_anim_frame`](Self::on_anim_frame) and [`update`](Self::update) are called.
 ///
 /// Later on, when the widget is laid out and displayed, methods
-/// [`layout`](Self::layout), [`compose`](Self::compose), [`paint`](Self::paint) and
-/// [`accessibility`](Self::accessibility) are called.
+/// [`measure`](Self::measure), [`layout`](Self::layout), [`compose`](Self::compose),
+/// [`paint`](Self::paint), and [`accessibility`](Self::accessibility) are called.
 ///
 /// These trait methods are provided with a corresponding context. The widget can
 /// request things and cause actions by calling methods on that context.
@@ -227,37 +228,128 @@ pub trait Widget: AsDynWidget + Any {
     /// Handles a property being added, changed, or removed.
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {}
 
-    /// Computes layout and return the widget's size.
+    /// Computes the length that the widget wants to be on the given `axis`.
     ///
-    /// A leaf widget should determine its size (subject to the provided
-    /// constraints) and return it.
+    /// The returned length must be finite, non-negative, and in device pixels.
+    /// If an invalid length is returned, Masonry will treat it as zero.
     ///
-    /// A container widget will recursively call [`LayoutCtx::run_layout`] on its
-    /// child widgets, providing each of them an appropriate box constraint,
-    /// run some layout logic, then call [`LayoutCtx::place_child`] on each of its children.
-    /// Finally, it should return the size of the container. The container
-    /// can recurse in any order, which can be helpful to, for example, compute
-    /// the size of non-flex widgets first, to determine the amount of space
-    /// available for the flex widgets.
+    /// The goal of this method is for a parent to learn how its children want to be sized.
+    /// All the inputs are hints towards what the parent is planning for its child.
+    /// These hints should be followed, but it is also allowed to ignore them. For example,
+    /// it is completely valid to have a widget that always wants to be a certain size.
     ///
-    /// Forgetting to visit children is a logic error and may lead to debug panics.
-    /// All the children returned by `children_ids` should be visited.
+    /// It's a question of intrinsic size. As `measure` will only be called when there is
+    /// no defined length present for the `axis`. So `measure` is not about reading the widget's
+    /// [`Dimensions`] from `props` and returning that. That is handled earlier by Masonry.
+    /// Instead, it's a task of measuring the contents of the widget. Combining both local state
+    /// and child measurements to come up with a answer for the total length of this `axis`.
     ///
-    /// For efficiency, a container should only invoke layout of a child widget
-    /// once, though there is nothing enforcing this.
+    /// Call [`MeasureCtx::compute_length`] to measure children and to get their `axis` length.
+    /// Then account for the child's positioning and any other unique layout factors you might have
+    /// to determine the total length of this widget on the given `axis`.
     ///
-    /// **Container widgets should not add or remove children during layout.**
-    /// Doing so is a logic error and may trigger a debug assertion.
+    /// If you have a thin wrapper widget that wants to mimic its child in terms of layout,
+    /// then you should use [`MeasureCtx::redirect_measurement`] to have the child answer for you.
     ///
-    /// While each widget should try to return a size that fits the input constraints,
-    /// **any widget may return a size that doesn't fit its constraints**, and container
-    /// widgets should handle those cases gracefully.
-    fn layout(
+    /// The `cross_length`, if present, says that the cross-axis of the given `axis` of this
+    /// measured widget can be presumed to be exactly `cross_length` long, in device pixels.
+    /// This information is often very useful for measuring `axis` and should be used.
+    /// However, ultimately it may end up not materializing. That is to say, it is
+    /// a valid assumption for the duration of this `measure` call but there is
+    /// no guarantee that it will still be true when the final size is decided.
+    ///
+    /// How exactly the length is calculated should be determined based on [`LenReq`].
+    /// Adapting to it is a cornerstone of a well running cooperative layout system,
+    /// and generally all built-in Masonry widgets will respect the request. However,
+    /// ultimately it is completely valid for the widget to return whatever length it wants.
+    ///
+    /// It is not guaranteed that `measure` will be called even once during a layout pass.
+    /// Don't design `measure` to be the only source of critical work that the widget depends on.
+    ///
+    /// Nor is it guaranteed that a [`layout`] call will follow a `measure` call, because
+    /// the parent widget might end up choosing the same size for this widget as last time.
+    /// Be very careful with mutating state inside `measure`. You should only mutate state
+    /// in a way that is useful for `measure` itself, or in a way that the rest of your widget
+    /// will correctly understand. Basically, don't commit any layout choices. You can save
+    /// speculative data that [`layout`] might later read and commit. However, generally,
+    /// no other part of the widget should be affected by the data that `measure` mutates.
+    ///
+    /// There might be any number of `measure` calls per layout pass. Depending on the specific
+    /// parent's layout algorithm, which might measure its children multiple times. Hence, it's
+    /// important for good performance to cache any expensive computations that can be reused.
+    ///
+    /// Masonry will, by default, cache the results of measurement. The cache key is derived
+    /// from `axis`, `len_req`, and `cross_length`. If the widget uses any other data to influence
+    /// the result of the measurement, then the widget is responsible for requesting layout
+    /// when any of that data changes. For properties, this is handled in [`property_changed`].
+    /// For any other data you reference, the exact mechanism of detecting changes is up to you.
+    /// Once you've detected a change in that data, call `request_layout` to clear the cache.
+    /// If you can't detect changes of the referenced data, disable the cache via [`cache_result`].
+    ///
+    /// The cache provided by Masonry is small, with only a few entries per widget. If your widget
+    /// does expensive computations that aren't necessarily different per the aforementioned inputs,
+    /// or you need to request layout for reasons that don't affect the result of this computation,
+    /// then your widget should also have its own inner cache layer to avoid redoing the same work.
+    ///
+    /// As for the inputs provided to `measure`, `len_req` must be [sanitized] and
+    /// `cross_length`, if present, must be [sanitized] and in device pixels.
+    /// When Masonry calls `measure` during the layout pass, it guarantees that for these inputs.
+    ///
+    /// # Panics
+    ///
+    /// Masonry will panic if `measure` returns a non-finite or negative value
+    /// and debug assertions are enabled.
+    ///
+    /// [sanitized]: crate::util::Sanitize
+    /// [`cache_result`]: MeasureCtx::cache_result
+    /// [`Dimensions`]: crate::properties::Dimensions
+    /// [`layout`]: Self::layout
+    /// [`property_changed`]: Self::property_changed
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size;
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64;
+
+    /// Lays out the widget with the given `size`.
+    ///
+    /// A container widget must ensure all its direct children are laid out in this method.
+    ///
+    /// For every child widget, as defined by [`children_ids`], the container must:
+    ///
+    /// 1. (Optionally) Call [`LayoutCtx::compute_size`] to get the size the child wants to be.
+    ///    If the container is doing complex layout, it might call `compute_size` multiple times.
+    ///    However, that should be done with great care, as it's a quick path to slow performance.
+    ///    Especially when such complex layout widgets are nested, layout complexity will explode.
+    ///    If the container has somehow already decided on the child length on one axis, then it
+    ///    should instead call [`LayoutCtx::compute_length`] with the correct `cross_length`.
+    /// 2. Decide on a final [`Size`] that the child should be. The parent is in control.
+    ///    Note, however, that the child will still be in control of its own [`paint`] method.
+    ///    If a child is given a size smaller than its [`MinContent`], its painting is likely
+    ///    to overflow its bounds, depending on both the child's and the parent's clip settings.
+    /// 3. Call [`LayoutCtx::run_layout`] on the child with the chosen size.
+    ///    This will recursively trigger the layout pass on both the child and all its descendants.
+    /// 4. Call [`LayoutCtx::place_child`] to give the child a location, relative to the parent.
+    ///    With that, the laying out of the child is finished.
+    ///
+    /// The order of laying out children doesn't matter. It is also valid to interleave the calls.
+    /// For example you might `compute_size` for a few, lay out one, re-compute the others.
+    ///
+    /// Failing to lay out and place some child is a logic error and may lead to panics.
+    ///
+    /// Container widgets must not add or remove children during layout.
+    /// Doing so is a logic error and may lead to panics.
+    ///
+    /// The `size` given to this method must be finite, non-negative, and in device pixels.
+    /// When Masonry calls `layout` during the layout pass, it will guarantee that for `size`.
+    ///
+    /// [`children_ids`]: Self::children_ids
+    /// [`paint`]: Self::paint
+    /// [`MinContent`]: crate::layout::Dim::MinContent
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
 
     /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}

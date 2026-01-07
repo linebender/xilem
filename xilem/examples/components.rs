@@ -21,6 +21,7 @@ fn modular_counter(count: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
         text_button("+", |count: &mut i32| *count += 1),
         text_button("-", |count: &mut i32| *count -= 1),
     ))
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {

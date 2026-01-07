@@ -3,8 +3,9 @@
 
 use std::any::TypeId;
 
-use crate::core::{BoxConstraints, Property, UpdateCtx};
-use crate::kurbo::{Point, Size, Vec2};
+use crate::core::{Property, UpdateCtx};
+use crate::kurbo::{Axis, Point, Size, Vec2};
+use crate::layout::Length;
 
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -129,29 +130,59 @@ impl Padding {
         ctx.request_layout();
     }
 
-    /// Shrinks the box constraints by the padding amount.
-    ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn layout_down(&self, bc: BoxConstraints) -> BoxConstraints {
-        bc.shrink((self.left + self.right, self.top + self.bottom))
+    /// Returns the [`Length`] on the given `axis`.
+    pub fn length(&self, axis: Axis) -> Length {
+        match axis {
+            Axis::Horizontal => Length::px(self.left + self.right),
+            Axis::Vertical => Length::px(self.top + self.bottom),
+        }
     }
 
-    /// Expands the size and raises the baseline by the padding amount.
+    /// Shrinks the `size` by the padding amount.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
     ///
     /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn layout_up(&self, size: Size, baseline: f64) -> (Size, f64) {
-        let size = Size::new(
-            size.width + self.left + self.right,
-            size.height + self.top + self.bottom,
-        );
-        let baseline = baseline + self.bottom;
-        (size, baseline)
+    pub fn size_down(&self, size: Size, scale: f64) -> Size {
+        let width = (size.width - Length::px(self.left + self.right).dp(scale)).max(0.);
+        let height = (size.height - Length::px(self.top + self.bottom).dp(scale)).max(0.);
+        Size::new(width, height)
     }
 
-    /// Shifts the position by the padding amount.
+    /// Raises the `baseline` by the padding amount.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
     ///
     /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn place_down(&self, pos: Point) -> Point {
-        pos + Vec2::new(self.left, self.top)
+    pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
+        baseline + Length::px(self.bottom).dp(scale)
+    }
+
+    /// Lowers the `baseline` by the padding amount.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
+        baseline - Length::px(self.bottom).dp(scale)
+    }
+
+    /// Lowers the position by the padding amount.
+    ///
+    /// The returned [`Point`] will be in device pixels.
+    ///
+    /// The provided `origin` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
+        let x = Length::px(self.left).dp(scale);
+        let y = Length::px(self.top).dp(scale);
+        origin + Vec2::new(x, y)
     }
 }

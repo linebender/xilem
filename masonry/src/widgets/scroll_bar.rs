@@ -6,11 +6,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
-    NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut,
-    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
+    PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Axis, Point, Rect, Size};
+use crate::layout::LenReq;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 
@@ -65,7 +66,11 @@ impl ScrollBar {
     /// `cursor_Length` is guaranteed to be at least `min_length`
     /// and the remainder of the layout length is `empty_space_length`.
     fn lengths(&self, layout_size: Size, min_length: f64) -> (f64, f64) {
-        let size_ratio = self.portal_size / self.content_size;
+        let size_ratio = if self.content_size != 0. {
+            self.portal_size / self.content_size
+        } else {
+            1.
+        };
         let size_ratio = size_ratio.clamp(0.0, 1.0);
 
         let cursor_length = (size_ratio * layout_size.get_coord(self.axis)).max(min_length);
@@ -201,21 +206,33 @@ impl Widget for ScrollBar {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // TODO - handle resize
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        let scrollbar_width = theme::SCROLLBAR_WIDTH;
-        let cursor_padding = theme::SCROLLBAR_PAD;
-        self.axis.pack_size(
-            bc.max().get_coord(self.axis),
-            scrollbar_width + cursor_padding * 2.0,
-        )
+        if axis == self.axis {
+            // TODO: Consider .max(theme::SCROLLBAR_MIN_SIZE * scale)
+            match len_req {
+                LenReq::MinContent | LenReq::MaxContent => self.portal_size,
+                LenReq::FitContent(space) => space,
+            }
+        } else {
+            let scrollbar_width = theme::SCROLLBAR_WIDTH * scale;
+            let cursor_padding = theme::SCROLLBAR_PAD * scale;
+
+            scrollbar_width + cursor_padding * 2.0
+        }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let radius = theme::SCROLLBAR_RADIUS;
@@ -268,12 +285,16 @@ impl AllowRawMut for ScrollBar {}
 mod tests {
     use super::*;
     use crate::core::{NewWidget, PointerButton};
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
     #[test]
     fn simple_scrollbar() {
-        let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0));
+        let widget = NewWidget::new_with_props(
+            ScrollBar::new(Axis::Vertical, 200.0, 600.0),
+            Dimensions::FIT,
+        );
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(50.0, 200.0));
@@ -300,7 +321,10 @@ mod tests {
 
     #[test]
     fn horizontal_scrollbar() {
-        let widget = NewWidget::new(ScrollBar::new(Axis::Horizontal, 200.0, 600.0));
+        let widget = NewWidget::new_with_props(
+            ScrollBar::new(Axis::Horizontal, 200.0, 600.0),
+            Dimensions::FIT,
+        );
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 50.0));

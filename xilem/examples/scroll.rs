@@ -58,8 +58,7 @@ fn color_block(
     let horizontal_count = horizontal_count as f32;
 
     sized_box(label(format!("r{}c{}", row_idx, col_idx)))
-        .width(50.px())
-        .height(50.px())
+        .dims(50.px())
         .background_color(AlphaColor::new([
             row_idx / vertical_count,
             col_idx / horizontal_count,

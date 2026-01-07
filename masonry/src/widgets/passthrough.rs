@@ -8,30 +8,43 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::LenReq;
 
 /// A pass-through container that hosts exactly one child, which may be replaced dynamically.
 ///
 /// Useful when you need an insertion point for one widget that can be
 /// replaced at runtime, without adding layout or chrome of its own.
 ///
+/// Ensure that `Passthrough` has [`Dimensions`] set via props
+/// either to [`Dimensions::fixed`] or [`Dimensions::MAX`].
+/// Fixed dimensions resolve early and are explicit in intent.
+/// Max intrinsic size of `Passthrough` means that the question of size
+/// will get passed through to its child, and doesn't mean that it will
+/// necessarily map to the max intrinsic size of the child.
+///
 /// # Examples
 /// Create a host and later replace its content inside a mutate/edit callback:
 /// ```
-/// use masonry::core::{NewWidget, Widget};
+/// use masonry::core::Widget;
+/// use masonry::properties::Dimensions;
 /// use masonry::widgets::{Passthrough, Label};
 ///
 /// // Create a host around a label
-/// let host = NewWidget::new(Passthrough::new(Label::new("Hello").with_auto_id()));
+/// let host = Passthrough::new(Label::new("Hello").with_auto_id()).with_props(Dimensions::MAX);
 ///
 /// // ... in an edit callback, mutate the widget tree
 /// # fn edit(mut host: masonry::core::WidgetMut<'_, Passthrough>) {
 /// Passthrough::set_child(&mut host, Label::new("World").with_auto_id());
 /// # }
 /// ```
+///
+/// [`Dimensions`]: crate::properties::Dimensions
+/// [`Dimensions::fixed`]: crate::properties::Dimensions::fixed
+/// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 pub struct Passthrough {
     inner: WidgetPod<dyn Widget>,
 }
@@ -76,15 +89,23 @@ impl Widget for Passthrough {
         ctx.register_child(&mut self.inner);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = ctx.run_layout(&mut self.inner, bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        ctx.redirect_measurement(&mut self.inner, axis, cross_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.inner, size);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
-        size
+
+        let baseline = ctx.child_baseline_offset(&self.inner);
+        ctx.set_baseline_offset(baseline);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
@@ -115,6 +136,7 @@ impl Widget for Passthrough {
 mod tests {
     use super::*;
     use crate::kurbo::Size;
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;
@@ -122,7 +144,7 @@ mod tests {
     #[test]
     fn passthrough_replaces_child() {
         // Start with a label
-        let widget = NewWidget::new(Passthrough::new(Label::new("A").with_auto_id()));
+        let widget = Passthrough::new(Label::new("A").with_auto_id()).with_props(Dimensions::MAX);
         let window_size = Size::new(30.0, 30.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 

@@ -5,6 +5,7 @@ use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
 use crate::kurbo::{Affine, Size};
+use crate::util::Sanitize;
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.
@@ -78,17 +79,31 @@ impl ObjectFit {
         ctx.request_layout();
     }
 
-    /// Calculates an origin and scale for an image with a given `ObjectFit`.
+    /// Calculates an [`Affine`] transform to fit `content` inside `container`.
     ///
-    /// This takes some properties of a widget and an object fit and returns an affine matrix
-    /// used to position and scale the image in the widget.
-    pub fn affine_to_fill(self, parent: Size, fit_box: Size) -> Affine {
-        if fit_box.width == 0. || fit_box.height == 0. {
+    /// See [`ObjectFit`] variant documentation for fitting details.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either `content` or `container` is non-finite or negative
+    /// and debug assertions are enabled.
+    pub fn affine(self, container: Size, content: Size) -> Affine {
+        // Guard against invalid input
+        let container = Size::new(
+            container.width.sanitize("container width"),
+            container.height.sanitize("container height"),
+        );
+        let content = Size::new(
+            content.width.sanitize("content width"),
+            content.height.sanitize("content height"),
+        );
+        // Guard against division by zero
+        if content.width == 0. || content.height == 0. {
             return Affine::IDENTITY;
         }
 
-        let raw_scalex = parent.width / fit_box.width;
-        let raw_scaley = parent.height / fit_box.height;
+        let raw_scalex = container.width / content.width;
+        let raw_scaley = container.height / content.height;
 
         let (scalex, scaley) = match self {
             Self::Contain => {
@@ -109,8 +124,8 @@ impl ObjectFit {
             Self::None => (1.0, 1.0),
         };
 
-        let origin_x = (parent.width - (fit_box.width * scalex)) / 2.0;
-        let origin_y = (parent.height - (fit_box.height * scaley)) / 2.0;
+        let origin_x = (container.width - (content.width * scalex)) * 0.5;
+        let origin_y = (container.height - (content.height * scaley)) * 0.5;
 
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
     }

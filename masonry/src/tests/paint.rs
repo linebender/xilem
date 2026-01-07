@@ -6,7 +6,7 @@ use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_
 
 use crate::core::{NewWidget, WidgetTag};
 use crate::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
-use crate::layout::Length;
+use crate::layout::{Length, SizeDef};
 use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::Color;
 use crate::properties::Background;
@@ -76,15 +76,15 @@ fn paint_order() {
     let children = vec![child1, child2, child3];
     let parent = NewWidget::new(
         ModularWidget::new_multi_parent(children)
-            .layout_fn(move |children, ctx, _props, bc| {
+            .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE * 2.)
+            .layout_fn(move |children, ctx, _props, size| {
                 let mut pos = Point::ZERO;
                 for child in children {
-                    let _ = ctx.run_layout(child, bc);
-
+                    let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+                    ctx.run_layout(child, child_size);
                     ctx.place_child(child, pos);
                     pos += Vec2::new(SQUARE_SIZE / 2., SQUARE_SIZE / 2.);
                 }
-                Size::new(SQUARE_SIZE * 2., SQUARE_SIZE * 2.)
             })
             .paint_fn(|_, ctx, _, scene| {
                 fill(scene, &ctx.size().to_rect(), Color::WHITE);
@@ -122,10 +122,9 @@ fn paint_clipping() {
 
     let parent = NewWidget::new(
         ModularWidget::new(())
-            .layout_fn(|_, ctx, _, _| {
-                let size = Size::new(SQUARE_SIZE, SQUARE_SIZE);
+            .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE)
+            .layout_fn(|_, ctx, _, size| {
                 ctx.set_clip_path(size.to_rect());
-                size
             })
             .paint_fn(move |_, ctx, _, scene| {
                 fill(scene, &ctx.size().to_rect(), Color::WHITE);

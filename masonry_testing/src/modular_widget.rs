@@ -5,12 +5,13 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
-    PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod, WidgetRef, find_widget_under_pointer,
+    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, MeasureCtx,
+    NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef,
+    find_widget_under_pointer,
 };
-use masonry_core::kurbo::{Point, Size};
+use masonry_core::kurbo::{Axis, Point, Size};
+use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
 use masonry_core::vello::Scene;
 use tracing::trace_span;
 
@@ -25,8 +26,9 @@ pub(crate) type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
 pub(crate) type UpdateFn<S> =
     dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
 pub(crate) type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
-pub(crate) type LayoutFn<S> =
-    dyn FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
+pub(crate) type MeasureFn<S> =
+    dyn FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64;
+pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size);
 pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
 pub(crate) type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
 pub(crate) type RoleFn<S> = dyn Fn(&S) -> Role;
@@ -50,6 +52,7 @@ pub struct ModularWidget<S> {
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
     property_change: Option<Box<PropertyChangeFn<S>>>,
+    measure: Option<Box<MeasureFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
@@ -78,6 +81,7 @@ impl<S> ModularWidget<S> {
             register_children: None,
             update: None,
             property_change: None,
+            measure: None,
             layout: None,
             compose: None,
             paint: None,
@@ -97,10 +101,16 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
             .register_children_fn(move |child, ctx| {
                 ctx.register_child(child);
             })
-            .layout_fn(move |child, ctx, _props, bc| {
-                let size = ctx.run_layout(child, bc);
+            .measure_fn(move |child, ctx, _props, axis, len_req, cross_length| {
+                let auto_size = SizeDef::req(axis, len_req);
+                let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+
+                ctx.compute_length(child, auto_size, context_size, axis, cross_length)
+            })
+            .layout_fn(move |child, ctx, _props, size| {
+                let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+                ctx.run_layout(child, child_size);
                 ctx.place_child(child, Point::ZERO);
-                size
             })
             .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
     }
@@ -118,14 +128,28 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                     ctx.register_child(child);
                 }
             })
-            .layout_fn(move |children, ctx, _props, bc| {
-                let mut size = Size::ZERO;
+            .measure_fn(move |children, ctx, _props, axis, len_req, cross_length| {
+                let auto_size = SizeDef::req(axis, len_req);
+                let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+
+                let mut length: f64 = 0.;
                 for child in children {
-                    let child_size = ctx.run_layout(child, bc);
-                    ctx.place_child(child, Point::ZERO);
-                    size = size.max(child_size);
+                    let child_length =
+                        ctx.compute_length(child, auto_size, context_size, axis, cross_length);
+                    length = length.max(child_length);
                 }
-                size
+
+                length
+            })
+            .layout_fn(move |children, ctx, _props, size| {
+                let auto_size = SizeDef::fit(size);
+                let context_size = size.into();
+
+                for child in children {
+                    let child_size = ctx.compute_size(child, auto_size, context_size);
+                    ctx.run_layout(child, child_size);
+                    ctx.place_child(child, Point::ZERO);
+                }
             })
             .children_fn(|children| children.iter().map(|child| child.id()).collect())
     }
@@ -227,11 +251,20 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::measure`]
+    pub fn measure_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64
+        + 'static,
+    ) -> Self {
+        self.measure = Some(Box::new(f));
+        self
+    }
+
     /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, &BoxConstraints) -> Size
-        + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size) + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
@@ -349,17 +382,25 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let Self { state, layout, .. } = self;
-        layout
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let Self { state, measure, .. } = self;
+        measure
             .as_mut()
-            .map(|f| f(state, ctx, props, bc))
-            .unwrap_or_else(|| Size::new(100., 100.))
+            .map(|f| f(state, ctx, props, axis, len_req, cross_length))
+            .unwrap_or_default()
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        if let Some(f) = self.layout.as_mut() {
+            f(&mut self.state, ctx, props, size);
+        }
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {

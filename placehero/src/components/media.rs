@@ -13,11 +13,8 @@ use xilem::{
         ViewArgument,
         one_of::{OneOf, OneOf4},
     },
-    masonry::{
-        layout::AsUnit,
-        peniko::{ImageAlphaType, ImageData},
-    },
-    view::{flex_col, image, prose, sized_box},
+    masonry::peniko::{ImageAlphaType, ImageData},
+    view::{ObjectFit, flex_col, image, prose},
 };
 
 use crate::actions::Navigation;
@@ -87,7 +84,9 @@ fn maybe_blurhash<State: ViewArgument>(
 
     // Retain the aspect ratio, and don't go bigger than the image's actual dimensions.
     // Prefer to fill up the width rather than the height.
-    Some(sized_box(sized_box(image(image2)).expand_width()).width(width.px()))
+    // TODO: Don't go bigger than the image's actual dimensions.
+    //       Can achieve it with ObjectFit::ScaleDown if we surface IMAGE_SCALE from the widget.
+    Some(image(image2).fit(ObjectFit::FitWidth))
 }
 
 /// Show some useful info for audio attachments.
