@@ -65,7 +65,9 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **compose:** Assigns transforms to widgets.
 - **update_pointer:** Updates the hovered status of widgets and the current cursor icon.
 
-The layout and compose passes have methods with matching names in the [`Widget`] trait.
+The layout pass may call [`Widget::measure`] any number of times, including zero.
+It may then call [`Widget::layout`].
+The compose pass will call [`Widget::compose`].
 The update_xxx passes call the widgets' update method.
 
 By default, each of these passes completes without doing any work, unless pass-dependent invalidation flags are set.
@@ -152,9 +154,9 @@ It also update the pointer's icon depending on which widget it's hovering.
 
 ### Layout pass
 
-The layout pass runs bidirectionally, passing constraints from the top down and getting back sizes and other layout info from the bottom up.
+The layout pass will determine the size of widgets, which might involve calling the `measure` methods on widgets.
 
-It is subject to be reworked in the future to be closer to the semantics of web layout engines and the Taffy crate.
+Then as sizes get resolved, they get passed to the `layout` methods on widgets.
 
 Unlike with other passes, container widgets' `Widget::layout()` method must "manually" recurse by calling [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of their children.
 
@@ -203,20 +205,24 @@ External mutation is how Xilem applies any changes to the widget tree produced b
 Some notes about pass context types:
 
 - Render passes should be pure and can be skipped occasionally, therefore their context types ([`PaintCtx`] and [`AccessCtx`]) can't set invalidation flags or send signals.
-- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`LayoutCtx`]and [`ComposeCtx`] cannot access the size and position of the `self` widget.
+- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot access the size and position of the `self` widget.
 They can access the layout of children if they have already been laid out.
-- For the same reason, [`LayoutCtx`]and [`ComposeCtx`] cannot create a `WidgetRef` reference to a child.
+- For the same reason, [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot create a `WidgetRef` reference to a child.
 - [`MutateCtx`], [`EventCtx`] and [`UpdateCtx`] can let you add and remove children.
 - [`RegisterCtx`] can't do anything except register children.
 - [`QueryCtx`] provides read-only information about the widget.
 
 [`Widget`]: crate::core::Widget
+[`Widget::measure`]: crate::core::Widget::measure
+[`Widget::layout`]: crate::core::Widget::layout
+[`Widget::compose`]: crate::core::Widget::compose
 [`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
 [`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
 [`WidgetMut`]: crate::core::WidgetMut
 [`RenderRoot`]: crate::app::RenderRoot
 [`PaintCtx`]: crate::core::PaintCtx
 [`AccessCtx`]: crate::core::AccessCtx
+[`MeasureCtx`]: crate::core::MeasureCtx
 [`LayoutCtx`]: crate::core::LayoutCtx
 [`ComposeCtx`]: crate::core::ComposeCtx
 [`MutateCtx`]: crate::core::MutateCtx

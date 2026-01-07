@@ -3,14 +3,13 @@
 
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
-use masonry_core::core::keyboard::{Key, NamedKey};
-use masonry_core::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
-use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{
     ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics,
 };
-use vello::kurbo::Size;
 
+use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
+use crate::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
 use crate::layout::AsUnit;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, SizedBox, TextArea};
@@ -24,7 +23,7 @@ fn create_capture_target() -> ModularWidget<()> {
                 ctx.capture_pointer();
             }
         })
-        .layout_fn(|_, _, _, _| Size::new(10., 10.))
+        .measure_fn(|_, _, _, _, _, _| 10.)
 }
 
 #[test]

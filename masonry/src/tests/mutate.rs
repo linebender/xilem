@@ -3,9 +3,9 @@
 
 use std::sync::mpsc;
 
-use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_testing::{ModularWidget, TestHarness};
 
+use crate::core::{NewWidget, WidgetTag};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 

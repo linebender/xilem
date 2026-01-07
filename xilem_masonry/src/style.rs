@@ -4,13 +4,14 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::HasProperty;
+use masonry::layout::Dim;
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
 use masonry::properties::{
-    ContentColor, DisabledContentColor, FocusedBorderColor, Gap, LineBreaking,
+    ContentColor, Dimensions, DisabledContentColor, FocusedBorderColor, Gap, LineBreaking,
 };
 use vello::peniko::Color;
 
@@ -22,6 +23,39 @@ use crate::view::Prop;
 ///
 /// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
 pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action> + Sized {
+    /// Sets the element's dimensions.
+    ///
+    /// If you only want to set one dimension, then you can use [`width`] or [`height`].
+    ///
+    /// [`width`]: Style::width
+    /// [`height`]: Style::height
+    fn dims(self, dims: impl Into<Dimensions>) -> Prop<Dimensions, Self, State, Action>
+    where
+        Self::Widget: HasProperty<Dimensions>,
+    {
+        self.prop(dims.into())
+    }
+
+    /// Sets the element's width.
+    ///
+    /// This will reset the element's height to [`Dim::Auto`].
+    fn width(self, dim: impl Into<Dim>) -> Prop<Dimensions, Self, State, Action>
+    where
+        Self::Widget: HasProperty<Dimensions>,
+    {
+        self.prop(Dimensions::AUTO.with_width(dim.into()))
+    }
+
+    /// Sets the element's height.
+    ///
+    /// This will reset the element's width to [`Dim::Auto`].
+    fn height(self, dim: impl Into<Dim>) -> Prop<Dimensions, Self, State, Action>
+    where
+        Self::Widget: HasProperty<Dimensions>,
+    {
+        self.prop(Dimensions::AUTO.with_height(dim.into()))
+    }
+
     /// Sets the element's content color.
     ///
     /// "Content color" usually means text or text decorations.

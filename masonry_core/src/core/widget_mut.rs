@@ -5,7 +5,10 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId};
+use crate::{
+    core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId},
+    properties::Dimensions,
+};
 
 /// A rich mutable reference to a [`Widget`].
 ///
@@ -89,8 +92,10 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn insert_prop<P: Property>(&mut self, value: P) -> Option<P> {
         self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.insert(value);
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        let mut ctx = self.ctx.update_mut();
+        let property_type = TypeId::of::<P>();
+        Dimensions::prop_changed(&mut ctx, property_type);
+        self.widget.property_changed(&mut ctx, property_type);
         value
     }
 
@@ -102,8 +107,10 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn remove_prop<P: Property>(&mut self) -> Option<P> {
         self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.remove::<P>();
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        let mut ctx = self.ctx.update_mut();
+        let property_type = TypeId::of::<P>();
+        Dimensions::prop_changed(&mut ctx, property_type);
+        self.widget.property_changed(&mut ctx, property_type);
         value
     }
 

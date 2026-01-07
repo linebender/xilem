@@ -27,10 +27,11 @@ use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf3, OneOf6};
 use xilem::core::{Edit, NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::layout::AsUnit;
+use xilem::style::Style;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, flex_col, flex_row, label, prose, sized_box, spinner, split,
-    task_raw, text_button, text_input, worker_raw,
+    CrossAxisAlignment, FlexExt, MainAxisAlignment, flex_col, flex_row, label, prose, sized_box,
+    spinner, split, task_raw, text_button, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
@@ -99,9 +100,9 @@ fn select_app(state: &mut MainState) -> impl WidgetView<Edit<MainState>> + use<>
                         *state = MainState::New(PlaceheroWithLogin::new());
                     }),
                 ))
-                .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
+                .main_axis_alignment(MainAxisAlignment::Center),
             ))
-            .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
+            .main_axis_alignment(MainAxisAlignment::Center),
         ),
         MainState::Old(_) => OneOf::B(lens(app_logic, |state: &mut MainState, ()| {
             let MainState::Old(placehero) = state else {
@@ -182,8 +183,7 @@ impl Placehero {
                     )
                     .on_enter(|_, user| Navigation::LoadUser(user))
                     .disabled(self.loading_timeline),
-                    self.loading_timeline
-                        .then(|| sized_box(spinner()).width(50.px()).height(50.px())),
+                    self.loading_timeline.then(|| spinner().dims(50.px())),
                     text_button("Go", |state: &mut Self| {
                         Navigation::LoadUser(state.timeline_box_contents.clone())
                     }),
@@ -210,10 +210,9 @@ impl Placehero {
                 OneOf::B(prose("Loading thread"))
             }
         } else if self.loading_timeline {
-            // Hack: Flex allows the sized box to not take up the full size.
-            OneOf::C(flex_col(
-                sized_box(spinner()).width(50.px()).height(50.px()),
-            ))
+            OneOf::C(
+                flex_col(spinner().dims(50.px())).cross_axis_alignment(CrossAxisAlignment::Center),
+            )
         } else if let Some(acct) = self.not_found_acct.as_ref() {
             OneOf::D(prose(format!(
                 "Could not find account @{acct} on this server. \

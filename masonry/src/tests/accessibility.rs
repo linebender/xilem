@@ -3,9 +3,9 @@
 
 use accesskit::NodeId;
 use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
+use crate::core::{NewWidget, Widget, WidgetTag};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 

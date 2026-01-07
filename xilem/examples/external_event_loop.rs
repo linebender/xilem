@@ -14,6 +14,7 @@ use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
+use xilem::style::Style;
 use xilem::view::{Label, button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
@@ -24,9 +25,7 @@ fn big_button<F: Fn(&mut i32) + Send + Sync + 'static>(
     callback: F,
 ) -> impl WidgetView<Edit<i32>> {
     // This being fully specified is "a known limitation of the trait solver"
-    sized_box(button::<Edit<i32>, _, _, F>(label.into(), callback))
-        .width(40.px())
-        .height(40.px())
+    sized_box(button::<Edit<i32>, _, _, F>(label.into(), callback)).dims(40.px())
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {

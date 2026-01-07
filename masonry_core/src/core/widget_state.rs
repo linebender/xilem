@@ -6,7 +6,10 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{LayoutCache, WidgetId, WidgetOptions};
+use crate::{
+    core::{WidgetId, WidgetOptions},
+    layout::MeasurementCache,
+};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -76,7 +79,7 @@ pub(crate) struct WidgetState {
     /// The bottom right of the widget in the `window_transform` coordinate space.
     /// Computed from the widget's origin and size, with some pixel snapping.
     pub(crate) end_point: Point,
-    /// The value returned by the widget's layout method.
+    /// The value given to the widget's layout method.
     /// Used to compute `end_point`.
     pub(crate) layout_size: Size,
     /// The insets applied to the layout rect to generate the paint rect.
@@ -98,8 +101,6 @@ pub(crate) struct WidgetState {
     pub(crate) baseline_offset: f64,
     /// The pixel-snapped position of the baseline, computed from `baseline_offset`
     pub(crate) baseline_y: f64,
-    /// Data cached from previous layout passes.
-    pub(crate) layout_cache: LayoutCache,
 
     /// Tracks whether widget gets pointer events.
     /// Should be immutable after `WidgetAdded` event.
@@ -144,7 +145,9 @@ pub(crate) struct WidgetState {
     /// This widget explicitly requested layout
     pub(crate) request_layout: bool,
     /// This widget or a descendant explicitly requested layout
-    pub(crate) needs_layout: bool,
+    needs_layout: bool,
+    /// Cached measurement results.
+    pub(crate) measurement_cache: MeasurementCache,
 
     /// The `compose` method must be called on this widget
     pub(crate) request_compose: bool,
@@ -236,7 +239,6 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
-            layout_cache: LayoutCache::empty(),
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
@@ -251,6 +253,7 @@ impl WidgetState {
             is_stashed: false,
             baseline_offset: 0.0,
             baseline_y: 0.0,
+            measurement_cache: MeasurementCache::new(),
             is_new: true,
             has_hovered: false,
             is_hovered: false,
@@ -292,6 +295,9 @@ impl WidgetState {
     // mutated anymore. This method may start doing so again in the future, so keep taking &mut for
     // now.
     pub(crate) fn merge_up(&mut self, child_state: &mut Self) {
+        if child_state.needs_layout {
+            self.measurement_cache.clear();
+        }
         self.needs_layout |= child_state.needs_layout;
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
@@ -303,14 +309,29 @@ impl WidgetState {
         self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
-    /// The paint region for this widget.
+    /// Returns `true` if this widget or a descendant explicitly requested layout.
+    pub(crate) fn needs_layout(&self) -> bool {
+        self.needs_layout
+    }
+
+    /// Sets the flag for whether this widget or a descendant explicitly requested layout.
+    ///
+    /// If set to `true` this also clears the measurement cache.
+    pub(crate) fn set_needs_layout(&mut self, needs_layout: bool) {
+        if needs_layout {
+            self.measurement_cache.clear();
+        }
+        self.needs_layout = needs_layout;
+    }
+
+    /// The paint region for this widget and all of its descendants.
     pub(crate) fn paint_rect(&self) -> Rect {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
     /// The size of this widget.
     ///
-    /// This may be different from the value returned by [`Widget::layout`](crate::core::Widget::layout)
+    /// This may be different from the value given to [`Widget::layout`](crate::core::Widget::layout)
     /// depending on pixel snapping.
     pub(crate) fn size(&self) -> Size {
         (self.end_point - self.origin).to_size()

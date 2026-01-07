@@ -4,15 +4,18 @@
 //! A canvas widget.
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds};
 use tracing::{Span, trace_span};
-use vello::Scene;
-use vello::kurbo::Size;
+use vello::{Scene, kurbo::Axis};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, PaintCtx, PropertiesRef, RegisterCtx,
     Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::Size;
+use crate::layout::{LenReq, Length};
+
+/// The intrinsic size of the square Canvas.
+const DEFAULT_LENGTH: Length = Length::const_px(100.);
 
 /// A widget allowing custom drawing.
 ///
@@ -85,23 +88,33 @@ impl Widget for Canvas {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-    fn layout(
+
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // We use all the available space as possible.
-        let size = bc.max();
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        // We use all the available space or fall back to our const intrinsic size.
+        match len_req {
+            LenReq::FitContent(space) => space,
+            _ => DEFAULT_LENGTH.dp(scale),
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         if self.size != size {
             self.size = size;
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
         }
-
         // We clip the contents we draw.
         ctx.set_clip_path(size.to_rect());
-
-        size
     }
 
     fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -139,12 +152,12 @@ impl Widget for Canvas {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{DefaultProperties, Properties};
     use masonry_testing::assert_render_snapshot;
-    use vello::kurbo::{Affine, BezPath, Stroke};
-    use vello::peniko::{Color, Fill};
 
     use super::*;
+    use crate::core::{DefaultProperties, Properties};
+    use crate::kurbo::{Affine, BezPath, Stroke};
+    use crate::peniko::{Color, Fill};
     use crate::testing::TestHarness;
 
     #[test]

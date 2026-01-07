@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{FromDynWidget, Widget};
+use masonry::properties::Dimensions;
 use masonry::widgets::Passthrough;
 
 use crate::core::{AnyElement, AnyView, Mut, SuperElement};
@@ -19,8 +20,9 @@ pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<Passthrough>> + Send + Sync;
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<Passthrough> {
-    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        ctx.create_pod(Passthrough::new(child.new_widget.erased()))
+    fn upcast(_ctx: &mut ViewCtx, child: Pod<W>) -> Self {
+        let widget = Passthrough::new(child.new_widget.erased());
+        Self::new_with_props(widget, Dimensions::MAX)
     }
 
     fn with_downcast_val<R>(

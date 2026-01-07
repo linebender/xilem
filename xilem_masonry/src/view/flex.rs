@@ -47,10 +47,11 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// # Example
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// use xilem::masonry::layout::AsUnit;
 /// use xilem::masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 /// use xilem::masonry::kurbo::Axis;
+/// use xilem::masonry::layout::AsUnit;
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
+/// use xilem::style::Style;
 /// use xilem::WidgetView;
 /// use xilem::core::Edit;
 ///
@@ -60,9 +61,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     callback: F,
 /// ) -> impl WidgetView<Edit<i32>> {
 ///     // This being fully specified is "a known limitation of the trait solver"
-///     sized_box(button::<Edit<i32>, _, _, F>(label.into(), callback))
-///         .width(40.px())
-///         .height(40.px())
+///     button::<Edit<i32>, _, _, F>(label.into(), callback)
+///         .dims(40.px())
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
@@ -92,7 +92,6 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
         sequence,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
-        fill_major_axis: false,
         phantom: PhantomData,
     }
 }
@@ -130,7 +129,6 @@ pub struct Flex<Seq, State, Action = ()> {
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
-    fill_major_axis: bool,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -140,20 +138,16 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
         self.axis = axis;
         self
     }
+
     /// Set the children's [`CrossAxisAlignment`].
     pub fn cross_axis_alignment(mut self, axis: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = axis;
         self
     }
+
     /// Set the children's [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
-        self
-    }
-    /// Set whether the container must expand to fill the available space on
-    /// its main axis.
-    pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
-        self.fill_major_axis = fill_major_axis;
         self
     }
 }
@@ -219,7 +213,6 @@ where
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
             .cross_axis_alignment(self.cross_axis_alignment)
-            .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.drain() {
@@ -254,9 +247,6 @@ where
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
             widgets::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
-        }
-        if prev.fill_major_axis != self.fill_major_axis {
-            widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         let mut splice = FlexSplice::new(element, scratch);
         self.sequence
