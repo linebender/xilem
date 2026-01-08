@@ -142,8 +142,6 @@ impl Widget for Align {
             .resolve(Rect::new(0., 0., extra_width, extra_height));
         ctx.place_child(&mut self.child, origin);
 
-        let my_insets = ctx.compute_insets_from_child(&self.child, my_size);
-        ctx.set_paint_insets(my_insets);
         if self.height_factor.is_some() {
             let baseline_offset = ctx.child_baseline_offset(&self.child);
             if baseline_offset > 0_f64 {

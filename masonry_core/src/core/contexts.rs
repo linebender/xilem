@@ -560,16 +560,19 @@ impl LayoutCtx<'_> {
         new_size
     }
 
-    /// Sets the position of a child widget, in the parent's coordinate space.
-    /// This will affect the parent's display rect.
+    /// Sets the position of the `child` widget, in this widget's coordinate space.
+    ///
+    /// The child widget's paint rect will be automatically merged
+    /// with this widget's paint rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
-    /// layout method, after calling `ctx.run_layout(child, bc)`.
+    /// [`layout`] method, after calling `ctx.run_layout(child, bc)`.
     ///
     /// # Panics
     ///
-    /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
-    /// the child.
+    /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for the child.
+    ///
+    /// [`layout`]: Widget::layout
     #[track_caller]
     pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, origin: Point) {
         self.assert_layout_done(child, "place_child");
@@ -599,41 +602,16 @@ impl LayoutCtx<'_> {
 
     /// Sets explicit paint [`Insets`] for this widget.
     ///
-    /// You are not required to set explicit paint bounds unless you need
-    /// to paint outside of your layout bounds. In this case, the argument
-    /// should be an [`Insets`] struct that indicates where your widget
-    /// needs to overpaint, relative to its bounds.
+    /// The argument is an [`Insets`] struct that indicates where your widget will overpaint,
+    /// relative to its bounds, as defined by the `size` returned by the widget's [`layout`] method.
+    ///
+    /// You are only required to notify of painting done directly by this widget.
+    /// Child widget overdraw needs to be reported by those child widgets themselves.
+    ///
+    /// [`layout`]: Widget::layout
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
         self.widget_state.paint_insets = insets.nonnegative();
-    }
-
-    // TODO - This is currently redundant with the code in LayoutCtx::place_child
-    /// Given a child and its parent's size, determines the
-    /// appropriate paint `Insets` for the parent.
-    ///
-    /// This is a convenience method; it allows the parent to correctly
-    /// propagate a child's desired paint rect, if it extends beyond the bounds
-    /// of the parent's layout rect.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if the child's [`layout()`](LayoutCtx::run_layout) method has not been called yet
-    /// and if [`LayoutCtx::place_child()`] has not been called for the child.
-    #[track_caller]
-    pub fn compute_insets_from_child(
-        &mut self,
-        child: &WidgetPod<impl Widget + ?Sized>,
-        my_size: Size,
-    ) -> Insets {
-        self.assert_layout_done(child, "compute_insets_from_child");
-        self.assert_placed(child, "compute_insets_from_child");
-        let parent_bounds = my_size.to_rect();
-        let union_paint_rect = self
-            .get_child_state(child)
-            .paint_rect()
-            .union(parent_bounds);
-        union_paint_rect - parent_bounds
     }
 
     /// Sets an explicit baseline position for this widget.
@@ -681,6 +659,8 @@ impl LayoutCtx<'_> {
     }
 
     /// Returns the given child's paint rect.
+    ///
+    /// The paint rect will be a union of the child's and all of its descendants' paint rects.
     ///
     /// # Panics
     ///
@@ -865,7 +845,7 @@ impl_context_method!(
             self.widget_state.window_transform
         }
 
-        /// The bounding rect of the widget in window coordinates.
+        /// The bounding rect of the widget and all of its descendants in window coordinates.
         ///
         /// See [bounding rect documentation](crate::doc::masonry_concepts#bounding-rect)
         /// for details.
@@ -874,7 +854,7 @@ impl_context_method!(
         }
 
         // TODO - Remove? See above.
-        /// The paint rect of the widget.
+        /// The paint rect of the widget and all of its descendants.
         ///
         /// Covers the area we expect to be invalidated when the widget is painted.
         pub fn paint_rect(&self) -> Rect {
