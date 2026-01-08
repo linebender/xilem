@@ -10,21 +10,48 @@ use vello::kurbo::{Affine, Size};
 /// Strategies for inscribing a rectangle inside another rectangle.
 ///
 /// Default value is [`Self::Contain`].
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ObjectFit {
-    /// As large as possible without changing aspect ratio of image and all of image shown
+    /// The content is scaled to fully fit within the container.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will not cover the whole container and nothing will overflow.
     Contain,
-    /// As large as possible with no dead space so that some of the image may be clipped
+    /// The content is scaled to fully fill the container.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will overflow the container.
     Cover,
-    /// Fill the widget with no dead space, aspect ratio of widget is used
+    /// The content is stretched to fully fill the container.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will be stretched to fit exactly, changing its aspect ratio.
     Fill,
-    /// Fill the height with the images aspect ratio, some of the image may be clipped
+    /// The content is scaled to fully fill the container's height.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// This may result in letterboxed or overflowing width.
     FitHeight,
-    /// Fill the width with the images aspect ratio, some of the image may be clipped
+    /// The content is scaled to fully fill the container's width.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// This may result in letterboxed or overflowing height.
     FitWidth,
-    /// Do not scale
+    /// The content's size is not changed at all.
     None,
-    /// Scale down to fit but do not scale up
+    /// The content is only scaled down.
+    ///
+    /// This behaves as a mix of [`None`] and [`Contain`], resulting in whichever variant
+    /// gives the smaller size.
+    ///
+    /// [`None`]: ObjectFit::None
+    /// [`Contain`]: ObjectFit::Contain
     ScaleDown,
 }
 
