@@ -25,27 +25,25 @@ use crate::util::{fill, include_screenshot, stroke};
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
 ///
-/// The flex model used by Masonry has different behaviour than you might be familiar with from the web.
-/// Only children which have an explicit flex factor, set by the first parameter of
-/// [`FlexParams::new`](FlexParams::new) being `Some`, will share remaining space flexibly.
-/// Children which do not have an explicit flex factor set will be laid out as their natural size.
-/// For some widgets (such as [`TextInput`](crate::widgets::TextInput)), this will be
-/// all the space made available to the flex (in at least one axis).
-/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
-/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
-/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
-/// portals, sized boxes, and text inputs (in horizontal flex areas).
-/// That is, any item which needs to shrink to fit within the viewport should have a
-/// flex factor set.
+/// Every child has a `Flex` specific configuration in the form of [`FlexParams`].
+/// This configuration sets the flex factor, the basis, and the cross axis alignment.
 ///
-/// There is also no support for flex grow or flex shrink; instead, each flexible child takes up
-/// the proportion of remaining space (after all "non-flex" children are laid out) specified
-/// by its flex factor.
-/// In the web flex algorithm, if a widget cannot expand to its target flex size, that remaining space is distributed
-/// to the other sibling flex widgets recursively.
-/// However, this widget does not implement this behaviour at the moment, as it uses a single-pass layout algorithm.
-/// Instead, if a flex child of this widget does not expand to the target size provided by this parent, the difference is distributed
-/// to the space between widgets according to this widget's [`MainAxisAlignment`](Flex::set_main_axis_alignment).
+/// The basis determines the starting size of each child. For fixed children this will default to
+/// [`FlexBasis::Auto`] which means that they will be at their intrinsic preferred size.
+/// Flexible children, that is children with a flex factor greater than zero,
+/// will default to [`FlexBasis::Zero`] and thus fully depend on extra space distribution.
+///
+/// Once all the bases have been resolved, all the remaining free space will get
+/// distributed among its children based on everyone's share of the sum of all flex factors.
+/// Fixed children have a flex factor of zero, so they don't get anything and stay at their basis.
+/// Flexible children will get extra space on top of their basis.
+///
+/// If there is at least one flexible child, it will use up all the extra space.
+/// However, if there are only fixed children and there is extra space,
+/// then that gets distributed according to [`MainAxisAlignment`].
+///
+/// There is currently no fine-grained support for flex grow or flex shrink.
+/// Instead every child gets their size decided in one shot, as described above.
 ///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
@@ -971,6 +969,28 @@ impl Widget for Flex {
             }
         };
 
+        // Helper function to calculate child size when main length is decided
+        let compute_child_size =
+            |ctx: &mut LayoutCtx<'_>,
+             child: &mut WidgetPod<dyn Widget + 'static>,
+             child_main_length: f64,
+             alignment: &Option<CrossAxisAlignment>| {
+                let auto_size = new_auto_size(LenDef::Fixed(child_main_length), alignment);
+
+                let child_cross_length = ctx.compute_length(
+                    child,
+                    auto_size,
+                    space.into(),
+                    cross,
+                    Some(child_main_length),
+                );
+
+                match main {
+                    Axis::Horizontal => Size::new(child_main_length, child_cross_length),
+                    Axis::Vertical => Size::new(child_cross_length, child_main_length),
+                }
+            };
+
         // Helper function to lay out children
         let mut lay_out_child =
             |ctx: &mut LayoutCtx<'_>,
@@ -1003,52 +1023,34 @@ impl Widget for Flex {
                     basis,
                     basis_resolved,
                 } => {
-                    flex_sum += *flex;
                     match effective_basis(*basis, *flex) {
                         FlexBasis::Auto => {
                             // Basis is always resolved with a MaxContent fallback
                             let auto_size = new_auto_size(LenDef::MaxContent, alignment);
-
-                            let child_size = ctx.compute_size(widget, auto_size, space.into());
-
-                            *basis_resolved = child_size.get_coord(main);
+                            *basis_resolved = ctx.compute_length(
+                                widget,
+                                auto_size,
+                                space.into(),
+                                main,
+                                Some(cross_space),
+                            );
                             main_space -= *basis_resolved;
-
-                            if *flex == 0. {
-                                lay_out_child(ctx, widget, child_size, alignment);
-                            }
                         }
                         FlexBasis::Zero => {
                             // TODO: When min/max constraints become a real thing,
                             //      then need to account for them here, and also
                             //      subtract the result for main_space.
                             *basis_resolved = 0.;
-
-                            if *flex == 0. {
-                                // An inflexible child with zero length is quirky to say the least,
-                                // but we still need its cross length for baseline purposes.
-                                let auto_size = new_auto_size(LenDef::Fixed(0.), alignment);
-
-                                let child_cross_length = ctx.compute_length(
-                                    widget,
-                                    auto_size,
-                                    space.into(),
-                                    cross,
-                                    Some(*basis_resolved),
-                                );
-
-                                let child_size = match main {
-                                    Axis::Horizontal => {
-                                        Size::new(*basis_resolved, child_cross_length)
-                                    }
-                                    Axis::Vertical => {
-                                        Size::new(child_cross_length, *basis_resolved)
-                                    }
-                                };
-
-                                lay_out_child(ctx, widget, child_size, alignment);
-                            }
                         }
+                    }
+                    if *flex == 0. {
+                        let child_main_length = *basis_resolved;
+                        let child_size =
+                            compute_child_size(ctx, widget, child_main_length, alignment);
+
+                        lay_out_child(ctx, widget, child_size, alignment);
+                    } else {
+                        flex_sum += *flex;
                     }
                 }
                 Child::Spacer {
@@ -1057,12 +1059,13 @@ impl Widget for Flex {
                     basis_resolved,
                     length_resolved,
                 } => {
-                    flex_sum += *flex;
                     *basis_resolved = basis.dp(scale);
                     main_space -= *basis_resolved;
 
                     if *flex == 0. {
                         *length_resolved = *basis_resolved;
+                    } else {
+                        flex_sum += *flex;
                     }
                 }
             }
@@ -1085,20 +1088,16 @@ impl Widget for Flex {
                     basis_resolved,
                     ..
                 } if *flex > 0. => {
-                    let main_offer = *basis_resolved + *flex * flex_fraction;
-                    let auto_size = new_auto_size(LenDef::FitContent(main_offer), alignment);
-
-                    let mut child_size = ctx.compute_size(widget, auto_size, space.into());
-                    // Limit the child's main axis to the offer. This differs from the web
-                    // and we may want to revisit this decision once flex gets more powerful
-                    // with shrink support and looping space distribution. However, for now
-                    // the limit keeps compatibility with our historic behavior.
-                    let child_main_length = child_size.get_coord_mut(main);
-                    *child_main_length = child_main_length.min(main_offer);
+                    // Currently we just decide the space distribution in one go.
+                    // When Flex gets configurable grow/shrink support,
+                    // and min/max style constraints get implemented,
+                    // this distribution will need to evolve into a looped solver.
+                    let child_main_length = *basis_resolved + *flex * flex_fraction;
+                    let child_size = compute_child_size(ctx, widget, child_main_length, alignment);
 
                     lay_out_child(ctx, widget, child_size, alignment);
 
-                    main_space -= child_size.get_coord(main) - *basis_resolved;
+                    main_space -= child_main_length - *basis_resolved;
                 }
                 Child::Spacer {
                     flex,
@@ -1106,8 +1105,8 @@ impl Widget for Flex {
                     length_resolved,
                     ..
                 } if *flex > 0. => {
-                    let main_offer = *basis_resolved + *flex * flex_fraction;
-                    *length_resolved = main_offer;
+                    let child_main_length = *basis_resolved + *flex * flex_fraction;
+                    *length_resolved = child_main_length;
                     main_space -= *length_resolved - *basis_resolved;
                 }
                 _ => (),
@@ -1467,6 +1466,8 @@ mod tests {
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_baseline");
 
+        // TODO: Fill with text doesn't make sense, it's not visible,
+        //       unless we paint borders or background for the Label widget.
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
         });
@@ -1475,15 +1476,13 @@ mod tests {
 
     #[test]
     fn flex_row_main_axis_snapshots() {
+        // ALl children need to be fixed, otherwise a flexible child will use up all the space.
         let widget = NewWidget::new_with_props(
             Flex::row()
                 .with_fixed(Label::new("hello").with_auto_id())
-                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
-                .with(
-                    Label::new("bar").with_auto_id(),
-                    FlexParams::new(2.0, None, CrossAxisAlignment::Start),
-                ),
+                .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
             (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
@@ -1521,10 +1520,6 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_spaceAround");
-
-        // FILL MAIN AXIS
-        // TODO: Remove this, as it didn't do anything and no longer exists
-        assert_render_snapshot!(harness, "flex_row_fill_main_axis");
     }
 
     #[test]
@@ -1564,6 +1559,8 @@ mod tests {
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_baseline");
 
+        // TODO: Fill with text doesn't make sense, it's not visible,
+        //       unless we paint borders or background for the Label widget.
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
         });
@@ -1572,15 +1569,13 @@ mod tests {
 
     #[test]
     fn flex_col_main_axis_snapshots() {
+        // ALl children need to be fixed, otherwise a flexible child will use up all the space.
         let widget = NewWidget::new_with_props(
             Flex::column()
                 .with_fixed(Label::new("hello").with_auto_id())
-                .with(Label::new("world").with_auto_id(), 1.0)
+                .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
-                .with(
-                    Label::new("bar").with_auto_id(),
-                    FlexParams::new(2.0, None, CrossAxisAlignment::Start),
-                ),
+                .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
             (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
@@ -1618,10 +1613,6 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_spaceAround");
-
-        // FILL MAIN AXIS
-        // TODO: Remove this, as it didn't do anything and no longer exists
-        assert_render_snapshot!(harness, "flex_col_fill_main_axis");
     }
 
     #[test]

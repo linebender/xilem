@@ -8,7 +8,7 @@ use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{FlexExt as _, FlexSpacer, Label, button, flex_row, label, sized_box};
-use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem::{EventLoop, TextAlign, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
 
 /// A component to make a bigger than usual button.
@@ -23,17 +23,20 @@ fn big_button<F: Fn(&mut i32) + Send + Sync + 'static>(
 fn app_logic(data: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
     // This is the flex view, alternatives are `flex_col` or `flex` which allows dynamically switching the axis
     flex_row((
-        FlexSpacer::Fixed(30.px()),
+        FlexSpacer::Flex(1.0),
         big_button("-", |data| {
             *data -= 1;
         }),
-        FlexSpacer::Flex(1.0),
-        label(format!("count: {data}")).text_size(32.).flex(5.0),
-        FlexSpacer::Flex(1.0),
+        FlexSpacer::Fixed(30.px()),
+        label(format!("count: {data}"))
+            .text_size(32.)
+            .text_alignment(TextAlign::Center)
+            .flex(5.0),
+        FlexSpacer::Fixed(30.px()),
         big_button("+", |data| {
             *data += 1;
         }),
-        FlexSpacer::Fixed(30.px()),
+        FlexSpacer::Flex(1.0),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
