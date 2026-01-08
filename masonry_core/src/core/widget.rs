@@ -235,8 +235,9 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// The goal of this method is for a parent to learn how its children want to be sized.
     /// All the inputs are hints towards what the parent is planning for its child.
-    /// These hints should be followed, but it is also allowed to ignore them. For example,
-    /// it is completely valid to have a widget that always wants to be a certain size.
+    /// These hints should be followed, but that is not strictly required. For example,
+    /// it is completely valid for the child to always return the same size regardless of space.
+    /// Which is to say, at the end of the day, a widget chooses how it measures itself.
     ///
     /// It's a question of intrinsic size. As `measure` will only be called when there is
     /// no defined length present for the `axis`. So `measure` is not about reading the widget's
