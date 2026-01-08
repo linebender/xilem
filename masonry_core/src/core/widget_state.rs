@@ -83,8 +83,10 @@ pub(crate) struct WidgetState {
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
     pub(crate) paint_insets: Insets,
-    // TODO - Document
-    // The computed paint rect, in local coordinates.
+    /// The computed paint rect, in local coordinates.
+    ///
+    /// It is the union of this widget's and all of its descendants'
+    /// paint rects, i.e. layout rect + paint insets.
     pub(crate) local_paint_rect: Rect,
     /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `paint_insets`.
     pub(crate) bounding_rect: Rect,
