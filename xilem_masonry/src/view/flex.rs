@@ -20,29 +20,25 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// Most use cases for flexible layouts should use one of [`flex_row`] and [`flex_col`].
 ///
-/// The flex model used by Xilem has different behaviour than you might be familiar with from the web.
-/// Only items which have an explicit flex factor, set using the [`.flex`](FlexExt::flex) extension
-/// method, will share remaining space flexibly.
-/// Items which do not have an explicit flex factor set will be laid out as their natural size.
-/// For some widgets (such as [`text_input`](crate::view::text_input::text_input)), this will be
-/// all the space made available to the flex (in at least one axis).
-/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
-/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
-/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
-/// portals, sized boxes, and text inputs (in horizontal flex areas).
-/// That is, any item which needs to shrink to fit within the viewport should have a
-/// flex factor set.
-/// The `sequence` can also contain [`FlexSpacer`]s, which leave the specified amount of empty space.
+/// Every child has a `Flex` specific configuration in the form of [`FlexParams`].
+/// This configuration sets the flex factor, the basis, and the cross axis alignment.
 ///
-/// We would like to move to a more intuitive model. There is some discussion of possibilities for this in
-/// [#masonry > Layout refactor: surgical edition](https://xi.zulipchat.com/#narrow/channel/317477-masonry/topic/Layout.20refactor.3A.20surgical.20edition/with/534963761).
-/// There is also currently no support for flex grow or flex shrink; instead, each flexible child takes up
-/// the proportion of remaining space (after all "non-flex" children are laid out) specified
-/// by its flex factor.
+/// The basis determines the starting size of each child. For fixed children this will default to
+/// [`FlexBasis::Auto`] which means that they will be at their intrinsic preferred size.
+/// Flexible children, that is children with a flex factor greater than zero,
+/// will default to [`FlexBasis::Zero`] and thus fully depend on extra space distribution.
 ///
-/// When flexible children cannot expand to their allotted space, this space is allocated into the space
-/// between the children; the exact semantics are determined by the [`MainAxisAlignment`](Flex::main_axis_alignment).
-/// This is also discussed in the docs for the underlying [`Flex`](widgets::Flex) widget.
+/// Once all the bases have been resolved, all the remaining free space will get
+/// distributed among its children based on everyone's share of the sum of all flex factors.
+/// Fixed children have a flex factor of zero, so they don't get anything and stay at their basis.
+/// Flexible children will get extra space on top of their basis.
+///
+/// If there is at least one flexible child, it will use up all the extra space.
+/// However, if there are only fixed children and there is extra space,
+/// then that gets distributed according to [`MainAxisAlignment`].
+///
+/// There is currently no fine-grained support for flex grow or flex shrink.
+/// Instead every child gets their size decided in one shot, as described above.
 ///
 /// # Example
 /// ```rust,no_run
@@ -83,6 +79,9 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
 /// }
 /// ```
+///
+/// [`FlexBasis::Auto`]: masonry::widgets::FlexBasis::Auto
+/// [`FlexBasis::Zero`]: masonry::widgets::FlexBasis::Zero
 pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
     axis: Axis,
     sequence: Seq,
