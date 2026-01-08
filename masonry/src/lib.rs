@@ -42,9 +42,9 @@
 //! ```rust
 //! use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 //! use masonry::dpi::LogicalSize;
+//! use masonry::layout::Length;
 //! use masonry::peniko::color::AlphaColor;
 //! use masonry::properties::Padding;
-//! use masonry::layout::Length;
 //! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
