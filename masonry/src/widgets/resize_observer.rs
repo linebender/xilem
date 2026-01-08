@@ -150,7 +150,7 @@ mod tests {
     use masonry_testing::TestHarness;
     use vello::kurbo::Size;
 
-    use crate::properties::types::AsUnit;
+    use crate::layout::AsUnit;
     use crate::theme::default_property_set;
     use crate::widgets::{Flex, LayoutChanged, ResizeObserver, SizedBox};
 

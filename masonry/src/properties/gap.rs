@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
-use crate::properties::types::Length;
+use crate::layout::Length;
 
 /// The distance between two adjacent widgets in a [`Flex`](crate::widgets::Flex) or
 /// a [`Grid`](crate::widgets::Grid).

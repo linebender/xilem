@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::properties::types::Length;
+use masonry::layout::Length;
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};

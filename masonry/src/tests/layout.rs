@@ -7,7 +7,7 @@ use masonry_testing::{TestWidgetExt, assert_debug_panics};
 use vello::kurbo::{Insets, Point, Size};
 
 use crate::core::Widget;
-use crate::properties::types::{AsUnit, Length};
+use crate::layout::{AsUnit, Length};
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, SizedBox, ZStack};

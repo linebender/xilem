@@ -9,8 +9,9 @@
 //! react to and manipulate a shared application state.
 
 use masonry::kurbo::Axis;
+use masonry::layout::AsUnit;
 use masonry::peniko::Color;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BarColor, ThumbColor, ThumbRadius};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;

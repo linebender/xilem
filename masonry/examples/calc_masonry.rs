@@ -18,9 +18,10 @@ use masonry::core::{
     WidgetId, WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
+use masonry::layout::AsUnit;
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, Gap, HoveredBorderColor, Padding,
 };

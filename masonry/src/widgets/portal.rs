@@ -515,7 +515,7 @@ mod tests {
     use masonry_core::core::WidgetTag;
 
     use super::*;
-    use crate::properties::types::AsUnit;
+    use crate::layout::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Button, Flex, SizedBox};

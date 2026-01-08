@@ -10,7 +10,8 @@ use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
-use crate::properties::types::{AsUnit, UnitPoint};
+use crate::properties::types::UnitPoint;
+use crate::layout::AsUnit;
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, assert_render_snapshot};
 use crate::theme::default_property_set;

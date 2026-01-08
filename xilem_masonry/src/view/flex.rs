@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::kurbo::Axis;
-use masonry::properties::types::Length;
+use masonry::layout::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
@@ -47,7 +47,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// # Example
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
+/// use xilem::masonry::layout::AsUnit;
+/// use xilem::masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 /// use xilem::masonry::kurbo::Axis;
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::WidgetView;
@@ -468,7 +469,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// # use xilem_masonry as xilem;
     /// use xilem::masonry::kurbo::Axis;
-    /// use xilem::masonry::properties::types::AsUnit;
+    /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
@@ -497,7 +498,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// # use xilem_masonry as xilem;
     /// use xilem::masonry::kurbo::Axis;
-    /// use xilem::masonry::properties::types::AsUnit;
+    /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///
@@ -530,7 +531,7 @@ pub struct FlexItem<V, State, Action> {
 /// ```
 /// # use xilem_masonry as xilem;
 /// use xilem::masonry::kurbo::Axis;
-/// use xilem::masonry::properties::types::AsUnit;
+/// use xilem::masonry::layout::AsUnit;
 /// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView, core::ViewArgument};
 ///
@@ -711,7 +712,7 @@ impl FlexSpacer {
     /// ```
     /// # use xilem_masonry as xilem;
     /// use xilem::masonry::kurbo::Axis;
-    /// use xilem::masonry::properties::types::AsUnit;
+    /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{flex, FlexSpacer};
     /// # use xilem::{WidgetView, core::ViewArgument};
     ///

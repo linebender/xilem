@@ -4,7 +4,7 @@
 //! A to-do-list app, loosely inspired by todomvc.
 
 use xilem::core::Edit;
-use xilem::masonry::properties::types::Length;
+use xilem::masonry::layout::Length;
 use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
 use xilem::view::{

@@ -15,7 +15,8 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
+use crate::layout::Length;
+use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -906,7 +907,7 @@ mod tests {
     use masonry_testing::assert_debug_panics;
 
     use super::*;
-    use crate::properties::types::AsUnit;
+    use crate::layout::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Label;

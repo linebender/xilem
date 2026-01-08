@@ -44,7 +44,7 @@
 //! use masonry::dpi::LogicalSize;
 //! use masonry::peniko::color::AlphaColor;
 //! use masonry::properties::Padding;
-//! use masonry::properties::types::Length;
+//! use masonry::layout::Length;
 //! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -218,6 +218,6 @@ pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
 pub use {dpi, parley, vello};
 
-pub use masonry_core::{app, core, ui_events, util};
+pub use masonry_core::{app, core, layout, ui_events, util};
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;

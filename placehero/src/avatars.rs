@@ -9,8 +9,8 @@ use xilem::core::{
     MessageProxy, MessageResult, NoElement, Resource, View, ViewArgument, fork, map_message_result,
     on_action_with_context, provides, with_context,
 };
+use xilem::masonry::layout::AsUnit;
 use xilem::masonry::peniko::{ImageAlphaType, ImageData};
-use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Gradient, Style as _};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};

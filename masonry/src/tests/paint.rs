@@ -9,8 +9,9 @@ use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_
 use vello::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
 use vello::peniko::Color;
 
+use crate::layout::Length;
 use crate::properties::Background;
-use crate::properties::types::{Length, MainAxisAlignment};
+use crate::properties::types::MainAxisAlignment;
 use crate::theme::test_property_set;
 use crate::widgets::{Flex, SizedBox};
 

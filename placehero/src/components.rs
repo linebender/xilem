@@ -3,7 +3,7 @@
 
 use megalodon::entities::Status;
 use xilem::core::{Arg, ViewArgument};
-use xilem::masonry::properties::types::AsUnit;
+use xilem::masonry::layout::AsUnit;
 use xilem::style::Style;
 use xilem::view::{
     CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, flex_col, flex_row,

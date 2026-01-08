@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_core::debug_panic;
-
 /// A value representing a width, height, or similar distance value.
 ///
 /// Its value is always finite and non-negative.

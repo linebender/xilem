@@ -14,8 +14,8 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::layout::{AsUnit, Length};
 use crate::peniko::Color;
-use crate::properties::types::{AsUnit, Length};
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 

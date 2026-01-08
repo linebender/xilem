@@ -3,7 +3,7 @@
 
 //! Showcase a trasnsparent window.
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::*;

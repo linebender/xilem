@@ -14,8 +14,8 @@ use xilem::{
         one_of::{OneOf, OneOf4},
     },
     masonry::{
+        layout::AsUnit,
         peniko::{ImageAlphaType, ImageData},
-        properties::types::AsUnit,
     },
     view::{flex_col, image, prose, sized_box},
 };

@@ -26,7 +26,7 @@ use megalodon::error::{Kind, OwnError};
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf3, OneOf6};
 use xilem::core::{Edit, NoElement, View, fork, lens, map_action, map_state};
-use xilem::masonry::properties::types::AsUnit;
+use xilem::masonry::layout::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
     CrossAxisAlignment, FlexExt, flex_col, flex_row, label, prose, sized_box, spinner, split,
