@@ -12,8 +12,8 @@ use masonry::core::{
     WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
+use masonry::layout::Length;
 use masonry::peniko::Color;
-use masonry::properties::types::Length;
 use masonry::properties::{BorderColor, BorderWidth, Gap};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};

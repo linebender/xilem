@@ -4,7 +4,7 @@
 //! A widget gallery for xilem/masonry
 
 use masonry::dpi::LogicalSize;
-use masonry::properties::types::{AsUnit, Length};
+use masonry::layout::{AsUnit, Length};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;

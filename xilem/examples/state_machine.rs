@@ -3,7 +3,7 @@
 
 //! A state machine to detect whether the button was pressed an even or an odd number of times.
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;

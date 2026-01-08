@@ -283,7 +283,7 @@ mod tests {
 
     use super::*;
     use crate::core::Properties;
-    use crate::properties::types::AsUnit;
+    use crate::layout::AsUnit;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;

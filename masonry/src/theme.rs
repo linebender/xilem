@@ -8,8 +8,8 @@
 use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
+use crate::layout::Length;
 use crate::peniko::Color;
-use crate::properties::types::Length;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,

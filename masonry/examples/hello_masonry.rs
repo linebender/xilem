@@ -9,8 +9,8 @@
 
 use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget as _, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::layout::Length;
 use masonry::parley::style::FontWeight;
-use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};

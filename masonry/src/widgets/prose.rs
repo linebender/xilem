@@ -192,8 +192,9 @@ mod tests {
 
     use super::*;
     use crate::TextAlign;
+    use crate::layout::AsUnit;
     use crate::properties::Gap;
-    use crate::properties::types::{AsUnit, CrossAxisAlignment};
+    use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Flex, SizedBox, TextArea};

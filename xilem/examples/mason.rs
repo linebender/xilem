@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-use masonry::properties::types::Length;
+use masonry::layout::Length;
 use vello::kurbo::{Axis, Size};
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};

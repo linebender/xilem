@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::properties::types::Length;
+use crate::layout::Length;
 
 // NOTE ON OVERFLOW:
 // Casting a u64 to f64 can never overflow. In some cases, we may lose precision.

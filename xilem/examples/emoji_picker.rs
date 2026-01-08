@@ -3,7 +3,7 @@
 
 //! A simple emoji picker.
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;

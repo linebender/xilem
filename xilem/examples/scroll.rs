@@ -3,7 +3,7 @@
 
 //! An example showcasing the capabilities of the Portal widget.
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::style::Style;

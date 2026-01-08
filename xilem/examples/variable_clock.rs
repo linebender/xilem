@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};

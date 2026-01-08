@@ -15,7 +15,7 @@ use masonry_testing::{
 };
 use vello::kurbo::{Point, Size};
 
-use crate::properties::types::Length;
+use crate::layout::Length;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 

@@ -7,7 +7,7 @@ use megalodon::megalodon::GetAccountStatusesInputOptions;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::core::{Edit, fork};
 use xilem::masonry::core::ArcStr;
-use xilem::masonry::properties::types::AsUnit;
+use xilem::masonry::layout::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};

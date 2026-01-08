@@ -4,7 +4,7 @@
 use megalodon::entities::{Context, Status};
 use xilem::WidgetView;
 use xilem::core::Edit;
-use xilem::masonry::properties::types::AsUnit;
+use xilem::masonry::layout::AsUnit;
 use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};

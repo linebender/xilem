@@ -8,7 +8,8 @@
 
 use std::sync::Arc;
 
-use masonry::properties::types::{AsUnit, Length, UnitPoint};
+use masonry::layout::{AsUnit, Length};
+use masonry::properties::types::UnitPoint;
 use masonry::properties::{LineBreaking, Padding};
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};

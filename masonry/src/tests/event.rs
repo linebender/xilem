@@ -11,7 +11,7 @@ use masonry_testing::{
 };
 use vello::kurbo::Size;
 
-use crate::properties::types::AsUnit;
+use crate::layout::AsUnit;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
