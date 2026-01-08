@@ -62,15 +62,15 @@ fn paint_order() {
     const SQUARE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
     let child1 = NewWidget::new_with_props(
         SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        (Background::Color(RED),).into(),
+        Background::Color(RED),
     );
     let child2 = NewWidget::new_with_props(
         SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        (Background::Color(GREEN),).into(),
+        Background::Color(GREEN),
     );
     let child3 = NewWidget::new_with_props(
         SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        (Background::Color(BLUE),).into(),
+        Background::Color(BLUE),
     );
     let children = vec![child1, child2, child3];
     let parent = NewWidget::new(
