@@ -26,7 +26,11 @@ struct MemoizedArcView<D> {
 
 // The following is an example to do memoization with an Arc
 fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<Edit<AppState>>> {
-    if state.count != state.increase_button.data || state.increase_button.view.is_none() {
+    if state.count == state.increase_button.data
+        && let Some(inc_btn_view) = &state.increase_button.view
+    {
+        inc_btn_view.clone()
+    } else {
         let view = Arc::new(text_button(
             format!("current count is {}", state.count),
             |state: &mut AppState| {
@@ -36,8 +40,6 @@ fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<Edit<AppState>>> {
         state.increase_button.data = state.count;
         state.increase_button.view = Some(view.clone());
         view
-    } else {
-        state.increase_button.view.as_ref().unwrap().clone()
     }
 }
 
