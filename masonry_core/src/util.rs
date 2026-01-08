@@ -35,6 +35,71 @@ macro_rules! debug_panic {
 
 pub use crate::debug_panic;
 
+/// Provides sanitization of values.
+pub trait Sanitize {
+    /// Returns the sanitized value.
+    ///
+    /// Generally should remove all invariants.
+    /// Depending on the implementation, may also panic or log.
+    ///
+    /// See the specific implementation docs for more details.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self;
+}
+
+impl Sanitize for f64 {
+    /// Ensures the value is finite and non-negative.
+    ///
+    /// Non-finite or negative value falls back to zero.
+    ///
+    /// `name` is how the value will be named in the log message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value is non-finite or negative and debug assertions are enabled.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self {
+        if !self.is_finite() {
+            debug_panic!("{name} must be finite. Received: {self}");
+            0.
+        } else if self < 0. {
+            debug_panic!("{name} must be non-negative. Received: {self}");
+            0.
+        } else {
+            self
+        }
+    }
+}
+
+impl Sanitize for Option<f64> {
+    /// Ensures the value is finite and non-negative.
+    ///
+    /// Non-finite or negative value falls back to `None`.
+    ///
+    /// `name` is how the value will be named in the log message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value is non-finite or negative and debug assertions are enabled.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self {
+        match self {
+            Some(val) => {
+                if !val.is_finite() {
+                    debug_panic!("{name} must be finite. Received: {val}");
+                    None
+                } else if val < 0. {
+                    debug_panic!("{name} must be non-negative. Received: {val}");
+                    None
+                } else {
+                    Some(val)
+                }
+            }
+            None => None,
+        }
+    }
+}
+
 // ---
 
 pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
