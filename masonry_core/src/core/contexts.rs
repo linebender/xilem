@@ -542,9 +542,13 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     /// Read [`measure`] and [`layout`] docs for more details about those processes.
     ///
     /// `auto_length` specifies the fallback behavior if the child's dimension is [`Dim::Auto`].
-    /// Most widgets should use [`LenDef::FitContent`] to ask the child to fit inside the
-    /// available space. However sometimes a different fallback makes more sense, e.g.
-    /// `Grid` uses [`LenDef::Fixed`] to fall back to the exact allocated child area size.
+    /// If you're calling this from within [`measure`] then you usually want to derive
+    /// this from `len_req`, probably using [`LenReq::reduce`], i.e. you would call
+    /// `len_req.reduce(used_space_on_this_axis).into()`. However, if you're calling this
+    /// from within [`layout`] then you usually want to use use [`LenDef::FitContent`]
+    /// to ask the child to fit inside the available space. Sometimes a different fallback
+    /// makes more sense, e.g. `Grid` uses [`LenDef::Fixed`] to fall back to the exact
+    /// allocated child area size.
     /// `auto_length` values must be finite, non-negative, and in device pixels.
     /// An invalid `auto_length` will fall back to [`LenDef::MaxContent`].
     ///
@@ -570,6 +574,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     /// [`layout`]: Widget::layout
     /// [`Ratio(0.5)`]: crate::layout::Dim::Ratio
     /// [`Dim::Auto`]: crate::layout::Dim
+    /// [`LenReq::reduce`]: crate::layout::LenReq::reduce
     pub fn compute_length(
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
@@ -745,7 +750,7 @@ impl LayoutCtx<'_> {
     /// ultimately they can disregard the result and pass a different size to [`run_layout`].
     /// Read [`layout`] docs for more details about that process.
     ///
-    /// `auto_size` specifies the fallback behavior if the child has a [`Dim::Auto`] dimension.
+    /// `auto_size` specifies the fallback behavior if the child has any dimension as [`Dim::Auto`].
     /// Most widgets should use [`SizeDef::fit`] to ask the child to fit inside the
     /// available space. However sometimes a different fallback makes more sense, e.g.
     /// `Grid` uses [`SizeDef::fixed`] to fall back to the exact allocated child area size.
