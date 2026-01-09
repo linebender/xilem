@@ -466,7 +466,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// flex(Axis::Vertical, (
     ///     text_button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
-    ///     label("a label").flex(CrossAxisAlignment::Fill),
+    ///     label("a label").flex(CrossAxisAlignment::Stretch),
     ///     FlexSpacer::Fixed(2.px()),
     /// ))
     /// # }
@@ -528,7 +528,7 @@ pub struct FlexItem<V, State, Action> {
 /// flex(Axis::Vertical, (
 ///     flex_item(text_button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
-///     flex_item(label("a label"), CrossAxisAlignment::Fill),
+///     flex_item(label("a label"), CrossAxisAlignment::Stretch),
 ///     FlexSpacer::Fixed(2.px()),
 /// ))
 /// # }
