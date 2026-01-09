@@ -153,11 +153,16 @@ impl Widget for ProgressBar {
             (cross_length - cross_border_length).max(0.)
         });
 
-        let auto_size = SizeDef::req(axis, len_req.reduce(border_length));
+        let auto_length = len_req.reduce(border_length).into();
         let context_size = LayoutSize::maybe(cross, cross_space);
 
-        let label_length =
-            ctx.compute_length(&mut self.label, auto_size, context_size, axis, cross_space);
+        let label_length = ctx.compute_length(
+            &mut self.label,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
+        );
 
         let potential_length = match axis {
             Axis::Horizontal => match len_req {

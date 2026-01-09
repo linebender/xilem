@@ -20,7 +20,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
-use crate::layout::{LayoutSize, SizeDef};
+use crate::layout::{LayoutSize, LenDef, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
 use crate::util::{TypeSet, get_debug_color};
@@ -113,7 +113,7 @@ pub struct MeasureCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
-    pub(crate) auto_size: SizeDef,
+    pub(crate) auto_length: LenDef,
     pub(crate) context_size: LayoutSize,
     pub(crate) cache_result: bool,
 }
@@ -541,14 +541,16 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     /// of their [`layout`] logic if they have already chosen a length for one axis.
     /// Read [`measure`] and [`layout`] docs for more details about those processes.
     ///
-    /// `auto_size` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
-    /// Most widgets should use [`SizeDef::fit`] to ask the widget to fit inside the
+    /// `auto_length` specifies the fallback behavior if the child's dimension is [`Dim::Auto`].
+    /// Most widgets should use [`LenDef::FitContent`] to ask the child to fit inside the
     /// available space. However sometimes a different fallback makes more sense, e.g.
-    /// `Grid` uses [`SizeDef::fixed`] to fall back to the exact allocated child area size.
+    /// `Grid` uses [`LenDef::Fixed`] to fall back to the exact allocated child area size.
+    /// `auto_length` values must be finite, non-negative, and in device pixels.
+    /// An invalid `auto_length` will fall back to [`LenDef::MaxContent`].
     ///
     /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
-    /// This is usually the parent's size, excluding its borders and padding.
+    /// This is usually the container widget's size, excluding its borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
     /// its viewport size.
@@ -560,6 +562,8 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     ///
     /// # Panics
     ///
+    /// Panics if `auto_length` is non-finite or negative and debug assertions are enabled.
+    ///
     /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
     ///
     /// [`measure`]: Widget::measure
@@ -569,7 +573,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     pub fn compute_length(
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
-        auto_size: SizeDef,
+        auto_length: LenDef,
         context_size: LayoutSize,
         axis: Axis,
         cross_length: Option<f64>,
@@ -580,7 +584,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
             self.global_state,
             self.default_properties,
             node,
-            auto_size,
+            auto_length,
             context_size,
             axis,
             cross_length,
@@ -590,7 +594,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
 
 // --- MARK: MEASURE
 impl MeasureCtx<'_> {
-    /// Returns the fallback [`SizeDef`] of this measurement.
+    /// Returns the fallback [`LenDef`] of this measurement.
     ///
     /// This is essential information for widgets that want pass through measurements.
     /// That is, this fallback was chosen by widget A for widget B.
@@ -599,22 +603,22 @@ impl MeasureCtx<'_> {
     ///
     /// Even easier, though, is to use [`redirect_measurement`].
     ///
-    /// Calling `auto_size` will cause the result of this [`measure`] to not be cached.
-    /// This is because `auto_size` is not part of the cache key.
+    /// Calling `auto_length` will cause the result of this [`measure`] to not be cached.
+    /// This is because `auto_length` is not part of the cache key.
     ///
     /// [`measure`]: Widget::measure
     /// [`compute_length`]: Self::compute_length
     /// [`redirect_measurement`]: Self::redirect_measurement
-    pub fn auto_size(&mut self) -> SizeDef {
-        // We're adding a new variable, auto_size, into the measure function,
+    pub fn auto_length(&mut self) -> LenDef {
+        // We're adding a new variable, auto_length, into the measure function,
         // which is not part of the cache key. Hence, we need to not cache.
         self.cache_result = false;
-        self.auto_size
+        self.auto_length
     }
 
     /// Returns the context size of this measurement.
     ///
-    /// This is usually the parent's size, excluding its borders and padding.
+    /// This is usually the container widget's size, excluding its borders and padding.
     ///
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
@@ -667,12 +671,12 @@ impl MeasureCtx<'_> {
     /// This is meant for thin wrapper widgets that want their children measured instead.
     ///
     /// It is a convenience wrapper over [`compute_length`] that automatically configures
-    /// `auto_size` and `context_size` to whatever the parent used. Those could also be
-    /// manually accessed via [`auto_size`] and [`context_size`] if you're so inclined.
+    /// `auto_length` and `context_size` to whatever the outer container used. These could also
+    /// be manually accessed via [`auto_length`] and [`context_size`] if you're so inclined.
     ///
     /// Calling `redirect_measurement` will cause the result of your [`measure`] to not be cached.
     /// The child's measurement might still be cached, depending on what policy the child chooses.
-    /// This is because the redirection introduces new inputs in the form of [`auto_size`]
+    /// This is because the redirection introduces new inputs in the form of [`auto_length`]
     /// and [`context_size`] that are not part of the cache key.
     ///
     /// If present, `cross_length` must be finite, non-negative, and in device pixels.
@@ -684,7 +688,7 @@ impl MeasureCtx<'_> {
     ///
     /// [`measure`]: Widget::measure
     /// [`compute_length`]: Self::compute_length
-    /// [`auto_size`]: Self::auto_size
+    /// [`auto_length`]: Self::auto_length
     /// [`context_size`]: Self::context_size
     pub fn redirect_measurement(
         &mut self,
@@ -692,10 +696,16 @@ impl MeasureCtx<'_> {
         axis: Axis,
         cross_length: Option<f64>,
     ) -> f64 {
-        // We're adding two new variables, auto_size and context_size, into the measure function,
+        // We're adding two new variables, auto_length and context_size, into the measure function,
         // which are not part of the cache key. Hence, we need to not cache.
         self.cache_result = false;
-        self.compute_length(child, self.auto_size, self.context_size, axis, cross_length)
+        self.compute_length(
+            child,
+            self.auto_length,
+            self.context_size,
+            axis,
+            cross_length,
+        )
     }
 }
 
@@ -735,14 +745,14 @@ impl LayoutCtx<'_> {
     /// ultimately they can disregard the result and pass a different size to [`run_layout`].
     /// Read [`layout`] docs for more details about that process.
     ///
-    /// `auto_size` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
-    /// Most widgets should use [`SizeDef::fit`] to ask the widget to fit inside the
+    /// `auto_size` specifies the fallback behavior if the child has a [`Dim::Auto`] dimension.
+    /// Most widgets should use [`SizeDef::fit`] to ask the child to fit inside the
     /// available space. However sometimes a different fallback makes more sense, e.g.
     /// `Grid` uses [`SizeDef::fixed`] to fall back to the exact allocated child area size.
     ///
     /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
-    /// This is usually the parent's size, excluding its borders and padding.
+    /// This is usually the container widget's size, excluding its borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
     /// its viewport size.

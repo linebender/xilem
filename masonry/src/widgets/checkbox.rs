@@ -231,11 +231,16 @@ impl Widget for Checkbox {
             (cross_length - cross_other_length).max(0.)
         });
 
-        let auto_size = SizeDef::req(axis, len_req.reduce(other_length));
+        let auto_length = len_req.reduce(other_length).into();
         let context_size = LayoutSize::maybe(cross, cross_space);
 
-        let label_length =
-            ctx.compute_length(&mut self.label, auto_size, context_size, axis, cross_space);
+        let label_length = ctx.compute_length(
+            &mut self.label,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
+        );
 
         match axis {
             Axis::Horizontal => label_length + other_length,

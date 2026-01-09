@@ -14,7 +14,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{fill, include_screenshot, stroke};
 
@@ -274,13 +274,11 @@ impl Widget for SizedBox {
                     let cross_padding_length = padding.length(cross).dp(scale);
                     (cross_length - cross_border_length - cross_padding_length).max(0.)
                 });
-            let cross_len_def = LenDef::maybe_fixed(cross_space);
 
-            let auto_size = SizeDef::req(axis, len_req.reduce(border_length + padding_length))
-                .maybe(cross, cross_len_def);
+            let auto_length = len_req.reduce(border_length + padding_length).into();
             let context_size = LayoutSize::maybe(cross, cross_space);
 
-            ctx.compute_length(child, auto_size, context_size, axis, cross_space)
+            ctx.compute_length(child, auto_length, context_size, axis, cross_space)
         } else {
             0.
         };

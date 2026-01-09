@@ -102,10 +102,10 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
                 ctx.register_child(child);
             })
             .measure_fn(move |child, ctx, _props, axis, len_req, cross_length| {
-                let auto_size = SizeDef::req(axis, len_req);
+                let auto_length = len_req.into();
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-                ctx.compute_length(child, auto_size, context_size, axis, cross_length)
+                ctx.compute_length(child, auto_length, context_size, axis, cross_length)
             })
             .layout_fn(move |child, ctx, _props, size| {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
@@ -129,13 +129,13 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 }
             })
             .measure_fn(move |children, ctx, _props, axis, len_req, cross_length| {
-                let auto_size = SizeDef::req(axis, len_req);
+                let auto_length = len_req.into();
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
                 let mut length: f64 = 0.;
                 for child in children {
                     let child_length =
-                        ctx.compute_length(child, auto_size, context_size, axis, cross_length);
+                        ctx.compute_length(child, auto_length, context_size, axis, cross_length);
                     length = length.max(child_length);
                 }
 

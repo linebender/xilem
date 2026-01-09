@@ -1,8 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::Axis;
-
+use crate::kurbo::Axis;
 use crate::layout::LenReq;
 
 /// All the inputs that change [`measure`] output.
@@ -29,8 +28,8 @@ impl MeasurementInputs {
     }
 }
 
-// At the time of choosing this capacity,
-// 10 * 48 bytes = 480 bytes for the whole buffer
+/// At the time of choosing this capacity,
+/// 10 * 48 bytes = 480 bytes for the whole buffer.
 const CAPACITY: usize = 10;
 
 /// Contains a mapping of [`MeasurementInputs`] to results.

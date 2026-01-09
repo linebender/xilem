@@ -427,7 +427,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match len_req {
             LenReq::MinContent | LenReq::MaxContent => {
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
-                let auto_size = SizeDef::req(axis, len_req);
+                let auto_length = len_req.into();
 
                 let cross = axis.cross();
                 let cross_space = cross_length.filter(|_| match cross {
@@ -435,7 +435,13 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     Axis::Vertical => self.constrain_vertical,
                 });
 
-                ctx.compute_length(&mut self.child, auto_size, context_size, axis, cross_space)
+                ctx.compute_length(
+                    &mut self.child,
+                    auto_length,
+                    context_size,
+                    axis,
+                    cross_space,
+                )
             }
             LenReq::FitContent(space) => space,
         }

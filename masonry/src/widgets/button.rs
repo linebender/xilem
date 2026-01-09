@@ -224,11 +224,16 @@ impl Widget for Button {
             (cross_length - cross_border_length - cross_padding_length).max(0.)
         });
 
-        let auto_size = SizeDef::req(axis, len_req.reduce(border_length + padding_length));
+        let auto_length = len_req.reduce(border_length + padding_length).into();
         let context_size = LayoutSize::maybe(cross, cross_space);
 
-        let child_length =
-            ctx.compute_length(&mut self.child, auto_size, context_size, axis, cross_space);
+        let child_length = ctx.compute_length(
+            &mut self.child,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
+        );
 
         let length = child_length + border_length + padding_length;
 

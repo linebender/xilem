@@ -9,7 +9,7 @@ use crate::util::Sanitize;
 ///
 /// A length may be missing if it has not been computed yet, i.e. it depends on the child.
 ///
-/// The lengths, if present, are always be finite, non-negative, and in device pixels.
+/// The lengths, if present, are always finite, non-negative, and in device pixels.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct LayoutSize {
     width: Option<f64>,

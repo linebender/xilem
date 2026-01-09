@@ -14,7 +14,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Axis, Line, Point, Rect, Size};
-use crate::layout::{AsUnit, LayoutCalc, LayoutSize, LenDef, LenReq, Length, SizeDef};
+use crate::layout::{AsUnit, LayoutCalc, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
@@ -488,6 +488,8 @@ where
             }
             return space;
         }
+        // Both children can share the same auto length, because it'll be either Min or MaxContent.
+        let auto_length = len_req.into();
 
         let cross = axis.cross();
         let (child1_cross_space, child2_cross_space) = cross_length
@@ -503,25 +505,19 @@ where
                 }
             })
             .unzip();
-        let child1_cross_len_def = LenDef::maybe_fixed(child1_cross_space);
-        let child2_cross_len_def = LenDef::maybe_fixed(child2_cross_space);
-
-        let child1_auto_size = SizeDef::req(axis, len_req).maybe(cross, child1_cross_len_def);
         let child1_context_size = LayoutSize::maybe(cross, child1_cross_space);
-
-        let child2_auto_size = SizeDef::req(axis, len_req).maybe(cross, child2_cross_len_def);
         let child2_context_size = LayoutSize::maybe(cross, child2_cross_space);
 
         let child1_length = ctx.compute_length(
             &mut self.child1,
-            child1_auto_size,
+            auto_length,
             child1_context_size,
             axis,
             child1_cross_space,
         );
         let child2_length = ctx.compute_length(
             &mut self.child2,
-            child2_auto_size,
+            auto_length,
             child2_context_size,
             axis,
             child2_cross_space,

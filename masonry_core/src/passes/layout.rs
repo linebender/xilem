@@ -99,7 +99,7 @@ fn resolve_len_def(
 ///
 /// The returned length will be finite, non-negative, and in device pixels.
 ///
-/// `auto_size` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
+/// `auto_length` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
 ///
 /// `context_size` must be in device pixels.
 ///
@@ -107,6 +107,8 @@ fn resolve_len_def(
 /// Invalid `cross_length` value is fall back to `None`.
 ///
 /// # Panics
+///
+/// Panics if `auto_length` has a non-finite or negative value and debug assertions are enabled.
 ///
 /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
 ///
@@ -122,7 +124,7 @@ pub(crate) fn resolve_length(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     node: ArenaMut<'_, WidgetArenaNode>,
-    auto_size: SizeDef,
+    auto_length: LenDef,
     context_size: LayoutSize,
     axis: Axis,
     cross_length: Option<f64>,
@@ -130,6 +132,12 @@ pub(crate) fn resolve_length(
     // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
+
+    // Sanitize inputs early & always, to quickly catch bugs,
+    // because not every code path will use these values.
+    let auto_length = auto_length.sanitize("auto_length");
+    let cross_length = cross_length.sanitize("cross_length");
+    // LayoutSize encapsulates sanitization already.
 
     // Get the dimensions
     let widget = &mut *node.item.widget;
@@ -143,7 +151,7 @@ pub(crate) fn resolve_length(
     let len_def = dims
         .dim(axis)
         .resolve(scale, context_size.length(axis))
-        .unwrap_or(auto_size.dim(axis))
+        .unwrap_or(auto_length)
         .sanitize("len_def");
 
     // Return immediately if we already have a fixed length
@@ -158,20 +166,17 @@ pub(crate) fn resolve_length(
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
         default_properties,
-        auto_size,
+        auto_length,
         context_size,
         cache_result: true,
     };
 
     // Resolve the cross dimension in case it's fixed
-    let cross_length = cross_length.sanitize("cross_length").or_else(|| {
+    let cross_length = cross_length.or_else(|| {
         let cross = axis.cross();
-        let cross_len_def = dims
-            .dim(cross)
+        dims.dim(cross)
             .resolve(scale, context_size.length(cross))
-            .unwrap_or(auto_size.dim(cross))
-            .sanitize("cross_len_def");
-        cross_len_def.fixed()
+            .and_then(|cross_len_def| cross_len_def.sanitize("cross_len_def").fixed())
     });
 
     // Measure
@@ -208,6 +213,8 @@ pub(crate) fn resolve_size(
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
 
+    // Input sanitization is not required, because SizeDef and LayoutSize encapsulate it.
+
     // Currently we only support the common horizontal-tb writing mode,
     // so the assignments are hardcoded here, but the rest of the function adapts.
     let (inline, block) = (Axis::Horizontal, Axis::Vertical);
@@ -221,15 +228,17 @@ pub(crate) fn resolve_size(
     let dims = props.get::<Dimensions>();
 
     // Resolve the dimensions
+    let inline_auto = auto_size.dim(inline);
     let inline_def = dims
         .dim(inline)
         .resolve(scale, context_size.length(inline))
-        .unwrap_or(auto_size.dim(inline))
+        .unwrap_or(inline_auto)
         .sanitize("inline_def");
+    let block_auto = auto_size.dim(block);
     let block_def = dims
         .dim(block)
         .resolve(scale, context_size.length(block))
-        .unwrap_or(auto_size.dim(block))
+        .unwrap_or(block_auto)
         .sanitize("block_def");
 
     // Return immediately if we already have a fixed size
@@ -251,7 +260,7 @@ pub(crate) fn resolve_size(
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
         default_properties,
-        auto_size,
+        auto_length: inline_auto,
         context_size,
         cache_result: true,
     };
@@ -260,6 +269,9 @@ pub(crate) fn resolve_size(
         resolve_len_def(widget, &mut ctx, &props, inline, inline_def, block_length)
             .sanitize("measured inline length")
     });
+
+    // Update the auto length
+    ctx.auto_length = block_auto;
 
     // Even if the inline measurement couldn't cache, the block one might be able to.
     ctx.cache_result = true;
