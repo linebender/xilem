@@ -15,7 +15,7 @@ pub use masonry::properties::ObjectFit;
 
 /// Displays the bitmap `image`.
 ///
-/// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
+/// By default, the Image will be scaled to fully fit within the container ([`ObjectFit::Contain`]).
 /// To configure this, call [`fit`](Image::fit) on the returned value.
 ///
 /// Corresponds to the [`Image`](widgets::Image) widget.
