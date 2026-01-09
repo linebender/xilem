@@ -187,6 +187,20 @@ It's the one in which almost all content (buttons, texts, images) will be drawn.
 Other layers can represent tooltips, menus, dialogs, etc.
 They are created with a pre-set position and are drawn on top of the base layer.
 
+### Adding a layer
+
+<!-- TODO - Flesh this out -->
+
+Most context methods have a `create_layer(layer_type, fallback_widget, pos)` method.
+
+`layer_type` and `fallback_widget` are two redundant representations of the same layer:
+
+- `layer_type` represents the layer's "semantic" content, as an enum with variants for common layer types.
+- `fallback_widget` represents the layer's "visual" content, as a widget which should be drawn at the root of the new layer.
+
+These two values are sent to the Masonry driver running the app; if the driver has built-in behavior for the given `layer_type`, this behavior will be used.
+Otherwise, the driver will add a new layer to the current [`RenderRoot`] with `fallback_widget` as its root.
+
 
 ## Safety rails
 
