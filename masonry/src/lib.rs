@@ -208,6 +208,7 @@ pub mod doc;
 #[cfg(test)]
 mod tests;
 
+pub mod layers;
 pub mod properties;
 pub mod theme;
 pub mod widgets;
