@@ -36,6 +36,13 @@ macro_rules! debug_panic {
 pub use crate::debug_panic;
 
 /// Provides sanitization of values.
+///
+/// This is a generic trait that doesn't specify what sanitization exactly means,
+/// as that will be implementations specific per type.
+///
+/// Right now it is also implemented for `f64` and `Option<f64>` in a way
+/// where it forbids non-finite and negative values. This is immediately useful for
+/// Masonry itself but is likely to go away as we migrate our float usage to newtypes.
 pub trait Sanitize {
     /// Returns the sanitized value.
     ///
