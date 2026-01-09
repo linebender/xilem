@@ -971,7 +971,9 @@ impl Widget for Flex {
              child_main_length: f64,
              alignment: &Option<CrossAxisAlignment>| {
                 let cross_auto = match alignment.unwrap_or(self.cross_alignment) {
-                    CrossAxisAlignment::Fill => LenDef::Fixed(cross_space),
+                    // Cross stretch is merely an auto fallback, not an immediate choice.
+                    // That means that an explicit child length will override it, matching web.
+                    CrossAxisAlignment::Stretch => LenDef::Fixed(cross_space),
                     _ => LenDef::FitContent(cross_space),
                 };
 
@@ -990,25 +992,15 @@ impl Widget for Flex {
             };
 
         // Helper function to lay out children
-        let mut lay_out_child =
-            |ctx: &mut LayoutCtx<'_>,
-             child: &mut WidgetPod<dyn Widget + 'static>,
-             mut child_size: Size,
-             alignment: &Option<CrossAxisAlignment>| {
-                // If requested, we'll force the child to fill the cross axis no matter what.
-                if let CrossAxisAlignment::Fill = alignment.unwrap_or(self.cross_alignment) {
-                    let cross_length = child_size.get_coord(cross);
-                    if cross_length < cross_space {
-                        child_size.set_coord(cross, cross_space);
-                    }
-                }
+        let mut lay_out_child = |ctx: &mut LayoutCtx<'_>,
+                                 child: &mut WidgetPod<dyn Widget + 'static>,
+                                 child_size: Size| {
+            ctx.run_layout(child, child_size);
 
-                ctx.run_layout(child, child_size);
-
-                let baseline = ctx.child_baseline_offset(child);
-                let ascent = child_size.height - baseline;
-                max_ascent = max_ascent.max(ascent);
-            };
+            let baseline = ctx.child_baseline_offset(child);
+            let ascent = child_size.height - baseline;
+            max_ascent = max_ascent.max(ascent);
+        };
 
         // Sum flex factors, resolve bases, subtract bases from main space,
         // and lay out inflexible widgets.
@@ -1046,7 +1038,7 @@ impl Widget for Flex {
                         let child_size =
                             compute_child_size(ctx, widget, child_main_length, alignment);
 
-                        lay_out_child(ctx, widget, child_size, alignment);
+                        lay_out_child(ctx, widget, child_size);
                     } else {
                         flex_sum += *flex;
                     }
@@ -1093,7 +1085,7 @@ impl Widget for Flex {
                     let child_main_length = *basis_resolved + *flex * flex_fraction;
                     let child_size = compute_child_size(ctx, widget, child_main_length, alignment);
 
-                    lay_out_child(ctx, widget, child_size, alignment);
+                    lay_out_child(ctx, widget, child_size);
 
                     main_space -= child_main_length - *basis_resolved;
                 }
@@ -1142,7 +1134,7 @@ impl Widget for Flex {
                         }
                         _ => {
                             let cross_unused = cross_space - child_size.get_coord(cross);
-                            alignment.align(cross_unused)
+                            alignment.offset(cross_unused)
                         }
                     };
 
@@ -1464,12 +1456,12 @@ mod tests {
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_baseline");
 
-        // TODO: Fill with text doesn't make sense, it's not visible,
+        // TODO: Stretch with text doesn't make sense, it's not visible,
         //       unless we paint borders or background for the Label widget.
         harness.edit_root_widget(|mut flex| {
-            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Stretch);
         });
-        assert_render_snapshot!(harness, "flex_row_cross_axis_fill");
+        assert_render_snapshot!(harness, "flex_row_cross_axis_stretch");
     }
 
     #[test]
@@ -1557,12 +1549,12 @@ mod tests {
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_baseline");
 
-        // TODO: Fill with text doesn't make sense, it's not visible,
+        // TODO: Stretch with text doesn't make sense, it's not visible,
         //       unless we paint borders or background for the Label widget.
         harness.edit_root_widget(|mut flex| {
-            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Stretch);
         });
-        assert_render_snapshot!(harness, "flex_col_cross_axis_fill");
+        assert_render_snapshot!(harness, "flex_col_cross_axis_stretch");
     }
 
     #[test]
