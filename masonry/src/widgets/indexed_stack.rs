@@ -261,12 +261,12 @@ impl Widget for IndexedStack {
                 (cross_length - cross_border_length - cross_padding_length).max(0.)
             });
 
-            let auto_size = SizeDef::req(axis, len_req.reduce(border_length + padding_length));
+            let auto_length = len_req.reduce(border_length + padding_length).into();
             let context_size = LayoutSize::maybe(cross, cross_space);
 
             ctx.compute_length(
                 &mut self.children[self.active_child],
-                auto_size,
+                auto_length,
                 context_size,
                 axis,
                 cross_space,

@@ -203,10 +203,10 @@ fn pixel_snapping() {
     let pos = Point::new(5.1, 5.3);
     let parent = ModularWidget::new_parent(child)
         .measure_fn(|child, ctx, _props, axis, len_req, cross_length| {
-            let auto_size = SizeDef::req(axis, len_req);
+            let auto_length = len_req.into();
             let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-            ctx.compute_length(child, auto_size, context_size, axis, cross_length)
+            ctx.compute_length(child, auto_length, context_size, axis, cross_length)
         })
         .layout_fn(move |child, ctx, _, size| {
             let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());

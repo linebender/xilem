@@ -6,7 +6,7 @@ use crate::layout::{LenDef, Length};
 /// Specifies how a widget dimension's length is derived.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum Dim {
-    /// Automatically determine a reasonable length with a strategy chosen by the parent widget.
+    /// Automatically determine a reasonable length with a strategy chosen by the container widget.
     ///
     /// This may result in a [`measure`] invocation, which can be slow.
     ///
@@ -21,12 +21,12 @@ pub enum Dim {
     ///
     /// For example, `Ratio(0.5)` will result in 50% of the context length.
     ///
-    /// Context length is usually the parent's length excluding its borders and padding.
+    /// Context length is usually the container widget's length excluding its borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area length,
     /// i.e. the sum of cell lengths that the child occupies, and `Portal` which will provide
     /// its viewport length.
     ///
-    /// If there is no context length, e.g. the parent hasn't calculated its dynamic length yet,
+    /// If there is no context length, e.g. the container hasn't calculated its dynamic length yet,
     /// then `Ratio` will fall back to [`Auto`].
     ///
     /// The ratio value must be finite and non-negative.
@@ -53,7 +53,7 @@ pub enum Dim {
     MaxContent,
     /// The widget should attempt to fit into the context length.
     ///
-    /// If there is no context length, e.g. the parent hasn't calculated its dynamic length yet,
+    /// If there is no context length, e.g. the container hasn't calculated its dynamic length yet,
     /// then `FitContent` will fall back to [`Auto`].
     ///
     /// This may result in a [`measure`] invocation, which can be slow.

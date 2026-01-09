@@ -15,7 +15,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Affine, Axis, Line, Size, Stroke};
-use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
+use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::Sanitize;
@@ -761,7 +761,7 @@ impl Widget for Flex {
         // Resolve bases
         if !skip_resolving_bases {
             // Basis is always resolved with a MaxContent fallback
-            let auto_size = SizeDef::MAX;
+            let main_auto = LenDef::MaxContent;
 
             for child in &mut self.children {
                 match child {
@@ -775,7 +775,7 @@ impl Widget for Flex {
                         FlexBasis::Auto => {
                             *basis_resolved = ctx.compute_length(
                                 widget,
-                                auto_size,
+                                main_auto,
                                 context_size,
                                 main,
                                 cross_space,
@@ -804,7 +804,7 @@ impl Widget for Flex {
 
             // Find the largest desired flex fraction
             let mut flex_fraction: f64 = 0.;
-            let auto_size = SizeDef::req(main, len_req);
+            let main_auto = len_req.into();
 
             for child in &mut self.children {
                 let desired_flex_fraction = match child {
@@ -824,7 +824,7 @@ impl Widget for Flex {
                                 FlexBasis::Zero => {
                                     let child_length = ctx.compute_length(
                                         widget,
-                                        auto_size,
+                                        main_auto,
                                         context_size,
                                         main,
                                         cross_space,
@@ -916,14 +916,19 @@ impl Widget for Flex {
                         basis_resolved,
                         ..
                     } => {
-                        let main_offer = flex_fraction
+                        let child_main_length = flex_fraction
                             .map(|flex_fraction| *basis_resolved + *flex * flex_fraction);
-                        let auto_size = SizeDef::req(cross, len_req);
+                        let cross_auto = len_req.into();
 
-                        let child_length =
-                            ctx.compute_length(widget, auto_size, context_size, cross, main_offer);
+                        let child_cross_length = ctx.compute_length(
+                            widget,
+                            cross_auto,
+                            context_size,
+                            cross,
+                            child_main_length,
+                        );
 
-                        length = length.max(child_length);
+                        length = length.max(child_cross_length);
                     }
                     // Spacers don't contribute to cross length
                     Child::Spacer { .. } => (),
@@ -959,27 +964,20 @@ impl Widget for Flex {
         let mut flex_sum = 0.;
         let mut max_ascent: f64 = 0.;
 
-        // Helper function to generate size fallbacks
-        let new_auto_size = |main_len_def: LenDef, alignment: &Option<CrossAxisAlignment>| {
-            let auto_size = SizeDef::one(main, main_len_def);
-            if let CrossAxisAlignment::Fill = alignment.unwrap_or(self.cross_alignment) {
-                auto_size.with(cross, LenDef::Fixed(cross_space))
-            } else {
-                auto_size.with(cross, LenDef::FitContent(cross_space))
-            }
-        };
-
         // Helper function to calculate child size when main length is decided
         let compute_child_size =
             |ctx: &mut LayoutCtx<'_>,
              child: &mut WidgetPod<dyn Widget + 'static>,
              child_main_length: f64,
              alignment: &Option<CrossAxisAlignment>| {
-                let auto_size = new_auto_size(LenDef::Fixed(child_main_length), alignment);
+                let cross_auto = match alignment.unwrap_or(self.cross_alignment) {
+                    CrossAxisAlignment::Fill => LenDef::Fixed(cross_space),
+                    _ => LenDef::FitContent(cross_space),
+                };
 
                 let child_cross_length = ctx.compute_length(
                     child,
-                    auto_size,
+                    cross_auto,
                     space.into(),
                     cross,
                     Some(child_main_length),
@@ -1026,10 +1024,10 @@ impl Widget for Flex {
                     match effective_basis(*basis, *flex) {
                         FlexBasis::Auto => {
                             // Basis is always resolved with a MaxContent fallback
-                            let auto_size = new_auto_size(LenDef::MaxContent, alignment);
+                            let main_auto = LenDef::MaxContent;
                             *basis_resolved = ctx.compute_length(
                                 widget,
-                                auto_size,
+                                main_auto,
                                 space.into(),
                                 main,
                                 Some(cross_space),

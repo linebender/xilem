@@ -13,7 +13,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
-use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -356,14 +356,13 @@ impl Widget for Grid {
                     // which can happen if total space can't fit all cells and gaps.
                     length.max(0.)
                 });
-                let cross_len_def = LenDef::maybe_fixed(cross_area_length);
 
-                let auto_size = SizeDef::req(axis, len_req).maybe(cross, cross_len_def);
+                let auto_length = len_req.into();
                 let context_size = LayoutSize::maybe(cross, cross_area_length);
 
                 let child_length = ctx.compute_length(
                     &mut child.widget,
-                    auto_size,
+                    auto_length,
                     context_size,
                     axis,
                     cross_area_length,

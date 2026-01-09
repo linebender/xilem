@@ -53,13 +53,6 @@ impl From<LenReq> for LenDef {
 }
 
 impl LenDef {
-    /// Returns [`LenDef::Fixed`] with the given `value` or `None`.
-    ///
-    /// The value must be finite, non-negative, and in device pixels.
-    pub fn maybe_fixed(value: Option<f64>) -> Option<Self> {
-        value.map(Self::Fixed)
-    }
-
     /// Returns the specific fixed length if it is present.
     ///
     /// The length will be in device pixels.

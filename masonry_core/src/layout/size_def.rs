@@ -3,16 +3,16 @@
 
 use vello::kurbo::{Axis, Size};
 
-use crate::{
-    layout::{LenDef, LenReq},
-    util::Sanitize,
-};
+use crate::{layout::LenDef, util::Sanitize};
 
 /// Widget size definition.
 ///
 /// This is how a parent specifies [`Dim::Auto`] behavior for its children.
 ///
+/// The inner [`LenDef`] values will already be [sanitized] and are safe to read.
+///
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
+/// [sanitized]: Sanitize
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct SizeDef {
     width: LenDef,
@@ -82,30 +82,6 @@ impl SizeDef {
         Self::new(LenDef::Fixed(size.width), LenDef::Fixed(size.height))
     }
 
-    /// Creates a new [`SizeDef`] with `axis` set to a value based on [`LenReq`].
-    ///
-    /// The other axis will be [`LenDef::MaxContent`].
-    ///
-    /// [`LenReq`] values must be finite, non-negative, and in device pixels.
-    /// Invalid [`LenReq`] will fall back to [`LenDef::MaxContent`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if `len_req` contains non-finite or negative values and debug assertions are enabled.
-    pub fn req(axis: Axis, len_req: LenReq) -> Self {
-        let len_req = len_req.sanitize("SizeDef::one len_req");
-        match axis {
-            Axis::Horizontal => Self {
-                width: len_req.into(),
-                height: LenDef::MaxContent,
-            },
-            Axis::Vertical => Self {
-                width: LenDef::MaxContent,
-                height: len_req.into(),
-            },
-        }
-    }
-
     /// Creates a new [`SizeDef`] with `axis` set to [`LenDef`].
     ///
     /// The other axis will be [`LenDef::MaxContent`].
@@ -145,24 +121,6 @@ impl SizeDef {
         }
     }
 
-    /// Returns the [`SizeDef`] with `axis` potentially set to [`LenDef`].
-    ///
-    /// If `len_def` is `None` then no modifications are made.
-    ///
-    /// [`LenDef`] values must be finite, non-negative, and in device pixels.
-    /// Invalid [`LenDef`] values will fall back to [`LenDef::MaxContent`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if `len_def` contains non-finite or negative values and debug assertions are enabled.
-    pub fn maybe(self, axis: Axis, len_def: Option<LenDef>) -> Self {
-        if let Some(len_def) = len_def {
-            self.with(axis, len_def)
-        } else {
-            self
-        }
-    }
-
     /// Returns the [`SizeDef`] with the width set to [`LenDef`].
     ///
     /// [`LenDef`] values must be finite, non-negative, and in device pixels.
@@ -190,6 +148,10 @@ impl SizeDef {
     }
 
     /// Returns the [`LenDef`] of the given `axis`.
+    ///
+    /// The result will already have been [sanitized].
+    ///
+    /// [sanitized]: Sanitize
     pub const fn dim(&self, axis: Axis) -> LenDef {
         match axis {
             Axis::Horizontal => self.width,

@@ -107,12 +107,12 @@ impl Widget for VerticalStack {
             LenReq::FitContent(space) => (LenReq::MinContent, space),
         };
 
-        let auto_size = SizeDef::req(axis, len_req);
+        let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
         
         let mut length: f64 = 0.;
         for child in &mut self.children {
-            let child_length = ctx.compute_length(child, auto_size, context_size, axis, cross_length);
+            let child_length = ctx.compute_length(child, auto_length, context_size, axis, cross_length);
             match axis {
                 Axis::Horizontal => length = length.max(child_length),
                 Axis::Vertical => length += child_length,

@@ -217,14 +217,14 @@ impl Widget for ZStack {
         len_req: LenReq,
         cross_length: Option<f64>,
     ) -> f64 {
-        let auto_size = SizeDef::req(axis, len_req);
+        let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
         let mut length: f64 = 0.;
         for child in &mut self.children {
             let child_length = ctx.compute_length(
                 &mut child.widget,
-                auto_size,
+                auto_length,
                 context_size,
                 axis,
                 cross_length,
