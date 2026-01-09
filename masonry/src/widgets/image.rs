@@ -50,7 +50,8 @@ pub struct Image {
 impl Image {
     /// Creates an image drawing widget from an image buffer.
     ///
-    /// By default, the Image will scale to fit its container ([`ObjectFit::Fill`]).
+    /// By default, the image will be scaled to fully fit within the container.
+    /// ([`ObjectFit::Contain`]).
     #[inline]
     pub fn new(image_data: impl Into<ImageBrush>) -> Self {
         Self {
@@ -169,7 +170,7 @@ impl Widget for Image {
                 .map(|cl| (cl * ar).min(space))
                 .unwrap_or(space_or_intrinsic),
             // Always use all available space.
-            ObjectFit::Cover | ObjectFit::Fill => space_or_intrinsic,
+            ObjectFit::Cover | ObjectFit::Stretch => space_or_intrinsic,
             // Always use all available vertical space.
             // Greedily take all horizontal space unless cross is known.
             ObjectFit::FitHeight => match axis {
@@ -372,12 +373,6 @@ mod tests {
         });
         assert_render_snapshot!(harness, "image_layout_cover");
 
-        // Fill.
-        harness.edit_root_widget(|mut image| {
-            image.insert_prop(ObjectFit::Fill);
-        });
-        assert_render_snapshot!(harness, "image_layout_fill");
-
         // FitHeight.
         harness.edit_root_widget(|mut image| {
             image.insert_prop(ObjectFit::FitHeight);
@@ -401,5 +396,11 @@ mod tests {
             image.insert_prop(ObjectFit::ScaleDown);
         });
         assert_render_snapshot!(harness, "image_layout_scaledown");
+
+        // Stretch.
+        harness.edit_root_widget(|mut image| {
+            image.insert_prop(ObjectFit::Stretch);
+        });
+        assert_render_snapshot!(harness, "image_layout_stretch");
     }
 }

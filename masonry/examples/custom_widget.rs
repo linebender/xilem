@@ -172,7 +172,7 @@ impl Widget for CustomWidget {
             width: 256,
             height: 256,
         });
-        let transform = ObjectFit::Fill.affine(ctx.size(), Size::new(256., 256.));
+        let transform = ObjectFit::Stretch.affine(ctx.size(), Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
 
