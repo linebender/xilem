@@ -1031,7 +1031,7 @@ mod tests {
                 .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
                 .with_fixed(Label::new("bar").with_auto_id()),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1080,7 +1080,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1123,7 +1123,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1181,7 +1181,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
         let window_size = Size::new(200.0, 150.0);
@@ -1224,7 +1224,7 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
         );
 
         let window_size = Size::new(200.0, 150.0);

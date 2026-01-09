@@ -304,7 +304,7 @@ impl<W: Widget> Widget for Recorder<W> {
         NewWidget::new_with_id(self, id)
     }
 
-    fn with_props(self, props: Properties) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
     where
         Self: Sized,
     {

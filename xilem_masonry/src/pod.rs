@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{FromDynWidget, NewWidget, Widget, WidgetMut};
+use masonry::core::{FromDynWidget, NewWidget, Properties, Widget, WidgetMut};
 
 use crate::ViewCtx;
 use crate::core::{Mut, SuperElement, ViewElement};
@@ -31,6 +31,13 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     pub fn new(widget: W) -> Self {
         Self {
             new_widget: NewWidget::new(widget),
+        }
+    }
+
+    /// Creates a new [`Pod`] with the given `widget` and `props`.
+    pub fn new_with_props(widget: W, props: impl Into<Properties>) -> Self {
+        Self {
+            new_widget: NewWidget::new_with_props(widget, props),
         }
     }
 }

@@ -111,6 +111,12 @@ impl Properties {
     }
 }
 
+impl<P: Property> From<P> for Properties {
+    fn from(prop: P) -> Self {
+        Self::one(prop)
+    }
+}
+
 macro_rules! impl_props_from_tuple {
     (
         $(

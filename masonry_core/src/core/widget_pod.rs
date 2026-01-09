@@ -106,9 +106,9 @@ impl<W: Widget> NewWidget<W> {
 
     // TODO - Replace with builder methods?
     /// Creates a new widget with custom [`Properties`].
-    pub fn new_with_props(inner: W, props: Properties) -> Self {
+    pub fn new_with_props(inner: W, props: impl Into<Properties>) -> Self {
         Self {
-            properties: props,
+            properties: props.into(),
             ..Self::new(inner)
         }
     }
@@ -122,7 +122,12 @@ impl<W: Widget> NewWidget<W> {
     }
 
     /// Creates a new widget with custom [`WidgetOptions`] and custom [`Properties`].
-    pub fn new_with(inner: W, id: WidgetId, options: WidgetOptions, props: Properties) -> Self {
+    pub fn new_with(
+        inner: W,
+        id: WidgetId,
+        options: WidgetOptions,
+        props: impl Into<Properties>,
+    ) -> Self {
         Self {
             widget: Box::new(inner),
             id,
@@ -130,7 +135,7 @@ impl<W: Widget> NewWidget<W> {
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
             options,
-            properties: props,
+            properties: props.into(),
             tag: None,
         }
     }
