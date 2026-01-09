@@ -7,6 +7,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
+use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::keyboard::{Key, KeyState};
@@ -203,7 +204,7 @@ pub struct MasonryState<'a> {
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
     windows: HashMap<HandleId, Window>,
 
-    clipboard_cx: ClipboardContext,
+    clipboard_cx: Box<dyn ClipboardProvider>,
 
     // Is `Some` if the most recently displayed frame was an animation frame.
     last_anim: Option<Instant>,
@@ -355,6 +356,16 @@ impl MasonryState<'_> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
 
+        let clipboard_cx =
+            ClipboardContext::new().map(|cx| -> Box<dyn ClipboardProvider> { Box::new(cx) });
+        let clipboard_cx = if cfg!(target_os = "linux") {
+            // If we're running on Linux, we might fail to get the clipboard context because
+            // we're using Wayland, so we fall back to NopClipboardContext to be safe.
+            clipboard_cx.unwrap_or_else(|_| Box::new(NopClipboardContext))
+        } else {
+            clipboard_cx.unwrap()
+        };
+
         MasonryState {
             is_suspended: true,
             render_cx,
@@ -369,7 +380,7 @@ impl MasonryState<'_> {
             windows: HashMap::new(),
             surfaces: HashMap::new(),
 
-            clipboard_cx: ClipboardContext::new().unwrap(),
+            clipboard_cx,
 
             signal_sender,
             default_properties: Arc::new(default_properties),
