@@ -27,11 +27,6 @@ pub enum ObjectFit {
     /// If the content's aspect ratio does not match the aspect ratio of its container,
     /// then the content will overflow the container.
     Cover,
-    /// The content is stretched to fully fill the container.
-    ///
-    /// If the content's aspect ratio does not match the aspect ratio of its container,
-    /// then the content will be stretched to fit exactly, changing its aspect ratio.
-    Fill,
     /// The content is scaled to fully fill the container's height.
     ///
     /// The content's aspect ratio is maintained.
@@ -54,6 +49,11 @@ pub enum ObjectFit {
     /// [`None`]: ObjectFit::None
     /// [`Contain`]: ObjectFit::Contain
     ScaleDown,
+    /// The content is stretched to fully fill the container.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will be stretched to fit exactly, changing its aspect ratio.
+    Stretch,
 }
 
 impl Property for ObjectFit {
@@ -114,14 +114,14 @@ impl ObjectFit {
                 let scale = raw_scalex.max(raw_scaley);
                 (scale, scale)
             }
-            Self::Fill => (raw_scalex, raw_scaley),
             Self::FitHeight => (raw_scaley, raw_scaley),
             Self::FitWidth => (raw_scalex, raw_scalex),
+            Self::None => (1.0, 1.0),
             Self::ScaleDown => {
                 let scale = raw_scalex.min(raw_scaley).min(1.0);
                 (scale, scale)
             }
-            Self::None => (1.0, 1.0),
+            Self::Stretch => (raw_scalex, raw_scaley),
         };
 
         let origin_x = (container.width - (content.width * scalex)) * 0.5;
