@@ -4,7 +4,7 @@
 //! A canvas widget.
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds};
+use masonry_core::core::{ArcStr, ChildrenIds, MutateCtx};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -53,9 +53,12 @@ impl Canvas {
 // --- MARK: WIDGETMUT
 impl Canvas {
     /// Updates the canvas scene.
-    pub fn update_scene(this: &mut WidgetMut<'_, Self>, f: impl FnOnce(&mut Scene, Size)) {
+    pub fn update_scene(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(&mut MutateCtx<'_>, &mut Scene, Size),
+    ) {
         this.widget.scene.reset();
-        f(&mut this.widget.scene, this.widget.size);
+        f(&mut this.ctx, &mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
 
@@ -139,8 +142,11 @@ impl Widget for Canvas {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{DefaultProperties, Properties};
-    use masonry_testing::assert_render_snapshot;
+    use masonry_core::core::{DefaultProperties, Properties, render_text};
+    use masonry_testing::{TestHarnessParams, assert_render_snapshot};
+    use parley::{
+        Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
+    };
     use vello::kurbo::{Affine, BezPath, Stroke};
     use vello::peniko::{Color, Fill};
 
@@ -158,7 +164,7 @@ mod tests {
         );
 
         harness.edit_root_widget(|mut canvas| {
-            Canvas::update_scene(&mut canvas, |scene, size| {
+            Canvas::update_scene(&mut canvas, |_ctx, scene, size| {
                 let scale = Affine::scale_non_uniform(size.width, size.height);
                 let mut path = BezPath::new();
                 path.move_to((0.1, 0.1));
@@ -184,5 +190,46 @@ mod tests {
         });
 
         assert_render_snapshot!(harness, "canvas_simple");
+    }
+
+    #[test]
+    fn text_canvas() {
+        let canvas =
+            Canvas::default().with_alt_text("The text 'Canvas' with a bright mint green fill");
+
+        let mut harness_params = TestHarnessParams::DEFAULT;
+        harness_params.window_size = Size::new(200., 200.);
+        let mut harness = TestHarness::create_with(
+            DefaultProperties::default(),
+            canvas.with_props(Properties::default()),
+            harness_params,
+        );
+
+        harness.edit_root_widget(|mut canvas| {
+            Canvas::update_scene(&mut canvas, |ctx, scene, size| {
+                let (fcx, lcx) = ctx.text_contexts();
+                let mut text_layout_builder = lcx.ranged_builder(fcx, "Canvas", 1., true);
+                text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
+                    FontFamily::Generic(GenericFamily::Serif),
+                )));
+                text_layout_builder.push_default(StyleProperty::FontSize(size.height as f32));
+                let mut text_layout = text_layout_builder.build("Canvas");
+                text_layout.break_all_lines(None);
+                text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+                let scale = Affine::scale_non_uniform(
+                    size.width / text_layout.width() as f64,
+                    size.height / text_layout.height() as f64,
+                );
+                render_text(
+                    scene,
+                    scale,
+                    &text_layout,
+                    &[Color::from_rgb8(100, 240, 150).into()],
+                    true,
+                );
+            });
+        });
+
+        assert_render_snapshot!(harness, "canvas_text");
     }
 }
