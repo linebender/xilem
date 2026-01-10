@@ -62,8 +62,7 @@ fn base_status<State: ViewArgument>(
             }),
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
                 .text_alignment(TextAlign::End),
-        ))
-        .must_fill_major_axis(true),
+        )),
         prose(status_html_to_plaintext(status.content.as_str())).flex(CrossAxisAlignment::Start),
         status
             .media_attachments
@@ -80,7 +79,6 @@ fn base_status<State: ViewArgument>(
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))
-        // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
         .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
         .flex(CrossAxisAlignment::Start),
     )

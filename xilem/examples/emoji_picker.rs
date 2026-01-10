@@ -3,13 +3,13 @@
 
 //! A simple emoji picker.
 
-use masonry::layout::AsUnit;
+use masonry::layout::{AsUnit, Dim};
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, GridExt, button, flex_col, flex_row, grid, label, prose, sized_box,
-    text_button,
+    FlexExt, FlexSpacer, GridExt, MainAxisAlignment, button, flex_col, flex_row, grid, label,
+    prose, sized_box, text_button,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
@@ -28,7 +28,8 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination
             text_button("🔍+", |data: &mut EmojiPagination| {
                 data.size = (data.size - 1).max(2);
             }),
-        )),
+        ))
+        .main_axis_alignment(MainAxisAlignment::Center),
         picker(data).flex(1.0),
         map_state(
             paginate(
@@ -42,7 +43,6 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
         FlexSpacer::Fixed(10.px()),
     ))
-    .must_fill_major_axis(true)
 }
 
 fn picker(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
@@ -64,7 +64,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> 
                         data.last_selected = Some(idx);
                     },
                 ))
-                .expand_width(),
+                .width(Dim::Stretch),
                 sized_box(
                     prose(emoji.name)
                         .text_alignment(TextAlign::Center)
@@ -76,9 +76,8 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> 
                             Color::WHITE
                         }),
                 )
-                .expand_width(),
-            ))
-            .must_fill_major_axis(true);
+                .width(Dim::Stretch),
+            ));
             grid_items.push(view.grid_pos(x.try_into().unwrap(), y.try_into().unwrap()));
         }
     }
@@ -122,6 +121,7 @@ fn paginate(
         )
         .disabled(current_end == max_count),
     ))
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 struct EmojiPagination {

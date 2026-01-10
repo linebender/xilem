@@ -3,6 +3,7 @@
 
 use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
+use masonry::properties::Dimensions;
 use masonry::widgets;
 
 use crate::core::{
@@ -90,10 +91,9 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
-        let widget_pod = ctx.create_pod(
-            widgets::VariableLabel::from_label(label.new_widget)
-                .with_initial_weight(self.target_weight.value()),
-        );
+        let widget = widgets::VariableLabel::from_label(label.new_widget)
+            .with_initial_weight(self.target_weight.value());
+        let widget_pod = Pod::new_with_props(widget, Dimensions::MAX);
         (widget_pod, ())
     }
 

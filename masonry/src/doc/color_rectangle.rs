@@ -9,15 +9,12 @@
 // TODO - Find some way to check that code chunks in docs
 // are up to date with this file.
 
-#![expect(missing_docs, reason = "This is example code")]
-
 use crate as masonry;
 
 // Note: The "// ---" lines separate blocks of code which are included together in
 // a tutorial example. So for example, the first code block in the widget tutorial
 // imports Color and Size, and then successive code blocks import more items.
 
-use masonry::kurbo::Size;
 use masonry::peniko::Color;
 // ---
 use masonry::core::{
@@ -26,10 +23,12 @@ use masonry::core::{
 // ---
 use masonry::core::{Update, UpdateCtx};
 // ---
-use masonry::core::{BoxConstraints, LayoutCtx};
+use masonry::core::{LayoutCtx, MeasureCtx, PropertiesRef};
+use masonry::kurbo::{Axis, Size};
+use masonry::layout::LenReq;
 // ---
 use masonry::accesskit::{Node, Role};
-use masonry::core::{AccessCtx, PaintCtx, PropertiesRef};
+use masonry::core::{AccessCtx, PaintCtx};
 use masonry::kurbo::Affine;
 use masonry::peniko::Fill;
 use masonry::vello::Scene;
@@ -42,17 +41,15 @@ use masonry::core::{ChildrenIds, RegisterCtx};
 use masonry::core::WidgetMut;
 // ---
 use masonry::properties::Background;
-
 // ---
 
 pub struct ColorRectangle {
-    size: Size,
     color: Color,
 }
 
 impl ColorRectangle {
-    pub fn new(size: Size, color: Color) -> Self {
-        Self { size, color }
+    pub fn new(color: Color) -> Self {
+        Self { color }
     }
 }
 
@@ -62,11 +59,6 @@ impl ColorRectangle {
     pub fn set_color(this: &mut WidgetMut<'_, Self>, color: Color) {
         this.widget.color = color;
         this.ctx.request_paint_only();
-    }
-
-    pub fn set_size(this: &mut WidgetMut<'_, Self>, size: Size) {
-        this.widget.size = size;
-        this.ctx.request_layout();
     }
 }
 
@@ -134,14 +126,28 @@ impl Widget for ColorRectangle {
 
     // ---
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        bc.constrain(self.size)
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match len_req {
+            LenReq::MinContent | LenReq::MaxContent => match axis {
+                Axis::Horizontal => 200. * scale,
+                Axis::Vertical => 100. * scale,
+            },
+            LenReq::FitContent(space) => space,
+        }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     // ---
 
@@ -249,9 +255,10 @@ fn set_bg(color_rectangle_mut: WidgetMut<'_, ColorRectangle>) {
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
+    use masonry::layout::AsUnit;
+    use masonry::properties::Dimensions;
     use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
-    use masonry_core::core::NewWidget;
     // ---
     use masonry::testing::assert_render_snapshot;
     // ---
@@ -260,9 +267,9 @@ mod tests {
 
     #[test]
     fn simple_rect() {
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
-        let mut harness = TestHarness::create(default_property_set(), NewWidget::new(widget));
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
 
@@ -275,7 +282,7 @@ mod tests {
 
     #[test]
     fn hovered() {
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
@@ -291,12 +298,12 @@ mod tests {
     #[test]
     fn edit_rect() {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
         harness.edit_root_widget(|mut rect| {
-            ColorRectangle::set_size(&mut rect, Size::new(50.0, 50.0));
+            rect.insert_prop(Dimensions::fixed(50.px(), 50.px()));
             ColorRectangle::set_color(&mut rect, RED);
         });
 
@@ -307,7 +314,7 @@ mod tests {
 
     #[test]
     fn on_click() {
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
+use crate::core::{NewWidget, WidgetTag};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 

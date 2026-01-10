@@ -53,7 +53,7 @@ impl Avatars {
             let height = 50.px();
             if let Some(maybe_image) = this.icons.get(&url) {
                 if let Some(image_) = maybe_image {
-                    return Either::A(sized_box(image(image_.clone())).width(width).height(height));
+                    return Either::A(image(image_.clone()).dims((width, height)));
                 }
             } else if let Some(requester) = this.requester.as_ref() {
                 drop(requester.send(AvatarRequest {
@@ -65,8 +65,7 @@ impl Avatars {
             }
             Either::B(
                 sized_box(spinner().color(css::BLACK))
-                    .width(width)
-                    .height(height)
+                    .dims((width, height))
                     .background_gradient(
                         Gradient::new_linear(
                             // down-right

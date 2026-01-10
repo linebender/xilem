@@ -9,8 +9,6 @@
 // TODO - Find some way to check that code chunks in docs
 // are up to date with this file.
 
-#![expect(missing_docs, reason = "This is example code")]
-
 use crate as masonry;
 
 // Note: The "// ---" lines separate blocks of code which are included together in
@@ -19,8 +17,9 @@ use crate as masonry;
 
 use masonry::core::{Widget, WidgetPod};
 // ---
-use masonry::core::{BoxConstraints, LayoutCtx, PropertiesMut};
-use masonry::kurbo::{Point, Size};
+use masonry::core::{LayoutCtx, MeasureCtx, PropertiesRef};
+use masonry::kurbo::{Axis, Point, Size};
+use masonry::layout::{LayoutSize, LenDef, LenReq, SizeDef};
 // ---
 use masonry::core::ComposeCtx;
 // ---
@@ -32,7 +31,7 @@ use masonry::core::{NewWidget, WidgetMut};
 // ---
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, EventCtx, NoAction, PaintCtx, PointerEvent, PropertiesRef, TextEvent,
+    AccessCtx, AccessEvent, EventCtx, NoAction, PaintCtx, PointerEvent, PropertiesMut, TextEvent,
     Update, UpdateCtx,
 };
 use masonry::vello::Scene;
@@ -87,30 +86,62 @@ impl Widget for VerticalStack {
 
     // ---
 
+    fn measure(
+        &mut self,
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let (len_req, min_result) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
+            LenReq::FitContent(space) => (LenReq::MinContent, space),
+        };
+
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+        
+        let mut length: f64 = 0.;
+        for child in &mut self.children {
+            let child_length = ctx.compute_length(child, auto_length, context_size, axis, cross_length);
+            match axis {
+                Axis::Horizontal => length = length.max(child_length),
+                Axis::Vertical => length += child_length,
+            }
+        }
+
+        if axis == Axis::Vertical {
+            let gap_count = (self.children.len() - 1) as f64;
+            length += gap_count * self.gap;
+        }
+
+        min_result.max(length)
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let total_width = bc.max().width;
-        let total_height = bc.max().height;
-        let total_child_height = total_height - self.gap * (self.children.len() - 1) as f64;
-        let child_height = total_child_height / self.children.len() as f64;
+        _props: &PropertiesRef<'_>,
+        size: Size,
+    ) {
+        let gap_count = (self.children.len() - 1) as f64;
+        let total_child_vertical_space = size.height - self.gap * gap_count;
+        let child_vertical_space = total_child_vertical_space / self.children.len() as f64;
+
+        let width_def = LenDef::FitContent(size.width);
+        let height_def = LenDef::FitContent(child_vertical_space.max(0.));
+        let auto_size = SizeDef::new(width_def, height_def);
+        let context_size = size.into();
 
         let mut y_offset = 0.0;
         for child in &mut self.children {
-            let child_bc =
-                BoxConstraints::new(Size::new(0., 0.), Size::new(total_width, child_height));
-
-            let child_size = ctx.run_layout(child, &child_bc);
+            let child_size = ctx.compute_size(child, auto_size, context_size);
+            ctx.run_layout(child, child_size);
             ctx.place_child(child, Point::new(0.0, y_offset));
 
             y_offset += child_size.height + self.gap;
         }
-
-        let total_height = y_offset - self.gap;
-        Size::new(total_width, total_height)
     }
 
     // ---

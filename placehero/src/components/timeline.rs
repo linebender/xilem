@@ -11,7 +11,9 @@ use xilem::masonry::layout::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{flex_col, prose, sized_box, spinner, virtual_scroll, worker_raw};
+use xilem::view::{
+    MainAxisAlignment, flex_col, flex_row, prose, sized_box, spinner, virtual_scroll, worker_raw,
+};
 use xilem::{TextAlign, WidgetView};
 
 use super::base_status;
@@ -98,7 +100,10 @@ impl Timeline {
                         if timeline.at_end {
                             OneOf3::A(prose("End of timeline.").text_alignment(TextAlign::Center))
                         } else {
-                            OneOf::B(sized_box(spinner()).width(50.px()).height(50.px()))
+                            OneOf::B(
+                                flex_row(spinner().dims(50.px()))
+                                    .main_axis_alignment(MainAxisAlignment::Center),
+                            )
                         }
                     } else {
                         // We would like to cache the status, but this is currently not supported due to `Avatars`
