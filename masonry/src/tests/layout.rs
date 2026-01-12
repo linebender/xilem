@@ -7,7 +7,7 @@ use masonry_testing::{TestWidgetExt, assert_debug_panics};
 use crate::core::Widget;
 use crate::core::{NewWidget, WidgetTag};
 use crate::kurbo::{Insets, Point, Size};
-use crate::layout::{AsUnit, LayoutSize, Length, SizeDef};
+use crate::layout::{AsUnit, Length, SizeDef};
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, Portal, SizedBox, ZStack};
@@ -204,18 +204,11 @@ fn pixel_snapping() {
     let child_tag = WidgetTag::named("child");
     let child = NewWidget::new_with_tag(SizedBox::empty().size(10.3.px(), 10.3.px()), child_tag);
     let pos = Point::new(5.1, 5.3);
-    let parent = ModularWidget::new_parent(child)
-        .measure_fn(|child, ctx, _props, axis, len_req, cross_length| {
-            let auto_length = len_req.into();
-            let context_size = LayoutSize::maybe(axis.cross(), cross_length);
-
-            ctx.compute_length(child, auto_length, context_size, axis, cross_length)
-        })
-        .layout_fn(move |child, ctx, _, size| {
-            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-            ctx.run_layout(child, child_size);
-            ctx.place_child(child, pos);
-        });
+    let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, size| {
+        let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+        ctx.run_layout(child, child_size);
+        ctx.place_child(child, pos);
+    });
     let parent = NewWidget::new(parent);
 
     let harness = TestHarness::create(test_property_set(), parent);
