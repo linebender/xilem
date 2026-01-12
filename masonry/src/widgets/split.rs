@@ -14,7 +14,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Axis, Line, Point, Rect, Size};
-use crate::layout::{AsUnit, LayoutCalc, LayoutSize, LenReq, Length};
+use crate::layout::{AsUnit, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
@@ -533,8 +533,8 @@ where
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let bar_area = self.bar_area();
         let space = match self.split_axis {
-            Axis::Horizontal => size.sub_width(bar_area),
-            Axis::Vertical => size.sub_height(bar_area),
+            Axis::Horizontal => Size::new((size.width - bar_area).max(0.), size.height),
+            Axis::Vertical => Size::new(size.width, (size.height - bar_area).max(0.)),
         };
 
         // Update our effective split point to respect our size

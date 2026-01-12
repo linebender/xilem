@@ -16,7 +16,7 @@ use crate::core::{
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
-use crate::layout::{LayoutCalc, LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, FocusedBorderColor,
@@ -262,7 +262,10 @@ impl Widget for Checkbox {
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
 
-        let space = space.sub_width(check_side + check_padding);
+        let space = Size::new(
+            (space.width - (check_side + check_padding)).max(0.),
+            space.height,
+        );
 
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
         ctx.run_layout(&mut self.label, label_size);

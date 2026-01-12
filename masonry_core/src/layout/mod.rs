@@ -20,30 +20,3 @@ pub use len_req::*;
 pub use length::*;
 pub(crate) use measurement_cache::*;
 pub use size_def::*;
-
-use vello::kurbo::Size;
-
-/// Ergonomic layout helper methods for [`Size`].
-pub trait LayoutCalc {
-    /// Reduces the width by the given `delta`.
-    ///
-    /// The width is clamped to zero.
-    fn sub_width(self, delta: f64) -> Self;
-
-    /// Returns the height by the given `delta`.
-    ///
-    /// The height is clamped to zero.
-    fn sub_height(self, delta: f64) -> Self;
-}
-
-impl LayoutCalc for Size {
-    fn sub_width(mut self, delta: f64) -> Self {
-        self.width = (self.width - delta).max(0.);
-        self
-    }
-
-    fn sub_height(mut self, delta: f64) -> Self {
-        self.height = (self.height - delta).max(0.);
-        self
-    }
-}
