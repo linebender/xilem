@@ -20,7 +20,7 @@ pub struct SizeDef {
 }
 
 impl SizeDef {
-    /// Minimum intrinsic size.
+    /// Minimum preferred size.
     ///
     /// See [`LenDef::MinContent`] for details.
     pub const MIN: Self = Self {
@@ -28,7 +28,7 @@ impl SizeDef {
         height: LenDef::MinContent,
     };
 
-    /// Maximum intrinsic size.
+    /// Maximum preferred size.
     ///
     /// See [`LenDef::MaxContent`] for details.
     pub const MAX: Self = Self {

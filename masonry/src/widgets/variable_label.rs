@@ -123,9 +123,9 @@ impl AnimationStatus {
 /// Ensure that `VariableLabel` has [`Dimensions`] set via props
 /// either to [`Dimensions::fixed`] or [`Dimensions::MAX`].
 /// Fixed dimensions resolve early and are explicit in intent.
-/// Max intrinsic size of `VariableLabel` means that the question of size
+/// Max preferred size of `VariableLabel` means that the question of size
 /// will get passed through to its inner label, and doesn't mean that it will
-/// necessarily map to the max intrinsic size of the label.
+/// necessarily map to the max preferred size of the label.
 ///
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::fixed`]: crate::properties::Dimensions::fixed

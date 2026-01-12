@@ -239,7 +239,7 @@ pub trait Widget: AsDynWidget + Any {
     /// it is completely valid for the child to always return the same size regardless of space.
     /// Which is to say, at the end of the day, a widget chooses how it measures itself.
     ///
-    /// It's a question of intrinsic size. As `measure` will only be called when there is
+    /// It's a question of preferred size. As `measure` will only be called when there is
     /// no defined length present for the `axis`. So `measure` is not about reading the widget's
     /// [`Dimensions`] from `props` and returning that. That is handled earlier by Masonry.
     /// Instead, it's a task of measuring the contents of the widget. Combining both local state

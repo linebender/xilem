@@ -14,7 +14,7 @@ use crate::core::{
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LenReq, Length};
 
-/// The intrinsic size of the square Canvas.
+/// The preferred size of the square Canvas.
 const DEFAULT_LENGTH: Length = Length::const_px(100.);
 
 /// A widget allowing custom drawing.
@@ -104,7 +104,7 @@ impl Widget for Canvas {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        // We use all the available space or fall back to our const intrinsic size.
+        // We use all the available space or fall back to our const preferred size.
         match len_req {
             LenReq::FitContent(space) => space,
             _ => DEFAULT_LENGTH.dp(scale),

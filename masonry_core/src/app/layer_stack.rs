@@ -23,9 +23,9 @@ use crate::layout::{LenReq, SizeDef};
 /// They have an associated position and are drawn on top of the base layer.
 ///
 /// Ensure that `LayerStack` has [`Dimensions`] set via props to [`Dimensions::MAX`].
-/// Max intrinsic size of `LayerStack` means that the question of size
+/// Max preferred size of `LayerStack` means that the question of size
 /// will get passed through to its base layer, and doesn't mean that it will
-/// necessarily map to the max intrinsic size of the base layer.
+/// necessarily map to the max preferred size of the base layer.
 ///
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX

@@ -39,13 +39,13 @@ pub enum Dim {
     ///
     /// [`Ratio(1.)`]: Self::Ratio
     Stretch,
-    /// Intrinsic minimum length.
+    /// Minimum preferred length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///
     /// [`measure`]: crate::core::Widget::measure
     MinContent,
-    /// Intrinsic preferred length.
+    /// Maximum preferred length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///

@@ -22,9 +22,9 @@ use crate::layout::LenReq;
 /// Ensure that `Passthrough` has [`Dimensions`] set via props
 /// either to [`Dimensions::fixed`] or [`Dimensions::MAX`].
 /// Fixed dimensions resolve early and are explicit in intent.
-/// Max intrinsic size of `Passthrough` means that the question of size
+/// Max preferred size of `Passthrough` means that the question of size
 /// will get passed through to its child, and doesn't mean that it will
-/// necessarily map to the max intrinsic size of the child.
+/// necessarily map to the max preferred size of the child.
 ///
 /// # Examples
 /// Create a host and later replace its content inside a mutate/edit callback:

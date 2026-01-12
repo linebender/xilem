@@ -17,9 +17,9 @@ use crate::layout::LenReq;
 /// The size of this widget can be accessed using [`MutateCtx::size`](crate::core::MutateCtx::size).
 ///
 /// Ensure that `ResizeObserver` has [`Dimensions`] set via props to [`Dimensions::MAX`].
-/// Max intrinsic size of `ResizeObserver` means that the question of size
+/// Max preferred size of `ResizeObserver` means that the question of size
 /// will get passed through to its child, and doesn't mean that it will
-/// necessarily map to the max intrinsic size of the child.
+/// necessarily map to the max preferred size of the child.
 ///
 /// This can be a useful primitive for making size-adaptive designs, such as
 /// scaling up a game board in response to more space being available, or switching

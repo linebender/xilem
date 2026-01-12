@@ -177,7 +177,7 @@ pub(crate) struct MutateCallback {
 pub enum WindowSizePolicy {
     /// Measure the content to determine the window size.
     ///
-    /// The window size will match the root widget's maximum intrinsic size.
+    /// The window size will match the root widget's maximum preferred size.
     Content,
     /// Use the provided window size.
     #[default]

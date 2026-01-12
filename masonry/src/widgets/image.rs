@@ -22,11 +22,11 @@ use crate::properties::ObjectFit;
 // TODO: Make this a configurable option of the widget.
 /// The scale that the image is native to.
 ///
-/// Used to calculate the intrinsic logical size of the image.
+/// Used to calculate the preferred logical size of the image.
 ///
 /// For example you might have a 256 px icon meant for crisp details on 8K screens.
-/// Then the image could have an intrinsic scale of e.g. 4.0,
-/// meaning that its intrinsic logical size is 64px.
+/// Then the image could have an preferred scale of e.g. 4.0,
+/// meaning that its preferred logical size is 64px.
 /// That way the image looks good at any scale and doesn't shift the layout around.
 const IMAGE_SCALE: f64 = 1.0;
 
@@ -93,7 +93,7 @@ impl Image {
 }
 
 impl Image {
-    /// Returns the intrinsic length of the given `axis`.
+    /// Returns the preferred length of the given `axis`.
     ///
     /// The returned length is in device pixels.
     ///
@@ -103,7 +103,7 @@ impl Image {
     /// This method's result will be stable in relation to other widgets at any scale factor.
     ///
     /// Basically it provides logical pixels in device pixel space.
-    fn intrinsic_length(&self, axis: Axis, scale: f64) -> f64 {
+    fn preferred_length(&self, axis: Axis, scale: f64) -> f64 {
         match axis {
             Axis::Horizontal => self.image_data.image.width as f64 * scale / IMAGE_SCALE,
             Axis::Vertical => self.image_data.image.height as f64 * scale / IMAGE_SCALE,
@@ -157,9 +157,9 @@ impl Widget for Image {
             }
         };
 
-        let intrinsic_length = self.intrinsic_length(axis, scale);
-        let (space, space_or_intrinsic) = match len_req {
-            LenReq::MinContent | LenReq::MaxContent => (f64::INFINITY, intrinsic_length),
+        let preferred_length = self.preferred_length(axis, scale);
+        let (space, space_or_preferred) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (f64::INFINITY, preferred_length),
             LenReq::FitContent(space) => (space, space),
         };
 
@@ -168,32 +168,32 @@ impl Widget for Image {
             // but don't exceed available space (will letterbox cross).
             ObjectFit::Contain => cross_length
                 .map(|cl| (cl * ar).min(space))
-                .unwrap_or(space_or_intrinsic),
+                .unwrap_or(space_or_preferred),
             // Always use all available space.
-            ObjectFit::Cover | ObjectFit::Stretch => space_or_intrinsic,
+            ObjectFit::Cover | ObjectFit::Stretch => space_or_preferred,
             // Always use all available vertical space.
             // Greedily take all horizontal space unless cross is known.
             ObjectFit::FitHeight => match axis {
                 Axis::Horizontal => cross_length
                     .map(|cl| (cl * ar).min(space))
-                    .unwrap_or(space_or_intrinsic),
-                Axis::Vertical => space_or_intrinsic,
+                    .unwrap_or(space_or_preferred),
+                Axis::Vertical => space_or_preferred,
             },
             // Always use all available horizontal space.
             // Greedily take all vertical space unless cross is known.
             ObjectFit::FitWidth => match axis {
-                Axis::Horizontal => space_or_intrinsic,
+                Axis::Horizontal => space_or_preferred,
                 Axis::Vertical => cross_length
                     .map(|cl| (cl * ar).min(space))
-                    .unwrap_or(space_or_intrinsic),
+                    .unwrap_or(space_or_preferred),
             },
-            // None == intrinsic size
-            ObjectFit::None => intrinsic_length,
+            // None == preferred size
+            ObjectFit::None => preferred_length,
             // ScaleDown == min(Contain, None)
             ObjectFit::ScaleDown => cross_length
                 .map(|cl| (cl * ar).min(space))
-                .unwrap_or(space_or_intrinsic)
-                .min(intrinsic_length),
+                .unwrap_or(space_or_preferred)
+                .min(preferred_length),
         }
     }
 
@@ -202,7 +202,7 @@ impl Widget for Image {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let object_fit = props.get::<ObjectFit>();
         // For drawing we want to scale the actual image data lengths, which means
-        // we need to avoid using Image::intrinsic_length which does not match the data.
+        // we need to avoid using Image::preferred_length which does not match the data.
         let image_size = Size::new(
             self.image_data.image.width as f64,
             self.image_data.image.height as f64,

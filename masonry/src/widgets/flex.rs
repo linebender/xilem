@@ -29,7 +29,7 @@ use crate::util::{fill, include_screenshot, stroke};
 /// This configuration sets the flex factor, the basis, and the cross axis alignment.
 ///
 /// The basis determines the starting size of each child. For fixed children this will default to
-/// [`FlexBasis::Auto`] which means that they will be at their intrinsic preferred size.
+/// [`FlexBasis::Auto`] which means that they will be at their preferred size.
 /// Flexible children, that is children with a flex factor greater than zero,
 /// will default to [`FlexBasis::Zero`] and thus fully depend on extra space distribution.
 ///
@@ -841,7 +841,7 @@ impl Widget for Flex {
                         }
                     }
                     Child::Spacer { .. } => {
-                        // Spacer basis fully covers its intrinsic size,
+                        // Spacer basis fully covers its preferred size,
                         // so spacers don't want any extra flex space.
                         0.
                     }

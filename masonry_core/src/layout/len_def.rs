@@ -20,13 +20,13 @@ pub enum LenDef {
     ///
     /// The value must be finite, non-negative, and in device pixels.
     Fixed(f64),
-    /// Intrinsic minimum length.
+    /// Minimum preferred length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///
     /// [`measure`]: crate::core::Widget::measure
     MinContent,
-    /// Intrinsic preferred length.
+    /// Maximum preferred length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///

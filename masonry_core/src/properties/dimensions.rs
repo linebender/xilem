@@ -77,12 +77,12 @@ impl Dimensions {
     /// See [`Dim::Stretch`] for details.
     pub const STRETCH: Self = Self::new(Dim::Stretch, Dim::Stretch);
 
-    /// Minimum intrinsic size.
+    /// Minimum preferred size.
     ///
     /// See [`Dim::MinContent`] for details.
     pub const MIN: Self = Self::new(Dim::MinContent, Dim::MinContent);
 
-    /// Maximum intrinsic size.
+    /// Maximum preferred size.
     ///
     /// See [`Dim::MaxContent`] for details.
     pub const MAX: Self = Self::new(Dim::MaxContent, Dim::MaxContent);

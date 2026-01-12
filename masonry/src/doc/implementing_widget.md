@@ -51,7 +51,7 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 - `on_anim_frame` is called once per frame for animated widgets.
 - `update` is called many times during a frame, with various events reflecting changes in the widget's state (for instance, it gets or loses text focus).
 - `measure` and `layout` are called during Masonry's layout pass.
-  `measure` computes the intrinsic size of the widget one a single axis.
+  `measure` computes the preferred size of the widget on a single axis.
   `layout` receives a chosen size and lays out its children accordingly.
 - `paint`, `accessibility_role` and `accessibility` are called roughly every frame for every widget, to allow them to draw to the screen and describe their structure to assistive technologies.
 
@@ -203,7 +203,7 @@ impl Widget for ColorRectangle {
 }
 ```
 
-Our intrinsic size is always 200x100 in logical pixels.
+Our preferred size is always 200x100 in logical pixels.
 If we receive a request to fit into a specific space, we always greedily take all of it.
 We don't perform complex operations like line-breaking, or depend on context information like "the widget is currently hovered".
 

@@ -8,9 +8,9 @@ use crate::util::Sanitize;
 /// It is up to the widget itself to define how it responds to these requests.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LenReq {
-    /// The widget should measure its minimum intrinsic length.
+    /// The widget should measure its minimum preferred length.
     MinContent,
-    /// The widget should measure its maximum intrinsic length.
+    /// The widget should measure its maximum preferred length.
     MaxContent,
     /// The widget should attempt to fit into the specified available space.
     ///

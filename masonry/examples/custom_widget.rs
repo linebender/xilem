@@ -81,7 +81,7 @@ impl Widget for CustomWidget {
         len_req: LenReq,
         _cross_length: Option<f64>,
     ) -> f64 {
-        // We currently just define our intrinsic min/max,
+        // We currently just define our preferred min/max,
         // but often it takes actual work to derive these.
         let min_size = Size::new(100., 50.);
         let max_size = Size::new(200., 200.);
@@ -99,7 +99,7 @@ impl Widget for CustomWidget {
     }
 
     fn layout(&mut self, _layout_ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
-        // Here is a good place to calculate size dependant values
+        // This method is a good place to calculate size-dependent values
     }
 
     // The paint method gets called last, after an event flow.

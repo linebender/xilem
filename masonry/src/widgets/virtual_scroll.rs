@@ -642,17 +642,17 @@ impl Widget for VirtualScroll {
         len_req: LenReq,
         _cross_length: Option<f64>,
     ) -> f64 {
-        // Our intrinsic size is a const square in logical pixels.
+        // Our preferred size is a const square in logical pixels.
         //
         // It is not clear that a data-derived result would be better.
         // We definitely can't load all the children to calculate our unclipped size.
         //
-        // If we would base it on the currently loaded items, then the intrinsic size
+        // If we would base it on the currently loaded items, then the preferred size
         // would fluctuate all over the place. The UI experience would be miserable,
         // with our viewport size frequently changing as the user is scrolling.
         //
         // Perhaps it would be worth it to always keep some first N items in memory and
-        // derive our intrinsic size always from those. That way it would be much more stable.
+        // derive our preferred size always from those. That way it would be much more stable.
         // We could also detect if we have a defined size via props and then unload those items.
         // Still, we would run into complexities with ensuring they are loaded in time for measure.
         //
