@@ -5,13 +5,10 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use masonry_core::util::bounding_box_to_rect;
 use parley::PlainEditor;
 use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Point, Rect, Size};
-use vello::peniko::Fill;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
@@ -20,10 +17,13 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::kurbo::{Affine, Point, Rect, Size};
+use crate::peniko::Fill;
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
 };
 use crate::theme::default_text_styles;
+use crate::util::bounding_box_to_rect;
 use crate::util::debug_panic;
 use crate::{TextAlign, theme};
 
@@ -1049,12 +1049,11 @@ pub enum InsertNewline {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
     use masonry_testing::TestHarnessParams;
-    use vello::kurbo::Size;
 
     use super::*;
-    use crate::core::{KeyboardEvent, Modifiers, Properties};
+    use crate::core::{KeyboardEvent, Modifiers, NewWidget, Properties};
+    use crate::kurbo::Size;
     use crate::palette;
     use crate::testing::TestHarness;
     use crate::theme::test_property_set;

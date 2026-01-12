@@ -4,15 +4,14 @@
 //! A canvas widget.
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Size;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Widget, WidgetId, WidgetMut,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::Size;
 
 /// A widget allowing custom drawing.
 ///
@@ -139,12 +138,12 @@ impl Widget for Canvas {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{DefaultProperties, Properties};
     use masonry_testing::assert_render_snapshot;
-    use vello::kurbo::{Affine, BezPath, Stroke};
-    use vello::peniko::{Color, Fill};
 
     use super::*;
+    use crate::core::{DefaultProperties, Properties};
+    use crate::kurbo::{Affine, BezPath, Stroke};
+    use crate::peniko::{Color, Fill};
     use crate::testing::TestHarness;
 
     #[test]

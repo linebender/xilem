@@ -9,15 +9,14 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
-use masonry_core::core::WidgetMut;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Rect, Size};
 
 use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetPod,
+    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Rect, Size};
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
 

@@ -4,10 +4,10 @@
 use std::any::TypeId;
 
 use vello::Scene;
-use vello::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
-use vello::peniko::color::{AlphaColor, Srgb};
 
 use crate::core::{Property, UpdateCtx};
+use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
+use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::CornerRadius;
 
 // TODO - This is a first implementation of box shadows. A full version would need

@@ -6,9 +6,9 @@
 use std::f64::consts::PI;
 
 use masonry_testing::WrapperWidget;
-use vello::kurbo::{Affine, Vec2};
-use vello::peniko::color::palette;
 
+use crate::kurbo::{Affine, Vec2};
+use crate::peniko::color::palette;
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
 use crate::properties::types::UnitPoint;
 use crate::layout::AsUnit;

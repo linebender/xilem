@@ -7,15 +7,14 @@ use std::any::TypeId;
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
 };
+use crate::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 use crate::properties::ContentColor;
 use crate::theme;
 use crate::util::include_screenshot;
@@ -150,9 +149,8 @@ impl Widget for Spinner {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{NewWidget, Properties};
-
     use super::*;
+    use crate::core::{NewWidget, Properties};
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;

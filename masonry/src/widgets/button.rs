@@ -7,18 +7,17 @@ use std::any::TypeId;
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Size};
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
-    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
+    NewWidget, PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Affine, Size};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
@@ -320,11 +319,10 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::CollectionWidget;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::{PointerButton, Properties, StyleProperty};
+    use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
     use crate::layout::AsUnit;
     use crate::properties::{ContentColor, Gap};
     use crate::testing::{TestHarness, assert_render_snapshot};

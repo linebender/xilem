@@ -9,13 +9,13 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Size};
-use vello::peniko::{BlendMode, ImageBrush};
 
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::{Affine, Size};
+use crate::peniko::{BlendMode, ImageBrush};
 use crate::properties::ObjectFit;
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -184,10 +184,9 @@ impl Widget for Image {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
-    use vello::peniko::{ImageAlphaType, ImageData, ImageFormat};
-
     use super::*;
+    use crate::core::NewWidget;
+    use crate::peniko::{ImageAlphaType, ImageData, ImageFormat};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 

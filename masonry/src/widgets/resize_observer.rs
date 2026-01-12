@@ -3,11 +3,11 @@
 
 use std::mem;
 
-use masonry_core::core::{
+use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Widget, WidgetMut, WidgetPod,
 };
-use vello::kurbo::{Point, Size};
+use crate::kurbo::{Point, Size};
 
 /// A widget which sends a [`LayoutChanged`] whenever its size changes.
 ///
@@ -146,10 +146,10 @@ impl Widget for ResizeObserver {
 #[cfg(test)]
 mod tests {
     use dpi::PhysicalSize;
-    use masonry_core::core::{NewWidget, Widget, WidgetTag, WindowEvent};
     use masonry_testing::TestHarness;
-    use vello::kurbo::Size;
 
+    use crate::core::{NewWidget, Widget, WidgetTag, WindowEvent};
+    use crate::kurbo::Size;
     use crate::layout::AsUnit;
     use crate::theme::default_property_set;
     use crate::widgets::{Flex, LayoutChanged, ResizeObserver, SizedBox};

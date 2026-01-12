@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::{Point, Rect};
+use crate::kurbo::{Point, Rect};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 /// A point with coordinates in the range [0.0, 1.0].

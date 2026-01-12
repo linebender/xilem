@@ -3,9 +3,8 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::{Point, RoundedRect, Size, Vec2};
-
 use crate::core::{BoxConstraints, Property, UpdateCtx};
+use crate::kurbo::{Point, RoundedRect, Size, Vec2};
 use crate::properties::CornerRadius;
 
 /// The width of a widget's border, in logical pixels.

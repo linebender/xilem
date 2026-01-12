@@ -6,17 +6,16 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use masonry_core::core::NoAction;
 use parley::style::FontWeight;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Point, Size};
 use crate::widgets::Label;
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
