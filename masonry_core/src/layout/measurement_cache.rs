@@ -30,6 +30,11 @@ impl MeasurementInputs {
 
 /// At the time of choosing this capacity,
 /// 10 * 48 bytes = 480 bytes for the whole buffer.
+///
+/// With the current layout system this should be no lower than 8.
+/// `(MaxContent + MinContent + FitContent(speculative) + FitContent(actual)) * 2 axes == 8`
+/// As we get more experience with the new layout system we may find that
+/// it is essential to have the minimum even higher than 8.
 const CAPACITY: usize = 10;
 
 /// Contains a mapping of [`MeasurementInputs`] to results.
