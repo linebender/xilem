@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_testing::{Record, TestWidgetExt, assert_debug_panics};
+use masonry_testing::{TestWidgetExt, assert_debug_panics};
 
 use crate::core::Widget;
 use crate::core::{NewWidget, WidgetTag};
@@ -187,12 +187,15 @@ fn skip_layout_when_cached() {
     });
 
     // The button did not request layout and its input constraints are the same:
-    // Nothing besides measurements should happen to it.
-    let button_records: Vec<_> = harness
-        .take_records_of(button_tag)
-        .into_iter()
-        .filter(|r| !matches!(r, Record::Measure(_)))
-        .collect();
+    // Nothing should happen to it.
+    let button_records_iter = harness.take_records_of(button_tag).into_iter();
+
+    // Measurements will still happen with debug assertions enabled because we verify the cache.
+    #[cfg(debug_assertions)]
+    let button_records_iter =
+        button_records_iter.filter(|r| !matches!(r, masonry_testing::Record::Measure(_)));
+
+    let button_records: Vec<_> = button_records_iter.collect();
     assert_matches!(button_records[..], []);
 }
 
