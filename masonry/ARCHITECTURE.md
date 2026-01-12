@@ -63,7 +63,7 @@ Masonry's passes are computations that run on the entire widget tree (iff invali
 
 `event.rs` and `update.rs` include a bunch of related passes.
 Every other file only includes one pass.
-`mod.rs` has a utility functions shared between multiple passes.
+`mod.rs` has utility functions shared between multiple passes.
 
 ### `masonry_core/src/doc/`
 
