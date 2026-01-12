@@ -322,9 +322,6 @@ pub trait Widget: AsDynWidget + Any {
     /// For every child widget, as defined by [`children_ids`], the container must:
     ///
     /// 1. (Optionally) Call [`LayoutCtx::compute_size`] to get the size the child wants to be.
-    ///    If the container is doing complex layout, it might call `compute_size` multiple times.
-    ///    However, that should be done with great care, as it's a quick path to slow performance.
-    ///    Especially when such complex layout widgets are nested, layout complexity will explode.
     ///    If the container has somehow already decided on the child length on one axis, then it
     ///    should instead call [`LayoutCtx::compute_length`] with the correct `cross_length`.
     /// 2. Decide on a final [`Size`] that the child should be. The parent is in control.
