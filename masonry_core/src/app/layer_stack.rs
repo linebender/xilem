@@ -169,7 +169,7 @@ impl Widget for LayerStack {
         ctx.place_child(&mut base_layer.widget, Point::ORIGIN);
 
         for layer in &mut self.layers[1..] {
-            let _ = ctx.run_layout(&mut layer.widget, bc);
+            let _ = ctx.run_layout(&mut layer.widget, &bc.loosen());
             ctx.place_child(&mut layer.widget, layer.pos);
         }
 

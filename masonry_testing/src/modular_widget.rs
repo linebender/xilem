@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer,
     LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
     PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetOptions, WidgetPod, WidgetRef, find_widget_under_pointer,
@@ -405,6 +405,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } else {
             ChildrenIds::new()
         }
+    }
+
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
     }
 
     fn accepts_pointer_interaction(&self) -> bool {

@@ -961,7 +961,9 @@ impl MasonryState<'_> {
                     };
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
                 }
-                RenderRootSignal::NewLayer(root, pos) => window.render_root.add_layer(root, pos),
+                RenderRootSignal::NewLayer(_type, root, pos) => {
+                    window.render_root.add_layer(root, pos);
+                }
                 RenderRootSignal::RemoveLayer(root_id) => window.render_root.remove_layer(root_id),
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
                     window.render_root.reposition_layer(root_id, new_pos);

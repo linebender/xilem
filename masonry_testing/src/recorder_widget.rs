@@ -15,7 +15,7 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer,
     LayoutCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
     QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions,
     WidgetRef,
@@ -248,6 +248,10 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn children_ids(&self) -> ChildrenIds {
         self.child.children_ids()
+    }
+
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
     }
 
     fn accepts_pointer_interaction(&self) -> bool {
