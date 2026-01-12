@@ -14,9 +14,9 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
-    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Update, UpdateCtx, WidgetMut, WidgetOptions, WidgetRef,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetOptions, WidgetRef,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -308,6 +308,13 @@ pub trait Widget: AsDynWidget + Any {
     /// `children_changed` on one of the Ctx parameters. Container widgets are
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> ChildrenIds;
+
+    /// Return `Some(self)` if the widget also implements [`Layer`].
+    ///
+    /// Default implementation returns `None`.
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
+    }
 
     /// Whether this widget gets pointer events and [hovered] status. True by default.
     ///
