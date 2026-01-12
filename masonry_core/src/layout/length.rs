@@ -3,8 +3,6 @@
 
 /// A value representing a width, height, or similar distance value.
 ///
-/// It is in logical pixels.
-///
 /// It is always finite and non-negative.
 #[derive(Clone, Copy, PartialEq)]
 pub struct Length {
