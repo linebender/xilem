@@ -130,7 +130,10 @@ impl Padding {
         ctx.request_layout();
     }
 
-    /// Returns the [`Length`] on the given `axis`.
+    /// Returns the total [`Length`] of this padding on the given `axis`.
+    ///
+    /// For [`Axis::Horizontal`] it will return the sum of the left and right padding width.
+    /// For [`Axis::Vertical`] it will return the sum of the top and bottom padding height.
     pub fn length(&self, axis: Axis) -> Length {
         match axis {
             Axis::Horizontal => Length::px(self.left + self.right),

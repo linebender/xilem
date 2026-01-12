@@ -39,7 +39,10 @@ impl BorderWidth {
         ctx.request_layout();
     }
 
-    /// Returns the [`Length`] on the given `axis`.
+    /// Returns the total [`Length`] of this border on the given `axis`.
+    ///
+    /// For [`Axis::Horizontal`] it will return the sum of the left and right border width.
+    /// For [`Axis::Vertical`] it will return the sum of the top and bottom border height.
     pub fn length(&self, _axis: Axis) -> Length {
         Length::px(self.width * 2.)
     }
