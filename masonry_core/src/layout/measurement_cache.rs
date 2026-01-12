@@ -4,6 +4,27 @@
 use crate::kurbo::Axis;
 use crate::layout::LenReq;
 
+/// At the time of choosing this capacity,
+/// 10 * 48 bytes = 480 bytes for the whole buffer.
+///
+/// With the current layout system this should be no lower than 8.
+/// `(MaxContent + MinContent + FitContent(speculative) + FitContent(actual)) * 2 axes == 8`
+/// As we get more experience with the new layout system we may find that
+/// it is essential to have the minimum even higher than 8.
+const CAPACITY: usize = 10;
+
+/// Contains a mapping of [`MeasurementInputs`] to results.
+///
+/// Implemented as a linear search LRU cache over [`Vec`],
+/// because we expect the dataset to be tiny.
+///
+/// We don't expect any `NaN`s to be in [`MeasurementInputs`],
+/// but even if there are that is fine, because we clear the cache regularly.
+#[derive(Clone, Debug)]
+pub(crate) struct MeasurementCache {
+    entries: Vec<(MeasurementInputs, f64)>,
+}
+
 /// All the inputs that change [`measure`] output.
 ///
 /// Notably this doesn't include properties, because the widget is
@@ -26,27 +47,6 @@ impl MeasurementInputs {
             cross_length,
         }
     }
-}
-
-/// At the time of choosing this capacity,
-/// 10 * 48 bytes = 480 bytes for the whole buffer.
-///
-/// With the current layout system this should be no lower than 8.
-/// `(MaxContent + MinContent + FitContent(speculative) + FitContent(actual)) * 2 axes == 8`
-/// As we get more experience with the new layout system we may find that
-/// it is essential to have the minimum even higher than 8.
-const CAPACITY: usize = 10;
-
-/// Contains a mapping of [`MeasurementInputs`] to results.
-///
-/// Implemented as a linear search LRU cache over [`Vec`],
-/// because we expect the dataset to be tiny.
-///
-/// We don't expect any `NaN`s to be in [`MeasurementInputs`],
-/// but even if there are that is fine, because we clear the cache regularly.
-#[derive(Clone, Debug)]
-pub(crate) struct MeasurementCache {
-    entries: Vec<(MeasurementInputs, f64)>,
 }
 
 impl MeasurementCache {
