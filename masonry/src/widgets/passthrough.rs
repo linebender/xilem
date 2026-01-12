@@ -6,12 +6,12 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Point, Size};
 
 /// A pass-through container that hosts exactly one child, which may be replaced dynamically.
 ///
@@ -113,9 +113,8 @@ impl Widget for Passthrough {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use vello::kurbo::Size;
-
     use super::*;
+    use crate::kurbo::Size;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;

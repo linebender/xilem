@@ -4,17 +4,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Point, Rect, Size};
 
 use crate::TextAlign;
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NewWidget, NoAction,
+    PaintCtx, Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Affine, Point, Rect, Size};
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
     DisabledBackground, FocusedBorderColor, Padding, PlaceholderColor, SelectionColor,
@@ -359,12 +358,11 @@ impl Widget for TextInput {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::TextEvent;
     use masonry_testing::TestHarnessParams;
-    use vello::kurbo::Size;
 
     use super::*;
-    use crate::core::StyleProperty;
+    use crate::core::{StyleProperty, TextEvent};
+    use crate::kurbo::Size;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::TextArea;

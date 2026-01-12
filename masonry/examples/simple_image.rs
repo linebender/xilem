@@ -11,12 +11,12 @@
 use masonry::core::{ErasedAction, NewWidget, Properties, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::ImageFormat;
+use masonry::peniko::{ImageAlphaType, ImageData};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::widgets::Image;
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
-use vello::peniko::{ImageAlphaType, ImageData};
 
 struct Driver;
 

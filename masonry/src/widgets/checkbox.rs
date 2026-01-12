@@ -6,17 +6,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
 
 use crate::core::keyboard::Key;
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Affine, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, FocusedBorderColor,

@@ -6,14 +6,13 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use vello::kurbo::{Point, Size, Vec2};
-
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent,
     LayoutCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut, PropertiesRef,
     RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Point, Size, Vec2};
 use crate::util::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
@@ -1052,9 +1051,9 @@ mod tests {
 
     use super::opt_iter_difference;
     use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
+    use crate::kurbo;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
-    use crate::vello::kurbo;
     use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};
 
     #[test]

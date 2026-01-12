@@ -7,7 +7,6 @@ use accesskit::{Node, Role};
 use dpi::PhysicalPosition;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
@@ -15,6 +14,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Axis, Point, Rect, Size, Vec2};
 use crate::widgets::ScrollBar;
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -512,9 +512,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::WidgetTag;
-
     use super::*;
+    use crate::core::WidgetTag;
     use crate::layout::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;

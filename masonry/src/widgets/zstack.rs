@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry_core::core::CollectionWidget;
 use tracing::trace_span;
 use vello::Scene;
-use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, CollectionWidget, LayoutCtx, NewWidget, NoAction,
+    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Rect, Size};
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
 
@@ -279,11 +278,10 @@ impl Widget for ZStack {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use vello::peniko::color::palette;
-
     use super::*;
     use crate::core::Properties;
     use crate::layout::AsUnit;
+    use crate::peniko::color::palette;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;

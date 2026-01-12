@@ -4,17 +4,17 @@
 use std::sync::mpsc;
 
 use assert_matches::assert_matches;
-use masonry_core::core::pointer::{PointerButton, PointerEvent};
-use masonry_core::core::{
-    CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
-    WidgetTag,
-};
 use masonry_testing::{
     DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
     assert_debug_panics,
 };
-use vello::kurbo::{Point, Size};
 
+use crate::core::pointer::{PointerButton, PointerEvent};
+use crate::core::{
+    CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
+    WidgetTag,
+};
+use crate::kurbo::{Point, Size};
 use crate::layout::Length;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};

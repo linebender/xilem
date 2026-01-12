@@ -6,7 +6,6 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
-use vello::kurbo::{Axis, Line, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
@@ -14,6 +13,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::kurbo::{Axis, Line, Point, Rect, Size};
 use crate::layout::{AsUnit, Length};
 use crate::peniko::Color;
 use crate::theme;

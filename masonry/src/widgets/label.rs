@@ -7,18 +7,17 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use masonry_core::core::{HasProperty, NoAction};
 use parley::{Layout, LayoutAccessibility};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Point, Size};
-use vello::peniko::BlendMode;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, BrushIndex, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, render_text,
+    AccessCtx, ArcStr, BoxConstraints, BrushIndex, ChildrenIds, HasProperty, LayoutCtx, NoAction,
+    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::kurbo::{Affine, Point, Size};
+use crate::peniko::BlendMode;
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
 use crate::theme::default_text_styles;
 use crate::util::{debug_panic, include_screenshot};
@@ -410,12 +409,11 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 
     use super::*;
-    use crate::core::Properties;
+    use crate::core::{NewWidget, Properties};
     use crate::layout::AsUnit;
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;

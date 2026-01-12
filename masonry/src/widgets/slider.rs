@@ -8,7 +8,6 @@ use std::any::TypeId;
 use accesskit::{ActionData, Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Circle, Point, Rect, Size};
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
@@ -17,6 +16,7 @@ use crate::core::{
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::{Circle, Point, Rect, Size};
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -368,9 +368,9 @@ impl Widget for Slider {
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
             scene.push_layer(
-                vello::peniko::Mix::Normal,
+                crate::peniko::Mix::Normal,
                 DISABLED_ALPHA,
-                vello::kurbo::Affine::IDENTITY,
+                crate::kurbo::Affine::IDENTITY,
                 &ctx.size().to_rect(),
             );
         }
@@ -460,10 +460,9 @@ impl Widget for Slider {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use vello::kurbo::{Point, Size};
-
     use super::*;
     use crate::core::{PointerButton, TextEvent};
+    use crate::kurbo::{Point, Size};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 

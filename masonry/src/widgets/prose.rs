@@ -4,13 +4,13 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, NoAction,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Point, Size};
 use crate::util::include_screenshot;
 use crate::widgets::TextArea;
 
@@ -186,12 +186,12 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
     use parley::StyleProperty;
-    use vello::kurbo::Size;
 
     use super::*;
     use crate::TextAlign;
+    use crate::core::Properties;
+    use crate::kurbo::Size;
     use crate::layout::AsUnit;
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;

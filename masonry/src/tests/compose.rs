@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_core::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
-use vello::kurbo::{Affine, Point, Size, Vec2};
 
+use crate::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
+use crate::kurbo::{Affine, Point, Size, Vec2};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 

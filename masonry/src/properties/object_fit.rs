@@ -3,8 +3,8 @@
 
 use std::any::TypeId;
 
-use masonry_core::core::{Property, UpdateCtx};
-use vello::kurbo::{Affine, Size};
+use crate::core::{Property, UpdateCtx};
+use crate::kurbo::{Affine, Size};
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.

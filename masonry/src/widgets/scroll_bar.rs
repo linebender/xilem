@@ -4,13 +4,13 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
     NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut,
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::{Axis, Point, Rect, Size};
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 
@@ -266,10 +266,8 @@ impl AllowRawMut for ScrollBar {}
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
-
     use super::*;
-    use crate::core::PointerButton;
+    use crate::core::{NewWidget, PointerButton};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
