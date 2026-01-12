@@ -3,7 +3,8 @@
 
 use vello::kurbo::{Axis, Size};
 
-use crate::{layout::LenDef, util::Sanitize};
+use crate::layout::LenDef;
+use crate::util::Sanitize;
 
 /// Widget size definition.
 ///

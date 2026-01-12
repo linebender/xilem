@@ -1,7 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{layout::LenReq, util::Sanitize};
+use crate::layout::LenReq;
+use crate::util::Sanitize;
 
 /// Widget length definition.
 ///

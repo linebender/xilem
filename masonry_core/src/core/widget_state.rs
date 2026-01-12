@@ -6,10 +6,8 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::{
-    core::{WidgetId, WidgetOptions},
-    layout::MeasurementCache,
-};
+use crate::core::{WidgetId, WidgetOptions};
+use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
