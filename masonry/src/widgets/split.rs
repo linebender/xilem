@@ -532,44 +532,26 @@ where
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let bar_area = self.bar_area();
-        let space = match self.split_axis {
-            Axis::Horizontal => Size::new((size.width - bar_area).max(0.), size.height),
-            Axis::Vertical => Size::new(size.width, (size.height - bar_area).max(0.)),
-        };
+        let split_space = (size.get_coord(self.split_axis) - bar_area).max(0.);
+        let cross_space = size.get_coord(self.split_axis.cross());
 
         // Update our effective split point to respect our size
-        let split_space = space.get_coord(self.split_axis);
         self.split_point_effective = self.calc_effective_split_point(split_space);
 
-        let (child1_size, child2_size) = match self.split_axis {
-            Axis::Horizontal => {
-                let child1_width = (space.width * self.split_point_effective).floor().max(0.0);
-                let child2_width = (space.width - child1_width).max(0.0);
-                (
-                    Size::new(child1_width, space.height),
-                    Size::new(child2_width, space.height),
-                )
-            }
-            Axis::Vertical => {
-                let child1_height = (space.height * self.split_point_effective).floor().max(0.0);
-                let child2_height = (space.height - child1_height).max(0.0);
-                (
-                    Size::new(space.width, child1_height),
-                    Size::new(space.width, child2_height),
-                )
-            }
-        };
+        let child1_split_space = (split_space * self.split_point_effective).floor().max(0.);
+        let child2_split_space = (split_space - child1_split_space).max(0.);
+
+        let child1_size = self.split_axis.pack_size(child1_split_space, cross_space);
+        let child2_size = self.split_axis.pack_size(child2_split_space, cross_space);
 
         ctx.run_layout(&mut self.child1, child1_size);
         ctx.run_layout(&mut self.child2, child2_size);
 
-        // Top-left align for both children, out of laziness.
-        // Reduce our unsplit direction to the larger of the two widgets
+        // Top-left align both children.
         let child1_origin = Point::ORIGIN;
-        let child2_origin = match self.split_axis {
-            Axis::Horizontal => Point::new(child1_size.width + bar_area, 0.0),
-            Axis::Vertical => Point::new(0.0, child1_size.height + bar_area),
-        };
+        let child2_origin = self
+            .split_axis
+            .pack_point(child1_split_space + bar_area, 0.);
         ctx.place_child(&mut self.child1, child1_origin);
         ctx.place_child(&mut self.child2, child2_origin);
     }

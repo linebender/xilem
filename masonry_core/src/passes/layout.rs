@@ -247,10 +247,7 @@ pub(crate) fn resolve_size(
     if let Some(inline_length) = inline_length
         && let Some(block_length) = block_length
     {
-        return match inline {
-            Axis::Horizontal => Size::new(inline_length, block_length),
-            Axis::Vertical => Size::new(block_length, inline_length),
-        };
+        return inline.pack_size(inline_length, block_length);
     }
 
     // Otherwise fall back to measurement
@@ -288,10 +285,7 @@ pub(crate) fn resolve_size(
         .sanitize("measured block length")
     });
 
-    match inline {
-        Axis::Horizontal => Size::new(inline_length, block_length),
-        Axis::Vertical => Size::new(block_length, inline_length),
-    }
+    inline.pack_size(inline_length, block_length)
 }
 
 // --- MARK: RUN LAYOUT

@@ -985,10 +985,7 @@ impl Widget for Flex {
                     Some(child_main_length),
                 );
 
-                match main {
-                    Axis::Horizontal => Size::new(child_main_length, child_cross_length),
-                    Axis::Vertical => Size::new(child_cross_length, child_main_length),
-                }
+                main.pack_size(child_main_length, child_cross_length)
             };
 
         // Helper function to lay out children
