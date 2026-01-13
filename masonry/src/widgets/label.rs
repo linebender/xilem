@@ -6,7 +6,7 @@
 use std::any::TypeId;
 use std::mem::Discriminant;
 
-use accesskit::{Node, NodeId, Role};
+use accesskit::{Node, Role};
 use parley::{Layout, LayoutAccessibility};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -387,7 +387,7 @@ impl Widget for Label {
             &self.text_layout,
             ctx.tree_update(),
             node,
-            || NodeId::from(WidgetId::next()),
+            AccessCtx::next_node_id,
             text_origin.x,
             text_origin.y,
         );

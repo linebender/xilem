@@ -16,7 +16,7 @@ use vello::kurbo::{Point, Size};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Update, UpdateCtx, WidgetMut, WidgetOptions, WidgetRef,
+    TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -30,15 +30,13 @@ use crate::core::{
 /// A widget can retrieve its id via methods on the various contexts, such as
 /// [`UpdateCtx::widget_id`].
 ///
-/// # Explicit `WidgetId`s.
+/// # `WidgetId` cannot be reserved
 ///
-/// Sometimes, you may want to construct a widget, in a way that lets you know its id,
-/// so you can refer to the widget later. You can use [`NewWidget::new_with_id`](crate::core::NewWidget::new_with_id) to pass
-/// an id to the `NewWidget` you're creating; various widgets which have methods to create
-/// children may have variants taking ids as parameters.
+/// Ids are only attributed once a widget is added to the widget tree.
 ///
-/// If you set a `WidgetId` directly, you are responsible for ensuring that it
-/// is unique. Two widgets must not be created with the same id.
+/// You can't create a widget with a pre-allocated `WidgetId`.
+/// If you want to create a widget in a way that lets you refer to it later,
+/// see [`NewWidget::new_with_tag`](crate::core::NewWidget::new_with_tag).
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
 
@@ -421,22 +419,12 @@ pub trait Widget: AsDynWidget + Any {
         NewWidget::new(self)
     }
 
-    // TODO - We eventually want to remove the ability to reserve widget ids.
-    // See https://github.com/linebender/xilem/issues/1255
-    /// Convenience method to wrap this in a [`NewWidget`] with the given id.
-    fn with_id(self, id: WidgetId) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new_with_id(self, id)
-    }
-
     /// Convenience method to wrap this in a [`NewWidget`] with the given [`Properties`].
     fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
     where
         Self: Sized,
     {
-        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+        NewWidget::new_with_props(self, props)
     }
 }
 
@@ -507,21 +495,15 @@ impl WidgetId {
     ///
     /// You must ensure that a given `WidgetId` is only ever used for one
     /// widget at a time.
-    pub fn next() -> Self {
+    pub(crate) fn next() -> Self {
         static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
         let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         Self(id.try_into().unwrap())
     }
 
     // TODO - Remove
-    /// Creates a reserved `WidgetId`, suitable for reuse.
-    ///
-    /// The caller is responsible for ensuring that this ID is in fact assigned
-    /// to a single widget at any time, or your code may become haunted.
-    ///
-    /// The actual inner representation of the returned `WidgetId` will not
-    /// be the same as the raw value that is passed in; it will be
-    /// `u64::max_value() - raw`.
+    // Currently used in Xilem for event routing.
+    #[doc(hidden)]
     pub const fn reserved(raw: u16) -> Self {
         let id = u64::MAX - raw as u64;
         match NonZeroU64::new(id) {

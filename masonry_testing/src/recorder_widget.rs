@@ -17,8 +17,7 @@ use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
     LayoutCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions,
-    WidgetRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -297,17 +296,10 @@ impl<W: Widget> Widget for Recorder<W> {
         NewWidget::new(self)
     }
 
-    fn with_id(self, id: WidgetId) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new_with_id(self, id)
-    }
-
     fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
     where
         Self: Sized,
     {
-        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+        NewWidget::new_with_props(self, props)
     }
 }

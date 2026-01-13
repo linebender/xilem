@@ -16,9 +16,9 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
-    AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled,
-    Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget,
-    WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
+    Handled, Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent,
+    Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
     WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
@@ -316,7 +316,7 @@ impl RenderRoot {
 
         let mut root = Self {
             layer_stack,
-            window_node_id: WidgetId::next().into(),
+            window_node_id: AccessCtx::next_node_id(),
             size_policy,
             size,
             last_mouse_pos: None,

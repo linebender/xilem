@@ -6,7 +6,7 @@
 use std::any::Any;
 use std::collections::hash_map::Entry;
 
-use accesskit::TreeUpdate;
+use accesskit::{NodeId, TreeUpdate};
 use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
@@ -507,6 +507,12 @@ impl AccessCtx<'_> {
     /// accessibility nodes are stored.
     pub fn tree_update(&mut self) -> &mut TreeUpdate {
         self.tree_update
+    }
+
+    /// Returns an id which is guaranteed not to collide with [`WidgetId`]s or with previous ids returned by this function.
+    pub fn next_node_id() -> NodeId {
+        // TODO - Return from a pool disjoint from widget ids.
+        WidgetId::next().into()
     }
 }
 
