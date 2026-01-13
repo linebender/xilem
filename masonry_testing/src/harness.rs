@@ -100,7 +100,6 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// use masonry::core::PointerButton;
 /// use masonry::core::Action;
 /// use masonry::testing::assert_render_snapshot;
-/// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;
 /// use masonry::testing::TestWidgetExt;
 /// use masonry::theme::default_property_set;
@@ -109,10 +108,10 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// #[test]
 /// # */
 /// fn simple_button() {
-///     let [button_id] = widget_ids();
-///     let widget = Button::new("Hello").with_id(button_id);
+///     let widget = Button::new("Hello");
 ///
 ///     let mut harness = TestHarness::create(default_property_set(), widget);
+///     let button_id = harness.root_id();
 ///
 ///     # if false {
 ///     assert_render_snapshot!(harness, "hello");

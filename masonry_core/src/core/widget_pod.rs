@@ -79,14 +79,9 @@ impl<W: Widget> NewWidget<W> {
     ///
     /// You can also get the same result with [`Widget::with_auto_id()`].
     pub fn new(inner: W) -> Self {
-        Self::new_with_id(inner, WidgetId::next())
-    }
-
-    /// Creates a new widget with pre-determined id.
-    pub fn new_with_id(inner: W, id: WidgetId) -> Self {
         Self {
             widget: Box::new(inner),
-            id,
+            id: WidgetId::next(),
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
@@ -118,25 +113,6 @@ impl<W: Widget> NewWidget<W> {
         Self {
             options,
             ..Self::new(inner)
-        }
-    }
-
-    /// Creates a new widget with custom [`WidgetOptions`] and custom [`Properties`].
-    pub fn new_with(
-        inner: W,
-        id: WidgetId,
-        options: WidgetOptions,
-        props: impl Into<Properties>,
-    ) -> Self {
-        Self {
-            widget: Box::new(inner),
-            id,
-            action_type: TypeId::of::<W::Action>(),
-            #[cfg(debug_assertions)]
-            action_type_name: std::any::type_name::<W::Action>(),
-            options,
-            properties: props.into(),
-            tag: None,
         }
     }
 }

@@ -4,7 +4,7 @@
 use std::any::TypeId;
 use std::mem::Discriminant;
 
-use accesskit::{Node, NodeId, Role};
+use accesskit::{Node, Role};
 use parley::PlainEditor;
 use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
@@ -1000,13 +1000,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if !EDITABLE {
             node.set_read_only();
         }
-        let updated = self.editor.try_accessibility(
-            ctx.tree_update(),
-            node,
-            || NodeId::from(WidgetId::next()),
-            0.,
-            0.,
-        );
+        let updated =
+            self.editor
+                .try_accessibility(ctx.tree_update(), node, AccessCtx::next_node_id, 0., 0.);
 
         let Some(()) = updated else {
             // We always perform layout before accessibility, so this panic should be unreachable.
