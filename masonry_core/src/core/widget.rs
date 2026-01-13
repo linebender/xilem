@@ -487,7 +487,6 @@ pub fn find_widget_under_pointer<'c>(
 pub trait AllowRawMut: Widget {}
 
 impl WidgetId {
-    // TODO doc can't create use WidgetTag instead
     /// Allocates a new, unique `WidgetId`.
     ///
     /// All widgets are assigned ids automatically; you should only create
@@ -503,14 +502,8 @@ impl WidgetId {
     }
 
     // TODO - Remove
-    /// Creates a reserved `WidgetId`, suitable for reuse.
-    ///
-    /// The caller is responsible for ensuring that this ID is in fact assigned
-    /// to a single widget at any time, or your code may become haunted.
-    ///
-    /// The actual inner representation of the returned `WidgetId` will not
-    /// be the same as the raw value that is passed in; it will be
-    /// `u64::max_value() - raw`.
+    // Currently used in Xilem for event routing.
+    #[doc(hidden)]
     pub const fn reserved(raw: u16) -> Self {
         let id = u64::MAX - raw as u64;
         match NonZeroU64::new(id) {

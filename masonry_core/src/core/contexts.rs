@@ -509,7 +509,7 @@ impl AccessCtx<'_> {
         self.tree_update
     }
 
-    /// Return an id which is guaranteed not to collide with [`WidgetId`]s or with previous ids returned by this function.
+    /// Returns an id which is guaranteed not to collide with [`WidgetId`]s or with previous ids returned by this function.
     pub fn next_node_id() -> NodeId {
         // TODO - Return from a pool disjoint from widget ids.
         WidgetId::next().into()
