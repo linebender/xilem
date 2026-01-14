@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::trace_span;
 use vello::Scene;
 
@@ -11,7 +12,6 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Rect, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
-use crate::util::include_screenshot;
 
 struct Child {
     widget: WidgetPod<dyn Widget>,
@@ -48,7 +48,11 @@ impl Child {
 /// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
 /// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
 ///
-#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
+#[doc = concat!(
+    "![Red foreground widget on top of blue background widget](",
+    include_doc_path!("screenshots/zstack_alignment_default.png"),
+    ")",
+)]
 pub struct ZStack {
     children: Vec<Child>,
     alignment: UnitPoint,

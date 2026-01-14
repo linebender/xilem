@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -16,7 +17,7 @@ use crate::core::{
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, Length};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 /// A widget with bi-directional size enforcement.
 ///
@@ -54,7 +55,11 @@ use crate::util::{fill, include_screenshot, stroke};
 ///
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
-#[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
+#[doc = concat!(
+    "![Box with blue border, pink background and a child label](",
+    include_doc_path!("screenshots/sized_box_label_box_with_outer_padding.png"),
+    ")",
+)]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
     width: Option<Length>,

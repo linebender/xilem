@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -21,7 +22,7 @@ use crate::layout::LenReq;
 use crate::peniko::{BlendMode, Fill};
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
 use crate::theme::default_text_styles;
-use crate::util::{debug_panic, include_screenshot};
+use crate::util::debug_panic;
 use crate::{TextAlign, TextAlignOptions, theme};
 
 /// A widget displaying non-interactive text.
@@ -32,7 +33,11 @@ use crate::{TextAlign, TextAlignOptions, theme};
 /// You can customize the look of this label with the
 /// [`Padding`], [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
 ///
-#[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
+#[doc = concat!(
+    "![Styled label](",
+    include_doc_path!("screenshots/label_styled_label.png"),
+    ")",
+)]
 pub struct Label {
     text_layout: TextLayout,
     measure_text_layout: TextLayout,

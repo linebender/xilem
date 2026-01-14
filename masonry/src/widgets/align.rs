@@ -9,6 +9,7 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -19,13 +20,16 @@ use crate::core::{
 use crate::core::{MeasureCtx, WidgetMut};
 use crate::kurbo::{Axis, Rect, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
-use crate::util::include_screenshot;
 
 // TODO - Have child widget type as generic argument
 
 /// A widget that aligns its child.
 ///
-#[doc = include_screenshot!("align_right.png", "Right-aligned label.")]
+#[doc = concat!(
+    "![Right-aligned label](",
+    include_doc_path!("screenshots/align_right.png"),
+    ")",
+)]
 pub struct Align {
     align: UnitPoint,
     child: WidgetPod<dyn Widget>,

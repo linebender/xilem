@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
@@ -25,14 +26,18 @@ use crate::properties::{
     FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 /// A button with a child widget.
 ///
 /// Emits [`ButtonPress`] when pressed.
 ///
-#[doc = include_screenshot!("button_hello.png", "Button with text label.")]
+#[doc = concat!(
+    "![Button with text label](",
+    include_doc_path!("screenshots/button_hello.png"),
+    ")",
+)]
 pub struct Button {
     child: WidgetPod<dyn Widget>,
 }

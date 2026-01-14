@@ -22,6 +22,7 @@ members = [
     "xilem_web/web_examples/svgdraw",
     "tree_arena",
     "placehero",
+    "include_doc_path",
 ]
 
 [workspace.package]
@@ -48,6 +49,7 @@ xilem_core = { version = "0.4.0", path = "xilem_core" }
 xilem_masonry = { version = "0.4.0", path = "xilem_masonry" }
 xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
+include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
 vello = { version = "0.7.0", default-features = false, features = ["wgpu"] }

@@ -4,6 +4,7 @@
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -17,11 +18,15 @@ use crate::kurbo::{Axis, Line, Point, Rect, Size};
 use crate::layout::{AsUnit, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
-use crate::util::{fill_color, include_screenshot, stroke};
+use crate::util::{fill_color, stroke};
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
-#[doc = include_screenshot!("split_columns.png", "Split panel with two labels.")]
+#[doc = concat!(
+    "![Split panel with two labels](",
+    include_doc_path!("screenshots/split_columns.png"),
+    ")",
+)]
 pub struct Split<ChildA, ChildB>
 where
     ChildA: Widget + ?Sized,

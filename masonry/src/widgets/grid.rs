@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -15,14 +16,18 @@ use crate::core::{
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::util::{debug_panic, fill, stroke};
 
 /// A widget that arranges its children in a grid.
 ///
 /// Children are drawn in index order,
 /// i.e. each child is drawn on top of the other children with lower indices.
 ///
-#[doc = include_screenshot!("grid_with_changed_spacing.png", "Grid with buttons of various sizes.")]
+#[doc = concat!(
+    "![Grid with buttons of various sizes](",
+    include_doc_path!("screenshots/grid_with_changed_spacing.png"),
+    ")",
+)]
 pub struct Grid {
     children: Vec<Child>,
     grid_column_count: i32,
