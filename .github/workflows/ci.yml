@@ -278,6 +278,8 @@ jobs:
           # because those require Vello rendering to be working
           # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+          # Check that doc file paths are correct
+          CHECK_DOC_PATHS: "true"
 
       - name: Run cargo nextest on unsafe arena
         run: cargo nextest run -p tree_arena --locked --no-fail-fast --no-default-features

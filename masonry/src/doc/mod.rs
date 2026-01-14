@@ -17,8 +17,6 @@
     doc = "**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
 )]
 
-use masonry_core::util::include_screenshot_reference;
-
 // These docs all use the .rustdoc-hidden trick described in
 // https://linebender.org/blog/doc-include/
 
@@ -30,7 +28,10 @@ pub mod color_rectangle;
 pub mod vertical_stack;
 
 #[doc = include_str!("./creating_app.md")]
-#[doc = super::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
+#[doc = concat!(
+    "[to-do-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/example_to_do_list_initial.png")
+)]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_01_creating_app {}
 

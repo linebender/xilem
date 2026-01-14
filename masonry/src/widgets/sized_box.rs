@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 
@@ -16,7 +17,7 @@ use crate::core::{
 use crate::kurbo::{Point, Size};
 use crate::layout::Length;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 /// A widget with predefined size.
 ///
@@ -28,7 +29,11 @@ use crate::util::{fill, include_screenshot, stroke};
 /// and width as possible given the parent's constraints. If height or width is not set,
 /// it will be treated as zero.
 ///
-#[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
+#[doc = concat!(
+    "![Box with blue border, pink background and a child label](",
+    include_doc_path!("screenshots/sized_box_label_box_with_outer_padding.png"),
+    ")",
+)]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
     // TODO - Right now width and height can't be stored as Length values,

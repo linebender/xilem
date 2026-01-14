@@ -29,6 +29,7 @@ masonry_testing = { workspace = true, optional = true }
 parley.workspace = true
 tracing = { workspace = true, features = ["default"] }
 vello.workspace = true
+include_doc_path.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"

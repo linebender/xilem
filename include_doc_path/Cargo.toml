@@ -1,0 +1,18 @@
+[package]
+name = "linebender_include_doc_path"
+version = "0.1.0"
+description = "Helper macro for linking to files in docs.rs."
+keywords = ["macro", "doc"]
+categories = ["filesystem"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.103"
+quote = "1.0.42"
+syn = { version = "2.0.111", features = ["parsing"] }
