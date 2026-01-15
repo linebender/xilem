@@ -202,6 +202,7 @@ pub struct MasonryState<'a> {
     window_id_to_handle_id: HashMap<WindowId, HandleId>,
 
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
+    resized_window: Option<HandleId>,
     windows: HashMap<HandleId, Window>,
 
     clipboard_cx: Box<dyn ClipboardProvider>,
@@ -216,6 +217,7 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
+
 }
 
 // TODO - Merge into MasonryState?
@@ -379,6 +381,7 @@ impl MasonryState<'_> {
             window_id_to_handle_id: HashMap::new(),
             windows: HashMap::new(),
             surfaces: HashMap::new(),
+            resized_window: None,
 
             clipboard_cx,
 
@@ -527,6 +530,10 @@ impl MasonryState<'_> {
 
         // Get the existing surface or create a new one
         let surface = if let Some(surface) = self.surfaces.get_mut(&handle_id) {
+            if self.resized_window == Some(handle_id) {
+                self.render_cx.on_window_resize_state_change(surface, true);
+            }
+
             // The window might have been resized, make sure the surface dimensions match.
             if surface.config.width != size.width || surface.config.height != size.height {
                 self.render_cx
@@ -555,6 +562,10 @@ impl MasonryState<'_> {
         // If a new animation starts, then it will have zero reported elapsed time.
         let animation_continues = window.render_root.needs_anim();
         self.last_anim = animation_continues.then_some(now);
+
+        if self.resized_window == Some(handle_id) {
+            self.render_cx.on_window_resize_state_change(surface, true);
+        }
 
         let (scene, tree_update) = window.render_root.redraw();
         Self::render(surface, window, scene, &self.render_cx, &mut self.renderer);
@@ -747,6 +758,19 @@ impl MasonryState<'_> {
             }
         }
 
+        // On macOS, interactive resizing needs special presentation behavior on Metal to avoid
+        // visible jitter.
+        match event {
+            WinitWindowEvent::Resized(_) | WinitWindowEvent::RedrawRequested => {}
+            _ => {
+                if let Some(resized_window_id) = self.resized_window.take() {
+                    if let Some(surface) = self.surfaces.get_mut(&resized_window_id) {
+                        self.render_cx.on_window_resize_state_change(surface, false);
+                    }
+                }
+            }
+        }
+
         match event {
             WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 window
@@ -760,6 +784,11 @@ impl MasonryState<'_> {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
             }
             WinitWindowEvent::Resized(size) => {
+                self.resized_window = Some(handle_id);
+                if let Some(surface) = self.surfaces.get_mut(&handle_id) {
+                    self.render_cx.on_window_resize_state_change(surface, true);
+                }
+
                 window
                     .render_root
                     .handle_window_event(WindowEvent::Resize(size));
