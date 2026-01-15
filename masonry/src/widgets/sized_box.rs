@@ -57,7 +57,7 @@ use crate::util::{fill, stroke};
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 #[doc = concat!(
     "![Box with blue border, pink background and a child label](",
-    include_doc_path!("screenshots/sized_box_label_box_with_outer_padding.png"),
+    include_doc_path!("screenshots/sized_box_label_box_with_padding.png"),
     ")",
 )]
 pub struct SizedBox {
