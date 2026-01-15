@@ -4,13 +4,14 @@
 use std::collections::HashSet;
 
 use tracing::{info_span, trace};
-use tree_arena::ArenaMut;
+use tree_arena::{ArenaMut, ArenaMutList};
 use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
     QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode, WidgetId,
+    WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -140,49 +141,8 @@ fn update_widget_tree(
     if !state.children_changed {
         return;
     }
-    state.children_changed = false;
 
-    {
-        let mut ctx = RegisterCtx {
-            global_state,
-            children: children.reborrow_mut(),
-            #[cfg(debug_assertions)]
-            registered_ids: Vec::new(),
-        };
-        // The widget will call `RegisterCtx::register_child` on all its children,
-        // which will add the new widgets to the arena.
-        widget.register_children(&mut ctx);
-
-        #[cfg(debug_assertions)]
-        {
-            let children_ids = widget.children_ids();
-            for child_id in ctx.registered_ids {
-                if !children_ids.contains(&child_id) {
-                    panic!(
-                        "Error in '{}' {}: method register_children() called \
-                        RegisterCtx::register_child() on child {}, which isn't \
-                        in the list returned by children_ids()",
-                        widget.short_type_name(),
-                        id,
-                        child_id
-                    );
-                }
-            }
-        }
-
-        #[cfg(debug_assertions)]
-        for child_id in widget.children_ids() {
-            if !children.has(child_id) {
-                panic!(
-                    "Error in '{}' {}: method register_children() did not call \
-                    RegisterCtx::register_child() on child {} returned by children_ids()",
-                    widget.short_type_name(),
-                    id,
-                    child_id
-                );
-            }
-        }
-    }
+    register_children(global_state, widget, state, children.reborrow_mut());
 
     if state.is_new {
         let mut ctx = UpdateCtx {
@@ -204,6 +164,10 @@ fn update_widget_tree(
         state.accepts_text_input = widget.accepts_text_input();
         state.trace_span = widget.make_trace_span(state.id);
         state.is_new = false;
+
+        if state.children_changed {
+            register_children(global_state, widget, state, children.reborrow_mut());
+        }
     }
 
     // We can recurse on this widget's children, because they have already been added
@@ -213,6 +177,55 @@ fn update_widget_tree(
         update_widget_tree(global_state, default_properties, node.reborrow_mut());
         parent_state.merge_up(&mut node.item.state);
     });
+}
+
+fn register_children(
+    global_state: &mut RenderRootState,
+    widget: &mut (dyn Widget + 'static),
+    state: &mut WidgetState,
+    mut children: ArenaMutList<'_, WidgetArenaNode>,
+) {
+    state.children_changed = false;
+
+    let mut ctx = RegisterCtx {
+        global_state,
+        children: children.reborrow_mut(),
+        #[cfg(debug_assertions)]
+        registered_ids: Vec::new(),
+    };
+    // The widget will call `RegisterCtx::register_child` on all its children,
+    // which will add the new widgets to the arena.
+    widget.register_children(&mut ctx);
+
+    #[cfg(debug_assertions)]
+    {
+        let children_ids = widget.children_ids();
+        for child_id in ctx.registered_ids {
+            if !children_ids.contains(&child_id) {
+                panic!(
+                    "Error in '{}' {}: method register_children() called \
+                    RegisterCtx::register_child() on child {}, which isn't \
+                    in the list returned by children_ids()",
+                    widget.short_type_name(),
+                    state.id,
+                    child_id
+                );
+            }
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    for child_id in widget.children_ids() {
+        if !children.has(child_id) {
+            panic!(
+                "Error in '{}' {}: method register_children() did not call \
+                RegisterCtx::register_child() on child {} returned by children_ids()",
+                widget.short_type_name(),
+                state.id,
+                child_id
+            );
+        }
+    }
 }
 
 /// See the [passes documentation](crate::doc::pass_system#update-tree-pass).
