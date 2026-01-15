@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -18,7 +19,7 @@ use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::Length;
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::util::{debug_panic, fill, stroke};
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -46,7 +47,11 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 /// Instead, if a flex child of this widget does not expand to the target size provided by this parent, the difference is distributed
 /// to the space between widgets according to this widget's [`MainAxisAlignment`](Flex::set_main_axis_alignment).
 ///
-#[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
+#[doc = concat!(
+    "![Flex column with multiple labels](",
+    include_doc_path!("screenshots/flex_col_main_axis_spaceAround.png"),
+    ")",
+)]
 pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,

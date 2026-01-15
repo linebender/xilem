@@ -2028,6 +2028,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "linebender_include_doc_path"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "linebender_resource_handle"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2111,6 +2120,7 @@ dependencies = [
  "float-cmp",
  "image",
  "insta",
+ "linebender_include_doc_path",
  "masonry_core",
  "masonry_testing",
  "masonry_winit",
