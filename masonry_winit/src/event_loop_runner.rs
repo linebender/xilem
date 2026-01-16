@@ -20,7 +20,7 @@ use masonry_core::util::Instant;
 use masonry_core::vello::{
     AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu,
 };
-use tracing::{debug, info, info_span};
+use tracing::{info, info_span, trace};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
@@ -884,7 +884,7 @@ impl MasonryState<'_> {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     let window_id = window.id;
-                    debug!(
+                    trace!(
                         "Action {:?} on widget {:?}",
                         (*action).type_name(),
                         widget_id

@@ -9,7 +9,7 @@ use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
-use tracing::{info_span, warn};
+use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size};
@@ -670,7 +670,7 @@ impl RenderRoot {
 
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
-        tracing::debug!("added layer to stack");
+        debug!("added layer to stack");
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::add_layer(&mut layer_stack, root, pos);

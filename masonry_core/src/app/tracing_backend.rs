@@ -60,6 +60,9 @@ fn default_tracing_subscriber_native(
 
     // We skip the layer which stores to a file in `--release` mode for performance.
     let log_file_layer = if cfg!(debug_assertions) {
+        // TODO - Replace with a more targeted subscriber.
+        // See https://github.com/linebender/xilem/issues/1556
+
         let id = std::time::SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
