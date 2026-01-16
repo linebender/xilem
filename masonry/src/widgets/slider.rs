@@ -186,14 +186,6 @@ impl Widget for Slider {
                     ctx.request_render();
                 }
             }
-            PointerEvent::Up(PointerButtonEvent {
-                button: Some(PointerButton::Primary),
-                ..
-            }) => {
-                if ctx.is_active() {
-                    ctx.release_pointer();
-                }
-            }
             _ => {}
         }
     }
