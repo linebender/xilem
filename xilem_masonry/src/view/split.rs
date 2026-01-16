@@ -54,8 +54,8 @@ where
     Split {
         split_axis: Axis::Horizontal,
         split_point: 0.5,
-        min_size: (Length::ZERO, Length::ZERO),
-        bar_size: 6.px(),
+        min_lengths: (Length::ZERO, Length::ZERO),
+        bar_length: 6.px(),
         min_bar_area: 6.px(),
         solid_bar: false,
         draggable: true,
@@ -72,9 +72,9 @@ where
 pub struct Split<ChildA, ChildB, State, Action = ()> {
     split_axis: Axis,
     split_point: f64,
-    min_size: (Length, Length), // Integers only
-    bar_size: Length,           // Integers only
-    min_bar_area: Length,       // Integers only
+    min_lengths: (Length, Length), // Integers only
+    bar_length: Length,            // Integers only
+    min_bar_area: Length,          // Integers only
     solid_bar: bool,
     draggable: bool,
     child1: ChildA,
@@ -108,35 +108,36 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
         self
     }
 
-    /// Set the minimum size for both sides of the split axis in logical pixels.
+    /// Set the minimum lengths for both sides of the split axis in logical pixels.
     ///
     /// The value will be rounded up to the nearest integer.
-    pub fn min_size(mut self, first: Length, second: Length) -> Self {
-        self.min_size = (ceil_length(first), ceil_length(second));
+    pub fn min_lengths(mut self, first: Length, second: Length) -> Self {
+        self.min_lengths = (ceil_length(first), ceil_length(second));
         self
     }
 
-    /// Set the size of the splitter bar in logical pixels.
+    /// Set the length of the splitter bar on the split axis in logical pixels.
     ///
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     #[track_caller]
-    pub fn bar_size(mut self, bar_size: Length) -> Self {
-        self.bar_size = ceil_length(bar_size);
+    pub fn bar_length(mut self, bar_length: Length) -> Self {
+        self.bar_length = ceil_length(bar_length);
         self
     }
 
-    /// Set the minimum size of the splitter bar area in logical pixels.
+    /// Set the minimum thickness of the splitter bar area in logical pixels.
     ///
-    /// The minimum splitter bar area defines the minimum size of the area
-    /// where mouse hit detection is done for the splitter bar.
-    /// The final area is either this or the splitter bar size, whichever is greater.
+    /// The minimum splitter bar area defines the minimum thickness of the area
+    /// where pointer hit detection is done for the splitter bar.
+    /// The final hit detection area thickness is either this minimum
+    /// or the splitter bar thickness, whichever is greater.
     ///
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default minimum splitter bar area is `6.0`.
+    /// The default minimum splitter bar area thickness is `6.0`.
     #[track_caller]
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
         self.min_bar_area = ceil_length(min_bar_area);
@@ -199,8 +200,8 @@ where
             widgets::Split::new(child1.new_widget, child2.new_widget)
                 .split_axis(self.split_axis)
                 .split_point(self.split_point)
-                .min_size(self.min_size.0, self.min_size.1)
-                .bar_size(self.bar_size)
+                .min_lengths(self.min_lengths.0, self.min_lengths.1)
+                .bar_thickness(self.bar_length)
                 .min_bar_area(self.min_bar_area)
                 .draggable(self.draggable)
                 .solid_bar(self.solid_bar),
@@ -225,12 +226,12 @@ where
             widgets::Split::set_split_point(&mut element, self.split_point);
         }
 
-        if prev.min_size != self.min_size {
-            widgets::Split::set_min_size(&mut element, self.min_size.0, self.min_size.1);
+        if prev.min_lengths != self.min_lengths {
+            widgets::Split::set_min_lengths(&mut element, self.min_lengths.0, self.min_lengths.1);
         }
 
-        if prev.bar_size != self.bar_size {
-            widgets::Split::set_bar_size(&mut element, self.bar_size);
+        if prev.bar_length != self.bar_length {
+            widgets::Split::set_bar_thickness(&mut element, self.bar_length);
         }
 
         if prev.min_bar_area != self.min_bar_area {
