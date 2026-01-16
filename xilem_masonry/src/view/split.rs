@@ -126,17 +126,18 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
         self
     }
 
-    /// Set the minimum length of the splitter bar area in logical pixels.
+    /// Set the minimum thickness of the splitter bar area in logical pixels.
     ///
-    /// The minimum splitter bar area defines the minimum length of the area
-    /// where mouse hit detection is done for the splitter bar.
-    /// The final area is either this or the splitter bar length, whichever is greater.
+    /// The minimum splitter bar area defines the minimum thickness of the area
+    /// where pointer hit detection is done for the splitter bar.
+    /// The final hit detection area thickness is either this minimum
+    /// or the splitter bar thickness, whichever is greater.
     ///
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default minimum splitter bar area length is `6.0`.
+    /// The default minimum splitter bar area thickness is `6.0`.
     #[track_caller]
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
         self.min_bar_area = ceil_length(min_bar_area);
@@ -200,7 +201,7 @@ where
                 .split_axis(self.split_axis)
                 .split_point(self.split_point)
                 .min_lengths(self.min_lengths.0, self.min_lengths.1)
-                .bar_length(self.bar_length)
+                .bar_thickness(self.bar_length)
                 .min_bar_area(self.min_bar_area)
                 .draggable(self.draggable)
                 .solid_bar(self.solid_bar),
@@ -230,7 +231,7 @@ where
         }
 
         if prev.bar_length != self.bar_length {
-            widgets::Split::set_bar_length(&mut element, self.bar_length);
+            widgets::Split::set_bar_thickness(&mut element, self.bar_length);
         }
 
         if prev.min_bar_area != self.min_bar_area {

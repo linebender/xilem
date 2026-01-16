@@ -34,7 +34,7 @@ where
     split_point_chosen: f64,
     split_point_effective: f64,
     min_lengths: (Length, Length), // Integers only
-    bar_length: Length,            // Integers only
+    bar_thickness: Length,         // Integers only
     min_bar_area: Length,          // Integers only
     solid: bool,
     draggable: bool,
@@ -55,7 +55,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
             min_lengths: (Length::ZERO, Length::ZERO),
-            bar_length: 6.px(),
+            bar_thickness: 6.px(),
             min_bar_area: 6.px(),
             solid: false,
             draggable: true,
@@ -97,26 +97,27 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         self
     }
 
-    /// Builder-style method to set the length of the splitter bar.
+    /// Builder-style method to set the thickness of the splitter bar.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default splitter bar length is `6.0`.
-    pub fn bar_length(mut self, bar_length: Length) -> Self {
-        self.bar_length = ceil_length(bar_length);
+    /// The default splitter bar thickness is `6.0`.
+    pub fn bar_thickness(mut self, bar_thickness: Length) -> Self {
+        self.bar_thickness = ceil_length(bar_thickness);
         self
     }
 
-    /// Builder-style method to set the minimum length of the splitter bar area.
+    /// Builder-style method to set the minimum thickness of the splitter bar area.
     ///
-    /// The minimum splitter bar area defines the minimum length of the area
-    /// where mouse hit detection is done for the splitter bar.
-    /// The final area is either this or the splitter bar length, whichever is greater.
+    /// The minimum splitter bar area defines the minimum thickness of the area
+    /// where pointer hit detection is done for the splitter bar.
+    /// The final hit detection area thickness is either this minimum
+    /// or the splitter bar thickness, whichever is greater.
     ///
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default minimum splitter bar area length is `6.0`.
+    /// The default minimum splitter bar area thickness is `6.0`.
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
         self.min_bar_area = ceil_length(min_bar_area);
         self
@@ -145,16 +146,16 @@ pub fn ceil_length(l: Length) -> Length {
 
 // --- MARK: METHODS
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
-    /// Returns the length of the splitter bar area on the split axis.
+    /// Returns the thickness of the splitter bar area.
     #[inline]
     fn bar_area(&self, scale: f64) -> f64 {
-        self.bar_length.max(self.min_bar_area).dp(scale)
+        self.bar_thickness.max(self.min_bar_area).dp(scale)
     }
 
-    /// Returns the padding length added to each side of the splitter bar.
+    /// Returns the padding added to each side of the splitter bar on the split axis.
     #[inline]
     fn bar_padding(&self, scale: f64) -> f64 {
-        (self.bar_area(scale) - self.bar_length.dp(scale)) * 0.5
+        (self.bar_area(scale) - self.bar_thickness.dp(scale)) * 0.5
     }
 
     /// Returns the position of the split point (splitter bar area center).
@@ -241,9 +242,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let size = ctx.size();
         let length = size.get_coord(self.split_axis);
         let cross_length = size.get_coord(self.split_axis.cross());
-        // Set the line width to a third of the splitter bar length,
+        // Set the line width to a third of the splitter bar thickness,
         // because we'll paint two equal lines at the edges.
-        let line_width = (self.bar_length.dp(scale) / 3.0).floor();
+        let line_width = (self.bar_thickness.dp(scale) / 3.0).floor();
         let line_midpoint = line_width / 2.0;
         let (edge1, edge2) = self.bar_edges(length, scale);
         let padding = self.bar_padding(scale);
@@ -322,26 +323,27 @@ where
         this.ctx.request_layout();
     }
 
-    /// Sets the length of the splitter bar on the split axis.
+    /// Sets the thickness of the splitter bar.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default splitter bar length is `6.0`.
-    pub fn set_bar_length(this: &mut WidgetMut<'_, Self>, bar_length: Length) {
-        this.widget.bar_length = ceil_length(bar_length);
+    /// The default splitter bar thickness is `6.0`.
+    pub fn set_bar_thickness(this: &mut WidgetMut<'_, Self>, bar_thickness: Length) {
+        this.widget.bar_thickness = ceil_length(bar_thickness);
         this.ctx.request_layout();
     }
 
-    /// Sets the minimum length of the splitter bar area.
+    /// Sets the minimum thickness of the splitter bar area.
     ///
-    /// The minimum splitter bar area defines the minimum length of the area
-    /// where mouse hit detection is done for the splitter bar.
-    /// The final area is either this or the splitter bar length, whichever is greater.
+    /// The minimum splitter bar area defines the minimum thickness of the area
+    /// where pointer hit detection is done for the splitter bar.
+    /// The final hit detection area thickness is either this minimum
+    /// or the splitter bar thickness, whichever is greater.
     ///
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
     /// The value will be rounded up to the nearest integer.
-    /// The default minimum splitter bar area length is `6.0`.
+    /// The default minimum splitter bar area thickness is `6.0`.
     pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: Length) {
         this.widget.min_bar_area = ceil_length(min_bar_area);
         this.ctx.request_layout();
@@ -393,7 +395,7 @@ where
                     if self.bar_hit_test(length, pos, scale) {
                         ctx.set_handled();
                         ctx.capture_pointer();
-                        // Save the delta between the mouse click position and the split point
+                        // Save the delta between the click position and the split point
                         self.click_offset = pos - self.bar_position(length, scale);
                     }
                 }
@@ -548,8 +550,8 @@ where
         let scale = 1.0;
 
         let length = ctx.size().get_coord(self.split_axis);
-        let local_mouse_pos = (pos - ctx.window_origin().to_vec2()).get_coord(self.split_axis);
-        let is_bar_hovered = self.bar_hit_test(length, local_mouse_pos, scale);
+        let local_pos = (pos - ctx.window_origin().to_vec2()).get_coord(self.split_axis);
+        let is_bar_hovered = self.bar_hit_test(length, local_pos, scale);
 
         if self.draggable && (ctx.is_active() || is_bar_hovered) {
             match self.split_axis {
@@ -630,7 +632,7 @@ mod tests {
             )
             .split_point(0.3)
             .min_lengths(40.px(), 10.px())
-            .bar_length(12.px())
+            .bar_thickness(12.px())
             .draggable(true)
             .solid_bar(true)
             .with_auto_id();
@@ -654,7 +656,7 @@ mod tests {
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, 0.3);
                 Split::set_min_lengths(&mut splitter, 40.px(), 10.px());
-                Split::set_bar_length(&mut splitter, 12.px());
+                Split::set_bar_thickness(&mut splitter, 12.px());
                 Split::set_draggable(&mut splitter, true);
                 Split::set_bar_solid(&mut splitter, true);
             });
