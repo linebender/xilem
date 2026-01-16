@@ -18,7 +18,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::LenReq;
-use crate::peniko::BlendMode;
+use crate::peniko::{BlendMode, Fill};
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
 use crate::theme::default_text_styles;
 use crate::util::{debug_panic, include_screenshot};
@@ -459,7 +459,13 @@ impl Widget for Label {
 
         if line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
-            scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
+            scene.push_layer(
+                Fill::NonZero,
+                BlendMode::default(),
+                1.,
+                Affine::IDENTITY,
+                &clip_rect,
+            );
         }
         let text_origin = padding.origin_down(Point::ZERO, scale).to_vec2();
         let transform = Affine::translate(text_origin);
