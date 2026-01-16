@@ -35,8 +35,8 @@ where
     min_bar_area: Length,
     solid: bool,
     draggable: bool,
-    /// Offset from the split point (bar center) to the actual position where the
-    /// bar was clicked. This is used to ensure a click without moving is a no-op,
+    /// Offset from the bar center to the actual position where the bar was clicked.
+    /// This is used to ensure a click without moving is a no-op,
     /// instead of re-centering the bar to the click position.
     click_offset: f64,
     child1: WidgetPod<ChildA>,
@@ -139,41 +139,51 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         self.bar_thickness.max(self.min_bar_area).dp(scale)
     }
 
-    /// Returns the padding added to each side of the splitter bar on the split axis.
-    #[inline]
-    fn bar_padding(&self, scale: f64) -> f64 {
-        (self.bar_area(scale) - self.bar_thickness.dp(scale)) * 0.5
-    }
-
-    /// Returns the position of the split point (splitter bar area center).
-    fn bar_position(&self, length: f64, scale: f64) -> f64 {
+    /// Returns the splitter bar area center point.
+    fn bar_area_center(&self, length: f64, scale: f64) -> f64 {
         let bar_area = self.bar_area(scale);
         let reduced_length = length - bar_area;
         let edge = reduced_length * self.split_point_effective;
         edge + bar_area * 0.5
     }
 
-    /// Returns the location of the edges of the splitter bar area,
+    /// Returns the location of the edges of the splitter bar,
     /// given the specified total length.
     fn bar_edges(&self, length: f64, scale: f64) -> (f64, f64) {
-        let bar_area = self.bar_area(scale);
-        let reduced_length = length - bar_area;
+        let bar_thickness = self.bar_thickness.dp(scale);
+        let reduced_length = length - bar_thickness;
         let edge = reduced_length * self.split_point_effective;
-        (edge, edge + bar_area)
+        (edge, edge + bar_thickness)
+    }
+
+    /// Returns the location of the edges of the splitter bar area,
+    /// given the specified total length.
+    fn bar_area_edges(&self, length: f64, scale: f64) -> (f64, f64) {
+        let (edge1, edge2) = self.bar_edges(length, scale);
+        let (space1, space2) = (edge1.max(0.), (length - edge2).max(0.));
+        let padding = (self.min_bar_area.dp(scale) - self.bar_thickness.dp(scale)).max(0.);
+
+        // Half the padding to the first edge
+        let pad1 = (0.5 * padding).min(space1);
+        // Remainder to the second edge
+        let pad2 = (padding - pad1).min(space2);
+        // First edge gets more, in case space2 was low but space1 is high
+        let pad1 = (padding - pad2).min(space1);
+
+        (edge1 - pad1, edge2 + pad2)
     }
 
     /// Returns `true` if the provided position is on the splitter bar area.
-    fn bar_hit_test(&self, length: f64, pos: f64, scale: f64) -> bool {
-        let (edge1, edge2) = self.bar_edges(length, scale);
+    fn bar_area_hit_test(&self, length: f64, pos: f64, scale: f64) -> bool {
+        let (edge1, edge2) = self.bar_area_edges(length, scale);
         pos >= edge1 && pos <= edge2
     }
 
     /// Returns the minimum and maximum split coordinate of the provided length.
     fn split_side_limits(&self, length: f64, scale: f64) -> (f64, f64) {
-        let (min_limit, min_second) = self.min_lengths;
-        let mut min_limit = min_limit.dp(scale);
-        let min_second = min_second.dp(scale);
-        let mut max_limit = (length - min_second).max(0.0);
+        let (min_child1, min_child2) = self.min_lengths;
+        let mut min_limit = min_child1.dp(scale);
+        let mut max_limit = (length - min_child2.dp(scale)).max(0.0);
 
         if min_limit > max_limit {
             min_limit = 0.5 * (min_limit + max_limit);
@@ -213,10 +223,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let length = size.get_coord(self.split_axis);
         let cross_length = size.get_coord(self.split_axis.cross());
         let (edge1, edge2) = self.bar_edges(length, scale);
-        let padding = self.bar_padding(scale);
 
-        let p1 = self.split_axis.pack_point(edge1 + padding, 0.);
-        let p2 = self.split_axis.pack_point(edge2 - padding, cross_length);
+        let p1 = self.split_axis.pack_point(edge1, 0.);
+        let p2 = self.split_axis.pack_point(edge2, cross_length);
         let rect = Rect::from_points(p1, p2);
 
         let splitter_color = self.bar_color();
@@ -232,10 +241,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let line_width = self.bar_thickness.dp(scale) / 3.0;
         let line_midpoint = line_width / 2.0;
         let (edge1, edge2) = self.bar_edges(length, scale);
-        let padding = self.bar_padding(scale);
 
-        let edge1_line_pos = edge1 + line_midpoint + padding;
-        let edge2_line_pos = edge2 - line_midpoint - padding;
+        let edge1_line_pos = edge1 + line_midpoint;
+        let edge2_line_pos = edge2 - line_midpoint;
 
         let line1_p1 = self.split_axis.pack_point(edge1_line_pos, 0.);
         let line1_p2 = self.split_axis.pack_point(edge1_line_pos, cross_length);
@@ -373,11 +381,11 @@ where
                         .local_position(state.position)
                         .get_coord(self.split_axis);
                     let length = ctx.size().get_coord(self.split_axis);
-                    if self.bar_hit_test(length, pos, scale) {
+                    if self.bar_area_hit_test(length, pos, scale) {
                         ctx.set_handled();
                         ctx.capture_pointer();
-                        // Save the delta between the click position and the split point
-                        self.click_offset = pos - self.bar_position(length, scale);
+                        // Save the delta between the click position and the bar area center
+                        self.click_offset = pos - self.bar_area_center(length, scale);
                     }
                 }
                 PointerEvent::Move(PointerUpdate { current, .. }) => {
@@ -430,10 +438,13 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
+        let bar_thickness = self.bar_thickness.dp(scale);
+
         if let LenReq::FitContent(space) = len_req {
             // We always want to use up all offered space
             if axis == self.split_axis {
-                return space.max(self.bar_area(scale));
+                // Don't go below the bar thickness, which we always want to paint.
+                return space.max(bar_thickness);
             }
             return space;
         }
@@ -445,7 +456,7 @@ where
             .map(|cross_length| {
                 // We need to split the cross length if it's our split axis
                 if cross == self.split_axis {
-                    let cross_space = (cross_length - self.bar_area(scale)).max(0.);
+                    let cross_space = (cross_length - bar_thickness).max(0.);
                     let split_point = self.calc_effective_split_point(cross_space, scale);
                     let child1_cross_space = cross_space * split_point;
                     (child1_cross_space, cross_space - child1_cross_space)
@@ -473,7 +484,7 @@ where
         );
 
         if axis == self.split_axis {
-            child1_length + child2_length + self.bar_area(scale)
+            child1_length + child2_length + bar_thickness
         } else {
             child1_length.max(child2_length)
         }
@@ -484,8 +495,8 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let bar_area = self.bar_area(scale);
-        let split_space = (size.get_coord(self.split_axis) - bar_area).max(0.);
+        let bar_thickness = self.bar_thickness.dp(scale);
+        let split_space = (size.get_coord(self.split_axis) - bar_thickness).max(0.);
         let cross_space = size.get_coord(self.split_axis.cross());
 
         // Update our effective split point to respect our size
@@ -504,7 +515,7 @@ where
         let child1_origin = Point::ORIGIN;
         let child2_origin = self
             .split_axis
-            .pack_point(child1_split_space + bar_area, 0.);
+            .pack_point(child1_split_space + bar_thickness, 0.);
         ctx.place_child(&mut self.child1, child1_origin);
         ctx.place_child(&mut self.child2, child2_origin);
     }
@@ -532,9 +543,9 @@ where
 
         let length = ctx.size().get_coord(self.split_axis);
         let local_pos = (pos - ctx.window_origin().to_vec2()).get_coord(self.split_axis);
-        let is_bar_hovered = self.bar_hit_test(length, local_pos, scale);
+        let is_bar_area_hovered = self.bar_area_hit_test(length, local_pos, scale);
 
-        if self.draggable && (ctx.is_active() || is_bar_hovered) {
+        if self.draggable && (ctx.is_active() || is_bar_area_hovered) {
             match self.split_axis {
                 Axis::Horizontal => CursorIcon::EwResize,
                 Axis::Vertical => CursorIcon::NsResize,
