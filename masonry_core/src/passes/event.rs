@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use tracing::{debug, info_span, trace};
+use tracing::{info_span, trace};
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
@@ -143,20 +143,10 @@ fn run_event_pass<E>(
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
-    if is_very_frequent(event) {
-        // We still want to record that this pass occurred in the debug file log.
-        // However, we choose not to record any other tracing for this event,
-        // as that would create a lot of noise.
-        trace!(
-            "Running ON_POINTER_EVENT pass with {}",
-            pointer_event_short_name(event)
-        );
-    } else {
-        debug!(
-            "Running ON_POINTER_EVENT pass with {}",
-            pointer_event_short_name(event)
-        );
-    }
+    trace!(
+        "Running ON_POINTER_EVENT pass with {}",
+        pointer_event_short_name(event)
+    );
 
     let event_pos = try_event_position(event).map(|p| p.to_logical(root.global_state.scale_factor));
 
@@ -232,7 +222,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     }
 
     if !is_very_frequent(event) {
-        debug!(
+        trace!(
             focused_widget = root.global_state.focused_widget.map(|id| id.0),
             handled = handled.is_handled(),
             "ON_POINTER_EVENT finished",
@@ -258,7 +248,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     let _span = info_span!("dispatch_text_event").entered();
 
-    debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+    trace!("Running ON_TEXT_EVENT pass with {}", event.short_name());
 
     if let TextEvent::WindowFocusChange(focused) = event {
         root.global_state.window_focused = *focused;
@@ -320,7 +310,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
     }
 
-    debug!(
+    trace!(
         focused_widget = root.global_state.focused_widget.map(|id| id.0),
         handled = handled.is_handled(),
         "ON_TEXT_EVENT finished",
@@ -337,7 +327,7 @@ pub(crate) fn run_on_access_event_pass(
     target: WidgetId,
 ) -> Handled {
     let _span = info_span!("access_event").entered();
-    debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
+    trace!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
     let skip_if_disabled = true;
     let mut handled = run_event_pass(
@@ -377,7 +367,7 @@ pub(crate) fn run_on_access_event_pass(
         _ => {}
     }
 
-    debug!(
+    trace!(
         focused_widget = root.global_state.focused_widget.map(|id| id.0),
         handled = handled.is_handled(),
         "ON_ACCESS_EVENT finished",
