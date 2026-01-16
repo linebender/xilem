@@ -7,6 +7,7 @@ use vello::Scene;
 
 use crate::core::{Property, UpdateCtx};
 use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
+use crate::peniko::Fill;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::CornerRadius;
 
@@ -120,7 +121,7 @@ impl BoxShadow {
                 .chain(carve_out_rect.to_path(0.1).reverse_subpaths()),
         );
 
-        scene.push_clip_layer(transform, &clip_shape);
+        scene.push_clip_layer(Fill::NonZero, transform, &clip_shape);
         scene.draw_blurred_rounded_rect_in(
             &big_rect,
             transform,

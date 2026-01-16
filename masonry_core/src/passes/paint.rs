@@ -82,7 +82,7 @@ fn paint_widget(
         };
 
         if let Some(clip) = state.clip_path {
-            complete_scene.push_clip_layer(transform, &clip);
+            complete_scene.push_clip_layer(Fill::NonZero, transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));
