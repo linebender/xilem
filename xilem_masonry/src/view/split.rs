@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::kurbo::Axis;
 use masonry::layout::{AsUnit, Length};
-use masonry::widgets::{self, ceil_length};
+use masonry::widgets;
 
 use crate::core::{
     Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
@@ -55,7 +55,7 @@ where
         split_axis: Axis::Horizontal,
         split_point: 0.5,
         min_lengths: (Length::ZERO, Length::ZERO),
-        bar_length: 6.px(),
+        bar_thickness: 6.px(),
         min_bar_area: 6.px(),
         solid_bar: false,
         draggable: true,
@@ -72,9 +72,9 @@ where
 pub struct Split<ChildA, ChildB, State, Action = ()> {
     split_axis: Axis,
     split_point: f64,
-    min_lengths: (Length, Length), // Integers only
-    bar_length: Length,            // Integers only
-    min_bar_area: Length,          // Integers only
+    min_lengths: (Length, Length),
+    bar_thickness: Length,
+    min_bar_area: Length,
     solid_bar: bool,
     draggable: bool,
     child1: ChildA,
@@ -109,20 +109,17 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     }
 
     /// Set the minimum lengths for both sides of the split axis in logical pixels.
-    ///
-    /// The value will be rounded up to the nearest integer.
     pub fn min_lengths(mut self, first: Length, second: Length) -> Self {
-        self.min_lengths = (ceil_length(first), ceil_length(second));
+        self.min_lengths = (first, second);
         self
     }
 
-    /// Set the length of the splitter bar on the split axis in logical pixels.
+    /// Set the thickness of the splitter bar in logical pixels.
     ///
-    /// The value will be rounded up to the nearest integer.
-    /// The default splitter bar size is `6.0`.
+    /// The default splitter bar thickness is `6.0`.
     #[track_caller]
-    pub fn bar_length(mut self, bar_length: Length) -> Self {
-        self.bar_length = ceil_length(bar_length);
+    pub fn bar_thickness(mut self, bar_thickness: Length) -> Self {
+        self.bar_thickness = bar_thickness;
         self
     }
 
@@ -136,11 +133,10 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area thickness is `6.0`.
     #[track_caller]
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
-        self.min_bar_area = ceil_length(min_bar_area);
+        self.min_bar_area = min_bar_area;
         self
     }
 
@@ -201,7 +197,7 @@ where
                 .split_axis(self.split_axis)
                 .split_point(self.split_point)
                 .min_lengths(self.min_lengths.0, self.min_lengths.1)
-                .bar_thickness(self.bar_length)
+                .bar_thickness(self.bar_thickness)
                 .min_bar_area(self.min_bar_area)
                 .draggable(self.draggable)
                 .solid_bar(self.solid_bar),
@@ -230,8 +226,8 @@ where
             widgets::Split::set_min_lengths(&mut element, self.min_lengths.0, self.min_lengths.1);
         }
 
-        if prev.bar_length != self.bar_length {
-            widgets::Split::set_bar_thickness(&mut element, self.bar_length);
+        if prev.bar_thickness != self.bar_thickness {
+            widgets::Split::set_bar_thickness(&mut element, self.bar_thickness);
         }
 
         if prev.min_bar_area != self.min_bar_area {

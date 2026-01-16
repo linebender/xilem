@@ -19,9 +19,6 @@ use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 
-// TODO - Remove size rounding.
-// Pixel snapping is now done at the Masonry level.
-
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
 #[doc = include_screenshot!("split_columns.png", "Split panel with two labels.")]
@@ -33,9 +30,9 @@ where
     split_axis: Axis,
     split_point_chosen: f64,
     split_point_effective: f64,
-    min_lengths: (Length, Length), // Integers only
-    bar_thickness: Length,         // Integers only
-    min_bar_area: Length,          // Integers only
+    min_lengths: (Length, Length),
+    bar_thickness: Length,
+    min_bar_area: Length,
     solid: bool,
     draggable: bool,
     /// Offset from the split point (bar center) to the actual position where the
@@ -90,19 +87,16 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     }
 
     /// Builder-style method to set the minimum length for both sides of the split axis.
-    ///
-    /// The values will be rounded up to the nearest integer.
     pub fn min_lengths(mut self, first: Length, second: Length) -> Self {
-        self.min_lengths = (ceil_length(first), ceil_length(second));
+        self.min_lengths = (first, second);
         self
     }
 
     /// Builder-style method to set the thickness of the splitter bar.
     ///
-    /// The value will be rounded up to the nearest integer.
     /// The default splitter bar thickness is `6.0`.
     pub fn bar_thickness(mut self, bar_thickness: Length) -> Self {
-        self.bar_thickness = ceil_length(bar_thickness);
+        self.bar_thickness = bar_thickness;
         self
     }
 
@@ -116,10 +110,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area thickness is `6.0`.
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
-        self.min_bar_area = ceil_length(min_bar_area);
+        self.min_bar_area = min_bar_area;
         self
     }
 
@@ -136,12 +129,6 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         self.solid = solid;
         self
     }
-}
-
-// TODO - Remove this function, and remove pixel-snapping code from this file.
-#[doc(hidden)]
-pub fn ceil_length(l: Length) -> Length {
-    Length::px(l.get().ceil())
 }
 
 // --- MARK: METHODS
@@ -162,7 +149,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     fn bar_position(&self, length: f64, scale: f64) -> f64 {
         let bar_area = self.bar_area(scale);
         let reduced_length = length - bar_area;
-        let edge = (reduced_length * self.split_point_effective).floor();
+        let edge = reduced_length * self.split_point_effective;
         edge + bar_area * 0.5
     }
 
@@ -171,7 +158,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     fn bar_edges(&self, length: f64, scale: f64) -> (f64, f64) {
         let bar_area = self.bar_area(scale);
         let reduced_length = length - bar_area;
-        let edge = (reduced_length * self.split_point_effective).floor();
+        let edge = reduced_length * self.split_point_effective;
         (edge, edge + bar_area)
     }
 
@@ -228,10 +215,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let (edge1, edge2) = self.bar_edges(length, scale);
         let padding = self.bar_padding(scale);
 
-        let p1 = self.split_axis.pack_point(edge1 + padding.ceil(), 0.);
-        let p2 = self
-            .split_axis
-            .pack_point(edge2 - padding.floor(), cross_length);
+        let p1 = self.split_axis.pack_point(edge1 + padding, 0.);
+        let p2 = self.split_axis.pack_point(edge2 - padding, cross_length);
         let rect = Rect::from_points(p1, p2);
 
         let splitter_color = self.bar_color();
@@ -244,13 +229,13 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let cross_length = size.get_coord(self.split_axis.cross());
         // Set the line width to a third of the splitter bar thickness,
         // because we'll paint two equal lines at the edges.
-        let line_width = (self.bar_thickness.dp(scale) / 3.0).floor();
+        let line_width = self.bar_thickness.dp(scale) / 3.0;
         let line_midpoint = line_width / 2.0;
         let (edge1, edge2) = self.bar_edges(length, scale);
         let padding = self.bar_padding(scale);
 
-        let edge1_line_pos = edge1 + line_midpoint + padding.ceil();
-        let edge2_line_pos = edge2 - line_midpoint - padding.floor();
+        let edge1_line_pos = edge1 + line_midpoint + padding;
+        let edge2_line_pos = edge2 - line_midpoint - padding;
 
         let line1_p1 = self.split_axis.pack_point(edge1_line_pos, 0.);
         let line1_p2 = self.split_axis.pack_point(edge1_line_pos, cross_length);
@@ -316,19 +301,16 @@ where
     }
 
     /// Sets the minimum lengths for both sides of the split axis.
-    ///
-    /// The value will be rounded up to the nearest integer.
     pub fn set_min_lengths(this: &mut WidgetMut<'_, Self>, first: Length, second: Length) {
-        this.widget.min_lengths = (ceil_length(first), ceil_length(second));
+        this.widget.min_lengths = (first, second);
         this.ctx.request_layout();
     }
 
     /// Sets the thickness of the splitter bar.
     ///
-    /// The value will be rounded up to the nearest integer.
     /// The default splitter bar thickness is `6.0`.
     pub fn set_bar_thickness(this: &mut WidgetMut<'_, Self>, bar_thickness: Length) {
-        this.widget.bar_thickness = ceil_length(bar_thickness);
+        this.widget.bar_thickness = bar_thickness;
         this.ctx.request_layout();
     }
 
@@ -342,10 +324,9 @@ where
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area thickness is `6.0`.
     pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: Length) {
-        this.widget.min_bar_area = ceil_length(min_bar_area);
+        this.widget.min_bar_area = min_bar_area;
         this.ctx.request_layout();
     }
 
@@ -466,7 +447,7 @@ where
                 if cross == self.split_axis {
                     let cross_space = (cross_length - self.bar_area(scale)).max(0.);
                     let split_point = self.calc_effective_split_point(cross_space, scale);
-                    let child1_cross_space = (cross_space * split_point).floor();
+                    let child1_cross_space = cross_space * split_point;
                     (child1_cross_space, cross_space - child1_cross_space)
                 } else {
                     (cross_length, cross_length)
@@ -510,7 +491,7 @@ where
         // Update our effective split point to respect our size
         self.split_point_effective = self.calc_effective_split_point(split_space, scale);
 
-        let child1_split_space = (split_space * self.split_point_effective).floor().max(0.);
+        let child1_split_space = (split_space * self.split_point_effective).max(0.);
         let child2_split_space = (split_space - child1_split_space).max(0.);
 
         let child1_size = self.split_axis.pack_size(child1_split_space, cross_space);
