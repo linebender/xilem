@@ -12,12 +12,13 @@ use vello::Scene;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime,
-    LayoutCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
+    AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
+    MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
-use crate::kurbo::{Affine, Point, Rect, Size};
+use crate::kurbo::{Affine, Axis, Point, Rect, Size};
+use crate::layout::LenReq;
 use crate::peniko::Fill;
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
@@ -60,13 +61,10 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// Note that if clipping is desired, that should be added by the parent widget.
     /// Can be set using [`set_word_wrap`](Self::set_word_wrap).
     word_wrap: bool,
-    /// The amount of horizontal space available when [layout](Widget::layout) was
-    /// last performed.
+    /// The value of `max_advance` when this layout was last calculated.
     ///
-    /// If word wrapping is enabled, we use this for line breaking.
-    /// We store this to avoid redoing work in layout and to set the
-    /// width when `word_wrap` is re-enabled.
-    last_available_width: Option<f32>,
+    /// If it has changed, we need to re-perform line-breaking.
+    last_max_advance: Option<f32>,
 
     /// Whether to hint whilst drawing the text.
     ///
@@ -125,7 +123,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             editor,
             rendered_generation: Generation::default(),
             word_wrap: true,
-            last_available_width: None,
+            last_max_advance: None,
             hint: true,
             insert_newline: InsertNewline::default(),
             anim_cursor_visible: true,
@@ -182,10 +180,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Sets the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
-    /// Text alignment might have unexpected results when the text area has no horizontal constraints.
-    ///
     /// To modify this on an active text area, use [`set_text_alignment`](Self::set_text_alignment).
-    // TODO: Document behaviour based on provided minimum constraint?
     pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.editor.set_alignment(text_alignment);
         self
@@ -354,18 +349,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// The runtime equivalent of [`with_word_wrap`](Self::with_word_wrap).
     pub fn set_word_wrap(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
         this.widget.word_wrap = wrap_words;
-        let width = if wrap_words {
-            this.widget.last_available_width
-        } else {
-            None
-        };
-        this.widget.editor.set_width(width);
         this.ctx.request_layout();
     }
 
     /// Sets the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
-    ///
-    /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
     /// The runtime equivalent of [`with_text_alignment`](Self::with_text_alignment).
     pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
@@ -875,33 +862,66 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let available_width = if bc.max().width.is_finite() {
-            Some((bc.max().width) as f32)
-        } else {
-            None
-        };
-        let max_advance = if self.word_wrap {
-            available_width
-        } else {
-            None
-        };
-        if self.last_available_width != available_width && self.word_wrap {
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // Currently we only support the common horizontal-tb writing mode,
+        // so we hardcode the assumption that inline axis is horizontal.
+        let inline = Axis::Horizontal;
+
+        // TODO: The following max_advance calculation is very similar to Label widget's measure,
+        //       so these could be more unified and share a single implementation.
+
+        // Calculate the max advance for the inline axis, with None indicating unbounded.
+        let max_advance = match self.word_wrap {
+            true => {
+                if axis == inline {
+                    // Inline axis measurement ignores cross_length as a performance optimization.
+                    // The search complexity of dealing with it is just too prohibitive.
+                    // This is a common optimization also present on the web.
+                    match len_req {
+                        // Zero space will get us the length of longest unbreakable word
+                        LenReq::MinContent => Some(0.),
+                        // Unbounded space will get us the length of the unwrapped string
+                        LenReq::MaxContent => None,
+                        // Attempt to wrap according to the parent's request
+                        LenReq::FitContent(space) => Some(space),
+                    }
+                } else {
+                    // Block axis is dependant on the inline axis, so cross_length dominates.
+                    // If there is no explicit cross_length present, we fall back to inline defaults.
+                    match len_req {
+                        // Fallback is inline axis MinContent
+                        LenReq::MinContent => cross_length.or(Some(0.)),
+                        // Fallback is inline axis MaxContent, even for FitContent, because
+                        // as we don't have the inline space bound we'll consider it unbounded.
+                        LenReq::MaxContent | LenReq::FitContent(_) => cross_length,
+                    }
+                }
+            }
+            // If we're never wrapping, then there's no max advance.
+            false => None,
+        }
+        .map(|v| v as f32);
+
+        let mut reset_max_advance = None;
+        if self.last_max_advance != max_advance {
+            reset_max_advance = Some(self.last_max_advance);
             self.editor.set_width(max_advance);
-        }
-        self.last_available_width = available_width;
-        // TODO: Use the minimum width in the bc for alignment
-
-        let new_generation = self.editor.generation();
-        if new_generation != self.rendered_generation {
-            self.rendered_generation = new_generation;
+            self.last_max_advance = max_advance;
         }
 
+        // TODO: PlainEditor::layout will do alignment and all,
+        //       but that's potentially wasted work for measure.
+        //       Should probably split up that PlainEditor method.
+
+        // TODO: Don't trigger style change multiple times per layout pass for font changes,
+        //       by storing some marker that states we've already dealt with it this pass.
         if ctx.fonts_changed() {
             // HACK: We force the editor to relayout by pretending to edit the styles.
             // We know that the lifecycle of dirty tracking in Parley's
@@ -912,13 +932,55 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
         let text_size = Size::new(text_width.into(), layout.height().into());
-        ctx.set_ime_area(self.ime_area());
 
-        let area_size = Size {
-            height: text_size.height,
-            width: text_size.width,
+        let length = text_size.get_coord(axis);
+
+        // TODO: Remove this hack and do efficient side-effect free measurement with no alignment
+        // HACK: Perform layout again with the old value so that speculative measure() calls
+        //       won't affect paint() calls which expect the old layout() result to be present.
+        if let Some(reset_max_advance) = reset_max_advance {
+            self.editor.set_width(reset_max_advance);
+            self.last_max_advance = reset_max_advance;
+            self.editor.refresh_layout(fctx, lctx);
+        }
+
+        length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        // Currently we only support the common horizontal-tb writing mode,
+        // so we hardcode the assumption that inline axis is horizontal.
+        let inline = Axis::Horizontal;
+
+        let inline_space = size.get_coord(inline) as f32;
+
+        let max_advance = match self.word_wrap {
+            true => Some(inline_space),
+            false => None,
         };
-        bc.constrain(area_size)
+
+        if self.last_max_advance != max_advance {
+            self.editor.set_width(max_advance);
+            self.last_max_advance = max_advance;
+        }
+
+        let new_generation = self.editor.generation();
+        if new_generation != self.rendered_generation {
+            self.rendered_generation = new_generation;
+        }
+
+        // TODO: Don't trigger style change multiple times per layout pass for font changes,
+        //       by storing some marker that states we've already dealt with it this pass.
+        if ctx.fonts_changed() {
+            // HACK: We force the editor to relayout by pretending to edit the styles.
+            // We know that the lifecycle of dirty tracking in Parley's
+            // editor will need to change eventually anyway...
+            let _ = self.editor.edit_styles();
+        }
+        let (fctx, lctx) = ctx.text_contexts();
+        self.editor.layout(fctx, lctx);
+
+        ctx.set_ime_area(self.ime_area());
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

@@ -10,14 +10,16 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
     Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::{Axis, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
 };
+use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::Label;
 
@@ -126,28 +128,68 @@ impl Widget for ProgressBar {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        const DEFAULT_WIDTH: f64 = 400.;
-        // TODO: Clearer constraints here
-        let label_size = ctx.run_layout(&mut self.label, &bc.loosen());
-        let desired_size = Size::new(
-            DEFAULT_WIDTH.max(label_size.width),
-            crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
-        );
-        let final_size = bc.constrain(desired_size);
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Move this to theme?
+        const DEFAULT_WIDTH: f64 = 400.; // In logical pixels
 
-        // center text
-        let text_pos = Point::new(
-            ((final_size.width - label_size.width) * 0.5).max(0.),
-            ((final_size.height - label_size.height) * 0.5).max(0.),
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let border = props.get::<BorderWidth>();
+
+        let border_length = border.length(axis).dp(scale);
+
+        let cross = axis.cross();
+        let cross_space = cross_length.map(|cross_length| {
+            let cross_border_length = border.length(cross).dp(scale);
+            (cross_length - cross_border_length).max(0.)
+        });
+
+        let auto_length = len_req.reduce(border_length).into();
+        let context_size = LayoutSize::maybe(cross, cross_space);
+
+        let label_length = ctx.compute_length(
+            &mut self.label,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
         );
-        ctx.place_child(&mut self.label, text_pos);
-        final_size
+
+        let potential_length = match axis {
+            Axis::Horizontal => match len_req {
+                LenReq::MinContent | LenReq::MaxContent => DEFAULT_WIDTH * scale,
+                LenReq::FitContent(space) => space,
+            },
+            Axis::Vertical => theme::BASIC_WIDGET_HEIGHT.dp(scale),
+        };
+
+        // Make sure we always report a length big enough to fit our painting
+        potential_length.max(label_length + border_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let border = props.get::<BorderWidth>();
+
+        let space = border.size_down(size, scale);
+
+        let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
+        ctx.run_layout(&mut self.label, label_size);
+
+        let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
+        ctx.place_child(&mut self.label, child_origin);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

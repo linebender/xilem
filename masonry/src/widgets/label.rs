@@ -7,16 +7,17 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, Role};
-use parley::{Layout, LayoutAccessibility};
+use parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, BrushIndex, ChildrenIds, HasProperty, LayoutCtx, NoAction,
+    AccessCtx, ArcStr, BrushIndex, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
-use crate::kurbo::{Affine, Point, Size};
+use crate::kurbo::{Affine, Axis, Point, Size};
+use crate::layout::LenReq;
 use crate::peniko::BlendMode;
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
 use crate::theme::default_text_styles;
@@ -33,7 +34,8 @@ use crate::{TextAlign, TextAlignOptions, theme};
 ///
 #[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
-    text_layout: Layout<BrushIndex>,
+    text_layout: TextLayout,
+    measure_text_layout: TextLayout,
     accessibility: LayoutAccessibility,
 
     text: ArcStr,
@@ -44,20 +46,37 @@ pub struct Label {
     styles_changed: bool,
 
     text_alignment: TextAlign,
-    /// Whether the text alignment needs to be re-computed.
-    needs_text_alignment: bool,
-    /// How much width was available during last layout.
-    last_available_width: Option<f32>,
-    /// The value of `max_advance` when this layout was last calculated.
-    ///
-    /// If it has changed, we need to re-perform line-breaking.
-    last_max_advance: Option<f32>,
+
+    /// The amount of available inline space during last layout.
+    last_inline_space: f32,
 
     /// Whether to hint whilst drawing the text.
     ///
     /// Should be disabled whilst an animation involving this label is ongoing.
     // TODO: What classes of animations?
     hint: bool,
+}
+
+struct TextLayout {
+    layout: Layout<BrushIndex>,
+
+    /// Whether the text alignment needs to be re-computed.
+    needs_text_alignment: bool,
+
+    /// The value of `max_advance` when this layout was last calculated.
+    ///
+    /// If it has changed, we need to re-perform line-breaking.
+    last_max_advance: Option<f32>,
+}
+
+impl TextLayout {
+    fn new() -> Self {
+        Self {
+            layout: Layout::new(),
+            needs_text_alignment: true,
+            last_max_advance: None,
+        }
+    }
 }
 
 // --- MARK: BUILDERS
@@ -70,15 +89,14 @@ impl Label {
         let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
         default_text_styles(&mut styles);
         Self {
-            text_layout: Layout::new(),
+            text_layout: TextLayout::new(),
+            measure_text_layout: TextLayout::new(),
             accessibility: LayoutAccessibility::default(),
             text: text.into(),
             styles,
             styles_changed: true,
             text_alignment: TextAlign::Start,
-            needs_text_alignment: true,
-            last_available_width: None,
-            last_max_advance: None,
+            last_inline_space: 0.,
             hint: true,
         }
     }
@@ -221,7 +239,8 @@ impl Label {
     pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
         this.widget.text_alignment = text_alignment;
 
-        this.widget.needs_text_alignment = true;
+        this.widget.text_layout.needs_text_alignment = true;
+        this.widget.measure_text_layout.needs_text_alignment = true;
         this.ctx.request_layout();
     }
 
@@ -229,6 +248,60 @@ impl Label {
     pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
         this.widget.hint = hint;
         this.ctx.request_paint_only();
+    }
+}
+
+impl Label {
+    /// Builds the text layout and breaks the text into lines.
+    fn build_and_break(
+        &mut self,
+        font_ctx: &mut FontContext,
+        layout_ctx: &mut LayoutContext<BrushIndex>,
+        fonts_changed: bool,
+        max_advance: Option<f32>,
+        commit: bool,
+    ) {
+        // TODO: Rewrite this abomination in a far more efficient way.
+        //       There should be a simple LRU cache like MeasurementCache,
+        //       with one committed entry as immutable and undeletable.
+
+        // TODO: Don't trigger style change multiple times per layout pass for font changes,
+        //       by storing some marker that states we've already dealt with it this pass.
+        let styles_changed = self.styles_changed || fonts_changed;
+        if styles_changed {
+            {
+                // TODO: Should we use a different scale?
+                // See https://github.com/linebender/xilem/issues/1264
+                let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0, true);
+                for prop in self.styles.inner().values() {
+                    builder.push_default(prop.to_owned());
+                }
+                builder.build_into(&mut self.measure_text_layout.layout, &self.text);
+            }
+            if commit {
+                // TODO: Should we use a different scale?
+                // See https://github.com/linebender/xilem/issues/1264
+                let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0, true);
+                for prop in self.styles.inner().values() {
+                    builder.push_default(prop.to_owned());
+                }
+                builder.build_into(&mut self.text_layout.layout, &self.text);
+                self.styles_changed = false;
+            }
+        }
+
+        {
+            if styles_changed || max_advance != self.measure_text_layout.last_max_advance {
+                self.measure_text_layout.layout.break_all_lines(max_advance);
+                self.measure_text_layout.last_max_advance = max_advance;
+                self.measure_text_layout.needs_text_alignment = true;
+            }
+        }
+        if commit && (styles_changed || max_advance != self.text_layout.last_max_advance) {
+            self.text_layout.layout.break_all_lines(max_advance);
+            self.text_layout.last_max_advance = max_advance;
+            self.text_layout.needs_text_alignment = true;
+        }
     }
 }
 
@@ -262,84 +335,125 @@ impl Widget for Label {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let padding = *props.get::<Padding>();
-        let line_break_mode = *props.get::<LineBreaking>();
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        let bc = padding.layout_down(*bc);
+        // Currently we only support the common horizontal-tb writing mode,
+        // so we hardcode the assumption that inline axis is horizontal.
+        let inline = Axis::Horizontal;
 
-        let available_width = Some(bc.max().width as f32);
-        if available_width != self.last_available_width {
-            self.last_available_width = available_width;
-            self.needs_text_alignment = true;
-        }
+        let padding = props.get::<Padding>();
+        let line_break_mode = props.get::<LineBreaking>();
 
-        let max_advance = if line_break_mode == LineBreaking::WordWrap {
-            available_width
-        } else {
-            None
-        };
-        let styles_changed = self.styles_changed || ctx.fonts_changed();
-        if styles_changed {
-            let (font_ctx, layout_ctx) = ctx.text_contexts();
-            // TODO: Should we use a different scale?
-            // See https://github.com/linebender/xilem/issues/1264
-            let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0, true);
-            for prop in self.styles.inner().values() {
-                builder.push_default(prop.to_owned());
+        let padding_length = padding.length(axis).dp(scale);
+
+        // Calculate the max advance for the inline axis, with None indicating unbounded.
+        let max_advance = match line_break_mode {
+            LineBreaking::WordWrap => {
+                if axis == inline {
+                    // Inline axis measurement ignores cross_length as a performance optimization.
+                    // The search complexity of dealing with it is just too prohibitive.
+                    // This is a common optimization also present on the web.
+                    match len_req {
+                        // Zero space will get us the length of longest unbreakable word
+                        LenReq::MinContent => Some(0.),
+                        // Unbounded space will get us the length of the unwrapped string
+                        LenReq::MaxContent => None,
+                        // Attempt to wrap according to the parent's request
+                        LenReq::FitContent(space) => Some((space - padding_length).max(0.)),
+                    }
+                } else {
+                    // Block axis is dependant on the inline axis, so cross_length dominates.
+                    // If there is no explicit cross_length present, we fall back to inline defaults.
+                    let cross_space = cross_length.map(|cross_length| {
+                        let cross = axis.cross();
+                        let cross_padding_length = padding.length(cross).dp(scale);
+                        cross_length - cross_padding_length
+                    });
+                    match len_req {
+                        // Fallback is inline axis MinContent
+                        LenReq::MinContent => cross_space.or(Some(0.)),
+                        // Fallback is inline axis MaxContent, even for FitContent, because
+                        // as we don't have the inline space bound we'll consider it unbounded.
+                        LenReq::MaxContent | LenReq::FitContent(_) => cross_space,
+                    }
+                }
             }
-            builder.build_into(&mut self.text_layout, &self.text);
-            self.styles_changed = false;
+            // If we're never wrapping, then there's no max advance.
+            LineBreaking::Clip | LineBreaking::Overflow => None,
         }
+        .map(|v| v as f32);
 
-        if max_advance != self.last_max_advance || styles_changed {
-            self.text_layout.break_all_lines(max_advance);
-            self.last_max_advance = max_advance;
-            self.needs_text_alignment = true;
-        }
+        let fonts_changed = ctx.fonts_changed();
+        let (font_ctx, layout_ctx) = ctx.text_contexts();
+        self.build_and_break(font_ctx, layout_ctx, fonts_changed, max_advance, false);
 
-        let alignment_width = if self.text_alignment == TextAlign::Start {
-            self.text_layout.width()
-        } else if let Some(width) = available_width {
-            // We use the full available space to calculate text alignment and therefore
-            // determine the widget's current width.
-            //
-            // As a special case, we don't do that if the alignment is to the start.
-            // In theory, we should be passed down how our parent expects us to be aligned;
-            // however that isn't currently handled.
-            //
-            // This does effectively mean that the widget takes up all the available space and
-            // therefore doesn't play nicely with adjacent widgets unless `Start` alignment is used.
-            //
-            // The coherent way to have multiple items laid out on the same line and alignment is for them to
-            // be inside the same text layout object "region".
-            width
+        let length = if axis == inline {
+            self.measure_text_layout.layout.width() // Inline length
         } else {
-            // TODO: Warn on the rising edge of entering this state for this widget?
-            self.text_layout.width()
+            self.measure_text_layout.layout.height() // Block length
         };
-        if self.needs_text_alignment {
-            self.text_layout.align(
-                Some(alignment_width),
+
+        length as f64 + padding_length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        // Currently we only support the common horizontal-tb writing mode,
+        // so we hardcode the assumption that inline axis is horizontal.
+        let inline = Axis::Horizontal;
+
+        let padding = props.get::<Padding>();
+        let line_break_mode = props.get::<LineBreaking>();
+
+        let space = padding.size_down(size, scale);
+        let inline_space = space.get_coord(inline) as f32;
+
+        if self.last_inline_space != inline_space {
+            self.last_inline_space = inline_space;
+            self.text_layout.needs_text_alignment = true;
+        }
+
+        let max_advance = match line_break_mode {
+            LineBreaking::WordWrap => Some(inline_space),
+            LineBreaking::Clip | LineBreaking::Overflow => None,
+        };
+
+        let fonts_changed = ctx.fonts_changed();
+        let (font_ctx, layout_ctx) = ctx.text_contexts();
+        self.build_and_break(font_ctx, layout_ctx, fonts_changed, max_advance, true);
+
+        if self.text_layout.needs_text_alignment {
+            self.text_layout.layout.align(
+                Some(inline_space),
                 self.text_alignment,
                 TextAlignOptions::default(),
             );
-            self.needs_text_alignment = false;
+            self.text_layout.needs_text_alignment = false;
         }
 
-        let size = Size::new(alignment_width.into(), self.text_layout.height().into());
-        let size = bc.constrain(size);
-        let (size, baseline) = padding.layout_up(size, 0.);
+        let baseline = 0.; // TODO: Use actual baseline, at least for single line text
+        let baseline = padding.baseline_up(baseline, scale);
         ctx.set_baseline_offset(baseline);
-        size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let padding = *props.get::<Padding>();
         let line_break_mode = *props.get::<LineBreaking>();
 
@@ -347,7 +461,7 @@ impl Widget for Label {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
-        let text_origin = padding.place_down(Point::ZERO).to_vec2();
+        let text_origin = padding.origin_down(Point::ZERO, scale).to_vec2();
         let transform = Affine::translate(text_origin);
 
         let text_color = if ctx.is_disabled() {
@@ -359,7 +473,7 @@ impl Widget for Label {
         render_text(
             scene,
             transform,
-            &self.text_layout,
+            &self.text_layout.layout,
             &[text_color.color.into()],
             self.hint,
         );
@@ -379,12 +493,16 @@ impl Widget for Label {
         props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let padding = *props.get::<Padding>();
 
-        let text_origin = padding.place_down(Point::ZERO).to_vec2();
+        let text_origin = padding.origin_down(Point::ZERO, scale).to_vec2();
         self.accessibility.build_nodes(
             self.text.as_ref(),
-            &self.text_layout,
+            &self.text_layout.layout,
             ctx.tree_update(),
             node,
             AccessCtx::next_node_id,
@@ -414,7 +532,8 @@ mod tests {
 
     use super::*;
     use crate::core::{NewWidget, Properties};
-    use crate::layout::AsUnit;
+    use crate::layout::{AsUnit, Dim};
+    use crate::properties::Dimensions;
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -474,28 +593,29 @@ mod tests {
     }
 
     #[test]
-    /// A wrapping label's text alignment should be respected, regardless of
-    /// its parent's text alignment.
+    /// A label's text alignment should be respected, regardless of
+    /// its parent's alignment plans for it, if the label has stretched width.
     fn label_text_alignment_flex() {
-        fn base_label() -> Label {
-            Label::new("Hello").with_style(StyleProperty::FontSize(20.0))
-            //.with_props(Properties::new().with(LineBreaking::WordWrap))
+        fn base_label(text_alignment: TextAlign) -> NewWidget<Label> {
+            Label::new("Hello")
+                .with_style(StyleProperty::FontSize(20.0))
+                .with_text_alignment(text_alignment)
+                .with_props(Dimensions::width(Dim::Stretch))
         }
-        let label1 = base_label().with_text_alignment(TextAlign::Start);
-        let label2 = base_label().with_text_alignment(TextAlign::Center);
-        let label3 = base_label().with_text_alignment(TextAlign::End);
-        let label4 = base_label().with_text_alignment(TextAlign::Start);
-        let label5 = base_label().with_text_alignment(TextAlign::Center);
-        let label6 = base_label().with_text_alignment(TextAlign::End);
+        let label1 = base_label(TextAlign::Start);
+        let label2 = base_label(TextAlign::Center);
+        let label3 = base_label(TextAlign::End);
+        let label4 = base_label(TextAlign::Start);
+        let label5 = base_label(TextAlign::Center);
+        let label6 = base_label(TextAlign::End);
         let flex = Flex::column()
-            .with(label1.with_auto_id(), CrossAxisAlignment::Start)
-            .with(label2.with_auto_id(), CrossAxisAlignment::Start)
-            .with(label3.with_auto_id(), CrossAxisAlignment::Start)
-            // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
-            .with(label4.with_auto_id(), CrossAxisAlignment::Center)
-            .with(label5.with_auto_id(), CrossAxisAlignment::Center)
-            .with(label6.with_auto_id(), CrossAxisAlignment::Center);
-        let flex = NewWidget::new_with_props(flex, Properties::one(Gap::ZERO));
+            .with(label1, CrossAxisAlignment::Start)
+            .with(label2, CrossAxisAlignment::Start)
+            .with(label3, CrossAxisAlignment::Start)
+            .with(label4, CrossAxisAlignment::Center)
+            .with(label5, CrossAxisAlignment::Center)
+            .with(label6, CrossAxisAlignment::Center);
+        let flex = NewWidget::new_with_props(flex, Gap::ZERO);
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 200.0));

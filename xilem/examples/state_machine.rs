@@ -7,7 +7,7 @@ use masonry::layout::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
-use xilem::view::{flex_col, label, prose, sized_box, spinner, text_button};
+use xilem::view::{flex_col, label, prose, spinner, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
 
@@ -71,8 +71,7 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<Edit<StateMachine>>
         }),
         prose(&*app_data.history),
         label(format!("Current state: {:?}", app_data.state)),
-        // TODO: Make `spinner` not need a `sized_box` to appear.
-        sized_box(spinner()).height(40.px()).width(40.px()),
+        spinner().dims(40.px()),
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))

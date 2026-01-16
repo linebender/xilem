@@ -3,7 +3,7 @@
 
 /// A value representing a width, height, or similar distance value.
 ///
-/// Its value is always finite and non-negative.
+/// It is always finite and non-negative.
 #[derive(Clone, Copy, PartialEq)]
 pub struct Length {
     value: f64,
@@ -63,7 +63,32 @@ impl Length {
     }
 
     /// Returns the value, in logical pixels.
+    ///
+    /// The value is guaranteed to be finite and non-negative.
     pub const fn get(self) -> f64 {
         self.value
+    }
+
+    /// Scales the value to device pixels.
+    pub const fn dp(self, scale: f64) -> f64 {
+        self.value * scale
+    }
+
+    /// Returns the minimum of the two lengths.
+    pub const fn min(self, other: Self) -> Self {
+        if self.value < other.value {
+            self
+        } else {
+            other
+        }
+    }
+
+    /// Returns the maximum of the two lengths.
+    pub const fn max(self, other: Self) -> Self {
+        if self.value > other.value {
+            self
+        } else {
+            other
+        }
     }
 }

@@ -4,17 +4,17 @@
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
 use accesskit::{Node, Role};
-use tracing::{Span, trace_span, warn};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate,
+    AccessCtx, AccessEvent, ChildrenIds, CursorIcon, EventCtx, FromDynWidget, LayoutCtx,
+    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
 use crate::kurbo::{Axis, Line, Point, Rect, Size};
-use crate::layout::{AsUnit, Length};
+use crate::layout::{AsUnit, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
@@ -204,13 +204,11 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     }
 
     /// Returns the minimum and maximum split coordinate of the provided size.
-    fn split_side_limits(&self, size: Size) -> (f64, f64) {
-        let split_axis_size = size.get_coord(self.split_axis);
-
+    fn split_side_limits(&self, length: f64) -> (f64, f64) {
         let (min_limit, min_second) = self.min_size;
         let mut min_limit = min_limit.get();
         let min_second = min_second.get();
-        let mut max_limit = (split_axis_size - min_second).max(0.0);
+        let mut max_limit = (length - min_second).max(0.0);
 
         if min_limit > max_limit {
             min_limit = 0.5 * (min_limit + max_limit);
@@ -220,9 +218,20 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         (min_limit, max_limit)
     }
 
+    fn calc_effective_split_point(&self, length: f64) -> f64 {
+        let (min_limit, max_limit) = self.split_side_limits(length);
+        if length <= f64::EPSILON {
+            0.5
+        } else {
+            self.split_point_chosen
+                .clamp(min_limit / length, max_limit / length)
+        }
+    }
+
     /// Sets a new chosen split point.
     fn update_split_point(&mut self, size: Size, mouse_pos: Point) {
-        let (min_limit, max_limit) = self.split_side_limits(size);
+        let split_length = size.get_coord(self.split_axis);
+        let (min_limit, max_limit) = self.split_side_limits(split_length);
         self.split_point_chosen = match self.split_axis {
             Axis::Horizontal => mouse_pos.x.clamp(min_limit, max_limit) / size.width,
             Axis::Vertical => mouse_pos.y.clamp(min_limit, max_limit) / size.height,
@@ -464,107 +473,87 @@ where
         ctx.register_child(&mut self.child2);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        match self.split_axis {
-            Axis::Horizontal => {
-                if !bc.is_width_bounded() {
-                    warn!("A Split widget was given an unbounded width to split.");
-                }
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        if let LenReq::FitContent(space) = len_req {
+            // We always want to use up all offered space
+            if axis == self.split_axis {
+                return space.max(self.bar_area());
             }
-            Axis::Vertical => {
-                if !bc.is_height_bounded() {
-                    warn!("A Split widget was given an unbounded height to split.");
-                }
-            }
+            return space;
         }
+        // Both children can share the same auto length, because it'll be either Min or MaxContent.
+        let auto_length = len_req.into();
 
-        let mut my_size = bc.max();
-        let bar_area = self.bar_area();
-        let reduced_size = Size::new(
-            (my_size.width - bar_area).max(0.),
-            (my_size.height - bar_area).max(0.),
+        let cross = axis.cross();
+        let (child1_cross_space, child2_cross_space) = cross_length
+            .map(|cross_length| {
+                // We need to split the cross length if it's our split axis
+                if cross == self.split_axis {
+                    let cross_space = (cross_length - self.bar_area()).max(0.);
+                    let split_point = self.calc_effective_split_point(cross_space);
+                    let child1_cross_space = (cross_space * split_point).floor();
+                    (child1_cross_space, cross_space - child1_cross_space)
+                } else {
+                    (cross_length, cross_length)
+                }
+            })
+            .unzip();
+        let child1_context_size = LayoutSize::maybe(cross, child1_cross_space);
+        let child2_context_size = LayoutSize::maybe(cross, child2_cross_space);
+
+        let child1_length = ctx.compute_length(
+            &mut self.child1,
+            auto_length,
+            child1_context_size,
+            axis,
+            child1_cross_space,
+        );
+        let child2_length = ctx.compute_length(
+            &mut self.child2,
+            auto_length,
+            child2_context_size,
+            axis,
+            child2_cross_space,
         );
 
-        // Update our effective split point to respect our constraints
-        self.split_point_effective = {
-            let (min_limit, max_limit) = self.split_side_limits(reduced_size);
-            let reduced_axis_size = reduced_size.get_coord(self.split_axis);
-            if reduced_axis_size.is_infinite() || reduced_axis_size <= f64::EPSILON {
-                0.5
-            } else {
-                self.split_point_chosen
-                    .clamp(min_limit / reduced_axis_size, max_limit / reduced_axis_size)
-            }
-        };
+        if axis == self.split_axis {
+            child1_length + child2_length + self.bar_area()
+        } else {
+            child1_length.max(child2_length)
+        }
+    }
 
-        // TODO - The minimum height / width should really be zero here.
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let bar_area = self.bar_area();
+        let split_space = (size.get_coord(self.split_axis) - bar_area).max(0.);
+        let cross_space = size.get_coord(self.split_axis.cross());
 
-        let (child1_bc, child2_bc) = match self.split_axis {
-            Axis::Horizontal => {
-                let child1_width = (reduced_size.width * self.split_point_effective)
-                    .floor()
-                    .max(0.0);
-                let child2_width = (reduced_size.width - child1_width).max(0.0);
-                (
-                    BoxConstraints::new(
-                        Size::new(child1_width, bc.min().height),
-                        Size::new(child1_width, bc.max().height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(child2_width, bc.min().height),
-                        Size::new(child2_width, bc.max().height),
-                    ),
-                )
-            }
-            Axis::Vertical => {
-                let child1_height = (reduced_size.height * self.split_point_effective)
-                    .floor()
-                    .max(0.0);
-                let child2_height = (reduced_size.height - child1_height).max(0.0);
-                (
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child1_height),
-                        Size::new(bc.max().width, child1_height),
-                    ),
-                    BoxConstraints::new(
-                        Size::new(bc.min().width, child2_height),
-                        Size::new(bc.max().width, child2_height),
-                    ),
-                )
-            }
-        };
+        // Update our effective split point to respect our size
+        self.split_point_effective = self.calc_effective_split_point(split_space);
 
-        let child1_size = ctx.run_layout(&mut self.child1, &child1_bc);
-        let child2_size = ctx.run_layout(&mut self.child2, &child2_bc);
+        let child1_split_space = (split_space * self.split_point_effective).floor().max(0.);
+        let child2_split_space = (split_space - child1_split_space).max(0.);
 
-        // Top-left align for both children, out of laziness.
-        // Reduce our unsplit direction to the larger of the two widgets
-        let child1_pos = Point::ORIGIN;
-        let child2_pos = match self.split_axis {
-            Axis::Horizontal => {
-                my_size.height = child1_size.height.max(child2_size.height);
-                Point::new(child1_size.width + bar_area, 0.0)
-            }
-            Axis::Vertical => {
-                my_size.width = child1_size.width.max(child2_size.width);
-                Point::new(0.0, child1_size.height + bar_area)
-            }
-        };
-        ctx.place_child(&mut self.child1, child1_pos);
-        ctx.place_child(&mut self.child2, child2_pos);
+        let child1_size = self.split_axis.pack_size(child1_split_space, cross_space);
+        let child2_size = self.split_axis.pack_size(child2_split_space, cross_space);
 
-        let child1_paint_rect = ctx.child_paint_rect(&self.child1);
-        let child2_paint_rect = ctx.child_paint_rect(&self.child2);
-        let paint_rect = child1_paint_rect.union(child2_paint_rect);
-        let insets = paint_rect - my_size.to_rect();
-        ctx.set_paint_insets(insets);
+        ctx.run_layout(&mut self.child1, child1_size);
+        ctx.run_layout(&mut self.child2, child2_size);
 
-        my_size
+        // Top-left align both children.
+        let child1_origin = Point::ORIGIN;
+        let child2_origin = self
+            .split_axis
+            .pack_point(child1_split_space + bar_area, 0.);
+        ctx.place_child(&mut self.child1, child1_origin);
+        ctx.place_child(&mut self.child2, child2_origin);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -574,6 +563,9 @@ where
         } else {
             self.paint_stroked_bar(ctx, scene);
         }
+        // TODO: Child painting should probably be clipped, in such a way that
+        //       one child won't overflow across the split bar onto the other child.
+        //       Although that will only happen if we are sized below our MinContent.
     }
 
     fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {

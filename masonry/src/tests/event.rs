@@ -10,7 +10,6 @@ use masonry_testing::{
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use crate::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
-use crate::kurbo::Size;
 use crate::layout::AsUnit;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, SizedBox, TextArea};
@@ -24,7 +23,7 @@ fn create_capture_target() -> ModularWidget<()> {
                 ctx.capture_pointer();
             }
         })
-        .layout_fn(|_, _, _, _| Size::new(10., 10.))
+        .measure_fn(|_, _, _, _, _, _| 10.)
 }
 
 #[test]

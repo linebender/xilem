@@ -32,15 +32,16 @@ First, let's write a test module with a first unit test:
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
+    use masonry::layout::AsUnit;
+    use masonry::properties::Dimensions;
     use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
-    use masonry_core::core::NewWidget;
 
     const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
 
     #[test]
     fn simple_rect() {
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -112,7 +113,7 @@ Let's create another snapshot test to check that our widget correctly changes co
 
     #[test]
     fn hovered() {
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
@@ -146,12 +147,12 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
     #[test]
     fn edit_rect() {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
         harness.edit_root_widget(|mut rect| {
-            ColorRectangle::set_size(&mut rect, Size::new(50.0, 50.0));
+            rect.insert_prop(Dimensions::fixed(50.px(), 50.px()));
             ColorRectangle::set_color(&mut rect, RED);
         });
 
@@ -173,7 +174,7 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
 
     #[test]
     fn on_click() {
-        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
+        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();

@@ -19,8 +19,8 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose, sized_box,
-    spinner, split, text_button, worker, zstack,
+    FlexExt, FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose,
+    sized_box, spinner, split, text_button, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 use xilem_core::Edit;
@@ -52,16 +52,14 @@ enum ImageState {
 
 impl HttpCats {
     fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
-        let left_column = portal(
-            flex_col((
-                prose("Status"),
-                self.statuses
-                    .iter_mut()
-                    .map(Status::list_view)
-                    .collect::<Vec<_>>(),
-            ))
-            .padding(Padding::left(5.)),
-        );
+        let left_column = flex_col((
+            prose("Status"),
+            self.statuses
+                .iter_mut()
+                .map(Status::list_view)
+                .collect::<Vec<_>>(),
+        ))
+        .padding(Padding::left(5.));
 
         let info_area = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
@@ -90,9 +88,10 @@ impl HttpCats {
             flex_col((
                 // Add padding to the top for Android. Still a horrible hack
                 FlexSpacer::Fixed(40.px()),
-                split(left_column, portal(sized_box(info_area).expand_width())).split_point(0.4),
-            ))
-            .must_fill_major_axis(true),
+                split(portal(left_column), info_area)
+                    .split_point(0.4)
+                    .flex(1.),
+            )),
             worker(
                 |proxy, mut rx| async move {
                     while let Some(code) = rx.recv().await {
@@ -181,7 +180,7 @@ impl Status {
                 prose("Failed to start fetching image. This is a bug!")
                     .text_alignment(TextAlign::Center),
             ),
-            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.px()).height(80.px())),
+            ImageState::Pending => OneOf3::B(spinner().dims(80.px())),
             // TODO: Alt text?
             ImageState::Available(image_data) => {
                 let attribution = sized_box(
@@ -212,7 +211,7 @@ impl Status {
                 .text_size(20.)
                 .text_alignment(TextAlign::Center),
             FlexSpacer::Fixed(10.px()),
-            image,
+            image.flex(1.),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }

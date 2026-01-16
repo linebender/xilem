@@ -3,8 +3,9 @@
 
 use std::any::TypeId;
 
-use crate::core::{BoxConstraints, Property, UpdateCtx};
-use crate::kurbo::{Point, RoundedRect, Size, Vec2};
+use crate::core::{Property, UpdateCtx};
+use crate::kurbo::{Axis, Point, RoundedRect, Size, Vec2};
+use crate::layout::Length;
 use crate::properties::CornerRadius;
 
 /// The width of a widget's border, in logical pixels.
@@ -38,27 +39,59 @@ impl BorderWidth {
         ctx.request_layout();
     }
 
-    /// Shrinks the box constraints by the border width.
+    /// Returns the total [`Length`] of this border on the given `axis`.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn layout_down(&self, bc: BoxConstraints) -> BoxConstraints {
-        bc.shrink((self.width * 2., self.width * 2.))
+    /// For [`Axis::Horizontal`] it will return the sum of the left and right border width.
+    /// For [`Axis::Vertical`] it will return the sum of the top and bottom border height.
+    pub fn length(&self, _axis: Axis) -> Length {
+        Length::px(self.width * 2.)
     }
 
-    /// Expands the size and raises the baseline by the border width.
+    /// Shrinks the `size` by the border width.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
     ///
     /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn layout_up(&self, size: Size, baseline: f64) -> (Size, f64) {
-        let size = Size::new(size.width + self.width * 2., size.height + self.width * 2.);
-        let baseline = baseline + self.width;
-        (size, baseline)
+    pub fn size_down(&self, size: Size, scale: f64) -> Size {
+        let width = (size.width - Length::px(self.width).dp(scale) * 2.).max(0.);
+        let height = (size.height - Length::px(self.width).dp(scale) * 2.).max(0.);
+        Size::new(width, height)
     }
 
-    /// Shifts the position by the border width.
+    /// Raises the `baseline` by the border width.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
     ///
     /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
-    pub fn place_down(&self, pos: Point) -> Point {
-        pos + Vec2::new(self.width, self.width)
+    pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
+        baseline + Length::px(self.width).dp(scale)
+    }
+
+    /// Lowers the `baseline` by the border width.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
+        baseline - Length::px(self.width).dp(scale)
+    }
+
+    /// Lowers the position by the border width.
+    ///
+    /// The returned [`Point`] will be in device pixels.
+    ///
+    /// The provided `origin` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
+        let width = Length::px(self.width).dp(scale);
+        origin + Vec2::new(width, width)
     }
 
     /// Creates a rounded rectangle that is inset by the border width.

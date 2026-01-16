@@ -12,11 +12,12 @@ use vello::Scene;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
-    PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::{Circle, Point, Rect, Size};
+use crate::kurbo::{Axis, Circle, Point, Rect, Size};
+use crate::layout::LenReq;
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -322,17 +323,39 @@ impl Widget for Slider {
         ThumbRadius::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let height =
-            (props.get::<ThumbRadius>().0 * 2.0).max(props.get::<TrackThickness>().0) + 16.0;
-        let width = bc.max().width.clamp(100.0, 200.0);
-        Size::new(width, height)
+        _ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match axis {
+            Axis::Horizontal => match len_req {
+                // TODO: Move this 100. to theme?
+                LenReq::MinContent | LenReq::MaxContent => 100. * scale,
+                LenReq::FitContent(space) => space,
+            },
+            Axis::Vertical => {
+                let thumb_radius = props.get::<ThumbRadius>();
+                let track_thickness = props.get::<TrackThickness>();
+
+                let thumb_length = thumb_radius.0 * 2.0 * scale;
+                let track_length = track_thickness.0 * scale;
+                // TODO: Move the padding 16. to theme or make it otherwise configurable?
+                let padding_length = 16. * scale;
+
+                thumb_length.max(track_length) + padding_length
+            }
+        }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Get parameters and resolve colors

@@ -11,11 +11,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::LenReq;
 use crate::widgets::Label;
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
@@ -118,6 +119,17 @@ impl AnimationStatus {
 }
 
 /// A widget displaying non-editable text, with a variable [weight](parley::style::FontWeight).
+///
+/// Ensure that `VariableLabel` has [`Dimensions`] set via props
+/// either to [`Dimensions::fixed`] or [`Dimensions::MAX`].
+/// Fixed dimensions resolve early and are explicit in intent.
+/// Max preferred size of `VariableLabel` means that the question of size
+/// will get passed through to its inner label, and doesn't mean that it will
+/// necessarily map to the max preferred size of the label.
+///
+/// [`Dimensions`]: crate::properties::Dimensions
+/// [`Dimensions::fixed`]: crate::properties::Dimensions::fixed
+/// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 pub struct VariableLabel {
     label: WidgetPod<Label>,
     weight: AnimatedF32,
@@ -215,15 +227,23 @@ impl Widget for VariableLabel {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = ctx.run_layout(&mut self.label, bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        ctx.redirect_measurement(&mut self.label, axis, cross_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.label, size);
         ctx.place_child(&mut self.label, Point::ORIGIN);
-        size
+
+        let baseline = ctx.child_baseline_offset(&self.label);
+        ctx.set_baseline_offset(baseline);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

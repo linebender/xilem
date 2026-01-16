@@ -57,6 +57,10 @@ Code for setting up a default configuration of the `tracing` crate.
 
 Masonry's composition root. See **General architecture** section.
 
+### `masonry_core/src/layout/`
+
+Layout specific core types.
+
 ### `masonry_core/src/passes/`
 
 Masonry's passes are computations that run on the entire widget tree (iff invalidation flags are set) once per frame.
@@ -64,6 +68,10 @@ Masonry's passes are computations that run on the entire widget tree (iff invali
 `event.rs` and `update.rs` include a bunch of related passes.
 Every other file only includes one pass.
 `mod.rs` has utility functions shared between multiple passes.
+
+### `masonry_core/src/properties`
+
+Core properties that every widget has.
 
 ### `masonry_core/src/doc/`
 
@@ -158,7 +166,7 @@ The current passes are:
 - **on_xxx_event:** Handles UX-related events, e.g. clicks, text entered, IME updates and accessibility input. Widgets can declare these events as "handled" which has a bunch of semantic implications.
 - **anim:** Do updates related to an animation frame.
 - **update:** Handles internal changes to some widgets, e.g. when the widget is marked as "disabled" or Masonry detects that a widget is hovered by a pointer.
-- **layout:** Given size constraints, return the widget's size. Container widgets first call `LayoutCtx::run_layout` on their children, then set the position of each child.
+- **layout:** Container widgets measure their children with `LayoutCtx::compute_size` and then lay them out with `LayoutCtx::run_layout`, finally giving them a position with `LayoutCtx::place_child`.
 - **compose:** Computes the global transform/origin for every widget.
 - **paint** Paint every widget.
 - **accessibility:** Compute every widget's node in the accessibility tree.

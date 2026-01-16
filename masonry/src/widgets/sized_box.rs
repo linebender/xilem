@@ -6,36 +6,59 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use tracing::{Span, trace_span, warn};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, HasProperty, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
-use crate::layout::Length;
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::{LayoutSize, LenReq, Length};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{fill, include_screenshot, stroke};
 
-/// A widget with predefined size.
+/// A widget with bi-directional size enforcement.
 ///
-/// If given a child, this widget forces its child to have a specific width and/or height
-/// (assuming values are permitted by this widget's parent). If either the width or height is not
-/// set, this widget will size itself to match the child's size in that dimension.
+/// It can either have an explicit size or it will adopt the size of its child.
 ///
-/// If not given a child, `SizedBox` will try to size itself as close to the specified height
-/// and width as possible given the parent's constraints. If height or width is not set,
-/// it will be treated as zero.
+/// ## Explicit size
 ///
+/// There are two ways to define a size for `SizedBox`, in order of priority:
+/// 1. [`Dimensions`] properties work as usual and take precedence over anything else.
+/// 2. There are methods to configure the inner fields for width and height.
+///
+/// ## Adopted size
+///
+/// If there is no explicit size and the parent widget chooses to measure `SizedBox`,
+/// then the `SizedBox::measure` method will forward its child's `measure` result.
+/// This does not guarantee anything, but it usually means the parent will choose
+/// the `SizedBox` child's measurement result as the size for `SizedBox`.
+/// Set [`Dimensions::MAX`] for `SizedBox` to ensure there is no explicit size from props either.
+///
+/// ## Child's size
+///
+/// Whatever size `SizedBox` ends up getting from its parent for layout,
+/// `SizedBox` will also force its child to use that same size.
+///
+/// ## No child
+///
+/// The childless case works exactly as if there was a zero sized child.
+/// The main impact being that the adopted size will be zero.
+///
+/// ## Borders and Padding
+///
+/// The explicit size may be increased to ensure that the border and padding fit.
+/// When adopting the child's size, that size will be expanded by the `SizedBox` border and padding.
+/// The size forced on the child is shrunk by the `SizedBox` border and padding.
+///
+/// [`Dimensions`]: crate::properties::Dimensions
+/// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 #[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
-    // TODO - Right now width and height can't be stored as Length values,
-    // because they use f64::INFINITY as a sentinel value when using the `expand()` methods.
-    // Using float infinity as a sentinel value is somewhat of an anti-pattern and should be removed.
-    width: Option<f64>,
-    height: Option<f64>,
+    width: Option<Length>,
+    height: Option<Length>,
 }
 
 // --- MARK: BUILDERS
@@ -49,10 +72,9 @@ impl SizedBox {
         }
     }
 
-    /// Creates container without child, and both width and height unset.
+    /// Creates container without a child, and both width and height unset.
     ///
-    /// If the widget is unchanged, it will render nothing, which can be useful if you want to draw a
-    /// widget some of the time.
+    /// In this state it will render no content but will still render its border and padding.
     #[doc(alias = "null")]
     pub fn empty() -> Self {
         Self {
@@ -62,99 +84,50 @@ impl SizedBox {
         }
     }
 
-    /// Sets container's width.
+    /// Returns the container with `width`.
     pub fn width(mut self, width: Length) -> Self {
-        self.width = Some(width.get());
+        self.width = Some(width);
         self
     }
 
-    /// Sets container's height.
+    /// Returns the container with `height`.
     pub fn height(mut self, height: Length) -> Self {
-        self.height = Some(height.get());
+        self.height = Some(height);
         self
     }
 
-    /// Sets container's width and height.
+    /// Returns the container with `width` and `height`.
     pub fn size(mut self, width: Length, height: Length) -> Self {
-        self.width = Some(width.get());
-        self.height = Some(height.get());
+        self.width = Some(width);
+        self.height = Some(height);
         self
     }
 
-    /// Expands container to fit the parent.
+    /// Returns the container with `width`.
     ///
-    /// Only call this method if you want your widget to occupy all available
-    /// space. If you only care about expanding in one of width or height, use
-    /// [`expand_width`] or [`expand_height`] instead.
-    ///
-    /// [`expand_height`]: Self::expand_height
-    /// [`expand_width`]: Self::expand_width
-    pub fn expand(mut self) -> Self {
-        // TODO - Using infinity in layout is a code smell.
-        // Rework these methods.
-        self.width = Some(f64::INFINITY);
-        self.height = Some(f64::INFINITY);
+    /// `None` means that the width will be adopted from the child.
+    pub fn raw_width(mut self, width: Option<Length>) -> Self {
+        self.width = width;
         self
     }
 
-    /// Expands the container on the x-axis.
+    /// Returns the container with `height`.
     ///
-    /// This will force the child to have maximum width.
-    pub fn expand_width(mut self) -> Self {
-        self.width = Some(f64::INFINITY);
-        self
-    }
-
-    /// Expands the container on the y-axis.
-    ///
-    /// This will force the child to have maximum height.
-    pub fn expand_height(mut self) -> Self {
-        self.height = Some(f64::INFINITY);
-        self
-    }
-
-    /// Sets the width directly. Intended for toolkits abstracting over `SizedBox`.
-    ///
-    /// If `Some`, the value should be non-negative and not NaN.
-    pub fn raw_width(mut self, value: Option<f64>) -> Self {
-        self.width = value;
-        self
-    }
-
-    /// Sets the height directly. Intended for toolkits abstracting over `SizedBox`.
-    ///
-    /// If `Some`, the value should be non-negative and not NaN.
-    pub fn raw_height(mut self, value: Option<f64>) -> Self {
-        self.height = value;
+    /// `None` means that the height will be adopted from the child.
+    pub fn raw_height(mut self, height: Option<Length>) -> Self {
+        self.height = height;
         self
     }
 }
 
 // --- MARK: METHODS
 impl SizedBox {
-    fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
-        // if we don't have a width/height, we don't change that axis.
-        // if we have a width/height, we clamp it on that axis.
-        let (min_width, max_width) = match self.width {
-            Some(width) => {
-                let w = width.max(bc.min().width).min(bc.max().width);
-                (w, w)
-            }
-            None => (bc.min().width, bc.max().width),
-        };
-
-        let (min_height, max_height) = match self.height {
-            Some(height) => {
-                let h = height.max(bc.min().height).min(bc.max().height);
-                (h, h)
-            }
-            None => (bc.min().height, bc.max().height),
-        };
-
-        BoxConstraints::new(
-            Size::new(min_width, min_height),
-            Size::new(max_width, max_height),
-        )
+    /// Returns the length of the given `axis`.
+    pub const fn length(&self, axis: Axis) -> Option<Length> {
+        match axis {
+            Axis::Horizontal => self.width,
+            Axis::Vertical => self.height,
+        }
     }
 }
 
@@ -180,20 +153,20 @@ impl SizedBox {
 
     /// Sets container's width.
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: Length) {
-        this.widget.width = Some(width.get());
+        this.widget.width = Some(width);
         this.ctx.request_layout();
     }
 
     /// Sets container's height.
     pub fn set_height(this: &mut WidgetMut<'_, Self>, height: Length) {
-        this.widget.height = Some(height.get());
+        this.widget.height = Some(height);
         this.ctx.request_layout();
     }
 
     /// Sets container's width and height.
     pub fn set_size(this: &mut WidgetMut<'_, Self>, width: Length, height: Length) {
-        this.widget.width = Some(width.get());
-        this.widget.height = Some(height.get());
+        this.widget.width = Some(width);
+        this.widget.height = Some(height);
         this.ctx.request_layout();
     }
 
@@ -209,19 +182,19 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
-    /// Sets the width directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the container's `width` directly.
     ///
-    /// If `Some`, the value should be non-negative and not NaN.
-    pub fn set_raw_width(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
-        this.widget.width = value;
+    /// `None` means that the width will be adopted from the child.
+    pub fn set_raw_width(this: &mut WidgetMut<'_, Self>, width: Option<Length>) {
+        this.widget.width = width;
         this.ctx.request_layout();
     }
 
-    /// Sets the height directly. Intended for toolkits abstracting over `SizedBox`.
+    /// Sets the container's `height` directly.
     ///
-    /// If `Some`, the value should be non-negative and not NaN.
-    pub fn set_raw_height(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
-        this.widget.height = value;
+    /// `None` means that the height will be adopted from the child.
+    pub fn set_raw_height(this: &mut WidgetMut<'_, Self>, height: Option<Length>) {
+        this.widget.height = height;
         this.ctx.request_layout();
     }
 
@@ -260,49 +233,87 @@ impl Widget for SizedBox {
         Padding::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
 
-        let bc = self.child_constraints(bc);
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let border_length = border.length(axis).dp(scale);
+        let padding_length = padding.length(axis).dp(scale);
 
-        let origin = Point::ORIGIN;
-        let origin = border.place_down(origin);
-        let origin = padding.place_down(origin);
+        // First see if we have an explicitly defined length
+        if let Some(length) = self.length(axis) {
+            return length.dp(scale).max(border_length + padding_length);
+        }
 
-        let mut size;
-        match self.child.as_mut() {
-            Some(child) => {
-                size = ctx.run_layout(child, &bc);
-                ctx.place_child(child, origin);
-            }
-            None => {
-                size = (self.width.unwrap_or(0.0), self.height.unwrap_or(0.0)).into();
-                size = bc.constrain(size);
-            }
+        // Otherwise measure the child
+        let child_length = if let Some(child) = self.child.as_mut() {
+            let cross = axis.cross();
+            let cross_space = cross_length
+                .or_else(|| {
+                    // Can't use self.length() due to borrow checker stupidity,
+                    // so we need to manually inline that method.
+                    let length = match cross {
+                        Axis::Horizontal => self.width,
+                        Axis::Vertical => self.height,
+                    };
+                    length.map(|length| length.dp(scale))
+                })
+                .map(|cross_length| {
+                    let cross_border_length = border.length(cross).dp(scale);
+                    let cross_padding_length = padding.length(cross).dp(scale);
+                    (cross_length - cross_border_length - cross_padding_length).max(0.)
+                });
+
+            let auto_length = len_req.reduce(border_length + padding_length).into();
+            let context_size = LayoutSize::maybe(cross, cross_space);
+
+            ctx.compute_length(child, auto_length, context_size, axis, cross_space)
+        } else {
+            0.
         };
 
-        let (size, _) = padding.layout_up(size, 0.);
-        let (size, _) = border.layout_up(size, 0.);
+        child_length + border_length + padding_length
+    }
 
-        // TODO - figure out paint insets
-        // TODO - figure out baseline offset
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        if size.width.is_infinite() {
-            warn!("SizedBox is returning an infinite width.");
-        }
-        if size.height.is_infinite() {
-            warn!("SizedBox is returning an infinite height.");
-        }
+        let Some(child) = self.child.as_mut() else {
+            // No child, so no layout work beyond resetting the baseline
+            ctx.set_baseline_offset(0.);
+            return;
+        };
 
-        size
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
+        let space = border.size_down(size, scale);
+        let space = padding.size_down(space, scale);
+
+        ctx.run_layout(child, space);
+
+        let child_origin = Point::ORIGIN;
+        let child_origin = border.origin_down(child_origin, scale);
+        let child_origin = padding.origin_down(child_origin, scale);
+        ctx.place_child(child, child_origin);
+
+        let baseline = ctx.child_baseline_offset(child);
+        let baseline = border.baseline_up(baseline, scale);
+        let baseline = padding.baseline_up(baseline, scale);
+        ctx.set_baseline_offset(baseline);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -357,23 +368,6 @@ mod tests {
     use crate::widgets::Label;
 
     // TODO - Add WidgetMut tests
-
-    #[test]
-    fn expand() {
-        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).expand();
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
-        let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(400., 400.,));
-    }
-
-    #[test]
-    fn no_width() {
-        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.px());
-        let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
-        let child_bc = expand.child_constraints(&bc);
-        assert_eq!(child_bc.min(), Size::new(0., 200.,));
-        assert_eq!(child_bc.max(), Size::new(400., 200.,));
-    }
 
     #[test]
     fn empty_box() {

@@ -8,11 +8,13 @@ use std::ops::Range;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent, LayoutCtx,
+    MeasureCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
+    PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut,
+    WidgetPod,
 };
-use crate::kurbo::{Point, Size, Vec2};
+use crate::kurbo::{Axis, Point, Size, Vec2};
+use crate::layout::{LenDef, LenReq, SizeDef};
 use crate::util::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
@@ -632,25 +634,43 @@ impl Widget for VirtualScroll {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let viewport_size = bc.max();
-        ctx.set_clip_path(viewport_size.to_rect());
-        let child_bc = BoxConstraints::new(
-            Size {
-                width: viewport_size.width,
-                height: 0.,
-            },
-            Size {
-                width: viewport_size.width,
-                // TODO: Infinite constraints are... not ideal
-                height: f64::INFINITY,
-            },
-        );
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // Our preferred size is a const square in logical pixels.
+        //
+        // It is not clear that a data-derived result would be better.
+        // We definitely can't load all the children to calculate our unclipped size.
+        //
+        // If we would base it on the currently loaded items, then the preferred size
+        // would fluctuate all over the place. The UI experience would be miserable,
+        // with our viewport size frequently changing as the user is scrolling.
+        //
+        // Perhaps it would be worth it to always keep some first N items in memory and
+        // derive our preferred size always from those. That way it would be much more stable.
+        // We could also detect if we have a defined size via props and then unload those items.
+        // Still, we would run into complexities with ensuring they are loaded in time for measure.
+        //
+        // So, for now, we just use a simple O(1) default.
+        const DEFAULT_LENGTH: f64 = 100.;
+
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match len_req {
+            LenReq::MinContent | LenReq::MaxContent => DEFAULT_LENGTH * scale,
+            LenReq::FitContent(space) => space,
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.set_clip_path(size.to_rect());
         // The number of loaded items before the anchor
         let mut height_before_anchor = 0.;
         let mut total_height = 0.;
@@ -672,11 +692,13 @@ impl Widget for VirtualScroll {
             }
             first_item = first_item.map(|it| it.min(*idx)).or(Some(*idx));
             last_item = last_item.map(|it| it.max(*idx)).or(Some(*idx));
-            let child_size = ctx.run_layout(child, &child_bc);
+            let auto_size = SizeDef::fit(size).with_height(LenDef::MaxContent);
+            let child_size = ctx.compute_size(child, auto_size, size.into());
+            ctx.run_layout(child, child_size);
             if *idx < self.anchor_index {
-                height_before_anchor += child_size.height.max(0.0);
+                height_before_anchor += child_size.height;
             }
-            total_height += child_size.height.max(0.0);
+            total_height += child_size.height;
             count += 1;
         }
 
@@ -706,8 +728,7 @@ impl Widget for VirtualScroll {
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
                     if let Some(new_anchor) = new_anchor {
-                        // Don't go negative if the child incorrectly returns negative height
-                        ctx.child_size(new_anchor).height.max(0.0)
+                        ctx.child_size(new_anchor).height
                     } else {
                         // We don't treat missing items inside the set of loaded items as having a height.
                         // This avoids potential infinite loops (from adding a new
@@ -732,8 +753,7 @@ impl Widget for VirtualScroll {
                 let anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let current_anchor = self.items.get(&self.anchor_index);
                     if let Some(anchor_pod) = current_anchor {
-                        // Don't go negative if the child incorrectly returns negative height
-                        ctx.child_size(anchor_pod).height.max(0.0)
+                        ctx.child_size(anchor_pod).height
                     } else {
                         break;
                     }
@@ -772,21 +792,21 @@ impl Widget for VirtualScroll {
             .get(&self.anchor_index)
             .filter(|_| self.active_range.contains(&self.anchor_index))
         {
-            ctx.child_size(anchor).height.max(0.0)
+            ctx.child_size(anchor).height
         } else {
             mean_item_height
         };
         if at_valid_end {
             self.scroll_offset_from_anchor = f64::INFINITY;
-            self.cap_scroll_range_down(self.anchor_height, viewport_size.height);
+            self.cap_scroll_range_down(self.anchor_height, size.height);
         }
 
         // Load a page and a half above the screen
-        let cutoff_up = viewport_size.height * 1.5;
+        let cutoff_up = size.height * 1.5;
         // Load a page and a half below the screen (note that this cutoff "includes" the screen)
         // We also need to allow scrolling *at least* to the top of the current anchor; therefore, we load items sufficiently
         // that scrolling the bottom of the anchor to the top of the screen, we still have the desired margin
-        let cutoff_down = viewport_size.height * 2.5 + self.anchor_height;
+        let cutoff_down = size.height * 2.5 + self.anchor_height;
 
         let mut item_crossing_top = None;
         let mut item_crossing_bottom = self.active_range.start;
@@ -806,7 +826,7 @@ impl Widget for VirtualScroll {
                 let size = ctx.child_size(item);
                 ctx.place_child(item, Point::new(0., y));
                 // TODO: Padding/gap?
-                y += size.height.max(0.0);
+                y += size.height;
             } else {
                 was_dense = false;
                 // We expect the virtual scrolling to be dense; we are designed
@@ -891,10 +911,6 @@ impl Widget for VirtualScroll {
         // TODO: We should still try and find a way to detect infinite loops;
         // our pattern for this should avoid it, but if that assessment is wrong, the outcome would be very bad
         // (a driver which didn't correctly set `valid_range` would be one cause).
-
-        // In theory, if we have loaded all of the items in self.valid_range, we can tell the platform that this is our full size.
-        // Practically, that is such a rare case that it isn't worth doing.
-        viewport_size
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {

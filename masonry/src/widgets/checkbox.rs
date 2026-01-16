@@ -11,11 +11,12 @@ use vello::Scene;
 
 use crate::core::keyboard::Key;
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
+    AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
     NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
+use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, FocusedBorderColor,
@@ -194,43 +195,97 @@ impl Widget for Checkbox {
         CheckmarkColor::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
 
-        let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
-        let check_side = theme::BASIC_WIDGET_HEIGHT;
+        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
 
-        let label_size = ctx.run_layout(&mut self.label, bc);
-        ctx.place_child(&mut self.label, (check_side + x_padding, 0.0).into());
+        let calc_other_length = |axis| {
+            let border_length = border.length(axis).dp(scale);
+            let padding_length = padding.length(axis).dp(scale);
+            match axis {
+                Axis::Horizontal => {
+                    let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
+                    border_length + padding_length + check_side + check_padding
+                }
+                Axis::Vertical => border_length + padding_length,
+            }
+        };
+        let other_length = calc_other_length(axis);
 
-        let check_size = Size::new(check_side, check_side);
-        let (check_size, _) = padding.layout_up(check_size, 0.);
-        let (check_size, _) = border.layout_up(check_size, 0.);
+        let cross = axis.cross();
+        let cross_space = cross_length.map(|cross_length| {
+            let cross_other_length = calc_other_length(cross);
+            (cross_length - cross_other_length).max(0.)
+        });
 
-        let desired_size = Size::new(
-            check_size.width + x_padding + label_size.width,
-            check_size.height.max(label_size.height),
+        let auto_length = len_req.reduce(other_length).into();
+        let context_size = LayoutSize::maybe(cross, cross_space);
+
+        let label_length = ctx.compute_length(
+            &mut self.label,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
         );
-        let our_size = bc.constrain(desired_size);
-        let baseline =
-            ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
+
+        match axis {
+            Axis::Horizontal => label_length + other_length,
+            Axis::Vertical => label_length.max(check_side) + other_length,
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
+        let space = border.size_down(size, scale);
+        let space = padding.size_down(space, scale);
+
+        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
+        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
+
+        let space = Size::new(
+            (space.width - (check_side + check_padding)).max(0.),
+            space.height,
+        );
+
+        let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
+        ctx.run_layout(&mut self.label, label_size);
+        ctx.place_child(&mut self.label, (check_side + check_padding, 0.0).into());
+
+        let baseline = ctx.child_baseline_offset(&self.label) + (size.height - label_size.height);
         ctx.set_baseline_offset(baseline);
-        our_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let is_focused = ctx.is_focus_target();
         let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
 
-        let check_size = theme::BASIC_WIDGET_HEIGHT;
-        let size = Size::new(check_size, check_size);
+        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
+        let check_size = Size::new(check_side, check_side);
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
@@ -243,8 +298,8 @@ impl Widget for Checkbox {
             props.get::<Background>()
         };
 
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
+        let bg_rect = border_width.bg_rect(check_size, border_radius);
+        let border_rect = border_width.border_rect(check_size, border_radius);
 
         let border_color = if is_focused {
             &props.get::<FocusedBorderColor>().0

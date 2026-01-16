@@ -8,10 +8,14 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, MutateCtx, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::Size;
+use crate::kurbo::{Axis, Size};
+use crate::layout::{LenReq, Length};
+
+/// The preferred size of the square Canvas.
+const DEFAULT_LENGTH: Length = Length::const_px(100.);
 
 /// A widget allowing custom drawing.
 ///
@@ -87,23 +91,33 @@ impl Widget for Canvas {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-    fn layout(
+
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // We use all the available space as possible.
-        let size = bc.max();
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        // We use all the available space or fall back to our const preferred size.
+        match len_req {
+            LenReq::FitContent(space) => space,
+            _ => DEFAULT_LENGTH.dp(scale),
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         if self.size != size {
             self.size = size;
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
         }
-
         // We clip the contents we draw.
         ctx.set_clip_path(size.to_rect());
-
-        size
     }
 
     fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {

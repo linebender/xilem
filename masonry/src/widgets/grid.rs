@@ -8,11 +8,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, NewWidget,
-    NoAction, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
-use crate::kurbo::{Affine, Line, Point, Size, Stroke};
+use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -68,6 +69,17 @@ impl Grid {
     }
 }
 
+// --- MARK: METHODS
+impl Grid {
+    /// Returns the number of cells tracks have on the given `axis`.
+    fn track_cells(&self, axis: Axis) -> i32 {
+        match axis {
+            Axis::Horizontal => self.grid_column_count,
+            Axis::Vertical => self.grid_row_count,
+        }
+    }
+}
+
 // --- MARK: IMPL CHILD
 impl Child {
     fn update_params(&mut self, params: GridParams) {
@@ -75,6 +87,14 @@ impl Child {
         self.y = params.y;
         self.width = params.width;
         self.height = params.height;
+    }
+
+    /// Returns the number of cells the child's area spans on the given `axis`.
+    fn area_cells(&self, axis: Axis) -> i32 {
+        match axis {
+            Axis::Horizontal => self.width,
+            Axis::Vertical => self.height,
+        }
     }
 }
 
@@ -286,50 +306,114 @@ impl Widget for Grid {
         Gap::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
-        let gap = props.get::<Gap>().gap;
+        let gap = props.get::<Gap>();
 
-        let bc = *bc;
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let border_length = border.length(axis).dp(scale);
+        let padding_length = padding.length(axis).dp(scale);
+        let gap_length = gap.gap.dp(scale);
 
-        let origin = Point::ORIGIN;
-        let origin = border.place_down(origin);
-        let origin = padding.place_down(origin);
-        let origin = origin.to_vec2();
+        let cross = axis.cross();
+        let cross_space = cross_length.map(|cross_length| {
+            let cross_border_length = border.length(cross).dp(scale);
+            let cross_padding_length = padding.length(cross).dp(scale);
+            (cross_length - cross_border_length - cross_padding_length).max(0.)
+        });
+        let cross_track_cells = self.track_cells(cross) as f64;
+        let cross_cell_length = cross_space
+            .filter(|_| cross_track_cells > 0.) // Guard against div by zero
+            .map(|cross_space| (cross_space + gap_length) / cross_track_cells);
 
-        let total_size = bc.max();
-        if !total_size.is_finite() {
-            debug_panic!(
-                "Error while computing layout for grid; infinite BoxConstraint max provided {}",
-                total_size
-            );
-        }
-        let gap = gap.get();
-        let width_unit = (total_size.width + gap) / (self.grid_column_count as f64);
-        let height_unit = (total_size.height + gap) / (self.grid_row_count as f64);
+        let (len_req, min_result) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
+            // We always want to use up all offered space but may need even more,
+            // so we implement FitContent as space.max(MinContent).
+            LenReq::FitContent(space) => (LenReq::MinContent, space),
+        };
+
+        // Find the largest desired cell length
+        let mut cell_length: f64 = 0.;
         for child in &mut self.children {
-            let cell_size = Size::new(
-                (child.width as f64 * width_unit - gap).max(0.0),
-                (child.height as f64 * height_unit - gap).max(0.0),
-            );
-            let child_bc = BoxConstraints::new(cell_size, cell_size);
-            let _ = ctx.run_layout(&mut child.widget, &child_bc);
+            let desired_cell_length = {
+                let area_cells = child.area_cells(axis) as f64;
+                let cross_area_length = cross_cell_length.map(|cross_cell_length| {
+                    let cross_area_cells = child.area_cells(cross) as f64;
+                    let length = cross_area_cells * cross_cell_length - gap_length;
+                    // Guard against the derived area length becoming negative,
+                    // which can happen if total space can't fit all cells and gaps.
+                    length.max(0.)
+                });
 
-            let child_pos = Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit);
-            ctx.place_child(&mut child.widget, child_pos + origin);
+                let auto_length = len_req.into();
+                let context_size = LayoutSize::maybe(cross, cross_area_length);
+
+                let child_length = ctx.compute_length(
+                    &mut child.widget,
+                    auto_length,
+                    context_size,
+                    axis,
+                    cross_area_length,
+                );
+
+                (child_length + gap_length) / area_cells
+            };
+            cell_length = cell_length.max(desired_cell_length);
         }
 
-        let (total_size, _) = padding.layout_up(total_size, 0.);
-        let (total_size, _) = border.layout_up(total_size, 0.);
-        total_size
+        let track_cells = self.track_cells(axis) as f64;
+        let length = track_cells * cell_length - gap_length;
+
+        min_result.max(length + border_length + padding_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+        let gap = props.get::<Gap>();
+
+        let space = border.size_down(size, scale);
+        let space = padding.size_down(space, scale);
+        let gap_length = gap.gap.dp(scale);
+
+        let cell_width = (space.width + gap_length) / self.grid_column_count as f64;
+        let cell_height = (space.height + gap_length) / self.grid_row_count as f64;
+
+        for child in &mut self.children {
+            let area = Size::new(
+                child.width as f64 * cell_width - gap_length,
+                child.height as f64 * cell_height - gap_length,
+            )
+            // Guard against the derived area becoming negative,
+            // which can happen if total space can't fit all cells and gaps.
+            .max(Size::ZERO);
+            let auto_size = SizeDef::fixed(area);
+
+            let child_size = ctx.compute_size(&mut child.widget, auto_size, area.into());
+            ctx.run_layout(&mut child.widget, child_size);
+
+            let child_origin =
+                Point::new(child.x as f64 * cell_width, child.y as f64 * cell_height);
+            let child_origin = border.origin_down(child_origin, scale);
+            let child_origin = padding.origin_down(child_origin, scale);
+            ctx.place_child(&mut child.widget, child_origin);
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -385,6 +469,7 @@ impl Widget for Grid {
 mod tests {
     use super::*;
     use crate::layout::AsUnit;
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Button;
@@ -392,10 +477,13 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = NewWidget::new(Grid::with_dimensions(1, 1).with(
-            Button::with_text("A").with_auto_id(),
-            GridParams::new(0, 0, 1, 1),
-        ));
+        let widget = NewWidget::new_with_props(
+            Grid::with_dimensions(1, 1).with(
+                Button::with_text("A").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            ),
+            Dimensions::STRETCH,
+        );
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.

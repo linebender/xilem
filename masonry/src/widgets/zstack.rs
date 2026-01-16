@@ -6,10 +6,11 @@ use tracing::trace_span;
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, CollectionWidget, LayoutCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Rect, Size};
+use crate::kurbo::{Axis, Rect, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
 
@@ -208,38 +209,50 @@ impl CollectionWidget<ChildAlignment> for ZStack {
 impl Widget for ZStack {
     type Action = NoAction;
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // First pass: calculate the smallest bounds needed to layout the children.
-        let mut max_size = bc.min();
-        let loosened_bc = bc.loosen();
-        for child in &mut self.children {
-            let child_size = ctx.run_layout(&mut child.widget, &loosened_bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-            max_size.width = child_size.width.max(max_size.width);
-            max_size.height = child_size.height.max(max_size.height);
+        let mut length: f64 = 0.;
+        for child in &mut self.children {
+            let child_length = ctx.compute_length(
+                &mut child.widget,
+                auto_length,
+                context_size,
+                axis,
+                cross_length,
+            );
+            length = length.max(child_length);
         }
 
-        // Second pass: place the children given the calculated max_size bounds.
+        length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let context_size = size.into();
+        let auto_size = SizeDef::fit(size);
         for child in &mut self.children {
-            let child_size = ctx.child_size(&child.widget);
-            let end = max_size - child_size;
+            let child_size = ctx.compute_size(&mut child.widget, auto_size, context_size);
+            ctx.run_layout(&mut child.widget, child_size);
 
             let child_alignment = match child.alignment {
                 ChildAlignment::SelfAligned(alignment) => alignment,
                 ChildAlignment::ParentAligned => self.alignment,
             };
 
-            let origin = child_alignment.resolve(Rect::new(0., 0., end.width, end.height));
-
-            ctx.place_child(&mut child.widget, origin);
+            let extra_width = (size.width - child_size.width).max(0.);
+            let extra_height = (size.height - child_size.height).max(0.);
+            let child_origin =
+                child_alignment.resolve(Rect::new(0., 0., extra_width, extra_height));
+            ctx.place_child(&mut child.widget, child_origin);
         }
-
-        max_size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

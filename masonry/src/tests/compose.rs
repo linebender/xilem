@@ -5,7 +5,8 @@ use assert_matches::assert_matches;
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 
 use crate::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
-use crate::kurbo::{Affine, Point, Size, Vec2};
+use crate::kurbo::{Affine, Point, Vec2};
+use crate::layout::SizeDef;
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 
@@ -28,10 +29,11 @@ fn request_compose() {
     };
 
     let parent = ModularWidget::new(child)
-        .layout_fn(|state, ctx, _props, bc| {
-            ctx.run_layout(&mut state.child, bc);
+        .measure_fn(|_state, _ctx, _props, _axis, _len_req, _cross_length| 0.)
+        .layout_fn(|state, ctx, _props, size| {
+            let child_size = ctx.compute_size(&mut state.child, SizeDef::fit(size), size.into());
+            ctx.run_layout(&mut state.child, child_size);
             ctx.place_child(&mut state.child, state.pos);
-            Size::ZERO
         })
         .compose_fn(|state, ctx| {
             ctx.set_child_scroll_translation(&mut state.child, state.offset);

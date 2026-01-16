@@ -38,3 +38,5 @@ pub use placeholder_color::*;
 pub use progress_bar::*;
 pub use selection::*;
 pub use slider::*;
+
+pub use masonry_core::properties::*;

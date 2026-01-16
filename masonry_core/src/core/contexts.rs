@@ -12,15 +12,16 @@ use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
-    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId,
-    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget, NewWidget,
+    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState,
 };
-use crate::passes::layout::{place_widget, run_layout_on};
+use crate::layout::{LayoutSize, LenDef, SizeDef};
+use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
 use crate::util::{TypeSet, get_debug_color};
 
@@ -106,7 +107,17 @@ pub struct UpdateCtx<'a> {
     pub(crate) default_properties: &'a DefaultProperties,
 }
 
-// TODO - Change this once other layout methods are added.
+/// A context provided to [`Widget::measure`] methods.
+pub struct MeasureCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) auto_length: LenDef,
+    pub(crate) context_size: LayoutSize,
+    pub(crate) cache_result: bool,
+}
+
 /// A context provided to [`Widget::layout`] methods.
 pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
@@ -145,6 +156,7 @@ impl_context_method!(
     QueryCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
+    MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
@@ -202,6 +214,7 @@ impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
+    MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     RawCtx<'_>,
@@ -320,6 +333,7 @@ impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
+    MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
@@ -516,11 +530,195 @@ impl AccessCtx<'_> {
     }
 }
 
+// --- MARK: COMPUTE LENGTH
+impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
+    /// Computes the length that the `child` widget wants to be on the given `axis`.
+    ///
+    /// The returned length will be finite, non-negative, and in device pixels.
+    ///
+    /// Container widgets usually call this method as part of their [`measure`] logic,
+    /// to help them calculate their own length on the given `axis`. They call it as part
+    /// of their [`layout`] logic if they have already chosen a length for one axis.
+    /// Read [`measure`] and [`layout`] docs for more details about those processes.
+    ///
+    /// `auto_length` specifies the fallback behavior if the child's dimension is [`Dim::Auto`].
+    /// If you're calling this from within [`measure`] then you usually want to derive
+    /// this from `len_req`, probably using [`LenReq::reduce`], i.e. you would call
+    /// `len_req.reduce(used_space_on_this_axis).into()`. However, if you're calling this
+    /// from within [`layout`] then you usually want to use use [`LenDef::FitContent`]
+    /// to ask the child to fit inside the available space. Sometimes a different fallback
+    /// makes more sense, e.g. `Grid` uses [`LenDef::Fixed`] to fall back to the exact
+    /// allocated child area size.
+    /// `auto_length` values must be finite, non-negative, and in device pixels.
+    /// An invalid `auto_length` will fall back to [`LenDef::MaxContent`].
+    ///
+    /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
+    /// For example [`Ratio(0.5)`] will result in half the context size.
+    /// This is usually the container widget's size, excluding its borders and padding.
+    /// Examples of exceptions include `Grid` which will provide the child's area size,
+    /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
+    /// its viewport size.
+    ///
+    /// `cross_length` is the length of the cross axis and is critical information for certain
+    /// widgets, e.g. for text max advance or to keep an aspect ratio.
+    /// If present, `cross_length` must be finite, non-negative, and in device pixels.
+    /// An invalid `cross_length` will fall back to `None`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `auto_length` is non-finite or negative and debug assertions are enabled.
+    ///
+    /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
+    ///
+    /// [`measure`]: Widget::measure
+    /// [`layout`]: Widget::layout
+    /// [`Ratio(0.5)`]: crate::layout::Dim::Ratio
+    /// [`Dim::Auto`]: crate::layout::Dim
+    /// [`LenReq::reduce`]: crate::layout::LenReq::reduce
+    pub fn compute_length(
+        &mut self,
+        child: &mut WidgetPod<impl Widget + ?Sized>,
+        auto_length: LenDef,
+        context_size: LayoutSize,
+        axis: Axis,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let id = child.id();
+        let node = self.children.item_mut(id).unwrap();
+        resolve_length(
+            self.global_state,
+            self.default_properties,
+            node,
+            auto_length,
+            context_size,
+            axis,
+            cross_length,
+        )
+    }
+});
+
+// --- MARK: MEASURE
+impl MeasureCtx<'_> {
+    /// Returns the fallback [`LenDef`] of this measurement.
+    ///
+    /// This is essential information for widgets that want pass through measurements.
+    /// That is, this fallback was chosen by widget A for widget B.
+    /// Widget B can call this method and then pass it on via [`compute_length`] to widget C.
+    /// Widget C will resolve its size with the fallback originally provided by widget A.
+    ///
+    /// Even easier, though, is to use [`redirect_measurement`].
+    ///
+    /// Calling `auto_length` will cause the result of this [`measure`] to not be cached.
+    /// This is because `auto_length` is not part of the cache key.
+    ///
+    /// [`measure`]: Widget::measure
+    /// [`compute_length`]: Self::compute_length
+    /// [`redirect_measurement`]: Self::redirect_measurement
+    pub fn auto_length(&mut self) -> LenDef {
+        // We're adding a new variable, auto_length, into the measure function,
+        // which is not part of the cache key. Hence, we need to not cache.
+        self.cache_result = false;
+        self.auto_length
+    }
+
+    /// Returns the context size of this measurement.
+    ///
+    /// This is usually the container widget's size, excluding its borders and padding.
+    ///
+    /// Examples of exceptions include `Grid` which will provide the child's area size,
+    /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
+    /// its viewport size.
+    ///
+    /// The context size is used to resolve relative lengths, e.g. a width of [`Ratio(0.5)`]
+    /// means half of this space. This resolving is done by Masonry and not manually in [`measure`].
+    ///
+    /// One or both lengths may be missing if they have not been computed yet,
+    /// i.e. when the lengths depend on a child's size.
+    ///
+    /// This is essential information for widgets that want pass through measurements.
+    /// That is, this context size was chosen by widget A for widget B.
+    /// Widget B can call this method and then pass it on via [`compute_length`] to widget C.
+    /// Widget C will resolve its size in relation to widget A.
+    ///
+    /// Even easier, though, is to use [`redirect_measurement`].
+    ///
+    /// Calling `context_size` will cause the result of this [`measure`] to not be cached.
+    /// This is because `context_size` is not part of the cache key.
+    ///
+    /// [`measure`]: Widget::measure
+    /// [`Ratio(0.5)`]: crate::layout::Dim::Ratio
+    /// [`compute_length`]: Self::compute_length
+    /// [`redirect_measurement`]: Self::redirect_measurement
+    pub fn context_size(&mut self) -> LayoutSize {
+        // We're adding a new variable, context_size, into the measure function,
+        // which is not part of the cache key. Hence, we need to not cache.
+        self.cache_result = false;
+        self.context_size
+    }
+
+    /// Configures whether this [`measure`] result will be cached.
+    ///
+    /// Masonry will, by default, cache the results of measurement. The cache key is derived
+    /// from `axis`, `len_req`, and `cross_length`. If the widget uses any other data to influence
+    /// the result of the measurement, then the widget is responsible for requesting layout
+    /// when any of that data changes. For properties, this is handled in [`property_changed`].
+    /// For any other data you reference, the exact mechanism of detecting changes is up to you.
+    /// If you can't detect changes of the referenced data, disable the cache with this method.
+    ///
+    /// [`measure`]: Widget::measure
+    /// [`property_changed`]: Widget::property_changed
+    pub fn cache_result(&mut self, cache_result: bool) {
+        self.cache_result = cache_result;
+    }
+
+    /// Redirects the measurement request to a `child`.
+    ///
+    /// This is meant for thin wrapper widgets that want their children measured instead.
+    ///
+    /// It is a convenience wrapper over [`compute_length`] that automatically configures
+    /// `auto_length` and `context_size` to whatever the outer container used. These could also
+    /// be manually accessed via [`auto_length`] and [`context_size`] if you're so inclined.
+    ///
+    /// Calling `redirect_measurement` will cause the result of your [`measure`] to not be cached.
+    /// The child's measurement might still be cached, depending on what policy the child chooses.
+    /// This is because the redirection introduces new inputs in the form of [`auto_length`]
+    /// and [`context_size`] that are not part of the cache key.
+    ///
+    /// If present, `cross_length` must be finite, non-negative, and in device pixels.
+    /// An invalid `cross_length` will fall back to `None`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
+    ///
+    /// [`measure`]: Widget::measure
+    /// [`compute_length`]: Self::compute_length
+    /// [`auto_length`]: Self::auto_length
+    /// [`context_size`]: Self::context_size
+    pub fn redirect_measurement(
+        &mut self,
+        child: &mut WidgetPod<impl Widget + ?Sized>,
+        axis: Axis,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // We're adding two new variables, auto_length and context_size, into the measure function,
+        // which are not part of the cache key. Hence, we need to not cache.
+        self.cache_result = false;
+        self.compute_length(
+            child,
+            self.auto_length,
+            self.context_size,
+            axis,
+            cross_length,
+        )
+    }
+}
+
 // --- MARK: UPDATE LAYOUT
 impl LayoutCtx<'_> {
     #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
-        if self.get_child_state(child).needs_layout {
+        if self.get_child_state(child).needs_layout() {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
                 self.widget_id(),
@@ -544,26 +742,71 @@ impl LayoutCtx<'_> {
         }
     }
 
-    /// Computes the layout of a child widget.
+    /// Computes the size that the `child` widget wants to be.
     ///
-    /// Container widgets must call this on every child as part of
-    /// their [`layout`] method.
+    /// The returned size will be finite, non-negative, and in device pixels.
+    ///
+    /// Container widgets usually call this method as part of their [`layout`] logic, but
+    /// ultimately they can disregard the result and pass a different size to [`run_layout`].
+    /// Read [`layout`] docs for more details about that process.
+    ///
+    /// `auto_size` specifies the fallback behavior if the child has any dimension as [`Dim::Auto`].
+    /// Most widgets should use [`SizeDef::fit`] to ask the child to fit inside the
+    /// available space. However sometimes a different fallback makes more sense, e.g.
+    /// `Grid` uses [`SizeDef::fixed`] to fall back to the exact allocated child area size.
+    ///
+    /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
+    /// For example [`Ratio(0.5)`] will result in half the context size.
+    /// This is usually the container widget's size, excluding its borders and padding.
+    /// Examples of exceptions include `Grid` which will provide the child's area size,
+    /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
+    /// its viewport size.
     ///
     /// [`layout`]: Widget::layout
-    pub fn run_layout(
+    /// [`Ratio(0.5)`]: crate::layout::Dim::Ratio
+    /// [`Dim::Auto`]: crate::layout::Dim::Auto
+    /// [`run_layout`]: Self::run_layout
+    pub fn compute_size(
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
-        bc: &BoxConstraints,
+        auto_size: SizeDef,
+        context_size: LayoutSize,
     ) -> Size {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
+        resolve_size(
+            self.global_state,
+            self.default_properties,
+            node,
+            auto_size,
+            context_size,
+        )
+    }
 
-        let new_size = run_layout_on(self.global_state, self.default_properties, node, bc);
+    /// Lays out the `child` widget.
+    ///
+    /// Container widgets must call this on every child as part of their [`layout`] method.
+    ///
+    /// The container widget may call [`compute_size`] to see what `size` the child wants to be.
+    /// However, ultimately the parent is in control and can choose any `size` for the child.
+    ///
+    /// The provided `size` must be finite, non-negative, and in device pixels.
+    /// Non-finite or negative size will fall back to zero with a logged warning.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided `size` is non-finite or negative and debug assertions are enabled.
+    ///
+    /// [`layout`]: Widget::layout
+    /// [`compute_size`]: Self::compute_size
+    pub fn run_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, size: Size) {
+        let id = child.id();
+        let node = self.children.item_mut(id).unwrap();
+
+        run_layout_on(self.global_state, self.default_properties, node, size);
 
         let state_mut = &mut self.children.item_mut(id).unwrap().item.state;
         self.widget_state.merge_up(state_mut);
-
-        new_size
     }
 
     /// Sets the position of the `child` widget, in this widget's coordinate space.
@@ -572,7 +815,7 @@ impl LayoutCtx<'_> {
     /// with this widget's paint rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
-    /// [`layout`] method, after calling `ctx.run_layout(child, bc)`.
+    /// [`layout`] method, after calling `ctx.run_layout(child, size)`.
     ///
     /// # Panics
     ///
@@ -609,7 +852,7 @@ impl LayoutCtx<'_> {
     /// Sets explicit paint [`Insets`] for this widget.
     ///
     /// The argument is an [`Insets`] struct that indicates where your widget will overpaint,
-    /// relative to its bounds, as defined by the `size` returned by the widget's [`layout`] method.
+    /// relative to its bounds, as defined by the `size` given to the widget's [`layout`] method.
     ///
     /// You are only required to notify of painting done directly by this widget.
     /// Child widget overdraw needs to be reported by those child widgets themselves.
@@ -635,12 +878,12 @@ impl LayoutCtx<'_> {
 
     /// Returns whether this widget needs to call [`LayoutCtx::run_layout`].
     pub fn needs_layout(&self) -> bool {
-        self.widget_state.needs_layout
+        self.widget_state.needs_layout()
     }
 
     /// Returns whether a child of this widget needs to call [`LayoutCtx::run_layout`].
     pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
-        self.get_child_state(child).needs_layout
+        self.get_child_state(child).needs_layout()
     }
 
     /// The distance from the bottom of the given widget to the baseline.
@@ -721,14 +964,6 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
-
-    #[doc(hidden)]
-    /// Returns the widget's size at the beginning of the layout pass.
-    ///
-    /// **TODO** This method should be removed after the layout refactor.
-    pub fn old_size(&self) -> Size {
-        self.widget_state.size()
-    }
 }
 
 impl ComposeCtx<'_> {
@@ -806,7 +1041,7 @@ impl ComposeCtx<'_> {
 }
 
 // --- MARK: GET LAYOUT
-// Methods on all context types except LayoutCtx
+// Methods on all context types except MeasureCtx and LayoutCtx
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
     MutateCtx<'_>,
@@ -910,6 +1145,7 @@ impl_context_method!(
     QueryCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
+    MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     PaintCtx<'_>,
@@ -1077,7 +1313,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     pub fn request_layout(&mut self) {
         trace!("request_layout");
         self.widget_state.request_layout = true;
-        self.widget_state.needs_layout = true;
+        self.widget_state.set_needs_layout(true);
     }
 
     // TODO - Document better
@@ -1198,11 +1434,12 @@ impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
+    MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
     RawCtx<'_>,
     {
-        // TODO - Remove from LayoutCtx/ComposeCtx
+        // TODO - Remove from MeasureCtx/LayoutCtx/ComposeCtx
         /// Marks child widget as stashed.
         ///
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.

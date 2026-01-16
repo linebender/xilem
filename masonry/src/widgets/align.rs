@@ -13,10 +13,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx, PropertiesRef, RegisterCtx,
+    Widget, WidgetId, WidgetPod,
 };
-use crate::kurbo::{Rect, Size};
+use crate::core::{MeasureCtx, WidgetMut};
+use crate::kurbo::{Axis, Rect, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
 
@@ -108,47 +110,65 @@ impl Widget for Align {
         ctx.register_child(&mut self.child);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = ctx.run_layout(&mut self.child, &bc.loosen());
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-        log_size_warnings(size);
+        let child_length = ctx.compute_length(
+            &mut self.child,
+            auto_length,
+            context_size,
+            axis,
+            cross_length,
+        );
 
-        let mut my_size = size;
-        if bc.is_width_bounded() {
-            my_size.width = bc.max().width;
-        }
-        if bc.is_height_bounded() {
-            my_size.height = bc.max().height;
+        // Default to child length
+        let mut length = child_length;
+
+        // If the parent specified space bounds, use all of it
+        if let LenReq::FitContent(space) = len_req {
+            length = space;
         }
 
-        if let Some(width) = self.width_factor {
-            my_size.width = size.width * width;
-        }
-        if let Some(height) = self.height_factor {
-            my_size.height = size.height * height;
+        // Potentially override with a multiple of child length,
+        // which could be less than the parent specified bounds.
+        if let Some(factor) = match axis {
+            Axis::Horizontal => self.width_factor,
+            Axis::Vertical => self.height_factor,
+        } {
+            length = child_length * factor;
         }
 
-        my_size = bc.constrain(my_size);
-        let extra_width = (my_size.width - size.width).max(0.);
-        let extra_height = (my_size.height - size.height).max(0.);
-        let origin = self
+        // Never return a length larger than the bounds
+        if let LenReq::FitContent(space) = len_req {
+            length = length.min(space);
+        }
+
+        length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
+        ctx.run_layout(&mut self.child, child_size);
+
+        let extra_width = (size.width - child_size.width).max(0.);
+        let extra_height = (size.height - child_size.height).max(0.);
+        let child_origin = self
             .align
             .resolve(Rect::new(0., 0., extra_width, extra_height));
-        ctx.place_child(&mut self.child, origin);
+        ctx.place_child(&mut self.child, child_origin);
 
         if self.height_factor.is_some() {
-            let baseline_offset = ctx.child_baseline_offset(&self.child);
-            if baseline_offset > 0_f64 {
-                ctx.set_baseline_offset(baseline_offset + extra_height / 2.0);
-            }
+            let baseline = ctx.child_baseline_offset(&self.child);
+            ctx.set_baseline_offset(baseline + extra_height * 0.5);
         }
-
-        my_size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
@@ -171,16 +191,6 @@ impl Widget for Align {
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
         trace_span!("Align", id = id.trace())
-    }
-}
-
-fn log_size_warnings(size: Size) {
-    if size.width.is_infinite() {
-        tracing::warn!("Align widget's child has an infinite width.");
-    }
-
-    if size.height.is_infinite() {
-        tracing::warn!("Align widget's child has an infinite height.");
     }
 }
 

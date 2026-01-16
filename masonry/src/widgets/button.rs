@@ -13,11 +13,13 @@ use vello::Scene;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
-    NewWidget, PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
+    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Size};
+use crate::core::{HasProperty, MeasureCtx};
+use crate::kurbo::{Affine, Axis, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
@@ -197,48 +199,79 @@ impl Widget for Button {
         BoxShadow::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
 
-        let initial_bc = bc;
+        let border_length = border.length(axis).dp(scale);
+        let padding_length = padding.length(axis).dp(scale);
 
-        let bc = bc.loosen();
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let cross = axis.cross();
+        let cross_space = cross_length.map(|cross_length| {
+            let cross_border_length = border.length(cross).dp(scale);
+            let cross_padding_length = padding.length(cross).dp(scale);
+            (cross_length - cross_border_length - cross_padding_length).max(0.)
+        });
 
-        let label_size = ctx.run_layout(&mut self.child, &bc);
-        let baseline = ctx.child_baseline_offset(&self.child);
+        let auto_length = len_req.reduce(border_length + padding_length).into();
+        let context_size = LayoutSize::maybe(cross, cross_space);
 
-        let size = label_size;
-        let (size, baseline) = padding.layout_up(size, baseline);
-        let (size, baseline) = border.layout_up(size, baseline);
+        let child_length = ctx.compute_length(
+            &mut self.child,
+            auto_length,
+            context_size,
+            axis,
+            cross_space,
+        );
+
+        let length = child_length + border_length + padding_length;
 
         // TODO - Add MinimumSize property.
         // HACK: to make sure we look okay at default sizes when beside a text input,
         // we make sure we will have at least the same height as the default text input.
-        let mut size = size;
-        size.height = size.height.max(theme::BORDERED_WIDGET_HEIGHT);
+        match axis {
+            Axis::Horizontal => length,
+            Axis::Vertical => length.max(theme::BORDERED_WIDGET_HEIGHT * scale),
+        }
+    }
 
-        // TODO - Figure out how to handle cases where label size doesn't fit bc.
-        let size = initial_bc.constrain(size);
-        let label_offset = (size.to_vec2() - label_size.to_vec2()) / 2.0;
-        ctx.place_child(&mut self.child, label_offset.to_point());
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        // TODO - pos = (size - label_size) / 2
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+        let shadow = props.get::<BoxShadow>();
+
+        let space = border.size_down(size, scale);
+        let space = padding.size_down(space, scale);
+
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(space), space.into());
+        ctx.run_layout(&mut self.child, child_size);
+
+        let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
+        ctx.place_child(&mut self.child, child_origin);
+
+        let baseline = ctx.child_baseline_offset(&self.child);
+        let baseline = border.baseline_up(baseline, scale);
+        let baseline = padding.baseline_up(baseline, scale);
+        ctx.set_baseline_offset(baseline);
 
         if shadow.is_visible() {
             ctx.set_paint_insets(shadow.get_insets());
         }
-
-        ctx.set_baseline_offset(baseline);
-        size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

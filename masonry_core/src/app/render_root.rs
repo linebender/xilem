@@ -36,6 +36,7 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
+use crate::properties::Dimensions;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
@@ -171,13 +172,12 @@ pub(crate) struct MutateCallback {
     pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn Widget>)>,
 }
 
-/// Defines how a windows size should be determined
+/// Defines how a window's size is determined.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum WindowSizePolicy {
-    /// Use the content of the window to determine the size.
+    /// Measure the content to determine the window size.
     ///
-    /// If you use this option, your root widget will be passed infinite constraints;
-    /// you are responsible for ensuring that your content picks an appropriate size.
+    /// The window size will match the root widget's maximum preferred size.
     Content,
     /// Use the provided window size.
     #[default]
@@ -312,7 +312,11 @@ impl RenderRoot {
         } = options;
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
-        let layer_stack = WidgetPod::new(LayerStack::new(root_widget));
+        // LayerStack can't use Dimensions::AUTO because it'll resolve to the window size.
+        // Instead we want to always measure LayerStack, so it can measure its base layer.
+        let layer_stack = LayerStack::new(root_widget)
+            .with_props(Dimensions::MAX)
+            .to_pod();
 
         let mut root = Self {
             layer_stack,
@@ -438,7 +442,7 @@ impl RenderRoot {
             WindowEvent::Resize(size) => {
                 self.size = size;
                 self.root_state_mut().request_layout = true;
-                self.root_state_mut().needs_layout = true;
+                self.root_state_mut().set_needs_layout(true);
                 self.run_rewrite_passes();
                 Handled::Yes
             }
@@ -851,7 +855,7 @@ impl RenderRoot {
             let widget = &mut *node.item.widget;
             let state = &mut node.item.state;
 
-            state.needs_layout = true;
+            state.set_needs_layout(true);
             state.request_layout = true;
 
             let id = state.id;

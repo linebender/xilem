@@ -8,7 +8,8 @@ use xilem::masonry::layout::Length;
 use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, button, checkbox, flex_col, flex_row, label, text_button, text_input,
+    FlexExt, FlexSpacer, MainAxisAlignment, button, checkbox, flex_col, flex_row, label,
+    text_button, text_input,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
@@ -114,6 +115,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
             filter_tasks("Active", Filter::Active),
             filter_tasks("Completed", Filter::Completed),
         ))
+        .main_axis_alignment(MainAxisAlignment::Center)
     });
 
     flex_col((

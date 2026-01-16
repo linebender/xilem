@@ -4,34 +4,43 @@
 use std::mem;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PropertiesRef, RegisterCtx,
+    Widget, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::LenReq;
 
 /// A widget which sends a [`LayoutChanged`] whenever its size changes.
 ///
+/// It reports the child's length as its own in [`measure`], syncing its size with the child's.
+///
 /// The size of this widget can be accessed using [`MutateCtx::size`](crate::core::MutateCtx::size).
 ///
+/// Ensure that `ResizeObserver` has [`Dimensions`] set via props to [`Dimensions::MAX`].
+/// Max preferred size of `ResizeObserver` means that the question of size
+/// will get passed through to its child, and doesn't mean that it will
+/// necessarily map to the max preferred size of the child.
+///
 /// This can be a useful primitive for making size-adaptive designs, such as
-/// scaling up a game board in response more space being available, or switching
-/// to use fewer columns when there is not space to fit multiple columns.
+/// scaling up a game board in response to more space being available, or switching
+/// to use fewer columns when there is not enough space to fit multiple columns.
 /// This can be safely used to dynamically access the size of a window
 /// or tab in a [`Split`](crate::widgets::Split).
-/// You must make sure that the child takes up all the available space.
-/// This can be most easily achieved by making the child be
-/// an [expanded](crate::widgets::SizedBox::expand) `SizedBox`.
 ///
 /// # Caveats
 ///
-/// To avoid infinite loops, it is recommended to not use the new size in a way
-/// which will edit the output size.
+/// To avoid infinite loops, it is recommended to not use the reported size in a way
+/// which will edit the child widget's size.
 /// For example, using this to write the width of a label in that label would be
 /// unlikely to reach a steady-state.
 /// Currently Masonry will not detect these loops automatically, so using this
 /// incorrectly might cause your application to stop responding.
 ///
 /// You might also get several of the resulting actions in a sequence.
+///
+/// [`measure`]: Widget::measure
+/// [`Dimensions`]: crate::properties::Dimensions
+/// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 // TODO: It would be nice to at least catch these loops.
 // We could see how many times layout is executed without us being painted, and setting a threshold.
 // The response if that gets too high (100?) could be debug_panicking, then stopping
@@ -41,21 +50,20 @@ use crate::kurbo::{Point, Size};
 // involving the driver)
 pub struct ResizeObserver {
     child: WidgetPod<dyn Widget>,
-    size: Option<Size>,
+    last_size: Option<Size>,
 }
 
 // --- MARK: BUILDERS
 impl ResizeObserver {
-    /// Creates a new resize observer, which will send [`LayoutChanged`] whenever child's
-    /// size changes.
+    /// Creates a new resize observer, which will send [`LayoutChanged`] whenever its size changes.
     ///
-    /// If this size will be used to modify the content of the child, it should generally
-    /// take up all its available space, to avoid infinite loops.
-    /// See the docs on this type for more details.
+    /// It reports the child's length as its own in [`measure`], syncing its size with the child's.
+    ///
+    /// [`measure`]: Widget::measure
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             child: child.erased().to_pod(),
-            size: None,
+            last_size: None,
         }
     }
 }
@@ -72,7 +80,7 @@ impl ResizeObserver {
     ///
     /// It's hard to imagine reasonable use cases for this method, but it's provided for completeness.
     pub fn force_resend(this: &mut WidgetMut<'_, Self>) {
-        this.widget.size = None;
+        this.widget.last_size = None;
         this.ctx.request_layout();
     }
 
@@ -102,19 +110,28 @@ impl Widget for ResizeObserver {
         ctx.register_child(&mut self.child);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let res = ctx.run_layout(&mut self.child, bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        ctx.redirect_measurement(&mut self.child, axis, cross_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.child, size);
         ctx.place_child(&mut self.child, Point::ORIGIN);
-        if self.size.is_none_or(|it| it != res) {
+
+        let baseline = ctx.child_baseline_offset(&self.child);
+        ctx.set_baseline_offset(baseline);
+
+        if self.last_size.is_none_or(|it| it != size) {
+            self.last_size = Some(size);
             ctx.submit_action::<Self::Action>(LayoutChanged);
         }
-        self.size = Some(res);
-        res
     }
 
     fn paint(
@@ -151,6 +168,7 @@ mod tests {
     use crate::core::{NewWidget, Widget, WidgetTag, WindowEvent};
     use crate::kurbo::Size;
     use crate::layout::AsUnit;
+    use crate::properties::Dimensions;
     use crate::theme::default_property_set;
     use crate::widgets::{Flex, LayoutChanged, ResizeObserver, SizedBox};
 
@@ -159,7 +177,7 @@ mod tests {
         let tag = WidgetTag::named("inner_box");
         let inner_box =
             NewWidget::new_with_tag(SizedBox::empty().width(100.px()).height(100.px()), tag);
-        let observer = ResizeObserver::new(inner_box).with_auto_id();
+        let observer = ResizeObserver::new(inner_box).with_props(Dimensions::MAX);
         let observer_id = observer.id();
         // We use a flex here as the inner `SizedBox` will take up the full space available in this case.
         // This doesn't run into the caveat because the size of the inner widget is *not* based on the
@@ -202,8 +220,8 @@ mod tests {
 
     #[test]
     fn detects_window_resizing() {
-        let inner_box = SizedBox::empty().expand().with_auto_id();
-        let observer = ResizeObserver::new(inner_box).with_auto_id();
+        let inner_box = SizedBox::empty().with_props(Dimensions::STRETCH);
+        let observer = ResizeObserver::new(inner_box).with_props(Dimensions::MAX);
         let observer_id = observer.id();
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
