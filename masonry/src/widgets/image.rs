@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Size};
 use crate::layout::LenReq;
-use crate::peniko::{BlendMode, ImageBrush};
+use crate::peniko::{BlendMode, Fill, ImageBrush};
 use crate::properties::ObjectFit;
 
 // TODO: Make this a configurable option of the widget.
@@ -210,7 +210,13 @@ impl Widget for Image {
         let transform = object_fit.affine(ctx.size(), image_size);
 
         let clip_rect = ctx.size().to_rect();
-        scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
+        scene.push_layer(
+            Fill::NonZero,
+            BlendMode::default(),
+            1.,
+            Affine::IDENTITY,
+            &clip_rect,
+        );
         scene.draw_image(&self.image_data, transform);
         scene.pop_layer();
     }

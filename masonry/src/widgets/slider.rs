@@ -18,6 +18,7 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Circle, Point, Rect, Size};
 use crate::layout::LenReq;
+use crate::peniko::Fill;
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -391,6 +392,7 @@ impl Widget for Slider {
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
             scene.push_layer(
+                Fill::NonZero,
                 crate::peniko::Mix::Normal,
                 DISABLED_ALPHA,
                 crate::kurbo::Affine::IDENTITY,
