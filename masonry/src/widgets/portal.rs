@@ -296,7 +296,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let delta = match delta {
+                let mut delta = match delta {
                     ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
                     ScrollDelta::LineDelta(x, y) => {
                         -Vec2 {
@@ -306,22 +306,33 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     }
                     _ => Vec2::ZERO,
                 } * ctx.get_scale_factor();
-                self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
-                ctx.request_compose();
 
-                {
-                    let (scrollbar, mut scrollbar_ctx) =
-                        ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-                    scrollbar.cursor_progress =
-                        self.viewport_pos.x / (content_size - portal_size).width;
-                    scrollbar_ctx.request_render();
+                // Ignore scroll deltas in directions that are constrained
+                if self.constrain_horizontal {
+                    delta.x = 0.;
                 }
-                {
-                    let (scrollbar, mut scrollbar_ctx) =
-                        ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                    scrollbar.cursor_progress =
-                        self.viewport_pos.y / (content_size - portal_size).height;
-                    scrollbar_ctx.request_render();
+                if self.constrain_vertical {
+                    delta.y = 0.;
+                }
+
+                if delta.x != 0. || delta.y != 0. {
+                    self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
+                    ctx.request_compose();
+
+                    {
+                        let (scrollbar, mut scrollbar_ctx) =
+                            ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                        scrollbar.cursor_progress =
+                            self.viewport_pos.x / (content_size - portal_size).width;
+                        scrollbar_ctx.request_render();
+                    }
+                    {
+                        let (scrollbar, mut scrollbar_ctx) =
+                            ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                        scrollbar.cursor_progress =
+                            self.viewport_pos.y / (content_size - portal_size).height;
+                        scrollbar_ctx.request_render();
+                    }
                 }
             }
             _ => (),
