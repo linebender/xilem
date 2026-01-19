@@ -436,7 +436,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         cross_length: Option<f64>,
     ) -> f64 {
         match len_req {
-            LenReq::MinContent | LenReq::MaxContent => {
+            LenReq::MinContent => 0.,
+            LenReq::MaxContent => {
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
                 let auto_length = len_req.into();
 
