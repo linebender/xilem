@@ -78,42 +78,53 @@ impl<W: Widget> NewWidget<W> {
     /// Creates a new widget.
     ///
     /// You can also get the same result with [`Widget::with_auto_id()`].
+    #[inline(always)]
     pub fn new(inner: W) -> Self {
+        Self::new_with(inner, None, WidgetOptions::default(), Properties::default())
+    }
+
+    /// Creates a new widget with a potential [`WidgetTag`],
+    /// custom [`WidgetOptions`] and custom [`Properties`].
+    pub fn new_with(
+        inner: W,
+        tag: Option<WidgetTag<W>>,
+        options: WidgetOptions,
+        props: impl Into<Properties>,
+    ) -> Self {
         Self {
             widget: Box::new(inner),
             id: WidgetId::next(),
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
-            options: WidgetOptions::default(),
-            properties: Properties::default(),
-            tag: None,
+            options,
+            properties: props.into(),
+            tag: tag.map(|tag| tag.inner),
         }
     }
 
     /// Creates a new widget with a [`WidgetTag`].
+    #[inline(always)]
     pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
-        Self {
-            tag: Some(tag.inner),
-            ..Self::new(inner)
-        }
+        Self::new_with(
+            inner,
+            Some(tag),
+            WidgetOptions::default(),
+            Properties::default(),
+        )
     }
 
-    // TODO - Replace with builder methods?
+    // TODO - Replace with builder methods? More allocations then though?
     /// Creates a new widget with custom [`Properties`].
+    #[inline(always)]
     pub fn new_with_props(inner: W, props: impl Into<Properties>) -> Self {
-        Self {
-            properties: props.into(),
-            ..Self::new(inner)
-        }
+        Self::new_with(inner, None, WidgetOptions::default(), props)
     }
 
     /// Creates a new widget with custom [`WidgetOptions`].
+    #[inline(always)]
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
-        Self {
-            options,
-            ..Self::new(inner)
-        }
+        Self::new_with(inner, None, options, Properties::default())
     }
 }
 
