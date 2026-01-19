@@ -16,7 +16,7 @@ use vello::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget, NewWidget,
+    AllowRawMut, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget, LayerType, NewWidget,
     PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
@@ -1660,15 +1660,32 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Creates a new layer at a specified position.
+        /// Creates a new [layer](crate::doc::masonry_concepts#layers) at a specified position.
+        ///
+        /// # Panics
+        ///
+        /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
         pub fn create_layer<W: Widget + ?Sized>(
             &mut self,
-            root_widget: NewWidget<W>,
+            layer_type: LayerType,
+            mut fallback_widget: NewWidget<W>,
             position: Point,
         ) {
             trace!("create_layer");
-            self.global_state
-                .emit_signal(RenderRootSignal::NewLayer(root_widget.erased(), position));
+
+            if fallback_widget.widget.as_layer().is_none() {
+                debug_panic!(
+                    "cannot create layer of type {} - `Widget::as_layer()` returned None",
+                    fallback_widget.widget.short_type_name()
+                );
+                return;
+            }
+
+            self.global_state.emit_signal(RenderRootSignal::NewLayer(
+                layer_type,
+                fallback_widget.erased(),
+                position,
+            ));
         }
 
         /// Removes the layer with the specified widget as root.

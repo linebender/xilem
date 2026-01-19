@@ -463,7 +463,9 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::Exit => (),
                 RenderRootSignal::ShowWindowMenu(_) => (),
                 RenderRootSignal::WidgetSelectedInInspector(_) => (),
-                RenderRootSignal::NewLayer(root, pos) => self.render_root.add_layer(root, pos),
+                RenderRootSignal::NewLayer(_type, root, pos) => {
+                    self.render_root.add_layer(root, pos);
+                }
                 RenderRootSignal::RemoveLayer(root_id) => self.render_root.remove_layer(root_id),
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
                     self.render_root.reposition_layer(root_id, new_pos);

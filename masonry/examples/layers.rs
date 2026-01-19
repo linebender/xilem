@@ -8,20 +8,24 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
-    StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PointerEvent, PointerUpdate, Properties, PropertiesMut, PropertiesRef,
+    RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
-use masonry::kurbo::{Point, Size};
+use masonry::kurbo::{Axis, Point, Size, Vec2};
+use masonry::layers::Tooltip;
 use masonry::layout::{LayoutSize, LenReq, SizeDef};
 use masonry::parley::FontWeight;
+use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
 use masonry::theme::default_property_set;
+use masonry::util::{Duration, Instant};
 use masonry::vello::Scene;
+use masonry::vello::peniko::Color;
 use masonry::widgets::{Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
+
 use tracing::{Span, trace_span};
-use vello::kurbo::Axis;
 
 struct Driver;
 
@@ -36,33 +40,28 @@ impl AppDriver for Driver {
     }
 }
 
-#[allow(missing_docs, missing_debug_implementations, reason = "example code")]
-pub struct OverlayBox {
+struct OverlayBox {
     child: WidgetPod<dyn Widget>,
-    overlayer: Box<dyn Fn() -> NewWidget<dyn Widget>>,
+    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
     layer_root_id: Option<WidgetId>,
+    last_mouse_move: Option<Instant>,
+    last_cursor_pos: Point,
 }
 
 // --- MARK: BUILDERS
 impl OverlayBox {
     /// Construct container with child, and both width and height not set.
-    pub fn new(
+    fn new(
         child: NewWidget<impl Widget + ?Sized>,
-        overlayer: Box<dyn Fn() -> NewWidget<dyn Widget>>,
+        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
     ) -> Self {
         Self {
             child: child.erased().to_pod(),
             overlayer,
             layer_root_id: None,
+            last_mouse_move: None,
+            last_cursor_pos: Point::ZERO,
         }
-    }
-}
-
-// --- MARK: WIDGETMUT
-impl OverlayBox {
-    /// Returns mutable reference to the child widget, if any.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
-        this.ctx.get_mut(&mut this.widget.child)
     }
 }
 
@@ -76,16 +75,28 @@ impl Widget for OverlayBox {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        if let PointerEvent::Move(PointerUpdate { current, .. }) = event
-            && ctx.is_hovered()
-        {
-            let position = current.logical_point();
-            if let Some(overlay_id) = self.layer_root_id {
-                ctx.reposition_layer(overlay_id, position);
-            } else {
-                let overlay = (self.overlayer)();
+        if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
+            self.last_cursor_pos = current.logical_point();
+            self.last_mouse_move = Some(Instant::now());
+            ctx.request_anim_frame();
+        }
+    }
+
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _interval: u64,
+    ) {
+        if let Some(last_mouse_move) = self.last_mouse_move {
+            let now = Instant::now();
+            if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
+                let (overlay, layer_type) = (self.overlayer)();
                 self.layer_root_id = Some(overlay.id());
-                ctx.create_layer(overlay, position);
+                let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
+                ctx.create_layer(layer_type, overlay, layer_pos);
+            } else {
+                ctx.request_anim_frame();
             }
         }
     }
@@ -94,11 +105,9 @@ impl Widget for OverlayBox {
         ctx.register_child(&mut self.child);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        if let Update::HoveredChanged(false) = event
-            && let Some(overlay_id) = self.layer_root_id.take()
-        {
-            ctx.remove_layer(overlay_id);
+    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        if let Update::HoveredChanged(false) = event {
+            self.last_mouse_move = None;
         }
     }
 
@@ -157,7 +166,21 @@ fn main() {
         // Ideally there's be an Into in Parley for this
         .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
 
-    let overlayer = || Label::new("Tooltip!!!").with_auto_id().erased();
+    let overlayer = || {
+        let tooltip = NewWidget::new_with_props(
+            Tooltip::new(NewWidget::new_with_props(
+                Label::new("Tooltip!!!"),
+                Properties::one(ContentColor::new(Color::BLACK)),
+            )),
+            Properties::from((
+                BorderWidth::all(1.),
+                BorderColor::new(Color::BLACK),
+                Background::Color(Color::WHITE),
+            )),
+        )
+        .erased();
+        (tooltip, LayerType::Tooltip("Tooltip!!!".to_string()))
+    };
 
     let overlay_box = OverlayBox::new(label.with_auto_id(), Box::new(overlayer));
 

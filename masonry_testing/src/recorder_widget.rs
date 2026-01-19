@@ -15,9 +15,9 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
+    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
+    MeasureCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::LenReq;
@@ -257,6 +257,10 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn children_ids(&self) -> ChildrenIds {
         self.child.children_ids()
+    }
+
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
     }
 
     fn accepts_pointer_interaction(&self) -> bool {

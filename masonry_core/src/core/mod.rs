@@ -5,6 +5,7 @@
 
 mod contexts;
 mod events;
+mod layer;
 mod properties;
 mod text;
 mod widget;
@@ -17,6 +18,7 @@ mod widget_tag;
 
 pub use contexts::*;
 pub use events::*;
+pub use layer::*;
 pub use properties::*;
 pub use text::*;
 pub use widget::*;

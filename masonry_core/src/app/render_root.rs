@@ -17,9 +17,9 @@ use vello::kurbo::{Point, Rect, Size};
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent,
-    Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WidgetTag, WidgetTagInner, WindowEvent,
+    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
+    TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -270,8 +270,8 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
-    /// A new layer should be created with the widget as root.
-    NewLayer(NewWidget<dyn Widget>, Point),
+    /// A new [layer](crate::doc::masonry_concepts#layers) should be created with the widget as root.
+    NewLayer(LayerType, NewWidget<dyn Widget>, Point),
     /// The layer with the given widget as root should be removed.
     RemoveLayer(WidgetId),
     /// The layer with the given widget as root should be repositioned to the specified point.
@@ -548,7 +548,7 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS
-    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
     pub fn get_layer_root(&self, layer_idx: usize) -> WidgetRef<'_, dyn Widget> {
         self.get_widget(self.layer_root_id(layer_idx))
             .expect("layer root not in widget tree")
@@ -604,7 +604,7 @@ impl RenderRoot {
         res
     }
 
-    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     ///
