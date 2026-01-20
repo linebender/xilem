@@ -500,10 +500,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             !self.scrollbar_horizontal_visible,
         );
         if self.scrollbar_horizontal_visible {
-            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            let (scrollbar, mut sb_ctx) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
             scrollbar.portal_size = size.width;
             scrollbar.content_size = content_size.width;
-            // TODO - request paint for scrollbar?
+            sb_ctx.request_render();
+            drop(sb_ctx);
 
             let scrollbar_size = ctx.compute_size(
                 &mut self.scrollbar_horizontal,
@@ -522,10 +523,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             !self.scrollbar_vertical_visible,
         );
         if self.scrollbar_vertical_visible {
-            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            let (scrollbar, mut sb_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
             scrollbar.portal_size = size.height;
             scrollbar.content_size = content_size.height;
-            // TODO - request paint for scrollbar?
+            sb_ctx.request_render();
+            drop(sb_ctx);
 
             let scrollbar_size = ctx.compute_size(
                 &mut self.scrollbar_vertical,
