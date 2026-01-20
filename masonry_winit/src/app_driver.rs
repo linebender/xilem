@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
+use masonry_core::vello::wgpu;
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 
@@ -49,6 +50,21 @@ impl<'a, 's> DriverCtx<'a, 's> {
     }
 }
 
+/// Access to Masonry's WGPU device state.
+///
+/// This is provided via [`AppDriver::on_wgpu_ready`] so applications can create GPU resources
+/// (textures, pipelines, etc.) using the same `Device`/`Queue` as Masonry.
+pub struct WgpuContext<'a> {
+    /// The WGPU instance used by Masonry.
+    pub instance: &'a wgpu::Instance,
+    /// The WGPU adapter used to create the device.
+    pub adapter: &'a wgpu::Adapter,
+    /// The shared WGPU device.
+    pub device: &'a wgpu::Device,
+    /// The shared WGPU queue.
+    pub queue: &'a wgpu::Queue,
+}
+
 /// A trait for defining how your app interacts with the Masonry widget tree.
 ///
 /// When launching your app with [`crate::app::run`], you need to provide
@@ -82,6 +98,12 @@ pub trait AppDriver {
     fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
         ctx.exit();
     }
+
+    /// Called when Masonry has created a WGPU device.
+    ///
+    /// This may be called more than once if multiple devices are created (e.g. multiple windows
+    /// requiring different compatible adapters).
+    fn on_wgpu_ready(&mut self, _window_id: WindowId, _wgpu: &WgpuContext<'_>) {}
 }
 
 impl DriverCtx<'_, '_> {
