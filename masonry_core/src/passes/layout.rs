@@ -10,7 +10,7 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Axis, Point, Rect, Size};
+use vello::kurbo::{Axis, Insets, Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
@@ -19,7 +19,7 @@ use crate::core::{
 };
 use crate::layout::{LayoutSize, LenDef, LenReq, MeasurementInputs, SizeDef};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::properties::Dimensions;
+use crate::properties::{BoxShadow, Dimensions};
 use crate::util::Sanitize;
 
 // --- MARK: COMPUTE SIZE
@@ -384,6 +384,7 @@ pub(crate) fn run_layout_on(
     });
 
     state.local_paint_rect = Rect::ZERO;
+    state.paint_insets = Insets::ZERO;
 
     let mut ctx = LayoutCtx {
         global_state,
@@ -396,6 +397,19 @@ pub(crate) fn run_layout_on(
         default_map: default_properties.for_widget(widget.type_id()),
     };
     widget.layout(&mut ctx, &props, size);
+
+    // Make sure the paint insets cover the shadow insets
+    let shadow = props.get::<BoxShadow>();
+    if shadow.is_visible() {
+        let shadow_insets = shadow.get_insets();
+        state.paint_insets = Insets {
+            x0: state.paint_insets.x0.max(shadow_insets.x0),
+            y0: state.paint_insets.y0.max(shadow_insets.y0),
+            x1: state.paint_insets.x1.max(shadow_insets.x1),
+            y1: state.paint_insets.y1.max(shadow_insets.y1),
+        };
+    }
+
     if trace {
         trace!(
             "Computed layout: size={}, baseline={}, insets={:?}",

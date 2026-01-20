@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use vello::Scene;
 
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, UpdateCtx, Widget};
 use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
 use crate::peniko::Fill;
 use crate::peniko::color::{AlphaColor, Srgb};
@@ -18,6 +18,9 @@ use crate::properties::CornerRadius;
 // - Spread radius: CSS shadow can change size without changing the blur level using
 // a "spread radius" value. We should implement it and add a `spread_radius` value.
 // - Corner radius: Right now take our widget's corner radii, and average them to draw a shadow with a single corner radius. Ideally we'd like to match individual values.
+
+// Every widget has a box shadow.
+impl<W: Widget> HasProperty<BoxShadow> for W {}
 
 /// The drop shadow of a widget.
 ///
@@ -72,16 +75,6 @@ impl BoxShadow {
         }
     }
 
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        // TODO - We'd like to request_post_paint instead, which should be lighter.
-        // However, box shadow affects the size of the paint rect, which is currently handled in layout.
-        ctx.request_layout();
-    }
-
     /// Returns `false` if the shadow can be safely treated as non-existent.
     ///
     /// May have false positives.
@@ -134,6 +127,8 @@ impl BoxShadow {
     }
 
     /// Helper function that returns how much a given shadow expands the paint rect.
+    ///
+    /// The returned [`Insets`] are guaranteed to be non-negative.
     pub fn get_insets(&self) -> Insets {
         let blur_radius = self.blur_radius.max(0.);
         Insets {
@@ -142,5 +137,17 @@ impl BoxShadow {
             x1: (blur_radius + self.offset.x).max(0.),
             y1: (blur_radius + self.offset.y).max(0.),
         }
+    }
+
+    /// Requests layout if this property changed.
+    ///
+    /// This is called by Masonry during widget properties mutation.
+    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        // TODO: We'd like to request a paint pass instead, which should be lighter. However,
+        //       box shadow affects the size of the paint rect, which is handled in layout.
+        ctx.request_layout();
     }
 }
