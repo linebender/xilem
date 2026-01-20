@@ -360,9 +360,9 @@ impl Widget for SizedBox {
 mod tests {
     use super::*;
     use crate::core::Properties;
-    use crate::layout::AsUnit;
+    use crate::layout::{AsUnit, UnitPoint};
     use crate::palette;
-    use crate::properties::types::{Gradient, UnitPoint};
+    use crate::properties::types::Gradient;
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;

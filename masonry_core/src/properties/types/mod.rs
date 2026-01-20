@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Value types used in properties.
+//! Core value types used in properties.
 //!
 //! The types in this modules aren't properties themselves: they're types that the fields
 //! and variants of properties can have.
@@ -12,8 +12,6 @@
 //! [`Background`]: crate::properties::Background
 //! [`Background::Gradient`]: crate::properties::Background::Gradient
 
-mod alignment;
+mod gradient;
 
-pub use alignment::*;
-
-pub use masonry_core::properties::types::*;
+pub use gradient::*;
