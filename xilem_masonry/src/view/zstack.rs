@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
-use masonry::properties::types::UnitPoint;
+use masonry::layout::UnitPoint;
 use masonry::widgets;
 pub use masonry::widgets::ChildAlignment;
 

@@ -11,6 +11,7 @@ mod len_req;
 mod length;
 mod measurement_cache;
 mod size_def;
+mod unit_point;
 
 pub use as_unit::*;
 pub use dim::*;
@@ -20,3 +21,4 @@ pub use len_req::*;
 pub use length::*;
 pub(crate) use measurement_cache::*;
 pub use size_def::*;
+pub use unit_point::*;

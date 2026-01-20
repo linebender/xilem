@@ -4,12 +4,12 @@
 use std::f64::consts::TAU;
 
 use crate::kurbo::{Point, Rect};
+use crate::layout::UnitPoint;
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
 use crate::peniko::{ColorStops, ColorStopsSource, Extend};
 use crate::peniko::{
     InterpolationAlphaSpace, LinearGradientPosition, RadialGradientPosition, SweepGradientPosition,
 };
-use crate::properties::types::UnitPoint;
 
 /// Properties for the supported [`Gradient`] types.
 ///

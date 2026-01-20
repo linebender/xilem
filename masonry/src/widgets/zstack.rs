@@ -10,8 +10,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Rect, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::types::UnitPoint;
+use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
 use crate::util::include_screenshot;
 
 struct Child {
