@@ -12,6 +12,7 @@ use vello::peniko::{Color, Fill};
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
 use crate::passes::{enter_span_if, recurse_on_children};
+use crate::properties::{BoxShadow, CornerRadius};
 use crate::util::{get_debug_color, stroke};
 
 // --- MARK: PAINT WIDGET
@@ -60,6 +61,21 @@ fn paint_widget(
             default_map: default_properties.for_widget(widget.type_id()),
         };
         if ctx.widget_state.request_paint {
+            // Paint box shadow
+            let shadow = props.get::<BoxShadow>();
+            if shadow.is_visible() {
+                let size = state.size();
+                let border_radius = props.get::<CornerRadius>();
+                let shadow_rect = shadow.shadow_rect(size, border_radius);
+                let transform = state.window_transform;
+
+                shadow.paint(scene, Affine::IDENTITY, shadow_rect);
+
+                complete_scene.append(scene, Some(transform));
+                scene.reset();
+            }
+
+            // Paint the widget on top
             widget.paint(&mut ctx, &props, scene);
         }
         if ctx.widget_state.request_post_paint {

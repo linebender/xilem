@@ -13,10 +13,10 @@ use crate::core::{
     PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Point, Size};
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
+    Background, BorderColor, BorderWidth, CaretColor, ContentColor, CornerRadius,
     DisabledBackground, FocusedBorderColor, LineBreaking, Padding, PlaceholderColor,
     SelectionColor, UnfocusedSelectionColor,
 };
@@ -155,7 +155,6 @@ impl HasProperty<DisabledBackground> for TextInput {}
 impl HasProperty<BorderColor> for TextInput {}
 impl HasProperty<FocusedBorderColor> for TextInput {}
 impl HasProperty<BorderWidth> for TextInput {}
-impl HasProperty<BoxShadow> for TextInput {}
 impl HasProperty<CornerRadius> for TextInput {}
 impl HasProperty<Padding> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
@@ -179,8 +178,6 @@ impl Widget for TextInput {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
-        // TODO: Draw shadows in post_paint.
-        BoxShadow::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {
@@ -305,7 +302,6 @@ impl Widget for TextInput {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -330,10 +326,6 @@ impl Widget for TextInput {
             ctx.place_child(&mut self.placeholder, child_origin);
         }
 
-        if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
-        }
-
         if self.clip {
             // TODO: We actually want to clip space not size, but we can't here right now.
             //       Need either a set_clip_path_for_specific_child or TextArea clip support.
@@ -348,7 +340,6 @@ impl Widget for TextInput {
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
 
         let bg = if ctx.is_disabled() {
             &props.get::<DisabledBackground>().0
@@ -364,8 +355,6 @@ impl Widget for TextInput {
         } else {
             props.get::<BorderColor>()
         };
-
-        shadow.paint(scene, Affine::IDENTITY, bg_rect);
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);

@@ -18,11 +18,11 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::core::{HasProperty, MeasureCtx};
-use crate::kurbo::{Affine, Axis, Size};
+use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
+    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
+    FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -107,7 +107,6 @@ impl HasProperty<BorderColor> for Button {}
 impl HasProperty<BorderWidth> for Button {}
 impl HasProperty<CornerRadius> for Button {}
 impl HasProperty<Padding> for Button {}
-impl HasProperty<BoxShadow> for Button {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Button {
@@ -196,7 +195,6 @@ impl Widget for Button {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
-        BoxShadow::prop_changed(ctx, property_type);
     }
 
     fn measure(
@@ -253,7 +251,6 @@ impl Widget for Button {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -268,10 +265,6 @@ impl Widget for Button {
         let baseline = border.baseline_up(baseline, scale);
         let baseline = padding.baseline_up(baseline, scale);
         ctx.set_baseline_offset(baseline);
-
-        if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
-        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -305,16 +298,6 @@ impl Widget for Button {
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
-
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
-        let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
-
-        let shadow_rect = shadow.shadow_rect(size, border_radius);
-
-        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -357,7 +340,7 @@ mod tests {
     use super::*;
     use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
     use crate::layout::AsUnit;
-    use crate::properties::{ContentColor, Gap};
+    use crate::properties::{BoxShadow, ContentColor, Gap};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
