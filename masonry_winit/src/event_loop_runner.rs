@@ -29,7 +29,9 @@ use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as Win
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
-use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
+use crate::app::{
+    AppDriver, DriverCtx, WgpuContext, masonry_resize_direction_to_winit, winit_ime_to_masonry,
+};
 use crate::app_driver::WindowId;
 use crate::vello_util::{RenderContext, RenderSurface};
 
@@ -514,7 +516,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: REDRAW
-    fn redraw(&mut self, handle_id: HandleId) {
+    fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
         let _span = info_span!("redraw");
 
         let window = self.windows.get_mut(&handle_id).unwrap();
@@ -534,9 +536,24 @@ impl MasonryState<'_> {
             }
             surface
         } else {
+            let devices_before = self.render_cx.devices.len();
             let surface = create_surface(&mut self.render_cx, window.handle.clone(), size);
+            let dev_id = surface.dev_id;
             self.surfaces.insert(handle_id, surface);
-            self.surfaces.get_mut(&handle_id).unwrap()
+            let surface = self.surfaces.get_mut(&handle_id).unwrap();
+
+            if self.render_cx.devices.len() != devices_before {
+                let device_handle = &self.render_cx.devices[dev_id];
+                let wgpu = WgpuContext {
+                    instance: &self.render_cx.instance,
+                    adapter: &device_handle.adapter,
+                    device: &device_handle.device,
+                    queue: &device_handle.queue,
+                };
+                app_driver.on_wgpu_ready(window.id, &wgpu);
+            }
+
+            surface
         };
 
         let now = Instant::now();
@@ -754,7 +771,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
-                self.redraw(handle_id);
+                self.redraw(handle_id, app_driver);
             }
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
@@ -974,7 +991,7 @@ impl MasonryState<'_> {
         // If an app creates a visible window, we firstly create it as invisible
         // and then render the first frame before making it visible to avoid flashing.
         for handle_id in std::mem::take(&mut self.need_first_frame) {
-            self.redraw(handle_id);
+            self.redraw(handle_id, app_driver);
             let window = self.windows.get_mut(&handle_id).unwrap();
             window.handle.set_visible(true);
         }

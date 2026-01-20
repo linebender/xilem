@@ -17,11 +17,19 @@ use wgpu::{
 /// Simple render context that maintains wgpu state for rendering the pipeline.
 pub(crate) struct RenderContext {
     pub instance: Instance,
+    /// Created devices used by this context.
+    ///
+    /// Invariants:
+    /// - Entries are append-only (never deleted or replaced).
+    /// - Indices are stable for the lifetime of the `RenderContext`.
+    ///
+    /// Other parts of the library store indices into this vec (e.g. `RenderSurface::dev_id`) and
+    /// assume they remain valid.
     pub devices: Vec<DeviceHandle>,
 }
 
 pub(crate) struct DeviceHandle {
-    adapter: wgpu::Adapter,
+    pub(crate) adapter: wgpu::Adapter,
     pub device: Device,
     pub queue: wgpu::Queue,
 }
