@@ -18,7 +18,7 @@ use crate::properties::{
 /// change.
 ///
 /// You can create a `WidgetMut` from [`RenderRoot`](crate::app::RenderRoot),
-/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
+/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`] or from a parent
 /// `WidgetMut` with [`MutateCtx`].
 ///
 /// # `WidgetMut` as a Receiver
