@@ -120,7 +120,6 @@ impl HasProperty<BorderColor> for Selector {}
 impl HasProperty<BorderWidth> for Selector {}
 impl HasProperty<CornerRadius> for Selector {}
 impl HasProperty<Padding> for Selector {}
-impl HasProperty<BoxShadow> for Selector {}
 
 /// A [`Selector`]'s option was picked.
 #[derive(PartialEq, Debug)]
@@ -251,7 +250,6 @@ impl Widget for Selector {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
-        BoxShadow::prop_changed(ctx, property_type);
     }
 
     fn measure(
