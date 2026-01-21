@@ -15,8 +15,8 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, stroke};
+use crate::properties::{BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::util::stroke;
 
 // TODO - Rename "active" widget to "visible" widget?
 // Active already means something else.
@@ -216,7 +216,6 @@ impl CollectionWidget<()> for IndexedStack {
     }
 }
 
-impl HasProperty<Background> for IndexedStack {}
 impl HasProperty<BorderColor> for IndexedStack {}
 impl HasProperty<BorderWidth> for IndexedStack {}
 impl HasProperty<CornerRadius> for IndexedStack {}
@@ -232,7 +231,6 @@ impl Widget for IndexedStack {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
@@ -325,14 +323,10 @@ impl Widget for IndexedStack {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
         let border_color = props.get::<BorderColor>();
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
         let border_rect = border_width.border_rect(ctx.size(), border_radius);
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
 
         // paint the baseline if we're debugging layout

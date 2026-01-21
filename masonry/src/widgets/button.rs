@@ -20,11 +20,10 @@ use crate::core::{HasProperty, MeasureCtx};
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    FocusedBorderColor, HoveredBorderColor, Padding,
+    BorderColor, BorderWidth, CornerRadius, FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::stroke;
 use crate::widgets::Label;
 
 /// A button with a child widget.
@@ -101,9 +100,6 @@ pub struct ButtonPress {
     pub button: Option<PointerButton>,
 }
 
-impl HasProperty<DisabledBackground> for Button {}
-impl HasProperty<ActiveBackground> for Button {}
-impl HasProperty<Background> for Button {}
 impl HasProperty<FocusedBorderColor> for Button {}
 impl HasProperty<HoveredBorderColor> for Button {}
 impl HasProperty<BorderColor> for Button {}
@@ -189,9 +185,6 @@ impl Widget for Button {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
         FocusedBorderColor::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
@@ -273,22 +266,12 @@ impl Widget for Button {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
         let border_color = if is_focused {
@@ -299,8 +282,6 @@ impl Widget for Button {
             props.get::<BorderColor>()
         };
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
