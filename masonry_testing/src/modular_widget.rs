@@ -8,7 +8,7 @@ use masonry_core::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
     MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
     PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod, WidgetRef, find_widget_under_pointer,
+    WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
@@ -55,6 +55,7 @@ pub struct ModularWidget<S> {
     measure: Option<Box<MeasureFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
+    pre_paint: Option<Box<PaintFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
     post_paint: Option<Box<PaintFn<S>>>,
     role: Option<Box<RoleFn<S>>>,
@@ -84,6 +85,7 @@ impl<S> ModularWidget<S> {
             measure: None,
             layout: None,
             compose: None,
+            pre_paint: None,
             paint: None,
             post_paint: None,
             role: None,
@@ -276,6 +278,15 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::pre_paint`]
+    pub fn pre_paint_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
+    ) -> Self {
+        self.pre_paint = Some(Box::new(f));
+        self
+    }
+
     /// See [`Widget::paint`]
     pub fn paint_fn(
         mut self,
@@ -425,6 +436,14 @@ impl<S: 'static> Widget for ModularWidget<S> {
     ) {
         if let Some(f) = self.access.as_mut() {
             f(&mut self.state, ctx, props, node);
+        }
+    }
+
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        if let Some(f) = self.pre_paint.as_mut() {
+            f(&mut self.state, ctx, props, scene);
+        } else {
+            pre_paint(ctx, props, scene);
         }
     }
 

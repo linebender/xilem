@@ -12,9 +12,6 @@ use vello::peniko::{Color, Fill};
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::properties::{
-    ActiveBackground, Background, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
-};
 use crate::util::{get_debug_color, stroke};
 
 // --- MARK: PAINT WIDGET
@@ -22,7 +19,7 @@ fn paint_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
-    scene_cache: &mut HashMap<WidgetId, (Scene, Scene)>,
+    scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
     let mut children = node.children;
@@ -42,66 +39,39 @@ fn paint_widget(
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
 
-    if !is_stashed {
+    if (state.request_pre_paint || state.request_paint || state.request_post_paint) && !is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
-
+        let mut ctx = PaintCtx {
+            global_state,
+            widget_state: state,
+            children: children.reborrow_mut(),
+        };
         let props = PropertiesRef {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
 
-        let size = state.size();
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let transform = state.window_transform;
+        // TODO - Reserve scene
+        // https://github.com/linebender/xilem/issues/524
+        let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
 
-        // Paint box shadow
-        let shadow = props.get::<BoxShadow>();
-        if shadow.is_visible() {
-            let shadow_rect = shadow.shadow_rect(size, border_radius);
-            shadow.paint(complete_scene, transform, shadow_rect);
+        if state.request_pre_paint {
+            pre_scene.reset();
+            widget.pre_paint(&mut ctx, &props, pre_scene);
         }
-
-        // Paint background
-        let bg = if state.is_disabled {
-            &props.get::<DisabledBackground>().0
-        } else if state.is_active {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-        // TODO: Fix remaining issues, see https://github.com/linebender/xilem/issues/1592
-        //    1. Figure out how to skip painting fully transparent backgrounds.
-        //    2. Don't subtract the border from the background rect. Will need solution for border
-        //       painting, as background should go exactly to the outer border and not beyond.
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let bg_brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        complete_scene.fill(Fill::NonZero, transform, &bg_brush, None, &bg_rect);
-
-        if state.request_paint || state.request_post_paint {
-            let mut ctx = PaintCtx {
-                global_state,
-                widget_state: state,
-                children: children.reborrow_mut(),
-            };
-
-            // TODO - Reserve scene
-            // https://github.com/linebender/xilem/issues/524
-            let (scene, postfix_scene) = scene_cache.entry(id).or_default();
-
-            if state.request_paint {
-                scene.reset();
-                widget.paint(&mut ctx, &props, scene);
-            }
-            if state.request_post_paint {
-                postfix_scene.reset();
-                widget.post_paint(&mut ctx, &props, postfix_scene);
-            }
+        if state.request_paint {
+            scene.reset();
+            widget.paint(&mut ctx, &props, scene);
+        }
+        if state.request_post_paint {
+            post_scene.reset();
+            widget.post_paint(&mut ctx, &props, post_scene);
         }
     }
 
+    state.request_pre_paint = false;
     state.request_paint = false;
     state.request_post_paint = false;
     state.needs_paint = false;
@@ -109,12 +79,14 @@ fn paint_widget(
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
         let transform = state.window_transform;
-        let Some((scene, _)) = &mut scene_cache.get(&id) else {
+        let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
             );
             return;
         };
+
+        complete_scene.append(pre_scene, Some(transform));
 
         if let Some(clip) = state.clip_path {
             complete_scene.push_clip_layer(Fill::NonZero, transform, &clip);
@@ -156,14 +128,14 @@ fn paint_widget(
             complete_scene.pop_layer();
         }
 
-        let Some((_, postfix_scene)) = &mut scene_cache.get(&id) else {
+        let Some((_, _, post_scene)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
             );
             return;
         };
 
-        complete_scene.append(postfix_scene, Some(transform));
+        complete_scene.append(post_scene, Some(transform));
     }
 }
 
