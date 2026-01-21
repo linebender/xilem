@@ -43,6 +43,7 @@ fn paint_widget(
         if trace {
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
+
         let mut ctx = PaintCtx {
             global_state,
             widget_state: state,

@@ -315,6 +315,9 @@ impl Widget for Slider {
         TrackThickness::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
+        if property_type == TypeId::of::<Background>() {
+            ctx.request_paint_only();
+        }
     }
 
     fn measure(
