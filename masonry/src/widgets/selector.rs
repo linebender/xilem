@@ -36,6 +36,9 @@ pub struct Selector {
     pub(crate) options: Vec<String>,
     pub(crate) selected_option: usize,
     pub(crate) child: WidgetPod<Label>,
+    // TODO - Implement layer tracking in masonry_core instead.
+    // Each widget should have access to a list of the layers they created.
+    pub(crate) menu_layer_id: Option<WidgetId>,
 }
 
 // --- MARK: BUILDERS
@@ -56,6 +59,7 @@ impl Selector {
             options,
             selected_option: 0,
             child: WidgetPod::new(Label::new(first_option)),
+            menu_layer_id: None,
         }
     }
 
@@ -129,25 +133,36 @@ pub struct SelectionChanged {
 
 // --- MARK: HELPERS
 
-fn create_selector_layer(ctx: &mut EventCtx<'_>, options: &Vec<String>, selected_option: usize) {
-    let layer_type = LayerType::Selector {
-        options: options.clone(),
-        selected_option,
-    };
+impl Selector {
+    fn toggle_selector_layer(&mut self, ctx: &mut EventCtx<'_>) {
+        // If there's a selector menu, remove it.
+        if let Some(id) = self.menu_layer_id {
+            ctx.remove_layer(id);
+            self.menu_layer_id = None;
+            return;
+        }
 
-    let mut menu = SelectorMenu::new(ctx.widget_id());
-    for option in options.iter() {
-        let item = SelectorItem::new(option.clone());
-        menu = menu.with(NewWidget::new(item));
+        // Else create selector menu
+
+        let layer_type = LayerType::Selector {
+            options: self.options.clone(),
+            selected_option: self.selected_option,
+        };
+
+        let mut menu = SelectorMenu::new(ctx.widget_id());
+        for option in self.options.iter() {
+            let item = SelectorItem::new(option.clone());
+            menu = menu.with(NewWidget::new(item));
+        }
+
+        let layer_widget = NewWidget::new(menu);
+
+        ctx.create_layer(
+            layer_type,
+            layer_widget,
+            ctx.window_origin() + Vec2::new(0., ctx.size().height),
+        );
     }
-
-    let layer_widget = NewWidget::new(menu);
-
-    ctx.create_layer(
-        layer_type,
-        layer_widget,
-        ctx.window_origin() + Vec2::new(0., ctx.size().height),
-    );
 }
 
 // --- MARK: IMPL WIDGET
@@ -162,11 +177,13 @@ impl Widget for Selector {
     ) {
         match event {
             PointerEvent::Down(..) => {
-                ctx.capture_pointer();
+                if self.menu_layer_id.is_none() {
+                    ctx.capture_pointer();
+                }
             }
             PointerEvent::Up(PointerButtonEvent { .. }) => {
                 if ctx.is_active() && ctx.is_hovered() {
-                    create_selector_layer(ctx, &self.options, self.selected_option);
+                    self.toggle_selector_layer(ctx);
                 }
             }
             _ => (),
@@ -184,7 +201,7 @@ impl Widget for Selector {
                 if matches!(&event.key, Key::Character(c) if c == " ")
                     || event.key == Key::Named(NamedKey::Enter)
                 {
-                    create_selector_layer(ctx, &self.options, self.selected_option);
+                    self.toggle_selector_layer(ctx);
                 }
                 // TODO - On arrow key, change selected_item
             }
@@ -202,7 +219,7 @@ impl Widget for Selector {
     ) {
         match event.action {
             accesskit::Action::Click => {
-                create_selector_layer(ctx, &self.options, self.selected_option);
+                self.toggle_selector_layer(ctx);
             }
             _ => {}
         }
