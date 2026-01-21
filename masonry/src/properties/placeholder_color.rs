@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use crate::core::Property;
 use crate::peniko::color::{AlphaColor, Srgb};
 
@@ -19,6 +21,11 @@ impl Property for PlaceholderColor {
             color: AlphaColor::BLACK,
         };
         &DEFAULT
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 

@@ -11,6 +11,7 @@
     reason = "Don't matter for example code"
 )]
 
+use std::any::TypeId;
 use std::str::FromStr;
 
 use masonry::core::{
@@ -52,6 +53,11 @@ enum CalcAction {
 impl Property for CalcAction {
     fn static_default() -> &'static Self {
         &Self::None
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 

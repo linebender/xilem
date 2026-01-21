@@ -16,6 +16,11 @@ impl Property for TrackThickness {
         static DEFAULT: TrackThickness = TrackThickness(4.);
         &DEFAULT
     }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 impl TrackThickness {
@@ -35,6 +40,11 @@ impl Property for ThumbRadius {
     fn static_default() -> &'static Self {
         static DEFAULT: ThumbRadius = ThumbRadius(6.);
         &DEFAULT
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 
@@ -56,6 +66,11 @@ impl Property for ThumbColor {
     fn static_default() -> &'static Self {
         static DEFAULT: ThumbColor = ThumbColor(theme::TEXT_COLOR);
         &DEFAULT
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 

@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
 use std::fmt::Display;
 
 use masonry_core::core::Property;
@@ -13,6 +14,11 @@ impl Property for DebugName {
     fn static_default() -> &'static Self {
         static DEFAULT: DebugName = DebugName(String::new());
         &DEFAULT
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 

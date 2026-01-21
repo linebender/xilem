@@ -28,6 +28,11 @@ impl Property for Dimensions {
         static DEFAULT: Dimensions = Dimensions::AUTO;
         &DEFAULT
     }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 impl From<Dim> for Dimensions {

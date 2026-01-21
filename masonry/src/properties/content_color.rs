@@ -33,6 +33,11 @@ impl Property for ContentColor {
         };
         &DEFAULT
     }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 impl ContentColor {
@@ -52,6 +57,11 @@ impl Property for DisabledContentColor {
             color: AlphaColor::BLACK,
         });
         &DEFAULT
+    }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
     }
 }
 

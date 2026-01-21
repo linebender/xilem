@@ -20,6 +20,11 @@ impl Property for LineBreaking {
     fn static_default() -> &'static Self {
         &Self::Overflow
     }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 impl Default for LineBreaking {

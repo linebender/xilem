@@ -49,6 +49,11 @@ impl Property for BoxShadow {
         };
         &DEFAULT
     }
+
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 impl Default for BoxShadow {
