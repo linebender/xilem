@@ -175,6 +175,7 @@ impl Widget for SelectorMenu {
                             index,
                         });
                     selector.ctx.remove_layer(self_id);
+                    selector.widget.menu_layer_id = None;
                     Selector::select_option(&mut selector, index);
                 });
             }
@@ -214,12 +215,16 @@ impl Widget for SelectorMenu {
         _interval: u64,
     ) {
     }
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        // FIXME - This might be subject to TOCTOU. Find better system.
+        if let Update::WidgetAdded = event {
+            let id = ctx.widget_id();
+            ctx.mutate_later(self.creator, move |mut selector| {
+                let selector = selector.downcast::<Selector>();
+                selector.widget.menu_layer_id = Some(id);
+            });
+        }
     }
 
     fn measure(
@@ -342,18 +347,22 @@ impl Layer for SelectorMenu {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        match event {
+        let remove_this = match event {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 let local_pos = ctx.local_position(state.position);
 
-                if !ctx.size().to_rect().contains(local_pos) {
-                    ctx.remove_layer(ctx.widget_id());
-                }
+                !ctx.size().to_rect().contains(local_pos)
             }
-            PointerEvent::Cancel(..) => {
-                ctx.remove_layer(ctx.widget_id());
-            }
-            _ => {}
+            PointerEvent::Cancel(..) => true,
+            _ => false,
+        };
+
+        if remove_this {
+            ctx.remove_layer(ctx.widget_id());
+            ctx.mutate_later(self.creator, move |mut selector| {
+                let selector = selector.downcast::<Selector>();
+                selector.widget.menu_layer_id = None;
+            });
         }
     }
 }
