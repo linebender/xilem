@@ -57,7 +57,6 @@ impl HasProperty<BorderColor> for SelectorItem {}
 impl HasProperty<BorderWidth> for SelectorItem {}
 impl HasProperty<CornerRadius> for SelectorItem {}
 impl HasProperty<Padding> for SelectorItem {}
-impl HasProperty<BoxShadow> for SelectorItem {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for SelectorItem {
@@ -113,7 +112,6 @@ impl Widget for SelectorItem {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
-        BoxShadow::prop_changed(ctx, property_type);
     }
 
     fn measure(
