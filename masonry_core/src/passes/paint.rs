@@ -47,11 +47,6 @@ fn paint_widget(
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
 
-        let mut ctx = PaintCtx {
-            global_state,
-            widget_state: state,
-            children: children.reborrow_mut(),
-        };
         let props = PropertiesRef {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
@@ -85,17 +80,25 @@ fn paint_widget(
         let bg_brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         complete_scene.fill(Fill::NonZero, transform, &bg_brush, None, &bg_rect);
 
-        // TODO - Reserve scene
-        // https://github.com/linebender/xilem/issues/524
-        let (scene, postfix_scene) = scene_cache.entry(id).or_default();
+        if state.request_paint || state.request_post_paint {
+            let mut ctx = PaintCtx {
+                global_state,
+                widget_state: state,
+                children: children.reborrow_mut(),
+            };
 
-        if state.request_paint {
-            scene.reset();
-            widget.paint(&mut ctx, &props, scene);
-        }
-        if state.request_post_paint {
-            postfix_scene.reset();
-            widget.post_paint(&mut ctx, &props, postfix_scene);
+            // TODO - Reserve scene
+            // https://github.com/linebender/xilem/issues/524
+            let (scene, postfix_scene) = scene_cache.entry(id).or_default();
+
+            if state.request_paint {
+                scene.reset();
+                widget.paint(&mut ctx, &props, scene);
+            }
+            if state.request_post_paint {
+                postfix_scene.reset();
+                widget.post_paint(&mut ctx, &props, postfix_scene);
+            }
         }
     }
 
