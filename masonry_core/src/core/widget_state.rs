@@ -152,6 +152,8 @@ pub(crate) struct WidgetState {
     /// The `compose` method must be called on this widget or a descendant
     pub(crate) needs_compose: bool,
 
+    /// The `pre_paint` method must be called on this widget
+    pub(crate) request_pre_paint: bool,
     /// The `paint` method must be called on this widget
     pub(crate) request_paint: bool,
     /// The `post_paint` method must be called on this widget
@@ -261,6 +263,7 @@ impl WidgetState {
             needs_layout: true,
             request_compose: true,
             needs_compose: true,
+            request_pre_paint: true,
             request_paint: true,
             request_post_paint: true,
             needs_paint: true,
