@@ -1138,6 +1138,8 @@ impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
     }
 });
 
+// --- MARK: GET STATUS
+
 // Methods on all context types
 // Access status information (hovered/pointer captured/disabled/etc).
 impl_context_method!(
@@ -1224,6 +1226,25 @@ impl_context_method!(
         /// Whether the window is focused.
         pub fn is_window_focused(&self) -> bool {
             self.global_state.window_focused
+        }
+
+        /// The widget, if any, which has [pointer capture].
+        ///
+        /// The pointer will usually be the mouse. In future versions, this
+        /// function will take a pointer id as input to test a specific pointer.
+        ///
+        /// [pointer capture]: crate::doc::masonry_concepts#pointer-capture
+        pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
+            self.global_state.pointer_capture_target
+        }
+
+        /// The widget, if any, which has [text focus].
+        ///
+        /// The focused widget is the one that receives keyboard events.
+        ///
+        /// [text focus]: crate::doc::masonry_concepts#text-focus
+        pub fn focus_target_id(&self) -> Option<WidgetId> {
+            self.global_state.focused_widget
         }
 
         /// Whether this widget gets pointer events and hovered status.
