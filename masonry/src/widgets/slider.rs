@@ -137,7 +137,6 @@ impl Slider {
     }
 }
 
-impl HasProperty<Background> for Slider {}
 impl HasProperty<BarColor> for Slider {}
 impl HasProperty<TrackThickness> for Slider {}
 impl HasProperty<ThumbColor> for Slider {}
@@ -314,7 +313,6 @@ impl Widget for Slider {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
         BarColor::prop_changed(ctx, property_type);
         TrackThickness::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
@@ -357,6 +355,7 @@ impl Widget for Slider {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Get parameters and resolve colors
+        // TODO: Create a dedicated TrackColor property
         let track_color = if props.contains::<Background>() {
             props.get::<Background>()
         } else {
