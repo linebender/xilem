@@ -6,12 +6,13 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
+use dpi::PhysicalPosition;
+
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent, LayoutCtx,
     MeasureCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
-    PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut,
-    WidgetPod,
+    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::{LenDef, LenReq, SizeDef};
@@ -534,11 +535,18 @@ impl Widget for VirtualScroll {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let delta = match delta {
-                    ScrollDelta::PixelDelta(p) => -p.to_logical::<f64>(ctx.get_scale_factor()).y,
-                    ScrollDelta::LineDelta(_, y) => -y as f64 * ctx.get_scale_factor() * 120.,
-                    _ => 0.0,
+                let scale_factor = ctx.get_scale_factor();
+                let line_px = PhysicalPosition {
+                    x: 120.0 * scale_factor,
+                    y: 120.0 * scale_factor,
                 };
+                let page_px = PhysicalPosition {
+                    x: ctx.size().width * scale_factor,
+                    y: ctx.size().height * scale_factor,
+                };
+
+                let delta_px = delta.to_pixel_delta(line_px, page_px);
+                let delta = -delta_px.to_logical::<f64>(scale_factor).y;
                 self.scroll_offset_from_anchor += delta;
                 self.event_post_scroll(ctx);
             }

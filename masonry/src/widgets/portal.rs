@@ -11,8 +11,8 @@ use vello::Scene;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
     MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
-    PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
@@ -296,16 +296,18 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let mut delta = match delta {
-                    ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
-                    ScrollDelta::LineDelta(x, y) => {
-                        -Vec2 {
-                            x: x as f64,
-                            y: y as f64,
-                        } * 120.0
-                    }
-                    _ => Vec2::ZERO,
-                } * ctx.get_scale_factor();
+                let scale_factor = ctx.get_scale_factor();
+                let line_px = PhysicalPosition {
+                    x: 120.0 * scale_factor,
+                    y: 120.0 * scale_factor,
+                };
+                let page_px = PhysicalPosition {
+                    x: portal_size.width * scale_factor,
+                    y: portal_size.height * scale_factor,
+                };
+                let delta_px = delta.to_pixel_delta(line_px, page_px);
+                let dpi::LogicalPosition { x, y } = delta_px.to_logical::<f64>(scale_factor);
+                let mut delta = -Vec2 { x, y };
 
                 // Ignore scroll deltas in directions that are constrained
                 if self.constrain_horizontal {
