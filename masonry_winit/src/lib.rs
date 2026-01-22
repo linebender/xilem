@@ -84,10 +84,6 @@
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![expect(
-    clippy::needless_doctest_main,
-    reason = "Having a main function is a deliberate part of the root doc."
-)]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 
 mod app_driver;

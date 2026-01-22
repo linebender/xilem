@@ -23,7 +23,7 @@ xilem_core.workspace = true
 masonry.workspace = true
 tracing.workspace = true
 vello.workspace = true
-tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [lints]
 workspace = true
