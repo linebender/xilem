@@ -14,10 +14,7 @@ use crate::core::{
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    BorderColor, BorderWidth, CornerRadius, FocusedBorderColor, HoveredBorderColor, Padding,
-};
-use crate::util::stroke;
+use crate::properties::{BorderWidth, Padding};
 
 /// A [`Layer`] representing a simple tooltip showing some content until the mouse moves.
 pub struct Tooltip {
@@ -50,9 +47,6 @@ impl Tooltip {
     }
 }
 
-impl HasProperty<BorderColor> for Tooltip {}
-impl HasProperty<BorderWidth> for Tooltip {}
-impl HasProperty<CornerRadius> for Tooltip {}
 impl HasProperty<Padding> for Tooltip {}
 
 // --- MARK: IMPL WIDGET
@@ -83,13 +77,12 @@ impl Widget for Tooltip {
     ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(_) | Update::FocusChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -97,9 +90,6 @@ impl Widget for Tooltip {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
     }
 
@@ -165,26 +155,7 @@ impl Widget for Tooltip {
         ctx.set_baseline_offset(baseline);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_focused = ctx.is_focus_target();
-        let is_hovered = ctx.is_hovered();
-        let size = ctx.size();
-
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Tooltip

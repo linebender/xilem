@@ -4,10 +4,11 @@
 use vello::Scene;
 
 use crate::core::{PaintCtx, PropertiesRef};
-use crate::kurbo::{Affine, Size};
+use crate::kurbo::{Affine, Join, Size, Stroke};
 use crate::peniko::Fill;
 use crate::properties::{
-    ActiveBackground, Background, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, FocusedBorderColor, HoveredBorderColor,
 };
 
 /// References to common pre-paint properties.
@@ -20,6 +21,10 @@ pub struct PrePaintProps<'a> {
     pub background: &'a Background,
     /// Border width.
     pub border_width: &'a BorderWidth,
+    /// Border color.
+    ///
+    /// Considers focus and hovered state.
+    pub border_color: &'a BorderColor,
     /// Corner radius,
     pub corner_radius: &'a CornerRadius,
 }
@@ -36,24 +41,33 @@ impl<'a> PrePaintProps<'a> {
             props.get::<Background>()
         };
         let border_width = props.get::<BorderWidth>();
+        let border_color = if ctx.is_focus_target() {
+            &props.get::<FocusedBorderColor>().0
+        } else if ctx.is_hovered() {
+            &props.get::<HoveredBorderColor>().0
+        } else {
+            props.get::<BorderColor>()
+        };
         let corner_radius = props.get::<CornerRadius>();
 
         Self {
             box_shadow,
             background,
             border_width,
+            border_color,
             corner_radius,
         }
     }
 }
 
-/// Paints the widget's box shadow and background.
+/// Paints the widget's box shadow, background, and border.
 pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     let size = ctx.size();
     let p = PrePaintProps::fetch(ctx, props);
 
     paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
     paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+    paint_border(scene, size, p.border_color, p.border_width, p.corner_radius);
 }
 
 /// Paints the widget's box shadow.
@@ -84,4 +98,31 @@ pub fn paint_background(
     let bg_rect = border_width.bg_rect(size, corner_radius);
     let bg_brush = background.get_peniko_brush_for_rect(bg_rect.rect());
     scene.fill(Fill::NonZero, Affine::IDENTITY, &bg_brush, None, &bg_rect);
+}
+
+/// Paints the widget's border.
+pub fn paint_border(
+    scene: &mut Scene,
+    size: Size,
+    border_color: &BorderColor,
+    border_width: &BorderWidth,
+    corner_radius: &CornerRadius,
+) {
+    if border_width.width == 0. || !border_color.is_visible() {
+        return;
+    }
+    let border_rect = border_width.border_rect(size, corner_radius);
+    // Using Join::Miter avoids rounding corners when a widget has a wide border.
+    let border_style = Stroke {
+        width: border_width.width,
+        join: Join::Miter,
+        ..Default::default()
+    };
+    scene.stroke(
+        &border_style,
+        Affine::IDENTITY,
+        border_color.color,
+        None,
+        &border_rect,
+    );
 }

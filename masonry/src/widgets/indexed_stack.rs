@@ -15,8 +15,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::stroke;
+use crate::properties::{BorderWidth, Padding};
 
 // TODO - Rename "active" widget to "visible" widget?
 // Active already means something else.
@@ -216,9 +215,6 @@ impl CollectionWidget<()> for IndexedStack {
     }
 }
 
-impl HasProperty<BorderColor> for IndexedStack {}
-impl HasProperty<BorderWidth> for IndexedStack {}
-impl HasProperty<CornerRadius> for IndexedStack {}
 impl HasProperty<Padding> for IndexedStack {}
 
 // --- MARK: IMPL WIDGET
@@ -232,9 +228,6 @@ impl Widget for IndexedStack {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
     }
 
@@ -320,15 +313,7 @@ impl Widget for IndexedStack {
         ctx.set_baseline_offset(baseline);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let border_color = props.get::<BorderColor>();
-
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();

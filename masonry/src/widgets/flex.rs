@@ -18,9 +18,8 @@ use crate::core::{
 use crate::kurbo::{Affine, Axis, Line, Size, Stroke};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
-use crate::properties::{BorderColor, BorderWidth, CornerRadius, Gap, Padding};
+use crate::properties::{BorderWidth, Gap, Padding};
 use crate::util::Sanitize;
-use crate::util::stroke;
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -680,9 +679,6 @@ fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> 
     (space_before, space_between)
 }
 
-impl HasProperty<BorderColor> for Flex {}
-impl HasProperty<BorderWidth> for Flex {}
-impl HasProperty<CornerRadius> for Flex {}
 impl HasProperty<Padding> for Flex {}
 impl HasProperty<Gap> for Flex {}
 
@@ -701,9 +697,6 @@ impl Widget for Flex {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
         Gap::prop_changed(ctx, property_type);
     }
@@ -1189,15 +1182,7 @@ impl Widget for Flex {
         ctx.set_baseline_offset(baseline);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let border_color = props.get::<BorderColor>();
-
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
@@ -1241,6 +1226,7 @@ mod tests {
 
     use super::*;
     use crate::layout::AsUnit;
+    use crate::properties::BorderColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Label;

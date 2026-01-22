@@ -1,12 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, Widget};
 use crate::kurbo::{Axis, Point, RoundedRect, Size, Vec2};
 use crate::layout::Length;
 use crate::properties::CornerRadius;
+
+// Every widget has a border width.
+impl<W: Widget> HasProperty<BorderWidth> for W {}
 
 /// The width of a widget's border, in logical pixels.
 #[expect(missing_docs, reason = "field names are self-descriptive")]
@@ -31,14 +32,6 @@ impl BorderWidth {
         Self { width }
     }
 
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_layout();
-    }
-
     /// Returns the total [`Length`] of this border on the given `axis`.
     ///
     /// For [`Axis::Horizontal`] it will return the sum of the left and right border width.
@@ -53,7 +46,7 @@ impl BorderWidth {
     ///
     /// The provided `size` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn size_down(&self, size: Size, scale: f64) -> Size {
         let width = (size.width - Length::px(self.width).dp(scale) * 2.).max(0.);
         let height = (size.height - Length::px(self.width).dp(scale) * 2.).max(0.);
@@ -66,7 +59,7 @@ impl BorderWidth {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
         baseline + Length::px(self.width).dp(scale)
     }
@@ -77,7 +70,7 @@ impl BorderWidth {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
         baseline - Length::px(self.width).dp(scale)
     }
@@ -88,7 +81,7 @@ impl BorderWidth {
     ///
     /// The provided `origin` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
         let width = Length::px(self.width).dp(scale);
         origin + Vec2::new(width, width)
@@ -98,7 +91,7 @@ impl BorderWidth {
     ///
     /// Use to display a box's background.
     ///
-    /// Helper function to be called in [`Widget::paint`](crate::core::Widget::paint).
+    /// Helper function to be called in [`Widget::paint`].
     pub fn bg_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
         size.to_rect()
             .inset(-self.width)
@@ -109,7 +102,7 @@ impl BorderWidth {
     ///
     /// Use to display a box's border.
     ///
-    /// Helper function to be called in [`Widget::paint`](crate::core::Widget::paint).
+    /// Helper function to be called in [`Widget::paint`].
     pub fn border_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
         size.to_rect()
             .inset(-self.width / 2.0)
