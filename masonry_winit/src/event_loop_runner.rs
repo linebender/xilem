@@ -30,7 +30,8 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
-    AppDriver, DriverCtx, WgpuContext, masonry_resize_direction_to_winit, winit_ime_to_masonry,
+    AppDriver, DriverCtx, WgpuContext, WgpuLimits, masonry_resize_direction_to_winit,
+    winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
 use crate::vello_util::{RenderContext, RenderSurface};
@@ -400,6 +401,46 @@ impl MasonryState<'_> {
             new_windows,
             need_first_frame: Vec::new(),
         }
+    }
+
+    /// Configure how Masonry requests the WGPU device (features and limits).
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// `features` is best-effort: Masonry intersects it with `adapter.features()`, so unsupported
+    /// feature bits are ignored.
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn set_wgpu_device_options(
+        &mut self,
+        features: wgpu::Features,
+        limits: WgpuLimits,
+    ) -> bool {
+        self.render_cx.set_wgpu_device_options(features, limits)
+    }
+
+    /// Add extra WGPU features to request when creating the device.
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn add_wgpu_features(&mut self, features: wgpu::Features) -> bool {
+        self.render_cx.add_wgpu_features(features)
+    }
+
+    /// Configure the WGPU limits strategy used when requesting the device.
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn set_wgpu_limits(&mut self, limits: WgpuLimits) -> bool {
+        self.render_cx.set_wgpu_limits(limits)
     }
 
     // --- MARK: RESUMED
