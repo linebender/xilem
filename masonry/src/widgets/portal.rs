@@ -25,6 +25,19 @@ use crate::widgets::ScrollBar;
 // Imagine a very large widget, and a rect that represents the part of the widget we see
 
 /// A scrolling container with scrollbars and a child widget.
+///
+/// ## Keyboard and accessibility
+///
+/// - Exposes an accessibility node with [`accesskit::Role::ScrollView`], including `scroll_x/y`
+///   and their ranges.
+/// - Handles `accesskit` scroll actions (`ScrollUp`/`ScrollDown`/`ScrollLeft`/`ScrollRight`) by
+///   scrolling the viewport.
+/// - When this widget is focused, it handles basic keyboard scrolling (arrow keys, PageUp/Down,
+///   Home/End) *if the event wasn't already handled by a child*.
+///
+/// When nested inside another scrolling container, child scroll widgets should call
+/// [`EventCtx::set_handled`](crate::core::EventCtx::set_handled) after scrolling to prevent
+/// accidental double-scrolling due to event bubbling.
 pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
     content_size: Size,
@@ -133,6 +146,117 @@ pub(crate) fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) ->
 
 // --- MARK: METHODS
 impl<W: Widget + ?Sized> Portal<W> {
+    fn update_scrollbars_from_viewport(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        portal_size: Size,
+        content_size: Size,
+    ) {
+        let scroll_range = (content_size - portal_size).max(Size::ZERO);
+
+        let progress_x = if scroll_range.width > 1e-12 {
+            (self.viewport_pos.x / scroll_range.width).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let progress_y = if scroll_range.height > 1e-12 {
+            (self.viewport_pos.y / scroll_range.height).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+
+        {
+            let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            scrollbar.cursor_progress = progress_x;
+            scrollbar_ctx.request_render();
+            scrollbar_ctx.request_accessibility_update();
+        }
+        {
+            let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            scrollbar.cursor_progress = progress_y;
+            scrollbar_ctx.request_render();
+            scrollbar_ctx.request_accessibility_update();
+        }
+    }
+
+    fn set_viewport_pos_event_ctx(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        portal_size: Size,
+        content_size: Size,
+        pos: Point,
+    ) -> bool {
+        let changed = self.set_viewport_pos_raw(portal_size, content_size, pos);
+        if changed {
+            ctx.request_compose();
+            ctx.request_accessibility_update();
+            self.update_scrollbars_from_viewport(ctx, portal_size, content_size);
+        }
+        changed
+    }
+
+    fn pan_viewport_by_event_ctx(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        portal_size: Size,
+        content_size: Size,
+        mut delta: Vec2,
+    ) -> bool {
+        if self.constrain_horizontal {
+            delta.x = 0.0;
+        }
+        if self.constrain_vertical {
+            delta.y = 0.0;
+        }
+        if delta.x == 0.0 && delta.y == 0.0 {
+            return false;
+        }
+        self.set_viewport_pos_event_ctx(ctx, portal_size, content_size, self.viewport_pos + delta)
+    }
+
+    fn sync_viewport_from_scrollbars(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        portal_size: Size,
+        content_size: Size,
+    ) -> bool {
+        let mut changed = false;
+        let scroll_range = (content_size - portal_size).max(Size::ZERO);
+
+        {
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            if scrollbar.moved {
+                scrollbar.moved = false;
+                let x = scrollbar.cursor_progress * scroll_range.width;
+                changed |= self.set_viewport_pos_raw(
+                    portal_size,
+                    content_size,
+                    Point::new(x, self.viewport_pos.y),
+                );
+            }
+        }
+        {
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            if scrollbar.moved {
+                scrollbar.moved = false;
+                let y = scrollbar.cursor_progress * scroll_range.height;
+                changed |= self.set_viewport_pos_raw(
+                    portal_size,
+                    content_size,
+                    Point::new(self.viewport_pos.x, y),
+                );
+            }
+        }
+
+        if changed {
+            ctx.request_compose();
+            ctx.request_accessibility_update();
+            self.update_scrollbars_from_viewport(ctx, portal_size, content_size);
+        }
+
+        changed
+    }
+
     /// Returns the scrolling "position" of the container.
     pub fn get_viewport_pos(&self) -> Point {
         self.viewport_pos
@@ -140,8 +264,7 @@ impl<W: Widget + ?Sized> Portal<W> {
 
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
-        let viewport_max_pos =
-            (content_size - portal_size).clamp(Size::ZERO, Size::new(f64::INFINITY, f64::INFINITY));
+        let viewport_max_pos = (content_size - portal_size).max(Size::ZERO);
         let pos = Point::new(
             pos.x.clamp(0.0, viewport_max_pos.width),
             pos.y.clamp(0.0, viewport_max_pos.height),
@@ -317,80 +440,187 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     delta.y = 0.;
                 }
 
-                if delta.x != 0. || delta.y != 0. {
-                    self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
-                    ctx.request_compose();
-
-                    {
-                        let (scrollbar, mut scrollbar_ctx) =
-                            ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-                        scrollbar.cursor_progress =
-                            self.viewport_pos.x / (content_size - portal_size).width;
-                        scrollbar_ctx.request_render();
-                    }
-                    {
-                        let (scrollbar, mut scrollbar_ctx) =
-                            ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                        scrollbar.cursor_progress =
-                            self.viewport_pos.y / (content_size - portal_size).height;
-                        scrollbar_ctx.request_render();
-                    }
-                }
+                if self.pan_viewport_by_event_ctx(ctx, portal_size, content_size, delta) {
+                    ctx.set_handled();
+                };
             }
             _ => (),
         }
 
         // This section works because events are propagated up. So if the scrollbar got
         // pointer events, then its event method has already been called by the time this runs.
-        let mut scrollbar_moved = false;
-        {
-            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-            if scrollbar.moved {
-                scrollbar.moved = false;
-
-                let progress = scrollbar.cursor_progress;
-                self.viewport_pos = Point::new(
-                    progress * (content_size - portal_size).width,
-                    self.viewport_pos.y,
-                );
-                scrollbar_moved = true;
-            }
-        }
-        {
-            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-            if scrollbar.moved {
-                scrollbar.moved = false;
-
-                let progress = scrollbar.cursor_progress;
-                self.viewport_pos = Point::new(
-                    self.viewport_pos.x,
-                    progress * (content_size - portal_size).height,
-                );
-                scrollbar_moved = true;
-            }
-        }
-
-        if scrollbar_moved {
-            ctx.request_compose();
+        if self.sync_viewport_from_scrollbars(ctx, portal_size, content_size) {
+            ctx.set_handled();
         }
     }
 
-    // TODO - handle Home/End keys, etc
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
+        event: &TextEvent,
     ) {
+        let portal_size = ctx.size();
+        let content_size = self.content_size;
+        let target = ctx.target();
+        let scrollbar_target =
+            target == self.scrollbar_vertical.id() || target == self.scrollbar_horizontal.id();
+
+        if let TextEvent::Keyboard(event) = event
+            && event.state.is_down()
+            // Avoid scrolling the portal when the focused widget is one of its scrollbars.
+            // Scrollbars are focusable for keyboard users, and in that case they should own
+            // the arrow/page/home/end keys.
+            && !scrollbar_target
+        {
+            // TODO: Scale factor handling is in flux; revisit as part of
+            // https://github.com/linebender/xilem/issues/1264.
+            let scale = ctx.get_scale_factor();
+
+            let line = 120.0 * scale;
+            let page_y = portal_size.height * scale;
+
+            use crate::core::keyboard::{Key, NamedKey};
+            let mut did_scroll = false;
+            match &event.key {
+                Key::Named(NamedKey::PageDown) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(0.0, page_y),
+                    );
+                }
+                Key::Named(NamedKey::PageUp) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(0.0, -page_y),
+                    );
+                }
+                Key::Named(NamedKey::ArrowDown) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(0.0, line),
+                    );
+                }
+                Key::Named(NamedKey::ArrowUp) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(0.0, -line),
+                    );
+                }
+                Key::Named(NamedKey::ArrowRight) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(line, 0.0),
+                    );
+                }
+                Key::Named(NamedKey::ArrowLeft) => {
+                    did_scroll |= self.pan_viewport_by_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Vec2::new(-line, 0.0),
+                    );
+                }
+                Key::Named(NamedKey::Home) => {
+                    did_scroll |= self.set_viewport_pos_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Point::new(0.0, 0.0),
+                    );
+                }
+                Key::Named(NamedKey::End) => {
+                    let scroll_range = (content_size - portal_size).max(Size::ZERO);
+                    did_scroll |= self.set_viewport_pos_event_ctx(
+                        ctx,
+                        portal_size,
+                        content_size,
+                        Point::new(scroll_range.width, scroll_range.height),
+                    );
+                }
+                _ => {}
+            }
+            if did_scroll {
+                ctx.set_handled();
+            }
+        }
+
+        // Events bubble; if a scrollbar handled the keypress and updated its cursor progress,
+        // we synchronize the portal viewport here.
+        if self.sync_viewport_from_scrollbars(ctx, portal_size, content_size) {
+            ctx.set_handled();
+        }
     }
 
-    // TODO - Handle scroll-related events?
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
+        event: &AccessEvent,
     ) {
+        let portal_size = ctx.size();
+        let content_size = self.content_size;
+        let target = ctx.target();
+        let scrollbar_target =
+            target == self.scrollbar_vertical.id() || target == self.scrollbar_horizontal.id();
+
+        if !scrollbar_target
+            && matches!(
+                event.action,
+                accesskit::Action::ScrollUp
+                    | accesskit::Action::ScrollDown
+                    | accesskit::Action::ScrollLeft
+                    | accesskit::Action::ScrollRight
+            )
+        {
+            // TODO: Scale factor handling is in flux; revisit as part of
+            // https://github.com/linebender/xilem/issues/1264.
+            let scale = ctx.get_scale_factor();
+
+            let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
+                *unit
+            } else {
+                accesskit::ScrollUnit::Item
+            };
+            let line = 120.0 * scale;
+            let amount = match unit {
+                accesskit::ScrollUnit::Item => line,
+                accesskit::ScrollUnit::Page => match event.action {
+                    accesskit::Action::ScrollLeft | accesskit::Action::ScrollRight => {
+                        portal_size.width * scale
+                    }
+                    _ => portal_size.height * scale,
+                },
+            };
+
+            let delta = match event.action {
+                accesskit::Action::ScrollUp => Vec2::new(0.0, -amount),
+                accesskit::Action::ScrollDown => Vec2::new(0.0, amount),
+                accesskit::Action::ScrollLeft => Vec2::new(-amount, 0.0),
+                accesskit::Action::ScrollRight => Vec2::new(amount, 0.0),
+                _ => Vec2::ZERO,
+            };
+
+            if self.pan_viewport_by_event_ctx(ctx, portal_size, content_size, delta) {
+                ctx.set_handled();
+            }
+        }
+
+        // Events bubble; if a scrollbar handled the accessibility action and updated its cursor
+        // progress, we synchronize the portal viewport here.
+        if self.sync_viewport_from_scrollbars(ctx, portal_size, content_size) {
+            ctx.set_handled();
+        }
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -554,16 +784,65 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
-        Role::GenericContainer
+        Role::ScrollView
     }
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx<'_>,
+        ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         node.set_clips_children();
+
+        let portal_size = ctx.size();
+        let content_size = self.content_size;
+        let scroll_range = (content_size - portal_size).max(Size::ZERO);
+
+        let can_scroll_x = !self.constrain_horizontal && scroll_range.width > 1e-12;
+        let can_scroll_y = !self.constrain_vertical && scroll_range.height > 1e-12;
+
+        if can_scroll_x {
+            node.set_scroll_x_min(0.0);
+            node.set_scroll_x_max(scroll_range.width);
+            node.set_scroll_x(self.viewport_pos.x.clamp(0.0, scroll_range.width));
+            if self.viewport_pos.x > 1e-12 {
+                node.add_action(accesskit::Action::ScrollLeft);
+            }
+            if self.viewport_pos.x + 1e-12 < scroll_range.width {
+                node.add_action(accesskit::Action::ScrollRight);
+            }
+        } else {
+            node.clear_scroll_x_min();
+            node.clear_scroll_x_max();
+            node.clear_scroll_x();
+        }
+
+        if can_scroll_y {
+            node.set_scroll_y_min(0.0);
+            node.set_scroll_y_max(scroll_range.height);
+            node.set_scroll_y(self.viewport_pos.y.clamp(0.0, scroll_range.height));
+            if self.viewport_pos.y > 1e-12 {
+                node.add_action(accesskit::Action::ScrollUp);
+            }
+            if self.viewport_pos.y + 1e-12 < scroll_range.height {
+                node.add_action(accesskit::Action::ScrollDown);
+            }
+        } else {
+            node.clear_scroll_y_min();
+            node.clear_scroll_y_max();
+            node.clear_scroll_y();
+        }
+
+        if can_scroll_y && !can_scroll_x {
+            node.set_orientation(accesskit::Orientation::Vertical);
+        } else if can_scroll_x && !can_scroll_y {
+            node.set_orientation(accesskit::Orientation::Horizontal);
+        } else {
+            node.clear_orientation();
+        }
+
+        node.add_child_action(accesskit::Action::ScrollIntoView);
     }
 
     fn children_ids(&self) -> ChildrenIds {
@@ -577,6 +856,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn make_trace_span(&self, id: WidgetId) -> Span {
         trace_span!("Portal", id = id.trace())
     }
+
+    fn accepts_focus(&self) -> bool {
+        !(self.constrain_horizontal && self.constrain_vertical)
+    }
 }
 
 // --- MARK: TESTS
@@ -584,6 +867,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 mod tests {
     use super::*;
     use crate::core::WidgetTag;
+    use crate::core::keyboard::{Key, NamedKey};
     use crate::layout::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -681,6 +965,51 @@ mod tests {
 
         harness.scroll_into_view(button_id);
         assert_render_snapshot!(harness, "portal_scrolled_button_into_view");
+    }
+
+    #[test]
+    fn portal_accessibility_node_exposes_scroll() {
+        let portal_tag = WidgetTag::named("portal");
+        let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
+        let portal = NewWidget::new_with_tag(Portal::new(content), portal_tag);
+
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));
+        let _ = harness.render();
+
+        let portal_id = harness.get_widget(portal_tag).id();
+        let node = harness.access_node(portal_id).unwrap();
+
+        assert_eq!(node.data().role(), Role::ScrollView);
+        assert!(node.data().supports_action(accesskit::Action::ScrollDown));
+        assert!(!node.data().supports_action(accesskit::Action::ScrollUp));
+        assert!(
+            node.data()
+                .child_supports_action(accesskit::Action::ScrollIntoView)
+        );
+        assert_eq!(node.data().scroll_y_min(), Some(0.0));
+        assert!(node.data().scroll_y_max().is_some());
+        assert_eq!(node.data().scroll_y(), Some(0.0));
+    }
+
+    #[test]
+    fn portal_keyboard_scroll_updates_access_tree() {
+        let portal_tag = WidgetTag::named("portal");
+        let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
+        let portal = NewWidget::new_with_tag(Portal::new(content), portal_tag);
+
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));
+        let _ = harness.render();
+
+        let portal_id = harness.get_widget(portal_tag).id();
+        harness.focus_on(Some(portal_id));
+
+        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::PageDown)));
+        let _ = harness.render();
+
+        let node = harness.access_node(portal_id).unwrap();
+        assert!(node.data().scroll_y().unwrap_or(0.0) > 0.0);
     }
 
     // Helper function for panning tests
