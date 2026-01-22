@@ -195,6 +195,7 @@ pub struct MasonryState<'a> {
     is_suspended: bool,
     render_cx: RenderContext,
     renderer: Option<Renderer>,
+    image_overrides: HashMap<u64, ImageOverrideState>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     event_loop_proxy: EventLoopProxy,
@@ -218,6 +219,14 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
+}
+
+#[derive(Debug)]
+struct ImageOverrideState {
+    image: masonry_core::peniko::ImageData,
+    texture: wgpu::Texture,
+    applied: bool,
+    prev: Option<wgpu::TexelCopyTextureInfoBase<wgpu::Texture>>,
 }
 
 // TODO - Merge into MasonryState?
@@ -372,6 +381,7 @@ impl MasonryState<'_> {
             is_suspended: true,
             render_cx,
             renderer: None,
+            image_overrides: HashMap::new(),
             event_loop_proxy,
             #[cfg(feature = "tracy")]
             frame: None,
@@ -515,6 +525,68 @@ impl MasonryState<'_> {
         window.handle.set_ime_allowed(false);
     }
 
+    pub(crate) fn set_image_override(
+        &mut self,
+        image: masonry_core::peniko::ImageData,
+        texture: wgpu::Texture,
+    ) {
+        let image_id = image.data.id();
+
+        if let Some(existing) = self.image_overrides.get_mut(&image_id) {
+            existing.texture = texture;
+            if existing.applied {
+                if let Some(renderer) = &mut self.renderer {
+                    renderer.override_image(
+                        &existing.image,
+                        Some(wgpu::TexelCopyTextureInfoBase {
+                            texture: existing.texture.clone(),
+                            mip_level: 0,
+                            origin: wgpu::Origin3d::ZERO,
+                            aspect: wgpu::TextureAspect::All,
+                        }),
+                    );
+                } else {
+                    existing.applied = false;
+                }
+            }
+            return;
+        }
+
+        let mut state = ImageOverrideState {
+            image,
+            texture,
+            applied: false,
+            prev: None,
+        };
+
+        if let Some(renderer) = &mut self.renderer {
+            state.prev = renderer.override_image(
+                &state.image,
+                Some(wgpu::TexelCopyTextureInfoBase {
+                    texture: state.texture.clone(),
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                }),
+            );
+            state.applied = true;
+        }
+
+        self.image_overrides.insert(image_id, state);
+    }
+
+    pub(crate) fn clear_image_override(&mut self, image: &masonry_core::peniko::ImageData) {
+        let image_id = image.data.id();
+        let Some(state) = self.image_overrides.remove(&image_id) else {
+            return;
+        };
+        if state.applied
+            && let Some(renderer) = &mut self.renderer
+        {
+            renderer.override_image(&state.image, state.prev);
+        }
+    }
+
     // --- MARK: REDRAW
     fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
         let _span = info_span!("redraw");
@@ -574,7 +646,14 @@ impl MasonryState<'_> {
         self.last_anim = animation_continues.then_some(now);
 
         let (scene, tree_update) = window.render_root.redraw();
-        Self::render(surface, window, scene, &self.render_cx, &mut self.renderer);
+        Self::render(
+            surface,
+            window,
+            scene,
+            &self.render_cx,
+            &mut self.renderer,
+            &mut self.image_overrides,
+        );
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
         if let Some(tree_update) = tree_update {
@@ -589,6 +668,7 @@ impl MasonryState<'_> {
         scene: Scene,
         render_cx: &RenderContext,
         renderer: &mut Option<Renderer>,
+        image_overrides: &mut HashMap<u64, ImageOverrideState>,
     ) {
         let size = window.render_root.size();
         let scale_factor = window.handle.scale_factor();
@@ -641,25 +721,47 @@ impl MasonryState<'_> {
         };
 
         let _render_span = tracing::info_span!("Rendering using Vello").entered();
+        let renderer = renderer.get_or_insert_with(|| {
+            #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
+            let mut renderer = Renderer::new(device, renderer_options).unwrap();
+            #[cfg(feature = "tracy")]
+            {
+                let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
+                    wgpu_profiler::GpuProfilerSettings::default(),
+                    // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                    // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
+                    wgpu::Backend::Vulkan,
+                    device,
+                    queue,
+                )
+                .unwrap_or(renderer.profiler);
+                renderer.profiler = new_profiler;
+            }
+            renderer
+        });
+
+        // Apply any persistent image overrides.
+        //
+        // `Renderer` is shared across windows, so these overrides are global to the current
+        // renderer/device. We apply them once (lazily, when a renderer exists) and only restore
+        // when explicitly cleared.
+        for ovr in image_overrides.values_mut() {
+            if ovr.applied {
+                continue;
+            }
+            ovr.prev = renderer.override_image(
+                &ovr.image,
+                Some(wgpu::TexelCopyTextureInfoBase {
+                    texture: ovr.texture.clone(),
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                }),
+            );
+            ovr.applied = true;
+        }
+
         renderer
-            .get_or_insert_with(|| {
-                #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
-                let mut renderer = Renderer::new(device, renderer_options).unwrap();
-                #[cfg(feature = "tracy")]
-                {
-                    let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
-                        wgpu_profiler::GpuProfilerSettings::default(),
-                        // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
-                        // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
-                        wgpu::Backend::Vulkan,
-                        device,
-                        queue,
-                    )
-                    .unwrap_or(renderer.profiler);
-                    renderer.profiler = new_profiler;
-                }
-                renderer
-            })
             .render_to_texture(
                 device,
                 queue,
