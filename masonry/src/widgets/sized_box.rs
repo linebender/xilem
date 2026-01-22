@@ -9,13 +9,12 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
+    RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, Length};
-use crate::properties::{BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::stroke;
+use crate::properties::{BorderWidth, Padding};
 
 /// A widget with bi-directional size enforcement.
 ///
@@ -208,10 +207,6 @@ impl SizedBox {
     }
 }
 
-impl HasProperty<BorderColor> for SizedBox {}
-impl HasProperty<BorderWidth> for SizedBox {}
-impl HasProperty<CornerRadius> for SizedBox {}
-
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
     type Action = NoAction;
@@ -226,11 +221,7 @@ impl Widget for SizedBox {
         }
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-    }
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx<'_>, _property_type: TypeId) {}
 
     fn measure(
         &mut self,
@@ -315,15 +306,7 @@ impl Widget for SizedBox {
         ctx.set_baseline_offset(child_baseline);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = props.get::<BorderWidth>();
-        let border_color = props.get::<BorderColor>();
-        let corner_radius = props.get::<CornerRadius>();
-
-        let border_rect = border_width.border_rect(ctx.size(), corner_radius);
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -357,8 +340,8 @@ mod tests {
     use crate::core::Properties;
     use crate::layout::{AsUnit, UnitPoint};
     use crate::palette;
-    use crate::properties::Background;
     use crate::properties::types::Gradient;
+    use crate::properties::{Background, BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;

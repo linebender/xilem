@@ -1,9 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
-use crate::core::{HasProperty, Property, UpdateCtx, Widget};
+use crate::core::{HasProperty, Property, Widget};
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::Length;
 
@@ -125,16 +123,6 @@ impl Padding {
 }
 
 impl Padding {
-    /// Requests layout if this property changed.
-    ///
-    /// This is called by Masonry during widget properties mutation.
-    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_layout();
-    }
-
     /// Returns the total [`Length`] of this padding on the given `axis`.
     ///
     /// For [`Axis::Horizontal`] it will return the sum of the left and right padding width.

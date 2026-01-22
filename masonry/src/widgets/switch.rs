@@ -90,11 +90,6 @@ impl Switch {
 }
 
 impl HasProperty<ToggledBackground> for Switch {}
-impl HasProperty<FocusedBorderColor> for Switch {}
-impl HasProperty<HoveredBorderColor> for Switch {}
-impl HasProperty<BorderColor> for Switch {}
-impl HasProperty<BorderWidth> for Switch {}
-impl HasProperty<CornerRadius> for Switch {}
 impl HasProperty<ThumbRadius> for Switch {}
 impl HasProperty<ThumbColor> for Switch {}
 impl HasProperty<TrackThickness> for Switch {}
@@ -184,11 +179,6 @@ impl Widget for Switch {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         ToggledBackground::prop_changed(ctx, property_type);
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         TrackThickness::prop_changed(ctx, property_type);

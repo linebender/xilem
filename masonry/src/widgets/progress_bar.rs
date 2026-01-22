@@ -10,15 +10,16 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
-    Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PrePaintProps, Properties, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, paint_background, paint_border,
+    paint_box_shadow,
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::peniko::{Color, Gradient};
 use crate::properties::{BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking};
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::fill;
 use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
@@ -115,10 +116,13 @@ impl Widget for ProgressBar {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        BarColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
+        if BarColor::matches(property_type)
+            || BorderWidth::matches(property_type)
+            || BorderColor::matches(property_type)
+            || CornerRadius::matches(property_type)
+        {
+            ctx.request_paint_only();
+        }
     }
 
     fn update(
@@ -193,13 +197,20 @@ impl Widget for ProgressBar {
         ctx.place_child(&mut self.label, child_origin);
     }
 
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let size = ctx.size();
+        let p = PrePaintProps::fetch(ctx, props);
+
+        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
+        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+        // We need to delay painting the border until after we paint the filled bar area.
+    }
+
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let size = ctx.size();
         let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
+        let corner_radius = props.get::<CornerRadius>();
         let border_color = props.get::<BorderColor>();
-
-        let border_rect = border_width.border_rect(size, border_radius);
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
@@ -221,13 +232,13 @@ impl Widget for ProgressBar {
                 // Currently bg_rect() gives a rect without borders, so we can use it.
                 // However in the future when bg_rect() gets expanded to include borders,
                 // we'll need to create a special sans-border rect for this fill.
-                let bg_rect = border_width.bg_rect(size, border_radius);
+                let bg_rect = border_width.bg_rect(size, corner_radius);
 
                 fill(scene, &bg_rect, &gradient);
             }
         }
 
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        paint_border(scene, size, border_color, border_width, corner_radius);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -266,6 +277,7 @@ mod tests {
     use super::*;
     use crate::core::{NewWidget, Properties};
     use crate::palette;
+    use crate::properties::{BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
