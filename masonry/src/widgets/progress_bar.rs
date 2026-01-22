@@ -16,6 +16,7 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::peniko::{Color, Gradient};
 use crate::properties::{
     Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
 };
@@ -193,24 +194,42 @@ impl Widget for ProgressBar {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let size = ctx.size();
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
         let bg = props.get::<Background>();
-        let bar_color = props.get::<BarColor>();
         let border_color = props.get::<BorderColor>();
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
-
-        let progress_rect_size = Size::new(
-            ctx.size().width * self.progress.unwrap_or(1.),
-            ctx.size().height,
-        );
-        let progress_rect = border_width.bg_rect(progress_rect_size, border_radius);
+        let bg_rect = border_width.bg_rect(size, border_radius);
+        let border_rect = border_width.border_rect(size, border_radius);
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+
         fill(scene, &bg_rect, &brush);
-        fill(scene, &progress_rect, bar_color.0);
+
+        let progress = self.progress.unwrap_or(1.);
+        if progress > 0. {
+            // The bar width is without the borders.
+            let bar_width = size.width - 2. * border_width.width;
+            if bar_width > 0. {
+                let bar_color = props.get::<BarColor>().0;
+                let bar_start = border_width.width;
+                let bar_stop = bar_start + bar_width;
+
+                // Paint with a gradient so we get a straight line slice of the rounded rect.
+                let gradient = Gradient::new_linear((bar_start, 0.), (bar_stop, 0.)).with_stops([
+                    (0., bar_color),
+                    (progress as f32, bar_color),
+                    (progress as f32, Color::TRANSPARENT),
+                    (1., Color::TRANSPARENT),
+                ]);
+
+                // Currently bg_rect is without borders too, so we can just use it.
+                // However in the future when bg_rect gets expanded to include borders,
+                // we'll need to create a special sans-border rect for this fill.
+                fill(scene, &bg_rect, &gradient);
+            }
+        }
 
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
@@ -262,6 +281,32 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_indeterminate");
+    }
+
+    #[test]
+    fn _5_percent_styled_progressbar() {
+        let widget = ProgressBar::new(Some(0.05)).with_props((
+            CornerRadius::all(50.),
+            BorderWidth::all(10.),
+            BorderColor::new(palette::css::PINK),
+        ));
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "progress_bar_5_percent_styled");
+    }
+
+    #[test]
+    fn _95_percent_styled_progressbar() {
+        let widget = ProgressBar::new(Some(0.95)).with_props((
+            CornerRadius::all(50.),
+            BorderWidth::all(10.),
+            BorderColor::new(palette::css::PINK),
+        ));
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "progress_bar_95_percent_styled");
     }
 
     #[test]
