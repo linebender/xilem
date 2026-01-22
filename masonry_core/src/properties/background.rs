@@ -35,11 +35,6 @@ impl Property for Background {
         static DEFAULT: Background = Background::Color(AlphaColor::TRANSPARENT);
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 impl Default for Background {
@@ -81,11 +76,6 @@ impl Property for ActiveBackground {
             ActiveBackground(Background::Color(AlphaColor::TRANSPARENT));
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 impl Default for ActiveBackground {
@@ -112,11 +102,6 @@ impl Property for DisabledBackground {
         const DEFAULT: DisabledBackground =
             DisabledBackground(Background::Color(AlphaColor::TRANSPARENT));
         &DEFAULT
-    }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
     }
 }
 

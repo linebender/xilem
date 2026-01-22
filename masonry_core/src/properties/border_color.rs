@@ -35,11 +35,6 @@ impl Property for BorderColor {
         };
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 impl Default for BorderColor {
@@ -84,11 +79,6 @@ impl Property for HoveredBorderColor {
         });
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 impl HoveredBorderColor {
@@ -115,11 +105,6 @@ impl Property for FocusedBorderColor {
             color: AlphaColor::TRANSPARENT,
         });
         &DEFAULT
-    }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
     }
 }
 

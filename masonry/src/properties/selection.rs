@@ -22,11 +22,6 @@ impl Property for CaretColor {
         };
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 /// The background color of a [`TextArea`]'s selection.
@@ -48,11 +43,6 @@ impl Property for SelectionColor {
         };
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 /// The background color of a [`TextArea`]'s selection when unfocused.
@@ -70,11 +60,6 @@ impl Property for UnfocusedSelectionColor {
             color: AlphaColor::from_rgb8(176, 176, 176),
         });
         &DEFAULT
-    }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
     }
 }
 

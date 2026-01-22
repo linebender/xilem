@@ -25,11 +25,6 @@ impl Property for CheckmarkColor {
         };
         &DEFAULT
     }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
-    }
 }
 
 /// The color of a checkbox's "check" icon when disabled.
@@ -42,11 +37,6 @@ impl Property for DisabledCheckmarkColor {
             color: AlphaColor::BLACK,
         });
         &DEFAULT
-    }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
     }
 }
 
@@ -61,11 +51,6 @@ impl Property for CheckmarkStrokeWidth {
     fn static_default() -> &'static Self {
         static DEFAULT: CheckmarkStrokeWidth = CheckmarkStrokeWidth { width: 1. };
         &DEFAULT
-    }
-
-    #[inline(always)]
-    fn matches(property_type: TypeId) -> bool {
-        property_type == TypeId::of::<Self>()
     }
 }
 
