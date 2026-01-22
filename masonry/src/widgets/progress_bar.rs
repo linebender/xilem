@@ -209,6 +209,7 @@ impl Widget for ProgressBar {
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
+            // The bar width is without the borders.
             let bar_width = size.width - 2. * border_width.width;
             if bar_width > 0. {
                 let bar_color = props.get::<BarColor>().0;
@@ -223,6 +224,9 @@ impl Widget for ProgressBar {
                     (1., Color::TRANSPARENT),
                 ]);
 
+                // Currently bg_rect is without borders too, so we can just use it.
+                // However in the future when bg_rect gets expanded to include borders,
+                // we'll need to create a special sans-border rect for this fill.
                 fill(scene, &bg_rect, &gradient);
             }
         }
