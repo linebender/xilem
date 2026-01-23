@@ -5,7 +5,7 @@
 
 use std::any::TypeId;
 
-use accesskit::{ActionData, Node, Role};
+use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -459,7 +459,9 @@ impl Widget for Slider {
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
+        node.set_orientation(Orientation::Horizontal);
         node.set_value(self.value.to_string());
+        node.set_numeric_value(self.value);
         node.set_min_numeric_value(self.min);
         node.set_max_numeric_value(self.max);
         if let Some(step) = self.step {
