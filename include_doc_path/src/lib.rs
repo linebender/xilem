@@ -35,7 +35,7 @@
 //! - `CARGO_PKG_VERSION`
 //! - `CARGO_PKG_NAME`
 //!
-//! If they aren't set (e.g. because you're using a different build system), their values will be replaced with `<unknown>` instead.
+//! If they aren't set (e.g. because you're using a different build system), the macro will just return the input string without modification.
 
 use proc_macro::TokenStream;
 use syn::{LitStr, parse_macro_input};
