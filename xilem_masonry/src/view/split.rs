@@ -53,7 +53,7 @@ where
 {
     Split {
         split_axis: Axis::Horizontal,
-        split_point: 0.5,
+        split_point: widgets::SplitPoint::Fraction(0.5),
         min_lengths: (Length::ZERO, Length::ZERO),
         bar_thickness: 6.px(),
         min_bar_area: 6.px(),
@@ -71,7 +71,7 @@ where
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Split<ChildA, ChildB, State, Action = ()> {
     split_axis: Axis,
-    split_point: f64,
+    split_point: widgets::SplitPoint,
     min_lengths: (Length, Length),
     bar_thickness: Length,
     min_bar_area: Length,
@@ -96,14 +96,31 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
 
     /// Set the split point as a fraction of the split axis.
     ///
-    /// The value must be between `0.0` and `1.0`, inclusive.
+    /// The value is clamped to `0.0..=1.0`.
     /// The default split point is `0.5`.
-    #[track_caller]
     pub fn split_point(mut self, split_point: f64) -> Self {
-        assert!(
-            (0.0..=1.0).contains(&split_point),
-            "split_point must be in the range [0.0, 1.0], got {split_point}"
-        );
+        self.split_point = widgets::SplitPoint::Fraction(split_point.clamp(0.0, 1.0));
+        self
+    }
+
+    /// Set the split point as an absolute distance from the start.
+    ///
+    /// This is the size of the first child along the split axis, in logical pixels.
+    pub fn split_point_from_start(mut self, split_point: Length) -> Self {
+        self.split_point = widgets::SplitPoint::FromStart(split_point);
+        self
+    }
+
+    /// Set the split point as an absolute distance from the end.
+    ///
+    /// This is the size of the second child along the split axis, in logical pixels.
+    pub fn split_point_from_end(mut self, split_point: Length) -> Self {
+        self.split_point = widgets::SplitPoint::FromEnd(split_point);
+        self
+    }
+
+    /// Set the split point.
+    pub fn with_split_point(mut self, split_point: widgets::SplitPoint) -> Self {
         self.split_point = split_point;
         self
     }
