@@ -31,6 +31,12 @@ pub trait Property: Default + Send + Sync + 'static {
     ///
     /// Ideally, when const generics are stable, we'll want to use `const Default` directly in the default impl.
     fn static_default() -> &'static Self;
+
+    /// Returns `true` if the given `property_type` matches this property.
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 // TODO - Implement Debug.
