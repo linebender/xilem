@@ -152,7 +152,7 @@ impl Padding {
     ///
     /// The provided `size` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn size_down(&self, size: Size, scale: f64) -> Size {
         let width = (size.width - Length::px(self.left + self.right).dp(scale)).max(0.);
         let height = (size.height - Length::px(self.top + self.bottom).dp(scale)).max(0.);
@@ -165,7 +165,7 @@ impl Padding {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
         baseline + Length::px(self.bottom).dp(scale)
     }
@@ -176,7 +176,7 @@ impl Padding {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
         baseline - Length::px(self.bottom).dp(scale)
     }
@@ -187,7 +187,7 @@ impl Padding {
     ///
     /// The provided `origin` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
         let x = Length::px(self.left).dp(scale);
         let y = Length::px(self.top).dp(scale);
