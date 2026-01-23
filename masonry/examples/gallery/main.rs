@@ -19,6 +19,7 @@ mod progress;
 mod slider;
 mod spinner;
 mod split;
+mod switch;
 mod text_input;
 mod tooltip;
 mod transforms;
@@ -31,11 +32,13 @@ use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
     Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal, SizedBox,
+    SwitchToggled,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 use crate::demo::{DemoPage, new_demo_shell_tags};
+use crate::switch::SwitchDemo;
 
 const SIDEBAR_WIDTH: masonry::layout::Length = masonry::layout::Length::const_px(240.0);
 const SIDEBAR_SCROLLBAR_INSET: f64 = 12.0;
@@ -184,6 +187,26 @@ impl AppDriver for Driver {
             Err(action) => action,
         };
 
+        // Switch toggles.
+        let action = match action.downcast::<SwitchToggled>() {
+            Ok(toggled) => {
+                let toggled = toggled.0;
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_switch_toggled(render_root, widget_id, toggled))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
         // Slider values.
         let Ok(value) = action.downcast::<f64>() else {
             return;
@@ -211,6 +234,7 @@ fn build_demos() -> Vec<Box<dyn DemoPage>> {
         Box::new(slider::SliderDemo::new(new_demo_shell_tags())),
         Box::new(spinner::SpinnerDemo::new(new_demo_shell_tags())),
         Box::new(split::SplitDemo::new(new_demo_shell_tags())),
+        Box::new(SwitchDemo::new(new_demo_shell_tags())),
         Box::new(text_input::TextInputDemo::new(new_demo_shell_tags())),
         Box::new(tooltip::TooltipDemo::new(new_demo_shell_tags())),
         Box::new(transforms::TransformsDemo::new(new_demo_shell_tags())),
