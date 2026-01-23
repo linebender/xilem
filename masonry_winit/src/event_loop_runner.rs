@@ -663,7 +663,7 @@ impl MasonryState<'_> {
                     device: &device_handle.device,
                     queue: &device_handle.queue,
                 };
-                app_driver.on_wgpu_ready(window.id, &wgpu);
+                app_driver.on_wgpu_ready(&wgpu);
             }
 
             surface

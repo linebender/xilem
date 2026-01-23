@@ -112,11 +112,8 @@ pub trait AppDriver {
         ctx.exit();
     }
 
-    /// Called when Masonry has created a WGPU device.
-    ///
-    /// This may be called more than once if multiple devices are created (e.g. multiple windows
-    /// requiring different compatible adapters).
-    fn on_wgpu_ready(&mut self, _window_id: WindowId, _wgpu: &WgpuContext<'_>) {}
+    /// Called when Masonry has created its WGPU device.
+    fn on_wgpu_ready(&mut self, _wgpu: &WgpuContext<'_>) {}
 }
 
 impl DriverCtx<'_, '_> {
