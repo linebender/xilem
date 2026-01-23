@@ -30,7 +30,7 @@ use crate::{TextAlign, TextAlignOptions, theme};
 /// need support for displaying text, such as a button.
 ///
 /// You can customize the look of this label with the
-/// [`Padding`], [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
+/// [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
 ///
 #[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
@@ -323,7 +323,6 @@ impl Widget for Label {
         LineBreaking::prop_changed(ctx, property_type);
         ContentColor::prop_changed(ctx, property_type);
         DisabledContentColor::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {

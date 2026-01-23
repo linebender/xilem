@@ -3,9 +3,12 @@
 
 use std::any::TypeId;
 
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, UpdateCtx, Widget};
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::Length;
+
+// Every widget has padding.
+impl<W: Widget> HasProperty<Padding> for W {}
 
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -122,8 +125,10 @@ impl Padding {
 }
 
 impl Padding {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+    /// Requests layout if this property changed.
+    ///
+    /// This is called by Masonry during widget properties mutation.
+    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
             return;
         }

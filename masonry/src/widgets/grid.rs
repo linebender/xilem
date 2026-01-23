@@ -280,7 +280,6 @@ impl HasProperty<Background> for Grid {}
 impl HasProperty<BorderColor> for Grid {}
 impl HasProperty<BorderWidth> for Grid {}
 impl HasProperty<CornerRadius> for Grid {}
-impl HasProperty<Padding> for Grid {}
 impl HasProperty<Gap> for Grid {}
 
 // --- MARK: IMPL WIDGET
@@ -302,7 +301,6 @@ impl Widget for Grid {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
         Gap::prop_changed(ctx, property_type);
     }
 

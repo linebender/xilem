@@ -679,7 +679,6 @@ impl HasProperty<Background> for Flex {}
 impl HasProperty<BorderColor> for Flex {}
 impl HasProperty<BorderWidth> for Flex {}
 impl HasProperty<CornerRadius> for Flex {}
-impl HasProperty<Padding> for Flex {}
 impl HasProperty<Gap> for Flex {}
 
 // --- MARK: IMPL WIDGET
@@ -701,7 +700,6 @@ impl Widget for Flex {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
         Gap::prop_changed(ctx, property_type);
     }
 

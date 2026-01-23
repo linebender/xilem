@@ -7,7 +7,7 @@ use vello::kurbo::Affine;
 
 use crate::{
     core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId},
-    properties::{BoxShadow, Dimensions},
+    properties::{BoxShadow, Dimensions, Padding},
 };
 
 /// A rich mutable reference to a [`Widget`].
@@ -96,6 +96,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let property_type = TypeId::of::<P>();
         Dimensions::prop_changed(&mut ctx, property_type);
         BoxShadow::prop_changed(&mut ctx, property_type);
+        Padding::prop_changed(&mut ctx, property_type);
         self.widget.property_changed(&mut ctx, property_type);
         value
     }
@@ -112,6 +113,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let property_type = TypeId::of::<P>();
         Dimensions::prop_changed(&mut ctx, property_type);
         BoxShadow::prop_changed(&mut ctx, property_type);
+        Padding::prop_changed(&mut ctx, property_type);
         self.widget.property_changed(&mut ctx, property_type);
         value
     }
