@@ -92,7 +92,7 @@ rust.unsafe_code = "deny"
 
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compile_stress_test)'] }
 
-# LINEBENDER LINT SET - Cargo.toml - v7
+# LINEBENDER LINT SET - Cargo.toml - v8
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -114,6 +114,7 @@ clippy.too_many_arguments = "allow"
 
 clippy.allow_attributes_without_reason = "warn"
 clippy.cast_possible_truncation = "warn"
+clippy.cast_possible_wrap = "warn"
 clippy.collection_is_never_read = "warn"
 clippy.default_trait_access = "warn"
 clippy.dbg_macro = "warn"

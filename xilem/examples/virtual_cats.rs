@@ -139,7 +139,7 @@ impl VirtualCats {
 
     fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         sized_box(virtual_scroll(
-            0..self.statuses.len() as i64,
+            0..i64::try_from(self.statuses.len()).unwrap(),
             Self::virtual_item,
         ))
         .padding(Padding::horizontal(10.0))
