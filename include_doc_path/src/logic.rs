@@ -67,7 +67,16 @@ pub(crate) fn include_doc_path_impl(
     let Some(manifest_dir) = env("CARGO_MANIFEST_DIR") else {
         return cargo_env_fallback;
     };
-    let doc_file_path = Path::new(&manifest_dir).join(&relative_path);
+    let mut doc_file_path = Path::new(&manifest_dir)
+        .join(&relative_path)
+        .to_str()
+        .unwrap()
+        .to_string();
+    if cfg!(windows) {
+        // On Windows, both "/" and "\\" are valid separators, but "\\" will be
+        // encoded as %5C by rustdoc.
+        doc_file_path = doc_file_path.replace("\\", "/");
+    }
 
     let Some(repo_url) = env("CARGO_PKG_REPOSITORY") else {
         return cargo_env_fallback;
@@ -93,7 +102,7 @@ pub(crate) fn include_doc_path_impl(
     // FLAG PRE-FALLBACK LOGIC
 
     if force_local {
-        return literal_string(doc_file_path.to_str().unwrap(), span);
+        return literal_string(&doc_file_path, span);
     }
 
     if force_url {
@@ -104,12 +113,11 @@ pub(crate) fn include_doc_path_impl(
 
     // First, check if the local file exists
     if std::fs::metadata(&doc_file_path).is_ok() {
-        return literal_string(doc_file_path.to_str().unwrap(), span);
+        return literal_string(&doc_file_path, span);
     }
 
     // If not and CHECK_DOC_PATHS is set, error out.
     if check_doc_paths {
-        let doc_file_path = doc_file_path.to_string_lossy();
         let error_message = format!("File '{doc_file_path}' not found");
         return compile_error(&error_message, span);
     }
