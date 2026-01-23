@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -19,7 +20,7 @@ use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
 use crate::util::Sanitize;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -45,7 +46,11 @@ use crate::util::{fill, include_screenshot, stroke};
 /// There is currently no fine-grained support for flex grow or flex shrink.
 /// Instead every child gets their size decided in one shot, as described above.
 ///
-#[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
+#[doc = concat!(
+    "![Flex column with multiple labels](",
+    include_doc_path!("screenshots/flex_col_main_axis_spaceAround.png"),
+    ")",
+)]
 pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,

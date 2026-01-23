@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -15,7 +16,7 @@ use crate::core::{
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 // TODO - Rename "active" widget to "visible" widget?
 // Active already means something else.
@@ -27,7 +28,11 @@ use crate::util::{fill, include_screenshot, stroke};
 ///
 /// The indexed stack acts as a simple container around the active child.
 /// If there is no active child, it acts like a leaf node with no content.
-#[doc = include_screenshot!("indexed_stack_builder_new_widget.png", "Indexed stack element showing only the fourth element in its children.")]
+#[doc = concat!(
+    "![Indexed stack element showing only the fourth element in its children](",
+    include_doc_path!("screenshots/indexed_stack_builder_new_widget.png"),
+    ")",
+)]
 #[derive(Default)]
 pub struct IndexedStack {
     children: Vec<WidgetPod<dyn Widget>>,

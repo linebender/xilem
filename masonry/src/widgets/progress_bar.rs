@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -21,14 +22,18 @@ use crate::properties::{
     Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
 };
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
 
 /// A progress bar.
 ///
-#[doc = include_screenshot!("progress_bar_25_percent.png", "25% progress bar.")]
+#[doc = concat!(
+    "![25% progress bar](",
+    include_doc_path!("screenshots/progress_bar_25_percent.png"),
+    ")",
+)]
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///

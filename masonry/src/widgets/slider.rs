@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -21,11 +22,15 @@ use crate::layout::LenReq;
 use crate::peniko::Fill;
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 /// A widget that allows a user to select a value from a continuous range.
 ///
-#[doc = include_screenshot!("slider_initial_state.png", "Slider.")]
+#[doc = concat!(
+    "![Slider](",
+    include_doc_path!("screenshots/slider_initial_state.png"),
+    ")",
+)]
 pub struct Slider {
     // --- Logic ---
     min: f64,

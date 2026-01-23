@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -18,13 +19,16 @@ use crate::kurbo::{Affine, Axis, Cap, Line, Point, Size, Stroke, Vec2};
 use crate::layout::LenReq;
 use crate::properties::ContentColor;
 use crate::theme;
-use crate::util::include_screenshot;
 
 /// An animated spinner widget for showing a loading state.
 ///
 /// You can customize the look of this spinner with the [`ContentColor`] property.
 ///
-#[doc = include_screenshot!("spinner_init.png", "Spinner frame.")]
+#[doc = concat!(
+    "![Spinner frame](",
+    include_doc_path!("screenshots/spinner_init.png"),
+    ")",
+)]
 pub struct Spinner {
     t: f64,
 }

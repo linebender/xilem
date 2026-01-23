@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -13,7 +14,7 @@ use crate::core::{
 use crate::kurbo::{Axis, Point, Rect, Size};
 use crate::layout::LenReq;
 use crate::theme;
-use crate::util::{fill_color, include_screenshot, stroke};
+use crate::util::{fill_color, stroke};
 
 // TODO
 // - Fade scrollbars? Find out how Linux/macOS/Windows do it
@@ -24,7 +25,11 @@ use crate::util::{fill_color, include_screenshot, stroke};
 
 /// A scrollbar.
 ///
-#[doc = include_screenshot!("scrollbar_default.png", "Vertical scrollbar.")]
+#[doc = concat!(
+    "![Vertical scrollbar](",
+    include_doc_path!("screenshots/scrollbar_default.png"),
+    ")",
+)]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,

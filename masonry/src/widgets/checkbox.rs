@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
@@ -23,12 +24,16 @@ use crate::properties::{
     HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
 ///
-#[doc = include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
+#[doc = concat!(
+    "![Checkbox with checked state](",
+    include_doc_path!("screenshots/checkbox_hello_checked.png"),
+    ")",
+)]
 ///
 /// Emits [`CheckboxToggled`] when it should toggle.
 /// Note that the checked state does not automatically toggle, and so one of

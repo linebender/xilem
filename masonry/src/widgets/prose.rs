@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -12,7 +13,6 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::LenReq;
-use crate::util::include_screenshot;
 use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
@@ -29,7 +29,11 @@ use crate::widgets::TextArea;
 ///
 /// This widget has no actions.
 ///
-#[doc = include_screenshot!("prose_alignment_flex.png", "Multiple lines with different alignments.")]
+#[doc = concat!(
+    "![Multiple lines with different alignments](",
+    include_doc_path!("screenshots/prose_alignment_flex.png"),
+    ")",
+)]
 pub struct Prose {
     text: WidgetPod<TextArea<false>>,
 
