@@ -11,20 +11,31 @@
 //! If the fallback is taken, the generated URL is
 //! `https://raw.githubusercontent.com/{owner}/{name}/{tag_prefix}{crate_version}/{crate_name}/{relative_path}`. This has a few baked-in assumptions:
 //!
-//! - Your Git repository forge is Github.
+//! - Your Git repository forge is GitHub.
 //! - Your crate is in a `crate_name` folder at the root of the repository.
 //! - The file you're linking to is in that folder.
 //! - Your repository gets a Git tag with the crate version number every time the crate releases.
 //!
-//! The `tag_prefix` string defaults to `v` (e.g. `v1.2.3`), but can be changed by setting the `CRATE_TAG_PREFIX` env variable.
+//! The `tag_prefix` string is currently hardcoded to `v` (e.g. `v1.2.3`), but might become configurable in future versions.
 //!
 //! Otherwise, those assumptions are fairly opinionated, as this crate is meant primarily to be used by Linebender projects.
 //!
 //! # Error checking
 //!
-//! The URL fallback is needed when publishing to `docs.rs`, but in cases like CI you might want to emit a compile error when the path isn't found instead.
+//! The URL fallback is needed when publishing to `docs.rs`, but in cases like CI you might instead want to emit a compile error when the path isn't found.
 //!
-//! To do so, the `CHECK_DOC_PATHS` env variable to `true` (or anything non-empty) when running the macro.
+//! To do so, set the `CHECK_DOC_PATHS` env variable to `true` when running the macro.
+//!
+//! # Cargo flags
+//!
+//! The macro requires the following env flags to be set:
+//!
+//! - `CARGO_MANIFEST_DIR`
+//! - `CARGO_PKG_REPOSITORY`
+//! - `CARGO_PKG_VERSION`
+//! - `CARGO_PKG_NAME`
+//!
+//! If they aren't set (e.g. because you're using a different build system), their values will be replaced with `<unknown>` instead.
 
 use proc_macro::TokenStream;
 use syn::{LitStr, parse_macro_input};
@@ -50,7 +61,7 @@ pub fn include_doc_path(input: TokenStream) -> TokenStream {
     logic::include_doc_path_impl(relative_path, lit.span(), false, false).into()
 }
 
-/// Helper macro which always returns the same string is the path was found.
+/// Helper macro which always returns the same string as if the path was found.
 ///
 /// Useful for debugging.
 #[proc_macro]
@@ -61,7 +72,7 @@ pub fn helper_include_local_path(input: TokenStream) -> TokenStream {
     logic::include_doc_path_impl(relative_path, lit.span(), true, false).into()
 }
 
-/// Helper macro which always returns the same string is the path not was found.
+/// Helper macro which always returns the same string as if the path was not found.
 ///
 /// Useful for debugging.
 #[proc_macro]
