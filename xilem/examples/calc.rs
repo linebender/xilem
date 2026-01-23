@@ -195,7 +195,7 @@ impl Calculator {
 fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Edit<Calculator>> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
-        views.push(digit_button(num).grid_pos(i as i32, row));
+        views.push(digit_button(num).grid_pos(i32::try_from(i).unwrap(), row));
     }
     views
 }
