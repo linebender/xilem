@@ -66,6 +66,18 @@ pub struct WgpuContext<'a> {
     pub queue: &'a wgpu::Queue,
 }
 
+/// Strategy for selecting `wgpu::Limits` when requesting the WGPU device.
+#[derive(Clone, Debug, Default)]
+pub enum WgpuLimits {
+    /// Use `wgpu::Limits::default()`.
+    #[default]
+    Default,
+    /// Use `adapter.limits()` (maximum supported by the selected adapter).
+    Adapter,
+    /// Use the provided limits.
+    Custom(wgpu::Limits),
+}
+
 /// A trait for defining how your app interacts with the Masonry widget tree.
 ///
 /// When launching your app with [`crate::app::run`], you need to provide

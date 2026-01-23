@@ -14,6 +14,8 @@ use wgpu::{
     Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView,
 };
 
+use crate::app_driver::WgpuLimits;
+
 /// Simple render context that maintains wgpu state for rendering the pipeline.
 pub(crate) struct RenderContext {
     pub instance: Instance,
@@ -26,6 +28,8 @@ pub(crate) struct RenderContext {
     /// Other parts of the library store indices into this vec (e.g. `RenderSurface::dev_id`) and
     /// assume they remain valid.
     pub devices: Vec<DeviceHandle>,
+    requested_features: wgpu::Features,
+    requested_limits: WgpuLimits,
 }
 
 pub(crate) struct DeviceHandle {
@@ -48,7 +52,38 @@ impl RenderContext {
         Self {
             instance,
             devices: Vec::new(),
+            requested_features: wgpu::Features::empty(),
+            requested_limits: WgpuLimits::Default,
         }
+    }
+
+    pub(crate) fn set_wgpu_device_options(
+        &mut self,
+        features: wgpu::Features,
+        limits: WgpuLimits,
+    ) -> bool {
+        if !self.devices.is_empty() {
+            return false;
+        }
+        self.requested_features = features;
+        self.requested_limits = limits;
+        true
+    }
+
+    pub(crate) fn add_wgpu_features(&mut self, features: wgpu::Features) -> bool {
+        if !self.devices.is_empty() {
+            return false;
+        }
+        self.requested_features |= features;
+        true
+    }
+
+    pub(crate) fn set_wgpu_limits(&mut self, limits: WgpuLimits) -> bool {
+        if !self.devices.is_empty() {
+            return false;
+        }
+        self.requested_limits = limits;
+        true
     }
 
     /// Creates a new surface for the specified window and dimensions.
@@ -212,17 +247,25 @@ impl RenderContext {
             wgpu::util::initialize_adapter_from_env_or_default(&self.instance, compatible_surface)
                 .await
                 .ok()?;
-        let features = adapter.features();
-        let limits = wgpu::Limits::default();
-        let maybe_features = wgpu::Features::CLEAR_TEXTURE;
+        let supported_features = adapter.features();
+        let required_limits = match &self.requested_limits {
+            WgpuLimits::Default => wgpu::Limits::default(),
+            WgpuLimits::Adapter => adapter.limits(),
+            WgpuLimits::Custom(limits) => limits.clone(),
+        };
+
+        let requested_features = wgpu::Features::CLEAR_TEXTURE | self.requested_features;
         #[cfg(feature = "tracy")]
-        let maybe_features = maybe_features | wgpu_profiler::GpuProfiler::ALL_WGPU_TIMER_FEATURES;
+        let requested_features =
+            requested_features | wgpu_profiler::GpuProfiler::ALL_WGPU_TIMER_FEATURES;
+
+        let required_features = supported_features & requested_features;
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: None,
-                required_features: features & maybe_features,
-                required_limits: limits,
+                required_features,
+                required_limits,
                 memory_hints: MemoryHints::default(),
                 trace: wgpu::Trace::Off,
                 experimental_features: wgpu::ExperimentalFeatures::disabled(),
@@ -284,5 +327,20 @@ impl std::fmt::Debug for RenderSurface<'_> {
             .field("target_view", &self.target_view)
             .field("blitter", &"(Not Debug)")
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requested_features_are_intersected_with_adapter_features() {
+        let supported = wgpu::Features::CLEAR_TEXTURE;
+        let options_features = wgpu::Features::TIMESTAMP_QUERY;
+
+        let requested_features = wgpu::Features::CLEAR_TEXTURE | options_features;
+        let required_features = supported & requested_features;
+        assert_eq!(required_features, wgpu::Features::CLEAR_TEXTURE);
     }
 }
