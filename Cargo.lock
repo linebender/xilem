@@ -1109,6 +1109,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "external_communication"
+version = "0.0.0"
+dependencies = [
+ "console_error_panic_hook",
+ "console_log",
+ "futures-channel",
+ "futures-util",
+ "gloo-timers",
+ "log",
+ "wasm-bindgen-futures",
+ "xilem_web",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

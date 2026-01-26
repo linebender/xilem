@@ -1,0 +1,25 @@
+[package]
+name = "external_communication"
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "external_communication"
+test = false
+doctest = false
+doc = false
+bench = false
+
+[lints]
+workspace = true
+
+[dependencies]
+console_error_panic_hook = "0.1.7"
+console_log = { version = "1.0.0", features = ["color"] }
+futures-channel = "0.3.31"
+futures-util = "0.3.31"
+gloo-timers = { version = "0.3.0", features = ["futures"] }
+log = "0.4.29"
+wasm-bindgen-futures = "0.4.58"
+xilem_web = { path = "../.." }
