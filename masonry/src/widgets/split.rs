@@ -272,11 +272,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
             }
             SplitPoint::FromEnd(_) => {
                 let child2_len = (length - child1_len).max(0.0);
-                let logical = if scale <= f64::EPSILON {
-                    child2_len
-                } else {
-                    child2_len / scale
-                };
+                let logical = child2_len / scale;
                 self.split_point_chosen = SplitPoint::FromEnd(Length::px(logical));
             }
         }
