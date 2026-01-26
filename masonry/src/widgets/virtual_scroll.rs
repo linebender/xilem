@@ -487,7 +487,6 @@ impl VirtualScroll {
             PostScrollResult::NoLayout => {}
         }
         ctx.request_compose();
-        ctx.request_accessibility_update();
     }
 
     /// A wrapper to use [`post_scroll`](Self::post_scroll) in update methods.
