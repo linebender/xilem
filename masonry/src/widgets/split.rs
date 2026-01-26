@@ -738,11 +738,11 @@ where
             let size = ctx.size();
             let length = size.get_coord(self.split_axis);
             let cross_length = size.get_coord(self.split_axis.cross());
-            let (edge1, edge2) = self.bar_area_edges(length, scale);
+            let (edge1, edge2) = self.bar_edges(length, scale);
 
             let p1 = self.split_axis.pack_point(edge1, 0.);
             let p2 = self.split_axis.pack_point(edge2, cross_length);
-            let rect = Rect::from_points(p1, p2).inset(1.0);
+            let rect = Rect::from_points(p1, p2).inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
             stroke(scene, &rect, focus_color, 1.0);
