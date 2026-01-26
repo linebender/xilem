@@ -169,13 +169,11 @@ impl<W: Widget + ?Sized> Portal<W> {
             let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
             scrollbar.cursor_progress = progress_x;
             scrollbar_ctx.request_render();
-            scrollbar_ctx.request_accessibility_update();
         }
         {
             let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
             scrollbar.cursor_progress = progress_y;
             scrollbar_ctx.request_render();
-            scrollbar_ctx.request_accessibility_update();
         }
     }
 
@@ -189,7 +187,6 @@ impl<W: Widget + ?Sized> Portal<W> {
         let changed = self.set_viewport_pos_raw(portal_size, content_size, pos);
         if changed {
             ctx.request_compose();
-            ctx.request_accessibility_update();
             self.update_scrollbars_from_viewport(ctx, portal_size, content_size);
         }
         changed
@@ -250,7 +247,6 @@ impl<W: Widget + ?Sized> Portal<W> {
 
         if changed {
             ctx.request_compose();
-            ctx.request_accessibility_update();
             self.update_scrollbars_from_viewport(ctx, portal_size, content_size);
         }
 
@@ -473,9 +469,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             // the arrow/page/home/end keys.
             && !scrollbar_target
         {
-            // TODO: Scale factor handling is in flux; revisit as part of
-            // https://github.com/linebender/xilem/issues/1264.
-            let scale = ctx.get_scale_factor();
+            // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+            //       https://github.com/linebender/xilem/issues/1264
+            let scale = 1.0;
 
             let line = 120.0 * scale;
             let page_y = portal_size.height * scale;
@@ -583,9 +579,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     | accesskit::Action::ScrollRight
             )
         {
-            // TODO: Scale factor handling is in flux; revisit as part of
-            // https://github.com/linebender/xilem/issues/1264.
-            let scale = ctx.get_scale_factor();
+            // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+            //       https://github.com/linebender/xilem/issues/1264
+            let scale = 1.0;
 
             let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
                 *unit
@@ -805,41 +801,31 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         if can_scroll_x {
             node.set_scroll_x_min(0.0);
             node.set_scroll_x_max(scroll_range.width);
-            node.set_scroll_x(self.viewport_pos.x.clamp(0.0, scroll_range.width));
+            node.set_scroll_x(self.viewport_pos.x);
             if self.viewport_pos.x > 1e-12 {
                 node.add_action(accesskit::Action::ScrollLeft);
             }
             if self.viewport_pos.x + 1e-12 < scroll_range.width {
                 node.add_action(accesskit::Action::ScrollRight);
             }
-        } else {
-            node.clear_scroll_x_min();
-            node.clear_scroll_x_max();
-            node.clear_scroll_x();
         }
 
         if can_scroll_y {
             node.set_scroll_y_min(0.0);
             node.set_scroll_y_max(scroll_range.height);
-            node.set_scroll_y(self.viewport_pos.y.clamp(0.0, scroll_range.height));
+            node.set_scroll_y(self.viewport_pos.y);
             if self.viewport_pos.y > 1e-12 {
                 node.add_action(accesskit::Action::ScrollUp);
             }
             if self.viewport_pos.y + 1e-12 < scroll_range.height {
                 node.add_action(accesskit::Action::ScrollDown);
             }
-        } else {
-            node.clear_scroll_y_min();
-            node.clear_scroll_y_max();
-            node.clear_scroll_y();
         }
 
         if can_scroll_y && !can_scroll_x {
             node.set_orientation(accesskit::Orientation::Vertical);
         } else if can_scroll_x && !can_scroll_y {
             node.set_orientation(accesskit::Orientation::Horizontal);
-        } else {
-            node.clear_orientation();
         }
 
         node.add_child_action(accesskit::Action::ScrollIntoView);
@@ -990,6 +976,15 @@ mod tests {
         assert_eq!(node.data().scroll_y_min(), Some(0.0));
         assert!(node.data().scroll_y_max().is_some());
         assert_eq!(node.data().scroll_y(), Some(0.0));
+        
+        harness.edit_widget(portal_tag, |mut portal| {
+            Portal::pan_viewport_by(&mut portal, Vec2::new(0., 99999.));
+        });
+        harness.render();
+
+        let node = harness.access_node(portal_id).unwrap();
+        assert!(!node.data().supports_action(accesskit::Action::ScrollDown));
+        assert!(node.data().supports_action(accesskit::Action::ScrollUp));
     }
 
     #[test]

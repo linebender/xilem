@@ -198,7 +198,6 @@ impl Widget for ScrollBar {
                 };
                 if changed {
                     ctx.request_render();
-                    ctx.request_accessibility_update();
                 }
             }
             PointerEvent::Move(PointerUpdate { current, .. }) => {
@@ -214,7 +213,6 @@ impl Widget for ScrollBar {
                     );
                     if self.set_cursor_progress(progress) {
                         ctx.request_render();
-                        ctx.request_accessibility_update();
                     }
                 }
             }
@@ -238,9 +236,9 @@ impl Widget for ScrollBar {
             return;
         }
 
-        // TODO: Scale factor handling is in flux; revisit as part of
-        // https://github.com/linebender/xilem/issues/1264.
-        let scale = ctx.get_scale_factor();
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
         let line = 120.0 * scale;
         let page = self.portal_size * scale;
 
@@ -279,7 +277,6 @@ impl Widget for ScrollBar {
 
         if changed {
             ctx.request_render();
-            ctx.request_accessibility_update();
         }
     }
 
@@ -313,9 +310,9 @@ impl Widget for ScrollBar {
             return;
         }
 
-        // TODO: Scale factor handling is in flux; revisit as part of
-        // https://github.com/linebender/xilem/issues/1264.
-        let scale = ctx.get_scale_factor();
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
         let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
             *unit
         } else {
@@ -335,7 +332,6 @@ impl Widget for ScrollBar {
 
         if self.adjust_by_pixels(signed) {
             ctx.request_render();
-            ctx.request_accessibility_update();
         }
     }
 
