@@ -117,7 +117,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
     /// Builder-style method to set the split point as an absolute distance from the start.
     ///
-    /// This is the size of the first child along the split axis, in logical pixels.
+    /// This is the size of the first child along the split axis.
     /// This can be useful when one side should have a stable pixel size, even when the split
     /// container is resized.
     pub fn split_point_from_start(mut self, split_point: Length) -> Self {
@@ -127,7 +127,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
     /// Builder-style method to set the split point as an absolute distance from the end.
     ///
-    /// This is the size of the second child along the split axis, in logical pixels.
+    /// This is the size of the second child along the split axis.
     /// This can be useful when one side should have a stable pixel size, even when the split
     /// container is resized.
     pub fn split_point_from_end(mut self, split_point: Length) -> Self {
