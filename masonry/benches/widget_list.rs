@@ -6,21 +6,19 @@
 use divan::Bencher;
 use masonry::core::{CollectionWidget, NewWidget};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Flex, FlexParams, Label};
+use masonry::widgets::{Flex, FlexParams, Label, Prose};
 use masonry_testing::{TestHarness, TestHarnessParams};
 
-// TODO - Runtime is currently dominated by wgpu setup overhead.
-// TODO - `args = 100_000` panics.
-
 #[divan::bench(args = [100, 1_000, 10_000])]
-fn widget_list(bencher: Bencher<'_, '_>, children: u64) {
+fn widget_list_create(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
         let root_widget = NewWidget::new(Flex::column());
-        TestHarness::create_with(
+        let harness = TestHarness::create_with(
             default_property_set(),
             root_widget,
             TestHarnessParams::default(),
-        )
+        );
+        harness
     });
 
     bencher.bench_refs(|harness| {
@@ -33,7 +31,69 @@ fn widget_list(bencher: Bencher<'_, '_>, children: u64) {
                 );
             }
         });
+    });
+}
 
+// TODO - `args = 100_000` panics.
+#[divan::bench(args = [100, 1_000, 10_000])]
+fn widget_list_paint(bencher: Bencher<'_, '_>, children: u64) {
+    let bencher = bencher.with_inputs(|| {
+        let root_widget = NewWidget::new(Flex::column());
+        let mut harness = TestHarness::create_with(
+            default_property_set(),
+            root_widget,
+            TestHarnessParams::default(),
+        );
+
+        // Set up a wgpu context before benching
+        let _ = harness.render();
+
+        harness.edit_root_widget(|mut root| {
+            for _ in 0..children {
+                Flex::add(
+                    &mut root,
+                    NewWidget::new(Label::new("Hello")),
+                    FlexParams::default(),
+                );
+            }
+        });
+
+        harness
+    });
+
+    bencher.bench_refs(|harness| {
+        let _ = harness.render();
+    });
+}
+
+// TODO - `args = 100_000` panics.
+#[divan::bench(args = [100, 1_000, 10_000])]
+fn widget_list_paint_clipped(bencher: Bencher<'_, '_>, children: u64) {
+    let bencher = bencher.with_inputs(|| {
+        let root_widget = NewWidget::new(Flex::column());
+        let mut harness = TestHarness::create_with(
+            default_property_set(),
+            root_widget,
+            TestHarnessParams::default(),
+        );
+
+        // Set up a wgpu context before benching
+        let _ = harness.render();
+
+        harness.edit_root_widget(|mut root| {
+            for _ in 0..children {
+                Flex::add(
+                    &mut root,
+                    NewWidget::new(Prose::new("Hello").with_clip(true)),
+                    FlexParams::default(),
+                );
+            }
+        });
+
+        harness
+    });
+
+    bencher.bench_refs(|harness| {
         let _ = harness.render();
     });
 }
