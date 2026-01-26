@@ -9,6 +9,8 @@ use masonry::theme::default_property_set;
 use masonry::widgets::{Flex, FlexParams, Label, Prose};
 use masonry_testing::{TestHarness, TestHarnessParams};
 
+// TODO - Improve performance and add tests for 100_000 children.
+
 #[divan::bench(args = [100, 1_000, 10_000])]
 fn widget_list_create(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
@@ -45,9 +47,6 @@ fn widget_list_paint(bencher: Bencher<'_, '_>, children: u64) {
             TestHarnessParams::default(),
         );
 
-        // Set up a wgpu context before benching
-        let _ = harness.render();
-
         harness.edit_root_widget(|mut root| {
             for _ in 0..children {
                 Flex::add(
@@ -58,6 +57,10 @@ fn widget_list_paint(bencher: Bencher<'_, '_>, children: u64) {
             }
         });
 
+        // Set up a wgpu context before benching
+        // Fill the paint cache.
+        let _ = harness.render();
+
         harness
     });
 
@@ -66,8 +69,7 @@ fn widget_list_paint(bencher: Bencher<'_, '_>, children: u64) {
     });
 }
 
-// TODO - `args = 100_000` panics.
-#[divan::bench(args = [100, 1_000, 10_000])]
+#[divan::bench(args = [100, 1_000, 10_000, 100_000])]
 fn widget_list_paint_clipped(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
         let root_widget = NewWidget::new(Flex::column());
@@ -76,9 +78,6 @@ fn widget_list_paint_clipped(bencher: Bencher<'_, '_>, children: u64) {
             root_widget,
             TestHarnessParams::default(),
         );
-
-        // Set up a wgpu context before benching
-        let _ = harness.render();
 
         harness.edit_root_widget(|mut root| {
             for _ in 0..children {
@@ -89,6 +88,10 @@ fn widget_list_paint_clipped(bencher: Bencher<'_, '_>, children: u64) {
                 );
             }
         });
+
+        // Set up a wgpu context before benching
+        // Fill the paint cache.
+        let _ = harness.render();
 
         harness
     });
