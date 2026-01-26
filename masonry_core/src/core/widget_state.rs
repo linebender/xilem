@@ -389,6 +389,12 @@ impl WidgetState {
         }
     }
 
+    /// Returns the bounding rect of the widget's clip path (if any), in window coordinates.
+    pub(crate) fn clip_rect(&self) -> Option<Rect> {
+        self.clip_path
+            .map(|clip_path| self.window_transform.transform_rect_bbox(clip_path))
+    }
+
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
         self.needs_layout
             || self.needs_compose
