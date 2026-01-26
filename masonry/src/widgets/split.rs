@@ -208,7 +208,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     fn bar_area_edges(&self, length: f64, scale: f64) -> (f64, f64) {
         let (edge1, edge2) = self.bar_edges(length, scale);
         let (space1, space2) = (edge1.max(0.), (length - edge2).max(0.));
-        let padding = (self.bar_area(scale) - self.bar_thickness.dp(scale)).max(0.);
+        let padding = self.bar_area(scale) - self.bar_thickness.dp(scale);
 
         // Half the padding to the first edge
         let pad1 = (0.5 * padding).min(space1);
