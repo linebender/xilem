@@ -494,7 +494,6 @@ where
                         let effective_center = pos - self.click_offset;
                         self.update_split_point_from_bar_center(length, effective_center, scale);
                         ctx.request_layout();
-                        ctx.request_render();
                     }
                 }
                 PointerEvent::Up(..) | PointerEvent::Cancel(..) => {
