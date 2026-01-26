@@ -105,7 +105,7 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
 
     /// Set the split point as an absolute distance from the start.
     ///
-    /// This is the size of the first child along the split axis, in logical pixels.
+    /// This is the size of the first child along the split axis.
     pub fn split_point_from_start(mut self, split_point: Length) -> Self {
         self.split_point = widgets::SplitPoint::FromStart(split_point);
         self
@@ -113,7 +113,7 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
 
     /// Set the split point as an absolute distance from the end.
     ///
-    /// This is the size of the second child along the split axis, in logical pixels.
+    /// This is the size of the second child along the split axis.
     pub fn split_point_from_end(mut self, split_point: Length) -> Self {
         self.split_point = widgets::SplitPoint::FromEnd(split_point);
         self
