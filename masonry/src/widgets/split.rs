@@ -789,7 +789,7 @@ where
         let bar_thickness = self.bar_thickness.dp(scale);
         let split_space = (total_length - bar_thickness).max(0.0);
         let (min_limit, max_limit) = self.split_side_limits(split_space, scale);
-        let child1_len = (split_space * self.split_point_effective).clamp(min_limit, max_limit);
+        let child1_len = split_space * self.split_point_effective;
 
         node.set_orientation(match self.split_axis {
             Axis::Horizontal => accesskit::Orientation::Horizontal,
