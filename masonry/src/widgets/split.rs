@@ -32,9 +32,9 @@ pub enum SplitPoint {
     /// `0.0` means the first child gets no space, `1.0` means the second child gets no space.
     /// Values outside `0.0..=1.0` are clamped when set.
     Fraction(f64),
-    /// Split by an absolute distance from the start (in logical pixels).
+    /// Split by an absolute distance from the start.
     FromStart(Length),
-    /// Split by an absolute distance from the end (in logical pixels).
+    /// Split by an absolute distance from the end.
     FromEnd(Length),
 }
 
