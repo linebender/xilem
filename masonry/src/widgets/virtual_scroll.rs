@@ -153,7 +153,10 @@ pub struct VirtualScrollAction {
 /// A proper virtual scrolling list needs accessibility support (such as for scrolling, but
 /// also to ensure that focus does not get trapped, that the correct set of items are reported,
 /// if/that there are more items following, etc.).
-/// This has not yet been designed, and will be a follow-up.
+///
+/// This widget currently exposes basic scrolling semantics (such as `scroll_y` and
+/// `ScrollUp`/`ScrollDown` actions) and handles those actions. However, full accessibility
+/// behavior for a virtualized list has not yet been designed, and will be a follow-up.
 ///
 /// ## Scrollbars
 ///
@@ -579,6 +582,7 @@ impl Widget for VirtualScroll {
             } => {
                 self.scroll_offset_from_anchor += DELTA;
                 self.event_post_scroll(ctx);
+                ctx.set_handled();
             }
             KeyboardEvent {
                 state: KeyState::Down,
@@ -587,6 +591,7 @@ impl Widget for VirtualScroll {
             } => {
                 self.scroll_offset_from_anchor -= DELTA;
                 self.event_post_scroll(ctx);
+                ctx.set_handled();
             }
             _ => {}
         }
@@ -617,6 +622,7 @@ impl Widget for VirtualScroll {
                 self.scroll_offset_from_anchor += amount;
             }
             self.event_post_scroll(ctx);
+            ctx.set_handled();
         }
     }
 
