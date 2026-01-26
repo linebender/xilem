@@ -410,16 +410,6 @@ impl Widget for ScrollBar {
         });
 
         let scroll_range = self.scroll_range();
-        if scroll_range <= 1e-12 {
-            node.clear_scroll_x_min();
-            node.clear_scroll_x_max();
-            node.clear_scroll_x();
-            node.clear_scroll_y_min();
-            node.clear_scroll_y_max();
-            node.clear_scroll_y();
-            node.clear_orientation();
-            return;
-        }
 
         let value = (self.cursor_progress.clamp(0.0, 1.0)) * scroll_range;
         match self.axis {
