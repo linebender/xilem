@@ -608,7 +608,6 @@ where
 
         self.set_chosen_from_child1_len(split_space, child1_len, scale);
         ctx.request_layout();
-        ctx.request_render();
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
