@@ -499,7 +499,6 @@ impl VirtualScroll {
             PostScrollResult::NoLayout => {}
         }
         ctx.request_compose();
-        ctx.request_accessibility_update();
     }
 
     /// Locks scrolling so that:
