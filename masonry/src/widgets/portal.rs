@@ -976,7 +976,7 @@ mod tests {
         assert_eq!(node.data().scroll_y_min(), Some(0.0));
         assert!(node.data().scroll_y_max().is_some());
         assert_eq!(node.data().scroll_y(), Some(0.0));
-        
+
         harness.edit_widget(portal_tag, |mut portal| {
             Portal::pan_viewport_by(&mut portal, Vec2::new(0., 99999.));
         });
