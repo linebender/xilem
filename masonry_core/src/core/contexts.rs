@@ -203,7 +203,13 @@ impl_context_method!(
         }
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
-        /// The current (local) transform of this widget.
+        /// Returns the local transform of this widget.
+        ///
+        /// This transform is used during the mapping of this widget's border-box coordinate space
+        /// to the parent's border-box coordinate space.
+        ///
+        /// When calculating the effective border-box of this widget, first this transform
+        /// will be applied and then `scroll_translation` and `origin` applied on top.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
         }
@@ -292,11 +298,13 @@ impl MutateCtx<'_> {
         }
     }
 
-    /// Whether the (local) transform of this widget has been modified since
+    /// Returns `true` if the [local transform] of this widget has been modified since
     /// the last time this widget's transformation was resolved.
     ///
     /// This is exposed for Xilem, and is more likely to change or be removed
     /// in major releases of Masonry.
+    ///
+    /// [local transform]: Self::transform
     pub fn transform_has_changed(&self) -> bool {
         self.widget_state.transform_changed
     }
@@ -1058,8 +1066,7 @@ impl_context_method!(
             self.widget_state.baseline_offset()
         }
 
-        /// The origin of the widget in window coordinates, relative to the top left corner of the
-        /// content area.
+        /// Returns the widget's effective border-box origin in the window's coordinate space.
         pub fn window_origin(&self) -> Point {
             self.widget_state.window_origin()
         }
@@ -1140,8 +1147,8 @@ impl_context_method!(
     {
         /// The "hovered" status of a widget.
         ///
-        /// A widget is "hovered" when a pointer is hovering over it. Widgets will
-        /// often change their appearance as a visual indication that they
+        /// A widget is "hovered" when a pointer is hovering over its border-box.
+        /// Widgets will often change their appearance as a visual indication that they
         /// will respond to pointer (usually mouse) interaction.
         ///
         /// If the pointer is [captured], then only the capturing widget can have hovered
@@ -1424,9 +1431,12 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.is_explicitly_disabled = disabled;
     }
 
-    /// Sets the transform for this widget.
+    /// Sets the local transform for this widget.
     ///
-    /// It behaves similarly as CSS transforms
+    /// This maps this widget's border-box coordinate space
+    /// to the parent's border-box coordinate space.
+    ///
+    /// It behaves similarly as CSS transforms.
     pub fn set_transform(&mut self, transform: Affine) {
         self.widget_state.transform = transform;
         self.widget_state.transform_changed = true;
@@ -1598,7 +1608,7 @@ impl_context_method!(
         /// to the platform. The area can be used by the platform to, for example, place a
         /// candidate box near that area, while ensuring the area is not obscured.
         ///
-        /// If no IME area is set, the platform will use the widget's layout rect.
+        /// If no IME area is set, then Masonry will use the widget's aligned border-box rect.
         ///
         /// [focused]: EventCtx::request_focus
         /// [accepts text input]: Widget::accepts_text_input
@@ -1666,11 +1676,15 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Creates a new [layer](crate::doc::masonry_concepts#layers) at a specified position.
+        /// Creates a new [layer] at a specified `position`.
+        ///
+        /// The given `position` must be in the window's coordinate space.
         ///
         /// # Panics
         ///
         /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
+        ///
+        /// [layer]: crate::doc::masonry_concepts#layers
         pub fn create_layer<W: Widget + ?Sized>(
             &mut self,
             layer_type: LayerType,
@@ -1702,6 +1716,8 @@ impl_context_method!(
         }
 
         /// Repositions the layer with the specified widget as root.
+        ///
+        /// The given `position` must be in the window's coordinate space.
         pub fn reposition_layer(&mut self, root_widget_id: WidgetId, position: Point) {
             trace!("reposition_layer");
             self.global_state
