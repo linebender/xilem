@@ -242,8 +242,8 @@ impl Widget for VariableLabel {
         ctx.run_layout(&mut self.label, size);
         ctx.place_child(&mut self.label, Point::ORIGIN);
 
-        let baseline = ctx.child_baseline_offset(&self.label);
-        ctx.set_baseline_offset(baseline);
+        let child_baseline = ctx.child_baseline_offset(&self.label);
+        ctx.set_baseline_offset(child_baseline);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

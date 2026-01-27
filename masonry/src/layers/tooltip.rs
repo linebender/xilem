@@ -165,10 +165,12 @@ impl Widget for Tooltip {
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.child, child_origin);
 
-        let baseline = ctx.child_baseline_offset(&self.child);
-        let baseline = border.baseline_up(baseline, scale);
-        let baseline = padding.baseline_up(baseline, scale);
-        ctx.set_baseline_offset(baseline);
+        let child_baseline = ctx.child_baseline_offset(&self.child);
+        let child_baseline = border.baseline_up(child_baseline, scale);
+        let child_baseline = padding.baseline_up(child_baseline, scale);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
