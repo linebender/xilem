@@ -92,8 +92,17 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
-    let has_clip = state.clip_path.is_some();
-    if !is_stashed && !is_offscreen {
+    let mut inner_clip_rect = clip_rect;
+    let mut clip_is_offscreen = is_offscreen;
+    if let Some(inner_clip) = state.clip_rect() {
+        if inner_clip.overlaps(clip_rect) {
+            inner_clip_rect = clip_rect.intersect(inner_clip);
+        } else {
+            clip_is_offscreen = true;
+        }
+    }
+
+    if !is_stashed && !clip_is_offscreen {
         let transform = state.window_transform;
         let Some((scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
@@ -109,16 +118,6 @@ fn paint_widget(
         complete_scene.append(scene, Some(transform));
     }
 
-    let mut children_clip_rect = clip_rect;
-    let mut children_are_offscreen = is_offscreen;
-    if let Some(inner_clip) = state.clip_rect() {
-        if inner_clip.overlaps(clip_rect) {
-            children_clip_rect = clip_rect.intersect(inner_clip);
-        } else {
-            children_are_offscreen = true;
-        }
-    }
-
     let parent_state = &mut *state;
     recurse_on_children(id, widget, children, |mut node| {
         paint_widget(
@@ -127,11 +126,17 @@ fn paint_widget(
             complete_scene,
             scene_cache,
             node.reborrow_mut(),
-            children_clip_rect,
-            children_are_offscreen,
+            inner_clip_rect,
+            clip_is_offscreen,
         );
         parent_state.merge_up(&mut node.item.state);
     });
+
+    if !is_stashed && !clip_is_offscreen {
+        if state.clip_path.is_some() {
+            complete_scene.pop_layer();
+        }
+    }
 
     if !is_stashed && !is_offscreen {
         let transform = state.window_transform;
@@ -143,10 +148,6 @@ fn paint_widget(
             let color = get_debug_color(id.to_raw());
             let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
-        }
-
-        if has_clip {
-            complete_scene.pop_layer();
         }
 
         let Some((_, postfix_scene)) = &mut scene_cache.get(&id) else {
