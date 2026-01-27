@@ -898,15 +898,6 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).baseline_offset
     }
 
-    // TODO - Remove (used in Flex)
-    #[doc(hidden)]
-    #[track_caller]
-    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
-        self.assert_layout_done(child, "child_layout_rect");
-        self.assert_placed(child, "child_layout_rect");
-        self.get_child_state(child).layout_rect()
-    }
-
     /// Returns the given child's paint rect.
     ///
     /// The paint rect will be a union of the child's and all of its descendants' paint rects.
@@ -1060,12 +1051,6 @@ impl_context_method!(
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
             self.widget_state.size()
-        }
-
-        // TODO - Remove. Currently only used in tests.
-        #[doc(hidden)]
-        pub fn local_layout_rect(&self) -> Rect {
-            self.widget_state.layout_rect()
         }
 
         /// The offset of the baseline relative to the bottom of the widget.
