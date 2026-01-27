@@ -141,7 +141,6 @@ pub fn default_property_set() -> DefaultProperties {
     }));
 
     // Label
-    properties.insert::<Label, _>(Padding::from_vh(0., 2.));
     properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
     properties.insert::<Label, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
 
@@ -176,6 +175,7 @@ pub(crate) fn test_property_set() -> DefaultProperties {
     let mut properties = default_property_set();
 
     const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
+    properties.insert::<Label, _>(Padding::from_vh(0., 2.));
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
     properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
     properties.insert::<TextArea<false>, _>(CaretColor { color: TEXT_COLOR });
