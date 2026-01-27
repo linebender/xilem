@@ -104,6 +104,11 @@ pub(crate) struct RenderRootState {
     pub(crate) window_focused: bool,
 
     /// Widgets that have requested to be scrolled into view.
+    ///
+    /// The `WidgetId` is the id of the widget that made the request.
+    ///
+    /// The `Rect` is the area it wants to be scrolled into view,
+    /// in its border-box coordinate space.
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
 
     /// List of ancestors of the currently hovered widget.

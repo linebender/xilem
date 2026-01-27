@@ -725,18 +725,23 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
     let scroll_request_targets = std::mem::take(&mut root.global_state.scroll_request_targets);
     for (target, rect) in scroll_request_targets {
+        // We start with target_rect being in the target's border-box coordinate space.
         let mut target_rect = rect;
 
+        // We run the update pass on the target itself and then its ancestors.
         run_targeted_update_pass(root, Some(target), |widget, ctx, props| {
-            let event = Update::RequestPanToChild(rect);
+            let event = Update::RequestPanToChild(target_rect);
             widget.update(ctx, props, &event);
 
             // TODO - We should run the compose method after this, so
             // translations are updated and the rect passed to parents
-            // is more accurate.
+            // is more accurate. Until then we don't add scroll_translation
+            // at all and only support a single scrolling parent.
 
+            // Before continuing to the parent, we need to convert the target_rect from this
+            // widget's border-box coordinate space to the parent's border-box coordinate space.
             let state = &ctx.widget_state;
-            target_rect = target_rect + state.scroll_translation + state.origin.to_vec2();
+            target_rect = target_rect + state.origin.to_vec2();
         });
     }
 }

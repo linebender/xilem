@@ -98,8 +98,14 @@ pub enum Update {
     /// [`set_stashed`]: crate::core::EventCtx::set_stashed
     StashedChanged(bool),
 
-    /// Called when a child widgets uses
-    /// [`EventCtx::request_scroll_to_this`](crate::core::EventCtx::request_scroll_to_this).
+    /// Called when a descendant widget requests to be scrolled to.
+    ///
+    /// The included [`Rect`] is in the receiving widget's border-box coordinate space.
+    ///
+    /// See also [`EventCtx::request_scroll_to_this`] and [`EventCtx::request_scroll_to`].
+    ///
+    /// [`EventCtx::request_scroll_to_this`]: crate::core::EventCtx::request_scroll_to_this
+    /// [`EventCtx::request_scroll_to`]: crate::core::EventCtx::request_scroll_to
     RequestPanToChild(Rect),
 
     /// Called when the [hovered] status of the current widget changes.
