@@ -842,11 +842,6 @@ impl LayoutCtx<'_> {
         let child_state = self.get_child_state_mut(child);
 
         place_widget(child_state, origin);
-
-        self.widget_state.local_paint_rect = self
-            .widget_state
-            .local_paint_rect
-            .union(self.get_child_state(child).paint_rect());
     }
 
     /// Sets explicit paint [`Insets`] for this widget.
@@ -896,21 +891,6 @@ impl LayoutCtx<'_> {
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
         self.get_child_state(child).baseline_offset
-    }
-
-    /// Returns the given child's paint rect.
-    ///
-    /// The paint rect will be a union of the child's and all of its descendants' paint rects.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
-    /// have not been called yet for the child.
-    #[track_caller]
-    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
-        self.assert_layout_done(child, "child_paint_rect");
-        self.assert_placed(child, "child_paint_rect");
-        self.get_child_state(child).paint_rect()
     }
 
     /// Returns the given child's size.
@@ -1053,6 +1033,14 @@ impl_context_method!(
             self.widget_state.size()
         }
 
+        /// Returns the aligned paint-box rect of this widget
+        /// in this widget's border-box coordinate space.
+        ///
+        /// Covers the area we expect to be invalidated when the widget is painted.
+        pub fn paint_rect(&self) -> Rect {
+            self.widget_state.paint_rect()
+        }
+
         /// The offset of the baseline relative to the bottom of the widget.
         pub fn baseline_offset(&self) -> f64 {
             self.widget_state.baseline_offset()
@@ -1077,14 +1065,6 @@ impl_context_method!(
         /// for details.
         pub fn bounding_rect(&self) -> Rect {
             self.widget_state.bounding_rect()
-        }
-
-        // TODO - Remove? See above.
-        /// The paint rect of the widget and all of its descendants.
-        ///
-        /// Covers the area we expect to be invalidated when the widget is painted.
-        pub fn paint_rect(&self) -> Rect {
-            self.widget_state.paint_rect()
         }
 
         /// The clip path of the widget, if any was set.

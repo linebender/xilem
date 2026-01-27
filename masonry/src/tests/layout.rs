@@ -247,14 +247,23 @@ fn layout_insets() {
 
     let child_paint_rect = harness.get_widget(child_tag).ctx().paint_rect();
     let parent_paint_rect = harness.get_widget(parent_tag).ctx().paint_rect();
+    let parent_bounding_rect = harness.get_widget(parent_tag).ctx().bounding_rect();
 
+    // The child's paint box is affected by its paint insets
     assert_eq!(child_paint_rect.x0, 0.0);
     assert_eq!(child_paint_rect.y0, -20.0);
     assert_eq!(child_paint_rect.x1, BOX_WIDTH);
     assert_eq!(child_paint_rect.y1, BOX_WIDTH + 20.0);
 
+    // The parent's paint box is not affected by the child's paint insets
     assert_eq!(parent_paint_rect.x0, 0.0);
-    assert_eq!(parent_paint_rect.y0, -20.0);
+    assert_eq!(parent_paint_rect.y0, 0.0);
     assert_eq!(parent_paint_rect.x1, BOX_WIDTH);
-    assert_eq!(parent_paint_rect.y1, BOX_WIDTH + 20.0);
+    assert_eq!(parent_paint_rect.y1, BOX_WIDTH);
+
+    // The parent's bounding box is affected by the child's paint insets
+    assert_eq!(parent_bounding_rect.x0, 0.0);
+    assert_eq!(parent_bounding_rect.y0, -20.0);
+    assert_eq!(parent_bounding_rect.x1, BOX_WIDTH);
+    assert_eq!(parent_bounding_rect.y1, BOX_WIDTH + 20.0);
 }
