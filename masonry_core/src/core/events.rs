@@ -98,7 +98,7 @@ pub enum Update {
     /// [`set_stashed`]: crate::core::EventCtx::set_stashed
     StashedChanged(bool),
 
-    /// Called when a descendant widgets requests to be scrolled to.
+    /// Called when a descendant widget requests to be scrolled to.
     ///
     /// The included [`Rect`] is in the receiving widget's border-box coordinate space.
     ///

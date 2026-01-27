@@ -851,14 +851,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_testing::ModularWidget;
-
     use super::*;
     use crate::core::keyboard::{Key, NamedKey};
     use crate::core::{WidgetOptions, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::Dimensions;
-    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::testing::{ModularWidget, TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
