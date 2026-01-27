@@ -201,10 +201,10 @@ pub struct MasonryState<'a> {
     window_id_to_handle_id: HashMap<WindowId, HandleId>,
 
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
+    windows: HashMap<HandleId, Window>,
     /// On Metal, we need to track the state of resize requests to avoid jitter.
     #[cfg(target_os = "macos")]
     resized_window: Option<HandleId>,
-    windows: HashMap<HandleId, Window>,
 
     clipboard_cx: ClipboardContext,
 
