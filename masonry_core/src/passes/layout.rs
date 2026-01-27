@@ -487,7 +487,7 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 // --- MARK: PLACE WIDGET
 pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
     let end_point = origin + child_state.layout_size.to_vec2();
-    let baseline_y = origin.y + child_state.baseline_offset;
+    let baseline_y = end_point.y - child_state.baseline_offset;
     // TODO - Account for display scale in pixel snapping
     // See https://github.com/linebender/xilem/issues/1264
     let origin = origin.round();
