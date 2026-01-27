@@ -381,7 +381,7 @@ pub(crate) fn run_on_access_event_pass(
         }
         accesskit::Action::ScrollIntoView if !handled.is_handled() => {
             let widget_state = root.widget_arena.get_state(target);
-            let rect = widget_state.layout_rect();
+            let rect = widget_state.size().to_rect();
             root.global_state
                 .scroll_request_targets
                 .push((target, rect));

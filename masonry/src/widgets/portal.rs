@@ -378,8 +378,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
 
     /// Changes the scrolling "position" of the container so that `target` is scrolled into view.
     ///
-    /// `target` is in child coordinates, meaning a target of `(0, 0, 10, 10)` will
-    /// scroll an item at the top-left of the child into view.
+    /// `target` is in the child's border-box coordinate space, meaning a target
+    /// of `(0, 0, 10, 10)` will scroll an item at the top-left of the child into view.
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
         let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.size());
 
@@ -851,18 +851,49 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_testing::ModularWidget;
+
     use super::*;
-    use crate::core::WidgetTag;
     use crate::core::keyboard::{Key, NamedKey};
+    use crate::core::{WidgetOptions, WidgetTag};
     use crate::layout::AsUnit;
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
-    fn button(text: &'static str) -> impl Widget {
-        SizedBox::new(Button::with_text(text).with_auto_id())
-            .width(70.px())
-            .height(40.px())
+    fn button(
+        text: &'static str,
+        top_pad: f64,
+        tag: Option<WidgetTag<Button>>,
+    ) -> NewWidget<ModularWidget<WidgetPod<Button>>> {
+        let btn = NewWidget::new_with(
+            Button::with_text(text),
+            tag,
+            WidgetOptions::default(),
+            Dimensions::fixed(70.px(), 40.px()),
+        );
+
+        ModularWidget::new_parent(btn)
+            .measure_fn(move |child, ctx, _props, axis, len_req, cross_length| {
+                let auto_length = len_req.into();
+                let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+
+                let other = match axis {
+                    Axis::Horizontal => 0.,
+                    Axis::Vertical => top_pad,
+                };
+
+                ctx.compute_length(child, auto_length, context_size, axis, cross_length) + other
+            })
+            .layout_fn(move |child, ctx, _props, size| {
+                let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+                ctx.run_layout(child, child_size);
+                // We don't place it at (0,0) to test that stacked-origin translation works.
+                // Because if we were at (0,0) it would be effectively the same as no parent.
+                ctx.place_child(child, Point::new(0., top_pad));
+            })
+            .with_auto_id()
     }
 
     #[test]
@@ -872,33 +903,20 @@ mod tests {
 
         let widget = Portal::new(NewWidget::new(
             Flex::column()
-                .with_fixed(button("Item 1").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 2").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(NewWidget::new_with_tag(button("Item 3"), button_3))
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 4").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 5").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 6").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 7").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 8").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 9").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 10").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 11").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 12").with_auto_id())
-                .with_fixed_spacer(10.px())
-                .with_fixed(NewWidget::new_with_tag(button("Item 13"), button_13))
-                .with_fixed_spacer(10.px())
-                .with_fixed(button("Item 14").with_auto_id())
+                .with_fixed(button("Item 1", 0., None))
+                .with_fixed(button("Item 2", 20., None))
+                .with_fixed(button("Item 3", 20., Some(button_3)))
+                .with_fixed(button("Item 4", 20., None))
+                .with_fixed(button("Item 5", 20., None))
+                .with_fixed(button("Item 6", 20., None))
+                .with_fixed(button("Item 7", 20., None))
+                .with_fixed(button("Item 8", 20., None))
+                .with_fixed(button("Item 9", 20., None))
+                .with_fixed(button("Item 10", 20., None))
+                .with_fixed(button("Item 11", 20., None))
+                .with_fixed(button("Item 12", 20., None))
+                .with_fixed(button("Item 13", 20., Some(button_13)))
+                .with_fixed(button("Item 14", 20., None))
                 .with_fixed_spacer(10.px()),
         ))
         .with_auto_id();
@@ -914,18 +932,10 @@ mod tests {
 
         assert_render_snapshot!(harness, "portal_button_list_scrolled");
 
-        let item_3_rect = harness.get_widget(button_3).ctx().local_layout_rect();
-        harness.edit_root_widget(|mut portal| {
-            Portal::pan_viewport_to(&mut portal, item_3_rect);
-        });
-
+        harness.scroll_into_view(harness.get_widget(button_3).id());
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_3");
 
-        let item_13_rect = harness.get_widget(button_13).ctx().local_layout_rect();
-        harness.edit_root_widget(|mut portal| {
-            Portal::pan_viewport_to(&mut portal, item_13_rect);
-        });
-
+        harness.scroll_into_view(harness.get_widget(button_13).id());
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_13");
     }
 

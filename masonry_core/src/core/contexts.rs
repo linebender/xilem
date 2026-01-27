@@ -429,7 +429,7 @@ impl EventCtx<'_> {
 
     /// Sends a signal to parent widgets to scroll this widget into view.
     pub fn request_scroll_to_this(&mut self) {
-        let rect = self.widget_state.layout_rect();
+        let rect = self.widget_state.size().to_rect();
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
