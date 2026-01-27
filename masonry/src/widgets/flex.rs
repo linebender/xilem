@@ -15,7 +15,7 @@ use crate::core::{
     NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Line, Size, Stroke};
+use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
@@ -968,6 +968,7 @@ impl Widget for Flex {
         let mut main_space = space.get_coord(main) - gap_count as f64 * gap_length;
         let mut flex_sum = 0.;
         let mut max_ascent: f64 = 0.;
+        let mut lowest_baseline: f64 = f64::INFINITY;
 
         // Helper function to calculate child size when main length is decided
         let compute_child_size =
@@ -1002,6 +1003,20 @@ impl Widget for Flex {
             let baseline = ctx.child_baseline_offset(child);
             let ascent = child_size.height - baseline;
             max_ascent = max_ascent.max(ascent);
+        };
+
+        // Helper function to place children
+        let mut place_child = |ctx: &mut LayoutCtx<'_>,
+                               child: &mut WidgetPod<dyn Widget + 'static>,
+                               child_origin: Point| {
+            ctx.place_child(child, child_origin);
+
+            let child_baseline = ctx.child_baseline_offset(child);
+            let child_size = ctx.child_size(child);
+            let child_bottom = child_origin.y + child_size.height;
+            let bottom_gap = size.height - child_bottom;
+            let baseline = child_baseline + bottom_gap;
+            lowest_baseline = lowest_baseline.min(baseline);
         };
 
         // Sum flex factors, resolve bases, subtract bases from main space,
@@ -1143,7 +1158,7 @@ impl Widget for Flex {
                     let child_origin = main.pack_point(main_offset, child_origin_cross);
                     let child_origin = border.origin_down(child_origin, scale);
                     let child_origin = padding.origin_down(child_origin, scale);
-                    ctx.place_child(widget, child_origin);
+                    place_child(ctx, widget, child_origin);
 
                     main_offset += child_size.get_coord(main);
                     main_offset += gap_length;
@@ -1159,36 +1174,14 @@ impl Widget for Flex {
             }
         }
 
-        let baseline = match main {
-            Axis::Horizontal => {
-                // If we have at least one widget child, use max ascent to calculate our baseline
-                if self.children.iter().any(|child| child.is_widget()) {
-                    space.height - max_ascent
-                } else {
-                    // With no widgets (max_ascent == 0) our baseline would be the top edge,
-                    // but we actually want our bottom edge to serve as our fallback.
-                    0.
-                }
-            }
-            Axis::Vertical => self
-                .children
-                .iter()
-                .rfind(|child| child.is_widget())
-                .map(|last| {
-                    let child = last.widget().unwrap();
-                    let child_baseline = ctx.child_baseline_offset(child);
-                    let child_max_y = ctx.child_layout_rect(child).max_y();
-                    let extra_bottom_padding = size.height - child_max_y;
-                    let baseline = child_baseline + extra_bottom_padding;
-                    let baseline = border.baseline_down(baseline, scale);
-                    padding.baseline_down(baseline, scale)
-                })
-                .unwrap_or(0.),
-        };
+        // If we have at least one child widget then we can use the lowest child baseline.
+        let baseline = self
+            .children
+            .iter()
+            .any(|child| child.is_widget())
+            .then_some(lowest_baseline);
 
-        let baseline = border.baseline_up(baseline, scale);
-        let baseline = padding.baseline_up(baseline, scale);
-        ctx.set_baseline_offset(baseline);
+        ctx.set_baseline_offset(baseline.unwrap_or(0.));
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
