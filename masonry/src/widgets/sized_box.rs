@@ -315,10 +315,10 @@ impl Widget for SizedBox {
         let child_origin = padding.origin_down(child_origin, scale);
         ctx.place_child(child, child_origin);
 
-        let baseline = ctx.child_baseline_offset(child);
-        let baseline = border.baseline_up(baseline, scale);
-        let baseline = padding.baseline_up(baseline, scale);
-        ctx.set_baseline_offset(baseline);
+        let child_baseline = ctx.child_baseline_offset(child);
+        let child_baseline = border.baseline_up(child_baseline, scale);
+        let child_baseline = padding.baseline_up(child_baseline, scale);
+        ctx.set_baseline_offset(child_baseline);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

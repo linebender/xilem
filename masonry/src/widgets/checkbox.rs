@@ -16,7 +16,7 @@ use crate::core::{
     NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Rect, Size, Stroke};
+use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Point, Rect, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -274,10 +274,14 @@ impl Widget for Checkbox {
 
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
         ctx.run_layout(&mut self.label, label_size);
-        ctx.place_child(&mut self.label, (check_side + check_padding, 0.0).into());
 
-        let baseline = ctx.child_baseline_offset(&self.label) + (size.height - label_size.height);
-        ctx.set_baseline_offset(baseline);
+        let label_origin = Point::new(check_side + check_padding, 0.);
+        ctx.place_child(&mut self.label, label_origin);
+
+        let label_baseline = ctx.child_baseline_offset(&self.label);
+        let label_bottom = label_origin.y + label_size.height;
+        let bottom_gap = size.height - label_bottom;
+        ctx.set_baseline_offset(label_baseline + bottom_gap);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

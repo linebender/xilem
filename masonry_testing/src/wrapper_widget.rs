@@ -112,10 +112,14 @@ impl Widget for WrapperWidget {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
-        ctx.place_child(&mut self.child, Point::ORIGIN);
 
-        let baseline = ctx.child_baseline_offset(&self.child);
-        ctx.set_baseline_offset(baseline);
+        let child_origin = Point::ORIGIN;
+        ctx.place_child(&mut self.child, child_origin);
+
+        let child_baseline = ctx.child_baseline_offset(&self.child);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
     fn compose(&mut self, _ctx: &mut ComposeCtx<'_>) {}

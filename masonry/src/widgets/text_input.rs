@@ -314,10 +314,10 @@ impl Widget for TextInput {
 
         ctx.place_child(&mut self.text, child_origin);
 
-        let baseline = ctx.child_baseline_offset(&self.text);
-        let baseline = border.baseline_up(baseline, scale);
-        let baseline = padding.baseline_up(baseline, scale);
-        ctx.set_baseline_offset(baseline);
+        let child_baseline = ctx.child_baseline_offset(&self.text);
+        let child_baseline = border.baseline_up(child_baseline, scale);
+        let child_baseline = padding.baseline_up(child_baseline, scale);
+        ctx.set_baseline_offset(child_baseline);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
