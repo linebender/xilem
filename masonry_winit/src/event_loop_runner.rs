@@ -201,6 +201,8 @@ pub struct MasonryState<'a> {
     window_id_to_handle_id: HashMap<WindowId, HandleId>,
 
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
+    /// On Metal, we need to track the state of resize requests to avoid jitter.
+    #[cfg(target_os = "macos")]
     resized_window: Option<HandleId>,
     windows: HashMap<HandleId, Window>,
 
@@ -216,7 +218,6 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
-
 }
 
 // TODO - Merge into MasonryState?
@@ -519,6 +520,7 @@ impl MasonryState<'_> {
 
         // Get the existing surface or create a new one
         let surface = if let Some(surface) = self.surfaces.get_mut(&handle_id) {
+            #[cfg(target_os = "macos")]
             if self.resized_window == Some(handle_id) {
                 self.render_cx.on_window_resize_state_change(surface, true);
             }
@@ -552,6 +554,7 @@ impl MasonryState<'_> {
         let animation_continues = window.render_root.needs_anim();
         self.last_anim = animation_continues.then_some(now);
 
+        #[cfg(target_os = "macos")]
         if self.resized_window == Some(handle_id) {
             self.render_cx.on_window_resize_state_change(surface, true);
         }
@@ -749,13 +752,16 @@ impl MasonryState<'_> {
 
         // On macOS, interactive resizing needs special presentation behavior on Metal to avoid
         // visible jitter.
+        #[cfg(target_os = "macos")]
         match event {
             WinitWindowEvent::Resized(_) | WinitWindowEvent::RedrawRequested => {}
             _ => {
-                if let Some(resized_window_id) = self.resized_window.take() {
-                    if let Some(surface) = self.surfaces.get_mut(&resized_window_id) {
-                        self.render_cx.on_window_resize_state_change(surface, false);
-                    }
+                if let Some(surface) = self
+                    .resized_window
+                    .take()
+                    .and_then(|id| self.surfaces.get_mut(&id))
+                {
+                    self.render_cx.on_window_resize_state_change(surface, false);
                 }
             }
         }
@@ -773,9 +779,12 @@ impl MasonryState<'_> {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
             }
             WinitWindowEvent::Resized(size) => {
-                self.resized_window = Some(handle_id);
-                if let Some(surface) = self.surfaces.get_mut(&handle_id) {
-                    self.render_cx.on_window_resize_state_change(surface, true);
+                #[cfg(target_os = "macos")]
+                {
+                    self.resized_window = Some(handle_id);
+                    if let Some(surface) = self.surfaces.get_mut(&handle_id) {
+                        self.render_cx.on_window_resize_state_change(surface, true);
+                    }
                 }
 
                 window

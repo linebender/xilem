@@ -167,8 +167,9 @@ impl RenderContext {
 
     /// Handles changes of the window resizing state for a surface.
     ///
-    /// On macOS/Metal, interactive window resizing is driven by CoreAnimation transactions. During
+    /// On macOS/Metal, interactive window resizing is driven by `CoreAnimation` transactions. During
     /// that phase, enabling `present_with_transaction` avoids visible jitter.
+    #[cfg(target_os = "macos")]
     pub(crate) fn on_window_resize_state_change(&self, surface: &mut RenderSurface<'_>, resizing: bool) {
         if surface.resizing == resizing {
             return;
@@ -176,7 +177,7 @@ impl RenderContext {
 
         // SAFETY: We only mutate a backend-specific flag on the Metal HAL surface when the
         // runtime backend matches Metal. This mirrors the eframe/egui-wgpu fix.
-        #[allow(unsafe_code)]
+        #[allow(unsafe_code, reason = "We only mutate a backend-specific flag on the Metal HAL surface when the runtime backend matches Metal")]
         unsafe {
             if let Some(hal_surface) = surface.surface.as_hal::<wgpu::hal::api::Metal>() {
                 let raw = std::ptr::from_ref::<wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
