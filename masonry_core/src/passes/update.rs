@@ -445,7 +445,7 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
     let mut focus_anchor_id = root.global_state.focus_anchor;
 
     if let Some(id) = focus_anchor_id
-        && !root.is_still_interactive(id)
+        && !root.has_widget(id)
     {
         focus_anchor_id = None;
     }
@@ -559,9 +559,9 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     {
         root.global_state.next_focused_widget = None;
     }
-    // Same thing for the anchor.
+    // We are more permissive with the anchor.
     if let Some(id) = root.global_state.focus_anchor
-        && !root.is_still_interactive(id)
+        && !root.has_widget(id)
     {
         root.global_state.focus_anchor = None;
     }
