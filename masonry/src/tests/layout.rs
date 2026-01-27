@@ -39,13 +39,11 @@ fn layout_simple() {
 
     let harness = TestHarness::create(test_property_set(), widget);
 
-    let first_box_rect = harness.get_widget(tag_1).ctx().size().to_rect();
+    let first_box_size = harness.get_widget(tag_1).ctx().size();
     let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_rect();
 
-    assert_eq!(first_box_rect.x0, 0.0);
-    assert_eq!(first_box_rect.y0, 0.0);
-    assert_eq!(first_box_rect.x1, BOX_WIDTH);
-    assert_eq!(first_box_rect.y1, BOX_WIDTH);
+    assert_eq!(first_box_size.width, BOX_WIDTH);
+    assert_eq!(first_box_size.height, BOX_WIDTH);
 
     assert_eq!(first_box_paint_rect.x0, 0.0);
     assert_eq!(first_box_paint_rect.y0, 0.0);
