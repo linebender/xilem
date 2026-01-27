@@ -729,19 +729,6 @@ impl LayoutCtx<'_> {
         }
     }
 
-    #[track_caller]
-    fn assert_placed(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
-        if self.get_child_state(child).is_expecting_place_child_call {
-            debug_panic!(
-                "Error in {}: trying to call '{}' with child '{}' {} before placing it",
-                self.widget_id(),
-                method_name,
-                self.get_child_dyn(child).short_type_name(),
-                child.id(),
-            );
-        }
-    }
-
     /// Computes the size that the `child` widget wants to be.
     ///
     /// The returned size will be finite, non-negative, and in device pixels.
