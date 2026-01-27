@@ -343,12 +343,6 @@ impl WidgetState {
         self.end_point.y - self.baseline_y
     }
 
-    // TODO - Remove
-    /// The rectangle used when calculating layout with other widgets.
-    pub(crate) fn layout_rect(&self) -> Rect {
-        Rect::from_points(self.origin, self.end_point)
-    }
-
     /// The axis-aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
