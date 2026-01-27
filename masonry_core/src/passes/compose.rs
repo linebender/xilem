@@ -29,14 +29,16 @@ fn compose_widget(
         return;
     }
 
-    // the translation needs to be applied *after* applying the transform, as translation by scrolling should be within the transformed coordinate space. Same is true for the (layout) origin, to behave similar as in CSS.
+    // The translation needs to be applied *after* applying the transform,
+    // as translation by scrolling should be within the transformed coordinate space.
+    // Same is true for the aligned border-box origin, to behave similar as in CSS.
     let local_translation = state.scroll_translation + state.origin.to_vec2();
 
     state.window_transform =
         parent_window_transform * state.transform.then_translate(local_translation);
 
-    let local_rect = state.size().to_rect() + state.paint_insets;
-    state.bounding_rect = state.window_transform.transform_rect_bbox(local_rect);
+    let paint_rect = state.paint_rect();
+    state.bounding_rect = state.window_transform.transform_rect_bbox(paint_rect);
 
     let mut ctx = ComposeCtx {
         global_state,

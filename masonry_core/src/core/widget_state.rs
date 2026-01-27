@@ -84,11 +84,6 @@ pub(crate) struct WidgetState {
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
     pub(crate) paint_insets: Insets,
-    /// The computed paint rect, in local coordinates.
-    ///
-    /// It is the union of this widget's and all of its descendants'
-    /// paint rects, i.e. layout rect + paint insets.
-    pub(crate) local_paint_rect: Rect,
     /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `paint_insets`.
     pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
@@ -236,7 +231,6 @@ impl WidgetState {
             layout_size: Size::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
-            local_paint_rect: Rect::ZERO,
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
@@ -322,9 +316,9 @@ impl WidgetState {
         self.needs_layout = needs_layout;
     }
 
-    /// The paint region for this widget and all of its descendants.
+    /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
     pub(crate) fn paint_rect(&self) -> Rect {
-        self.local_paint_rect + self.origin.to_vec2()
+        (self.end_point - self.origin).to_size().to_rect() + self.paint_insets
     }
 
     /// The size of this widget.

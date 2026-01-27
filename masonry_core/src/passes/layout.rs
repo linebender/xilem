@@ -10,7 +10,7 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Axis, Insets, Point, Rect, Size};
+use vello::kurbo::{Axis, Insets, Point, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
@@ -383,7 +383,6 @@ pub(crate) fn run_layout_on(
         }
     });
 
-    state.local_paint_rect = Rect::ZERO;
     state.paint_insets = Insets::ZERO;
 
     let mut ctx = LayoutCtx {
@@ -420,10 +419,6 @@ pub(crate) fn run_layout_on(
     state.request_layout = false;
     state.set_needs_layout(false);
     state.is_expecting_place_child_call = true;
-
-    state.local_paint_rect = state
-        .local_paint_rect
-        .union(size.to_rect() + state.paint_insets);
 
     #[cfg(debug_assertions)]
     {
