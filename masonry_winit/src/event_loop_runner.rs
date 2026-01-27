@@ -371,6 +371,7 @@ impl MasonryState<'_> {
             window_id_to_handle_id: HashMap::new(),
             windows: HashMap::new(),
             surfaces: HashMap::new(),
+            #[cfg(target_os = "macos")]
             resized_window: None,
 
             clipboard_cx: ClipboardContext::new().unwrap(),
