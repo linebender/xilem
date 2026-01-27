@@ -15,12 +15,11 @@ use masonry_testing::{TestHarness, TestHarnessParams};
 fn widget_list_create(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
         let root_widget = NewWidget::new(Flex::column());
-        let harness = TestHarness::create_with(
+        TestHarness::create_with(
             default_property_set(),
             root_widget,
             TestHarnessParams::default(),
-        );
-        harness
+        )
     });
 
     bencher.bench_refs(|harness| {
@@ -69,7 +68,7 @@ fn widget_list_paint(bencher: Bencher<'_, '_>, children: u64) {
     });
 }
 
-#[divan::bench(args = [100, 1_000, 10_000, 100_000])]
+#[divan::bench(args = [100, 1_000, 10_000])]
 fn widget_list_paint_clipped(bencher: Bencher<'_, '_>, children: u64) {
     let bencher = bencher.with_inputs(|| {
         let root_widget = NewWidget::new(Flex::column());
