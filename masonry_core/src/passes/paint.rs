@@ -115,13 +115,13 @@ fn paint_widget(
 
     if !is_stashed {
         let transform = state.window_transform;
-        let bounding_rect = state.bounding_rect;
+        let bounding_box = state.bounding_box;
 
         // draw the global axis aligned bounding rect of the widget
         if global_state.debug_paint {
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
-            let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
+            let rect = bounding_box.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
         }
 
@@ -168,7 +168,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
-        let rect = Rect::from_origin_size(state.window_origin(), state.size());
+        let rect =
+            Rect::from_origin_size(state.border_box_window_origin(), state.border_box_size());
 
         complete_scene.fill(
             Fill::NonZero,

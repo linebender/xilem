@@ -95,7 +95,7 @@ fn resolve_len_def(
     result
 }
 
-/// Resolves the widget's desired length on the given `axis`.
+/// Resolves the widget's preferred border-box length on the given `axis`.
 ///
 /// The returned length will be finite, non-negative, and in device pixels.
 ///
@@ -184,7 +184,7 @@ pub(crate) fn resolve_length(
     length.sanitize("measured length")
 }
 
-/// Resolves the widget's desired size.
+/// Resolves the widget's preferred border-box size.
 ///
 /// The returned size will be finite, non-negative, and in device pixels.
 ///
@@ -292,6 +292,8 @@ pub(crate) fn resolve_size(
 /// Run [`Widget::layout`] method on the given widget.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
 ///
+/// The provided `size` will be the given widget's chosen border-box size.
+///
 /// The provided `size` must be finite, non-negative, and in device pixels.
 /// Non-finite or negative length will fall back to zero with a logged warning.
 ///
@@ -304,12 +306,12 @@ pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     node: ArenaMut<'_, WidgetArenaNode>,
-    size: Size,
+    chosen_size: Size,
 ) {
-    // Ensure the given size is valid.
-    let size = Size::new(
-        size.width.sanitize("layout size width"),
-        size.height.sanitize("layout size height"),
+    // Ensure the chosen size is sanitized.
+    let chosen_size = Size::new(
+        chosen_size.width.sanitize("chosen border-box size width"),
+        chosen_size.height.sanitize("chosen border-box size height"),
     );
 
     let mut children = node.children;
@@ -334,16 +336,18 @@ pub(crate) fn run_layout_on(
         );
         state.origin = Point::ZERO;
         state.end_point = Point::ZERO;
-        state.layout_size = Size::ZERO;
+        state.layout_border_box_size = Size::ZERO;
         return;
     }
 
-    if !state.needs_layout() && state.layout_size == size {
+    let border_box_size = chosen_size;
+
+    if !state.needs_layout() && state.layout_border_box_size == border_box_size {
         // We reset this to false to mark that the current widget has been visited.
         state.request_layout = false;
         return;
     }
-    state.layout_size = size;
+    state.layout_border_box_size = border_box_size;
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
     state.needs_paint = true;
@@ -356,7 +360,10 @@ pub(crate) fn run_layout_on(
     state.request_accessibility = true;
 
     if trace {
-        trace!("Computing layout with size {:?}", size);
+        trace!(
+            "Computing layout with border-box size {:?}",
+            border_box_size
+        );
     }
 
     // Again, these two blocks read `is_explicitly_stashed` instead of `is_stashed`
@@ -396,7 +403,7 @@ pub(crate) fn run_layout_on(
         map: properties,
         default_map: default_properties.for_widget(widget.type_id()),
     };
-    widget.layout(&mut ctx, &props, size);
+    widget.layout(&mut ctx, &props, border_box_size);
 
     // Make sure the paint insets cover the shadow insets
     let shadow = props.get::<BoxShadow>();
@@ -413,7 +420,7 @@ pub(crate) fn run_layout_on(
     if trace {
         trace!(
             "Computed layout: size={}, baseline={}, insets={:?}",
-            size, state.baseline_offset, state.paint_insets,
+            border_box_size, state.layout_baseline_offset, state.paint_insets,
         );
     }
 
@@ -481,9 +488,10 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 }
 
 // --- MARK: PLACE WIDGET
+/// Places the child at `origin` in its parent's border-box coordinate space.
 pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
-    let end_point = origin + child_state.layout_size.to_vec2();
-    let baseline_y = end_point.y - child_state.baseline_offset;
+    let end_point = origin + child_state.layout_border_box_size.to_vec2();
+    let baseline_y = end_point.y - child_state.layout_baseline_offset;
     // TODO - Account for display scale in pixel snapping
     // See https://github.com/linebender/xilem/issues/1264
     let origin = origin.round();
@@ -541,7 +549,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     root.global_state.fonts_changed = false;
 
     if let WindowSizePolicy::Content = root.size_policy {
-        let size = root_node.item.state.layout_size;
+        // We use the aligned border-box size, which means that transforms won't affect window size.
+        let size = root_node.item.state.border_box_size();
         // TODO: Remove HACK: Until scale factor rework happens, we still need to scale here.
         //       https://github.com/linebender/xilem/issues/1264
         let new_size =
