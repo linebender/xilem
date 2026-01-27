@@ -208,7 +208,7 @@ fn pixel_snapping() {
         let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
         ctx.run_layout(child, child_size);
         ctx.place_child(child, pos);
-        ctx.set_baseline_offset(5.);
+        ctx.set_baseline_offset(5.1);
     });
     let parent_tag = WidgetTag::named("parent");
     let parent = NewWidget::new_with_tag(parent, parent_tag);
