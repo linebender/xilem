@@ -117,7 +117,7 @@ impl Widget for Canvas {
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
         }
         // We clip the contents we draw.
-        ctx.set_clip_path(size.to_rect());
+        ctx.set_clips_contents(true);
     }
 
     fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {

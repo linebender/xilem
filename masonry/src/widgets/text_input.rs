@@ -326,13 +326,10 @@ impl Widget for TextInput {
             ctx.place_child(&mut self.placeholder, child_origin);
         }
 
-        if self.clip {
-            // TODO: We actually want to clip space not size, but we can't here right now.
-            //       Need either a set_clip_path_for_specific_child or TextArea clip support.
-            ctx.set_clip_path(size.to_rect());
-        } else {
-            ctx.clear_clip_path();
-        }
+        // TODO - Ideally, we'd want a "tighter" clip:
+        // Right now, if padding is non-zero, text will start some space away from
+        // the left border box, but will be clipped exactly at the right border box.
+        ctx.set_clips_contents(self.clip);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

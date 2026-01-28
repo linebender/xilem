@@ -71,7 +71,9 @@ fn compose_widget(
         );
         let parent_bounding_rect = parent_state.bounding_rect;
 
-        if let Some(child_bounding_rect) = parent_state.clip_child(node.item.state.bounding_rect) {
+        if let Some(child_bounding_rect) =
+            parent_state.clipped_child_rect(node.item.state.bounding_rect)
+        {
             parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
         }
 

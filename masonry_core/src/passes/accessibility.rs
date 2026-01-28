@@ -121,7 +121,7 @@ fn build_access_node(
     if ctx.is_disabled() {
         node.set_disabled();
     }
-    if ctx.widget_state.clip_path.is_some() {
+    if ctx.widget_state.clips_contents {
         node.set_clips_children();
     }
     if ctx.accepts_focus() && !ctx.is_disabled() {
