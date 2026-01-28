@@ -232,7 +232,10 @@ fn click_anchors_focus() {
         ))
         .with_fixed(NewWidget::new(Button::with_text("")))
         .with_fixed(NewWidget::new(Button::with_text("")))
-        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_fixed(NewWidget::new_with_tag(
+            Button::with_text("Click me!"),
+            child_3,
+        ))
         .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_4))
         .with_fixed(NewWidget::new(Button::with_text("")))
         .with_auto_id();
@@ -243,13 +246,18 @@ fn click_anchors_focus() {
     let child_4_id = harness.get_widget(child_4).id();
     let other_id = harness.get_widget(other).id();
 
-    // Clicking a button doesn't focus it.
+    // Clicking a disabled button doesn't focus it.
+    harness.set_disabled(child_3, true);
     harness.mouse_click_on(child_3_id);
     assert_eq!(harness.focused_widget_id(), None);
 
     // But the next tab event focuses its neighbor.
     harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
     assert_eq!(harness.focused_widget_id(), Some(child_4_id));
+
+    // TODO - Remove use of mouse_move_to_unchecked after
+    // https://github.com/linebender/xilem/issues/1620
+    // is resolved.
 
     // Clicking another non-focusable widget clears focus.
     harness.mouse_move_to_unchecked(other_id);

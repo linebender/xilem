@@ -207,7 +207,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     if matches!(event, PointerEvent::Down { .. })
         && let Some(target_widget_id) = target_widget_id
     {
-        // The next tab event assign focus around this widget.
+        // The next tab event will assign focus around this widget.
         root.global_state.focus_anchor = Some(target_widget_id);
 
         // If we click outside of the focused widget, we clear the focus.
