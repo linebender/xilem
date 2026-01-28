@@ -275,11 +275,17 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
-    /// A new [layer](crate::doc::masonry_concepts#layers) should be created with the widget as root.
+    /// A new [layer] should be created with the widget as root.
+    ///
+    /// The given [`Point`] must be in the window's coordinate space.
+    ///
+    /// [layer]: crate::doc::masonry_concepts#layers
     NewLayer(LayerType, NewWidget<dyn Widget>, Point),
     /// The layer with the given widget as root should be removed.
     RemoveLayer(WidgetId),
     /// The layer with the given widget as root should be repositioned to the specified point.
+    ///
+    /// The given [`Point`] must be in the window's coordinate space.
     RepositionLayer(WidgetId, Point),
 }
 
@@ -674,6 +680,8 @@ impl RenderRoot {
     }
 
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
+    ///
+    /// The given `pos` must be in the window's coordinate space.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
         debug!("added layer to stack");
         mutate_widget(self, self.root_id(), |mut layer_stack| {
@@ -702,6 +710,8 @@ impl RenderRoot {
     }
 
     /// Repositions the layer with the given widget as root.
+    ///
+    /// The given `new_origin` must be in the window's coordinate space.
     ///
     /// The base layer cannot be repositioned.
     ///

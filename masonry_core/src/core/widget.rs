@@ -462,8 +462,8 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This will be called when the mouse moves or [`request_cursor_icon_change`](crate::core::MutateCtx::request_cursor_icon_change) is called.
     ///
-    /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
-    /// window).
+    /// **pos** - the mouse position in the window's coordinate space,
+    /// e.g. `(0,0)` is the top-left corner of the window.
     fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {
         CursorIcon::Default
     }
@@ -478,8 +478,8 @@ pub trait Widget: AsDynWidget + Any {
     /// Has a default implementation that can be overridden to search children more efficiently.
     /// Custom implementations must uphold the conditions outlined above.
     ///
-    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
-    /// window).
+    /// **pos** - the position is in the window's coordinate space,
+    /// e.g. `(0,0)` is the top-left corner of the window.
     fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,

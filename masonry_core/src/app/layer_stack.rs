@@ -70,6 +70,10 @@ impl LayerStack {
 // --- MARK: IMPL WIDGETMUT
 impl LayerStack {
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
+    ///
+    /// The given `pos` must be in this `LayerStack`'s content-box coordinate space.
+    /// If this `LayerStack` is used as the root widget with no borders, padding, or transforms,
+    /// then that coordinate space will exactly match the window's coordinate space.
     pub(crate) fn add_layer(
         this: &mut WidgetMut<'_, Self>,
         root: NewWidget<impl Widget + ?Sized>,
@@ -122,6 +126,10 @@ impl LayerStack {
     }
 
     /// Repositions the layer with the given widget as root.
+    ///
+    /// The given `new_origin` must be in this `LayerStack`'s content-box coordinate space.
+    /// If this `LayerStack` is used as the root widget with no borders, padding, or transforms,
+    /// then that coordinate space will exactly match the window's coordinate space.
     ///
     /// The base layer cannot be repositioned.
     ///
