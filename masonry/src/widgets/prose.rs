@@ -156,11 +156,7 @@ impl Widget for Prose {
         ctx.run_layout(&mut self.text, size);
         ctx.place_child(&mut self.text, Point::ORIGIN);
 
-        if self.clip {
-            ctx.set_clip_path(size.to_rect());
-        } else {
-            ctx.clear_clip_path();
-        }
+        ctx.set_clips_contents(self.clip);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {
