@@ -1,9 +1,6 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! An Image widget.
-//! Please consider using SVG and the SVG widget as it scales much better.
-
 use std::any::TypeId;
 
 use accesskit::{Node, Role};

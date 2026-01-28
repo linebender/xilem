@@ -1,8 +1,6 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! An animated spinner widget.
-
 use std::any::TypeId;
 use std::f64::consts::PI;
 
