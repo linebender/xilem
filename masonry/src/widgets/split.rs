@@ -1,8 +1,6 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
-
 use accesskit::{ActionData, Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};

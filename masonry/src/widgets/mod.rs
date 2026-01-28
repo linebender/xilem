@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Common widgets.
-
 mod align;
 mod button;
 mod canvas;

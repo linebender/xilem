@@ -1,8 +1,6 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A label with support for animated variable font properties
-
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};

@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A widget that arranges its children in a one-dimensional array.
-
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
