@@ -11,7 +11,7 @@ use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Size};
+use vello::kurbo::{Axis, Point, Shape, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
@@ -542,7 +542,11 @@ pub fn find_widget_under_pointer<'c>(
 
     let local_pos = ctx.window_transform().inverse() * pos;
 
-    let is_inside_clip_shape = ctx.size().to_rect().contains(local_pos);
+    let is_inside_clip_shape = if let Some(clip_shape) = ctx.clip_shape() {
+        clip_shape.contains(local_pos)
+    } else {
+        ctx.size().to_rect().contains(local_pos)
+    };
 
     if ctx.clips_contents() && !is_inside_clip_shape {
         return None;

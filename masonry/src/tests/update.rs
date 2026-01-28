@@ -4,10 +4,12 @@
 use std::sync::mpsc;
 
 use assert_matches::assert_matches;
+use masonry_core::properties::CornerRadius;
 use masonry_testing::{
     DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
     assert_debug_panics,
 };
+use vello::kurbo::Vec2;
 
 use crate::core::pointer::{PointerButton, PointerEvent};
 use crate::core::{
@@ -16,7 +18,7 @@ use crate::core::{
 };
 use crate::layout::Length;
 use crate::theme::test_property_set;
-use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
+use crate::widgets::{Button, ButtonPress, Flex, Label, SizedBox, TextArea};
 
 // TREE
 
@@ -683,6 +685,31 @@ fn change_hovered_when_widget_changes() {
     // We reverted the child to the old size. It should be hovered again.
     assert!(harness.get_widget(child_tag).ctx().is_hovered());
     assert!(!harness.get_widget(parent_tag).ctx().is_hovered());
+}
+
+#[test]
+fn click_outside_clip_shape() {
+    let button = NewWidget::new_with_props(Button::with_text("button"), CornerRadius::all(10.0));
+
+    let mut harness = TestHarness::create(test_property_set(), button);
+
+    let button_rect = harness.root_widget().ctx().bounding_rect();
+
+    harness.mouse_move(button_rect.center());
+    assert!(harness.root_widget().ctx().is_hovered());
+
+    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_release(PointerButton::Primary);
+    assert_matches!(harness.pop_action::<ButtonPress>(), Some((_, _)));
+
+    // If we put our mouse at the top-left of the button, it's outside of
+    // the rounded corner.
+    harness.mouse_move(button_rect.origin() + Vec2::new(0.1, 0.1));
+    assert!(!harness.root_widget().ctx().is_hovered());
+
+    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_release(PointerButton::Primary);
+    assert_matches!(harness.pop_action::<ButtonPress>(), None);
 }
 
 // STATUS FLAGS

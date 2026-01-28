@@ -391,6 +391,7 @@ impl Widget for Grid {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let border_radius = props.get::<CornerRadius>();
         let gap = props.get::<Gap>();
 
         let space = border.size_down(size, scale);
@@ -418,6 +419,10 @@ impl Widget for Grid {
             let child_origin = border.origin_down(child_origin, scale);
             let child_origin = padding.origin_down(child_origin, scale);
             ctx.place_child(&mut child.widget, child_origin);
+        }
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
         }
     }
 

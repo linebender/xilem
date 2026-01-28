@@ -98,7 +98,11 @@ fn paint_widget(
         };
 
         if clips_contents {
-            complete_scene.push_clip_layer(Fill::NonZero, transform, &state.size().to_rect());
+            if let Some(clip) = &state.clip_shape {
+                complete_scene.push_clip_layer(Fill::NonZero, transform, clip);
+            } else {
+                complete_scene.push_clip_layer(Fill::NonZero, transform, &state.size().to_rect());
+            }
         }
 
         complete_scene.append(scene, Some(transform));

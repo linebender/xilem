@@ -302,6 +302,7 @@ impl Widget for TextInput {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let border_radius = props.get::<CornerRadius>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -318,6 +319,10 @@ impl Widget for TextInput {
         let child_baseline = border.baseline_up(child_baseline, scale);
         let child_baseline = padding.baseline_up(child_baseline, scale);
         ctx.set_baseline_offset(child_baseline);
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
+        }
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);

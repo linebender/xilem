@@ -3,6 +3,8 @@
 
 use std::any::TypeId;
 
+use vello::kurbo::{RoundedRect, Size};
+
 use crate::core::{Property, UpdateCtx};
 
 /// The radius of a widget's box corners, in logical pixels.
@@ -23,6 +25,15 @@ impl CornerRadius {
     /// Creates new `CornerRadius` with given value.
     pub const fn all(radius: f64) -> Self {
         Self { radius }
+    }
+
+    /// Returns a rounded rect with the given `size`, and a corner radius matching self.
+    ///
+    /// The provided `size` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    pub fn shape(&self, size: Size) -> RoundedRect {
+        size.to_rect().to_rounded_rect(self.radius)
     }
 
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).

@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use tracing::Span;
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, BezPath, Insets, Point, Rect, Size, Vec2};
 
 use crate::core::{WidgetId, WidgetOptions};
 use crate::layout::MeasurementCache;
@@ -109,11 +109,10 @@ pub(crate) struct WidgetState {
     /// an IME, in local coordinates.
     pub(crate) ime_area: Option<Rect>,
 
-    // TODO - Add clip_shape
     // TODO - Use more efficient type and avoid allocating by default.
-    // /// Shape that explicitly restricts pointer events.
-    // pub(crate) clip_shape: Option<BezPath>,
-    //
+    /// Shape that explicitly restricts pointer events.
+    pub(crate) clip_shape: Option<BezPath>,
+
     /// Whether the widget and its children's scenes are clipped by the
     /// [clip shape](crate::doc::masonry_concepts#clip-shape).
     pub(crate) clips_contents: bool,
@@ -239,6 +238,7 @@ impl WidgetState {
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,
+            clip_shape: None,
             clips_contents: false,
             scroll_translation: Vec2::ZERO,
             transform_changed: false,

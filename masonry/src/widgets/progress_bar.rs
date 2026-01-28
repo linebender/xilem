@@ -188,6 +188,7 @@ impl Widget for ProgressBar {
         let scale = 1.0;
 
         let border = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
 
         let space = border.size_down(size, scale);
 
@@ -196,6 +197,10 @@ impl Widget for ProgressBar {
 
         let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.label, child_origin);
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

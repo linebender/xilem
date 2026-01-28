@@ -304,6 +304,7 @@ impl Widget for SizedBox {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let border_radius = props.get::<CornerRadius>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -319,6 +320,10 @@ impl Widget for SizedBox {
         let child_baseline = border.baseline_up(child_baseline, scale);
         let child_baseline = padding.baseline_up(child_baseline, scale);
         ctx.set_baseline_offset(child_baseline);
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

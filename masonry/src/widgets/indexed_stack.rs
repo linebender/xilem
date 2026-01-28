@@ -300,6 +300,7 @@ impl Widget for IndexedStack {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let border_radius = props.get::<CornerRadius>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -322,6 +323,10 @@ impl Widget for IndexedStack {
         let child_bottom = child_origin.y + child_size.height;
         let bottom_gap = size.height - child_bottom;
         ctx.set_baseline_offset(child_baseline + bottom_gap);
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

@@ -183,7 +183,8 @@ Widgets have a shape, usually one that matches their visual appearance, which ha
 - If the widget is set to clip its contents, pointer events outside the clip shape won't affect the children either.
 - If the widget is set to clip its contents, its scene and the children's scenes will be painted inside of the clip shape.
 
-Currently, the clip shape is hardcoded to be the layout rect.
+By default, the clip shape is the layout rect.
+You can use [`LayoutCtx::set_clip_shape`] to pass a custom clip shape.
 
 <!-- TODO: Rename to "widget shape" instead? -->
 <!-- Need a better name. -->
@@ -257,5 +258,6 @@ DPI-aware pixel snapping is a future feature.
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
+[`LayoutCtx::set_clip_shape`]: crate::core::LayoutCtx::set_clip_shape
 [`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event
 [`RenderRoot`]: crate::app::RenderRoot

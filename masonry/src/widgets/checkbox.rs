@@ -260,6 +260,7 @@ impl Widget for Checkbox {
 
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
+        let border_radius = props.get::<CornerRadius>();
 
         let space = border.size_down(size, scale);
         let space = padding.size_down(space, scale);
@@ -282,6 +283,10 @@ impl Widget for Checkbox {
         let label_bottom = label_origin.y + label_size.height;
         let bottom_gap = size.height - label_bottom;
         ctx.set_baseline_offset(label_baseline + bottom_gap);
+
+        if border_radius.radius != 0. {
+            ctx.set_clip_shape(border_radius.shape(size));
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
