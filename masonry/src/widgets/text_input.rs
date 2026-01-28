@@ -156,7 +156,6 @@ impl HasProperty<BorderColor> for TextInput {}
 impl HasProperty<FocusedBorderColor> for TextInput {}
 impl HasProperty<BorderWidth> for TextInput {}
 impl HasProperty<CornerRadius> for TextInput {}
-impl HasProperty<Padding> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
 impl HasProperty<UnfocusedSelectionColor> for TextInput {}
@@ -177,7 +176,6 @@ impl Widget for TextInput {
         FocusedBorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {

@@ -3,9 +3,12 @@
 
 use std::any::TypeId;
 
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, UpdateCtx, Widget};
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::Length;
+
+// Every widget has padding.
+impl<W: Widget> HasProperty<Padding> for W {}
 
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -122,8 +125,10 @@ impl Padding {
 }
 
 impl Padding {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+    /// Requests layout if this property changed.
+    ///
+    /// This is called by Masonry during widget properties mutation.
+    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
             return;
         }
@@ -147,7 +152,7 @@ impl Padding {
     ///
     /// The provided `size` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn size_down(&self, size: Size, scale: f64) -> Size {
         let width = (size.width - Length::px(self.left + self.right).dp(scale)).max(0.);
         let height = (size.height - Length::px(self.top + self.bottom).dp(scale)).max(0.);
@@ -160,7 +165,7 @@ impl Padding {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
         baseline + Length::px(self.bottom).dp(scale)
     }
@@ -171,7 +176,7 @@ impl Padding {
     ///
     /// The provided `baseline` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
         baseline - Length::px(self.bottom).dp(scale)
     }
@@ -182,7 +187,7 @@ impl Padding {
     ///
     /// The provided `origin` must be in device pixels.
     ///
-    /// Helper function to be called in [`Widget::layout`](crate::core::Widget::layout).
+    /// Helper function to be called in [`Widget::layout`].
     pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
         let x = Length::px(self.left).dp(scale);
         let y = Length::px(self.top).dp(scale);
