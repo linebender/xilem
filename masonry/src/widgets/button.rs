@@ -125,6 +125,7 @@ impl Widget for Button {
     ) {
         match event {
             PointerEvent::Down(..) => {
+                ctx.request_focus();
                 ctx.capture_pointer();
                 // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
@@ -389,6 +390,19 @@ mod tests {
             harness.pop_action(),
             Some((ButtonPress { button: None }, button_id))
         );
+    }
+
+    #[test]
+    fn mouse_down_requests_focus() {
+        let widget = NewWidget::new(Button::with_text("Hello"));
+        let mut harness = TestHarness::create(test_property_set(), widget);
+        let button_id = harness.root_id();
+
+        harness.focus_on(None);
+        harness.mouse_move_to(button_id);
+        harness.mouse_button_press(PointerButton::Primary);
+
+        assert_eq!(harness.focused_widget_id(), Some(button_id));
     }
 
     #[test]
