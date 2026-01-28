@@ -22,6 +22,8 @@ fn paint_widget(
     complete_scene: &mut Scene,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene)>,
     node: ArenaMut<'_, WidgetArenaNode>,
+    clip_rect: Rect,
+    is_offscreen: bool,
 ) {
     let mut children = node.children;
     let widget = &mut *node.item.widget;
@@ -32,10 +34,13 @@ fn paint_widget(
     let trace = global_state.trace.paint;
     let _span = enter_span_if(trace, state);
 
-    // Note: At this point we could short-circuit if is_stashed is true,
-    // but we deliberately avoid doing that to avoid creating zombie flags.
-    // (See WidgetState doc.)
     let is_stashed = state.is_stashed;
+
+    // Note: Being offscreen alone isn't enough to skip this pass.
+    // We still want to reset needs_paint and request_paint flags.
+    if !state.needs_paint && (is_offscreen || is_stashed) {
+        return;
+    }
 
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
@@ -87,8 +92,17 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
-    let has_clip = state.clip_path.is_some();
-    if !is_stashed {
+    let mut inner_clip_rect = clip_rect;
+    let mut clip_is_offscreen = is_offscreen;
+    if let Some(inner_clip) = state.clip_rect() {
+        if inner_clip.overlaps(clip_rect) {
+            inner_clip_rect = clip_rect.intersect(inner_clip);
+        } else {
+            clip_is_offscreen = true;
+        }
+    }
+
+    if !is_stashed && !clip_is_offscreen {
         let transform = state.window_transform;
         let Some((scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
@@ -106,22 +120,25 @@ fn paint_widget(
 
     let parent_state = &mut *state;
     recurse_on_children(id, widget, children, |mut node| {
-        // TODO: We could skip painting children outside the parent clip path.
-        // There's a few things to consider if we do:
-        // - Some widgets can paint outside of their layout box.
-        // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
-        // - We still want to reset needs_paint and request_paint flags.
         paint_widget(
             global_state,
             default_properties,
             complete_scene,
             scene_cache,
             node.reborrow_mut(),
+            inner_clip_rect,
+            clip_is_offscreen,
         );
         parent_state.merge_up(&mut node.item.state);
     });
 
-    if !is_stashed {
+    if !is_stashed && !clip_is_offscreen {
+        if state.clip_path.is_some() {
+            complete_scene.pop_layer();
+        }
+    }
+
+    if !is_stashed && !is_offscreen {
         let transform = state.window_transform;
         let bounding_rect = state.bounding_rect;
 
@@ -131,10 +148,6 @@ fn paint_widget(
             let color = get_debug_color(id.to_raw());
             let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
-        }
-
-        if has_clip {
-            complete_scene.pop_layer();
         }
 
         let Some((_, postfix_scene)) = &mut scene_cache.get(&id) else {
@@ -157,6 +170,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
+    let screen_clip = root.get_kurbo_size().to_rect();
     let root_node = root.widget_arena.get_node_mut(root.root_id());
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
@@ -169,6 +183,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &mut complete_scene,
         &mut scene_cache,
         root_node,
+        screen_clip,
+        false,
     );
     root.global_state.scene_cache = scene_cache;
 
