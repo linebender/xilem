@@ -403,7 +403,8 @@ mod tests {
     const HARNESS_PARAMS: TestHarnessParams = {
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = Size::new(150.0, 40.0);
-        params.root_padding = 15;
+        params.padding_color = TestHarnessParams::DEFAULT_PADDING_COLOR;
+        params.padding_pixels = TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS;
         params
     };
 
