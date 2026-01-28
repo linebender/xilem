@@ -778,6 +778,28 @@ impl<W: Widget> TestHarness<W> {
         });
     }
 
+    /// Clicks the given widget.
+    ///
+    /// This will send an accesskit [`Click`] action to the widget,
+    /// which may have different behavior to a normal mouse click.
+    ///
+    /// Unlike [`Self::mouse_click_on`], the event will be routed to the target widget
+    /// event if it's not visible, or hidden behind other widgets.
+    ///
+    /// # Panics
+    ///
+    /// - If the widget is not found in the tree.
+    ///
+    /// [`Click`]: masonry_core::accesskit::Action::Click
+    #[track_caller]
+    pub fn accessibility_click_on(&mut self, id: WidgetId) {
+        self.render_root.handle_access_event(ActionRequest {
+            action: Action::Click,
+            target: id.to_raw().into(),
+            data: None,
+        });
+    }
+
     // TODO - Handle complicated IME
     // TODO - Mock Winit keyboard events
     /// Sends a [`TextEvent`] for each character in the given string.
