@@ -80,7 +80,7 @@ fn paint_widget(
     let transform = state
         .window_transform
         .pre_translate(state.border_box_translation());
-    let has_clip = state.clip_path.is_some();
+    let clips_contents = state.clips_contents;
     if !is_stashed {
         let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
@@ -91,9 +91,10 @@ fn paint_widget(
 
         complete_scene.append(pre_scene, Some(transform));
 
-        if let Some(clip) = state.clip_path {
-            // The clip path is stored in border-box space, so need just window transform.
-            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip);
+        if clips_contents {
+            let clip_shape = state.border_box_size().to_rect();
+            // The clip shape is in border-box space, so need just window transform.
+            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip_shape);
         }
 
         complete_scene.append(scene, Some(transform));
@@ -127,7 +128,7 @@ fn paint_widget(
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
         }
 
-        if has_clip {
+        if clips_contents {
             complete_scene.pop_layer();
         }
 

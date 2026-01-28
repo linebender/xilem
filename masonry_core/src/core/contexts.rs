@@ -941,45 +941,30 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_border_box_size
     }
 
-    /// Sets the widget's clip path in the widget's content-box coordinate space.
+    /// Sets whether the [clip shape] is applied to the widget and its children.
     ///
-    /// A widget's clip path will have two effects:
+    /// A widget's clip shape will have two effects:
     /// - It serves as a mask for painting operations of this widget and its children.
     ///   Note that while all painting done by children will be clipped by this path,
     ///   only the painting done in [`paint`] by this widget itself will be clipped.
     ///   The remaining painting done in [`pre_paint`] and [`post_paint`] will not be clipped.
-    /// - Pointer events must be inside this path to reach the widget's children.
+    /// - Pointer events must be inside that shape to reach the widget's children.
     ///
     /// [`paint`]: Widget::paint
     /// [`pre_paint`]: Widget::pre_paint
     /// [`post_paint`]: Widget::post_paint
-    pub fn set_clip_path(&mut self, path: Rect) {
-        // Translate the clip path to the widget's border-box coordinate space.
-        let path = path + self.widget_state.border_box_translation();
-        // We intentionally always log this because clip paths are:
-        // 1) Relatively rare in the tree
-        // 2) An easy potential source of items not being visible when expected
-        trace!("set_clip_path {path:?}");
-        self.widget_state.clip_path = Some(path);
-        // TODO - Updating the clip path may have
-        // other knock-on effects we'd need to document.
+    /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
+    pub fn set_clips_contents(&mut self, clips: bool) {
+        self.widget_state.clips_contents = clips;
+
         self.widget_state.request_accessibility = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
+        self.global_state.needs_pointer_pass = true;
     }
 
-    /// Removes the widget's clip path.
-    ///
-    /// See [`LayoutCtx::set_clip_path`] for details.
-    pub fn clear_clip_path(&mut self) {
-        trace!("clear_clip_path");
-        self.widget_state.clip_path = None;
-        // TODO - Updating the clip path may have
-        // other knock-on effects we'd need to document.
-        self.widget_state.request_accessibility = true;
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.needs_paint = true;
-    }
+    // TODO - Add set_clip_shape(impl Shape) method
+    // TODO - Add clear_clip_shape() method
 }
 
 impl ComposeCtx<'_> {
@@ -1139,16 +1124,12 @@ impl_context_method!(
             border_box_baseline - self.widget_state.border_box_insets.y1
         }
 
-        /// The clip path of the widget, if any was set.
-        ///
-        /// The returned clip path will be in this widget's content-box coordinate space.
+        /// Whether the children clips its own contents and that of its children.
         ///
         /// For more information, see
-        /// [`LayoutCtx::set_clip_path`](crate::core::LayoutCtx::set_clip_path).
-        pub fn clip_path(&self) -> Option<Rect> {
-            // Translate the clip path to the widget's content-box coordinate space.
-            let translation = self.widget_state.border_box_translation();
-            self.widget_state.clip_path.map(|path| path - translation)
+        /// [`LayoutCtx::set_clips_contents`](crate::core::LayoutCtx::set_clips_contents).
+        pub fn clips_contents(&self) -> bool {
+            self.widget_state.clips_contents
         }
 
         /// Returns the [`Vec2`] for translating between this widget's
