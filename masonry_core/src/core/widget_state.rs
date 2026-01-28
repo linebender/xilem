@@ -95,20 +95,6 @@ pub(crate) struct WidgetState {
     /// The pixel-snapped position of the baseline, computed from `baseline_offset`
     pub(crate) baseline_y: f64,
 
-    /// Tracks whether widget gets pointer events.
-    /// Should be immutable after `WidgetAdded` event.
-    pub(crate) accepts_pointer_interaction: bool,
-    /// Tracks whether widget gets text focus.
-    /// Should be immutable after `WidgetAdded` event.
-    pub(crate) accepts_focus: bool,
-
-    /// Tracks whether widget is eligible for IME events.
-    /// Should be immutable after `WidgetAdded` event.
-    pub(crate) accepts_text_input: bool,
-    /// The area of the widget that is being edited by
-    /// an IME, in local coordinates.
-    pub(crate) ime_area: Option<Rect>,
-
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
     // efficiently hold an arbitrary shape.
@@ -125,8 +111,23 @@ pub(crate) struct WidgetState {
     /// The `transform` or `scroll_translation` has changed.
     pub(crate) transform_changed: bool,
 
+    // --- INTERACTIONS ---
     /// The `TypeId` of the widget's `Widget::Action` type.
     pub(crate) action_type: TypeId,
+
+    /// Tracks whether widget gets pointer events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_pointer_interaction: bool,
+    /// Tracks whether widget gets text focus.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_focus: bool,
+
+    /// Tracks whether widget is eligible for IME events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) accepts_text_input: bool,
+    /// The area of the widget that is being edited by
+    /// an IME, in local coordinates.
+    pub(crate) ime_area: Option<Rect>,
 
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
@@ -226,33 +227,31 @@ impl WidgetState {
     ) -> Self {
         Self {
             id,
+
             origin: Point::ORIGIN,
             end_point: Point::ORIGIN,
             layout_size: Size::ZERO,
-            is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
+            bounding_rect: Rect::ZERO,
+            baseline_offset: 0.0,
+            baseline_y: 0.0,
+            clip_path: Option::default(),
+            transform: options.transform,
+            window_transform: Affine::IDENTITY,
+            scroll_translation: Vec2::ZERO,
+            transform_changed: false,
+
+            action_type,
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,
-            clip_path: Option::default(),
-            scroll_translation: Vec2::ZERO,
-            transform_changed: false,
-            action_type,
-            is_explicitly_disabled: options.disabled,
-            is_explicitly_stashed: false,
-            is_disabled: false,
-            is_stashed: false,
-            baseline_offset: 0.0,
-            baseline_y: 0.0,
-            measurement_cache: MeasurementCache::new(),
+
             is_new: true,
-            has_hovered: false,
-            is_hovered: false,
-            has_active: false,
-            is_active: false,
+            is_expecting_place_child_call: false,
             request_layout: true,
             needs_layout: true,
+            measurement_cache: MeasurementCache::new(),
             request_compose: true,
             needs_compose: true,
             request_paint: true,
@@ -260,22 +259,29 @@ impl WidgetState {
             needs_paint: true,
             request_accessibility: true,
             needs_accessibility: true,
-            has_focus_target: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
             needs_update_stashed: true,
-            children_changed: true,
             descendant_is_focusable: false,
             needs_update_focusable: true,
+            children_changed: true,
+
+            is_explicitly_disabled: options.disabled,
+            is_disabled: false,
+            is_explicitly_stashed: false,
+            is_stashed: false,
+            has_hovered: false,
+            is_hovered: false,
+            has_active: false,
+            is_active: false,
+            has_focus_target: false,
+
+            trace_span: Span::none(),
             #[cfg(debug_assertions)]
             widget_name,
             #[cfg(debug_assertions)]
             action_type_name,
-            window_transform: Affine::IDENTITY,
-            bounding_rect: Rect::ZERO,
-            trace_span: Span::none(),
-            transform: options.transform,
         }
     }
 
