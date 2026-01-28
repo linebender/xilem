@@ -42,3 +42,8 @@ Simple image example.
 ## `layers`
 
 Demonstration of the layer system with a simple tooltip.
+
+
+## `gallery`
+
+A simple widget gallery showcasing a few common widgets and the "driver + mutate" architecture.
