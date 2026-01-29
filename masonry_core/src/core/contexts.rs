@@ -904,12 +904,14 @@ impl LayoutCtx<'_> {
     ///
     /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
     pub fn set_clips_contents(&mut self, clips: bool) {
-        self.widget_state.clips_contents = clips;
+        if self.widget_state.clips_contents != clips {
+            self.widget_state.clips_contents = clips;
 
-        self.widget_state.request_accessibility = true;
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.needs_paint = true;
-        self.global_state.needs_pointer_pass = true;
+            self.widget_state.request_accessibility = true;
+            self.widget_state.needs_accessibility = true;
+            self.widget_state.needs_paint = true;
+            self.global_state.needs_pointer_pass = true;
+        }
     }
 
     // TODO - Add set_clip_shape(impl Shape) method
@@ -1045,7 +1047,7 @@ impl_context_method!(
             self.widget_state.bounding_rect()
         }
 
-        /// Whether the children clips its own contents and that of its children.
+        /// Whether the widget clips its own contents and that of its children.
         ///
         /// For more information, see
         /// [`LayoutCtx::set_clips_contents`](crate::core::LayoutCtx::set_clips_contents).
