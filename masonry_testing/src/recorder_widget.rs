@@ -83,6 +83,8 @@ pub enum Record {
     Layout(Size),
     /// Compose.
     Compose,
+    /// Background paint.
+    PrePaint,
     /// Paint.
     Paint,
     /// Paint after children.
@@ -229,6 +231,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         self.recording.push(Record::Compose);
         self.child.compose(ctx);
+    }
+
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        self.recording.push(Record::PrePaint);
+        self.child.pre_paint(ctx, props, scene);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

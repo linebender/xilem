@@ -1247,6 +1247,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     /// [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
+        self.widget_state.request_pre_paint = true;
         self.widget_state.request_paint = true;
         self.widget_state.request_post_paint = true;
         self.widget_state.needs_paint = true;
@@ -1254,13 +1255,25 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Requests a paint pass, specifically for the [`paint`](crate::core::Widget::paint) method.
+    /// Requests a paint pass for the [`pre_paint`](crate::core::Widget::pre_paint) method.
+    pub fn request_pre_paint(&mut self) {
+        trace!("request_pre_paint");
+        self.widget_state.request_pre_paint = true;
+        self.widget_state.needs_paint = true;
+    }
+
+    /// Requests a paint pass, specifically for the [`paint`] method.
     ///
-    /// Unlike [`request_render`](Self::request_render), this does not request an
-    /// [`accessibility`](crate::core::Widget::accessibility) pass or a call to
-    /// [`post_paint`](crate::core::Widget::post_paint).
+    /// Unlike [`request_render`], this does not request an [`accessibility`] pass
+    /// or a call to [`pre_paint`] or [`post_paint`].
     ///
-    /// Use `request_render` unless you're sure neither is needed.
+    /// Use `request_render` unless you're sure those aren't needed.
+    ///
+    /// [`paint`]: crate::core::Widget::paint
+    /// [`request_render`]: Self::request_render
+    /// [`accessibility`]: crate::core::Widget::accessibility
+    /// [`pre_paint`]: crate::core::Widget::post_paint
+    /// [`post_paint`]: crate::core::Widget::post_paint
     pub fn request_paint_only(&mut self) {
         trace!("request_paint_only");
         self.widget_state.request_paint = true;

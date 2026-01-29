@@ -16,9 +16,7 @@ use crate::core::{
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::peniko::{Color, Gradient};
-use crate::properties::{
-    Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
-};
+use crate::properties::{BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking};
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
@@ -119,7 +117,6 @@ impl Widget for ProgressBar {
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
         BarColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
     }
@@ -200,15 +197,9 @@ impl Widget for ProgressBar {
         let size = ctx.size();
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
         let border_color = props.get::<BorderColor>();
 
-        let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-
-        fill(scene, &bg_rect, &brush);
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
@@ -227,9 +218,11 @@ impl Widget for ProgressBar {
                     (1., Color::TRANSPARENT),
                 ]);
 
-                // Currently bg_rect is without borders too, so we can just use it.
-                // However in the future when bg_rect gets expanded to include borders,
+                // Currently bg_rect() gives a rect without borders, so we can use it.
+                // However in the future when bg_rect() gets expanded to include borders,
                 // we'll need to create a special sans-border rect for this fill.
+                let bg_rect = border_width.bg_rect(size, border_radius);
+
                 fill(scene, &bg_rect, &gradient);
             }
         }

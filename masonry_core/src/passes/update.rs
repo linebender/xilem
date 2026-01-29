@@ -287,6 +287,9 @@ fn update_disabled_for_widget(
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
+        // DisabledBackground needs pre-paint
+        state.request_pre_paint = true;
+        state.needs_paint = true;
     }
 
     state.needs_update_disabled = false;
@@ -847,10 +850,16 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_active_widget != next_active_widget {
         run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = false;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
     }
