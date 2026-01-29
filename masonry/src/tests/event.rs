@@ -4,18 +4,18 @@
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
 use dpi::PhysicalPosition;
-use masonry_core::core::{
-    PointerButtonEvent, PointerId, PointerState, PointerUpdate, Update, WidgetId,
-};
-use masonry_testing::{
-    ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics, assert_none,
-};
-use vello::kurbo::Point;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
-use crate::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
+use crate::core::{
+    AccessEvent, NewWidget, PointerButtonEvent, PointerId, PointerState, PointerUpdate, TextEvent,
+    Update, Widget, WidgetId, WidgetTag,
+};
+use crate::kurbo::Point;
 use crate::layout::AsUnit;
+use crate::testing::{
+    ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics, assert_none,
+};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, ButtonPress, Flex, SizedBox, TextArea};
 
@@ -466,13 +466,16 @@ fn multi_pointers_capture() {
     // Move pointer 22 to button 1, pointer release
     // Check mouse is still captured, button 1 is active, no action was emitted
     harness.process_pointer_event(pointer_move(button_1_rect.center(), 22));
+    harness.process_pointer_event(pointer_release(button_1_rect.center(), 22));
 
     assert!(harness.get_widget(button_1_tag).ctx().is_active());
     assert_matches!(harness.pop_action::<ButtonPress>(), None);
 
-    // Press and release pointer 22
+    // Press and release pointer 22 on button 1
     // Check mouse is no longer captured, button 1 is not active, action was emitted
-    harness.process_pointer_event(pointer_move(button_1_rect.center(), 22));
+    // This is because clicking a button should clear all captured pointers, even from other pointers.
+    harness.process_pointer_event(pointer_press(button_1_rect.center(), 22));
+    harness.process_pointer_event(pointer_release(button_1_rect.center(), 22));
 
     assert!(!harness.get_widget(button_1_tag).ctx().is_active());
     assert_matches!(harness.pop_action::<ButtonPress>(), Some((_, _)));
