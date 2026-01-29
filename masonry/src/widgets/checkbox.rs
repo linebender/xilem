@@ -95,7 +95,6 @@ impl HasProperty<HoveredBorderColor> for Checkbox {}
 impl HasProperty<BorderColor> for Checkbox {}
 impl HasProperty<BorderWidth> for Checkbox {}
 impl HasProperty<CornerRadius> for Checkbox {}
-impl HasProperty<Padding> for Checkbox {}
 impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
 impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
 impl HasProperty<CheckmarkColor> for Checkbox {}
@@ -192,7 +191,6 @@ impl Widget for Checkbox {
         FocusedBorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
         CheckmarkStrokeWidth::prop_changed(ctx, property_type);
         DisabledCheckmarkColor::prop_changed(ctx, property_type);
         CheckmarkColor::prop_changed(ctx, property_type);

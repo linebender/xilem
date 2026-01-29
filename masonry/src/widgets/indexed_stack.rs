@@ -220,7 +220,6 @@ impl HasProperty<Background> for IndexedStack {}
 impl HasProperty<BorderColor> for IndexedStack {}
 impl HasProperty<BorderWidth> for IndexedStack {}
 impl HasProperty<CornerRadius> for IndexedStack {}
-impl HasProperty<Padding> for IndexedStack {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for IndexedStack {
@@ -237,7 +236,6 @@ impl Widget for IndexedStack {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
     }
 
     fn measure(

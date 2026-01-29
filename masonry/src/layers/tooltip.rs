@@ -55,7 +55,6 @@ impl HasProperty<Background> for Tooltip {}
 impl HasProperty<BorderColor> for Tooltip {}
 impl HasProperty<BorderWidth> for Tooltip {}
 impl HasProperty<CornerRadius> for Tooltip {}
-impl HasProperty<Padding> for Tooltip {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Tooltip {
@@ -106,7 +105,6 @@ impl Widget for Tooltip {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
     }
 
     fn measure(

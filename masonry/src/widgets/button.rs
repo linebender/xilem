@@ -109,7 +109,6 @@ impl HasProperty<HoveredBorderColor> for Button {}
 impl HasProperty<BorderColor> for Button {}
 impl HasProperty<BorderWidth> for Button {}
 impl HasProperty<CornerRadius> for Button {}
-impl HasProperty<Padding> for Button {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Button {
@@ -198,7 +197,6 @@ impl Widget for Button {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
     }
 
     fn measure(

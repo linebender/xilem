@@ -212,7 +212,6 @@ impl HasProperty<Background> for SizedBox {}
 impl HasProperty<BorderColor> for SizedBox {}
 impl HasProperty<BorderWidth> for SizedBox {}
 impl HasProperty<CornerRadius> for SizedBox {}
-impl HasProperty<Padding> for SizedBox {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
@@ -233,7 +232,6 @@ impl Widget for SizedBox {
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
     }
 
     fn measure(
