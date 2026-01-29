@@ -14,10 +14,11 @@ use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
     DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
-    SelectionColor, UnfocusedSelectionColor,
+    SelectionColor, ThumbColor, ThumbRadius, ToggledBackground, TrackThickness,
+    UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Flex, Grid, Label, ProgressBar, Spinner, TextArea, TextInput,
+    Button, Checkbox, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -92,6 +93,23 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // Switch
+    properties.insert::<Switch, _>(CornerRadius { radius: 10. }); // Full pill shape
+    properties.insert::<Switch, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<Switch, _>(Background::Color(ZYNC_700));
+    properties.insert::<Switch, _>(ActiveBackground(Background::Color(ZYNC_600)));
+    properties.insert::<Switch, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<Switch, _>(ToggledBackground(Background::Color(ACCENT_COLOR)));
+    properties.insert::<Switch, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Switch, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Switch, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+    properties.insert::<Switch, _>(ThumbColor(Color::WHITE));
+    properties.insert::<Switch, _>(ThumbRadius(8.0));
+    properties.insert::<Switch, _>(TrackThickness(20.0));
 
     // Flex
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));

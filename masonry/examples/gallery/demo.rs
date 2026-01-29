@@ -44,6 +44,15 @@ pub(crate) trait DemoPage {
     ) -> bool {
         false
     }
+
+    fn on_switch_toggled(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _widget_id: WidgetId,
+        _toggled: bool,
+    ) -> bool {
+        false
+    }
 }
 
 pub(crate) fn wrap_in_shell(
