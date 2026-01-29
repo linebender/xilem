@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A switch (switch) widget.
-
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
@@ -91,10 +89,7 @@ impl Switch {
     }
 }
 
-impl HasProperty<DisabledBackground> for Switch {}
-impl HasProperty<ActiveBackground> for Switch {}
 impl HasProperty<ToggledBackground> for Switch {}
-impl HasProperty<Background> for Switch {}
 impl HasProperty<FocusedBorderColor> for Switch {}
 impl HasProperty<HoveredBorderColor> for Switch {}
 impl HasProperty<BorderColor> for Switch {}
@@ -188,10 +183,7 @@ impl Widget for Switch {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
         ToggledBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         FocusedBorderColor::prop_changed(ctx, property_type);
