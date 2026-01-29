@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
+use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use oxipng::{Options, optimize_from_memory};
@@ -1086,6 +1087,24 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: SNAPSHOT
+
+    /// Renders the current widget tree to a pixmap, and writes it to a temporary PNG file.
+    pub fn save_render_snapshot(&mut self) {
+        let image = self.render();
+
+        let mut buffer = Cursor::new(Vec::new());
+        image.write_to(&mut buffer, ImageFormat::Png).unwrap();
+        let image_data = buffer.into_inner();
+
+        let id = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-screenshot.png"));
+
+        std::fs::write(&tmp_path, image_data).unwrap();
+        debug!("Screenshot saved to {}", tmp_path.display());
+    }
 
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///
