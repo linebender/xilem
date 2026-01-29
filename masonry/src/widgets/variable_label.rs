@@ -208,7 +208,7 @@ impl Widget for VariableLabel {
         let new_weight = self.weight.value;
         // The ergonomics of child widgets are quite bad - ideally, this wouldn't need a mutate pass, since we
         // can set the required invalidation anyway.
-        ctx.mutate_later(&mut self.label, move |mut label| {
+        ctx.mutate_child_later(&mut self.label, move |mut label| {
             // TODO: Should this be configurable?
             if result.is_completed() {
                 Label::set_hint(&mut label, true);
