@@ -77,9 +77,11 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
+    let transform = state
+        .window_transform
+        .pre_translate(state.border_box_translation());
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
-        let transform = state.window_transform;
         let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
@@ -90,7 +92,8 @@ fn paint_widget(
         complete_scene.append(pre_scene, Some(transform));
 
         if let Some(clip) = state.clip_path {
-            complete_scene.push_clip_layer(Fill::NonZero, transform, &clip);
+            // The clip path is stored in border-box space, so need just window transform.
+            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));
@@ -114,7 +117,6 @@ fn paint_widget(
     });
 
     if !is_stashed {
-        let transform = state.window_transform;
         let bounding_box = state.bounding_box;
 
         // draw the global axis aligned bounding rect of the widget

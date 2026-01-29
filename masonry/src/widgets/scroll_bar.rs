@@ -182,8 +182,9 @@ impl Widget for ScrollBar {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
+                let size = ctx.content_box_size();
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
-                let cursor_rect = self.cursor_rect(ctx.size(), cursor_min_length);
+                let cursor_rect = self.cursor_rect(size, cursor_min_length);
                 let mouse_pos = ctx.local_position(state.position);
                 let mut changed = false;
                 if cursor_rect.contains(mouse_pos) {
@@ -192,7 +193,7 @@ impl Widget for ScrollBar {
                     self.grab_anchor = Some((mouse_major - c0) / (c1 - c0));
                 } else {
                     let progress =
-                        self.progress_from_mouse_pos(ctx.size(), cursor_min_length, 0.5, mouse_pos);
+                        self.progress_from_mouse_pos(size, cursor_min_length, 0.5, mouse_pos);
                     changed |= self.set_cursor_progress(progress);
                     self.grab_anchor = Some(0.5);
                 };
@@ -204,9 +205,10 @@ impl Widget for ScrollBar {
                 if ctx.is_active()
                     && let Some(grab_anchor) = self.grab_anchor
                 {
+                    let size = ctx.content_box_size();
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     let progress = self.progress_from_mouse_pos(
-                        ctx.size(),
+                        size,
                         cursor_min_length,
                         grab_anchor,
                         ctx.local_position(current.position),
@@ -379,9 +381,10 @@ impl Widget for ScrollBar {
         let cursor_padding = theme::SCROLLBAR_PAD;
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
 
+        let size = ctx.content_box_size();
         let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
-            .cursor_rect(ctx.size(), cursor_min_length)
+            .cursor_rect(size, cursor_min_length)
             .inset((-inset_x, -inset_y))
             .to_rounded_rect(radius);
 

@@ -739,7 +739,10 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
         // We run the update pass on the target itself and then its ancestors.
         run_targeted_update_pass(root, Some(target), |widget, ctx, props| {
-            let event = Update::RequestPanToChild(target_rect);
+            // Convert the target_rect from border-box space to content-box space.
+            let local_rect = target_rect - ctx.widget_state.border_box_translation();
+
+            let event = Update::RequestPanToChild(local_rect);
             widget.update(ctx, props, &event);
 
             // TODO - We should run the compose method after this, so

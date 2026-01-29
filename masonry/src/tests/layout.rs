@@ -39,7 +39,7 @@ fn layout_simple() {
 
     let harness = TestHarness::create(test_property_set(), widget);
 
-    let first_box_size = harness.get_widget(tag_1).ctx().size();
+    let first_box_size = harness.get_widget(tag_1).ctx().border_box_size();
     let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_box();
 
     assert_eq!(first_box_size.width, BOX_WIDTH);
@@ -214,7 +214,7 @@ fn pixel_snapping() {
     let harness = TestHarness::create(test_property_set(), parent);
 
     let child_pos = harness.get_widget(child_tag).ctx().window_origin();
-    let child_size = harness.get_widget(child_tag).ctx().size();
+    let child_size = harness.get_widget(child_tag).ctx().border_box_size();
     let baseline = harness.get_widget(parent_tag).ctx().baseline_offset();
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));

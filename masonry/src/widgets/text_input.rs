@@ -16,8 +16,8 @@ use crate::core::{
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    BorderWidth, CaretColor, ContentColor, FocusedBorderColor, LineBreaking, Padding,
-    PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
+    CaretColor, ContentColor, FocusedBorderColor, LineBreaking, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
 };
 use crate::widgets::{Label, TextArea};
 
@@ -235,83 +235,47 @@ impl Widget for TextInput {
     fn measure(
         &mut self,
         ctx: &mut MeasureCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
         cross_length: Option<f64>,
     ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let border_length = border.length(axis).dp(scale);
-        let padding_length = padding.length(axis).dp(scale);
-
         match len_req {
             LenReq::MaxContent | LenReq::MinContent => {
-                let cross = axis.cross();
-                let cross_space = cross_length.map(|cross_length| {
-                    let cross_border_length = border.length(cross).dp(scale);
-                    let cross_padding_length = padding.length(cross).dp(scale);
-                    (cross_length - cross_border_length - cross_padding_length).max(0.)
-                });
-
                 let auto_length = len_req.into();
-                let context_size = LayoutSize::maybe(cross, cross_space);
+                let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-                let text_length = ctx.compute_length(
+                ctx.compute_length(
                     &mut self.text,
                     auto_length,
                     context_size,
                     axis,
-                    cross_space,
-                );
-
-                text_length + border_length + padding_length
+                    cross_length,
+                )
             }
             // We always want to use all the offered space,
             // even on the block axis as we have multi-line display.
-            LenReq::FitContent(space) => space.max(border_length + padding_length),
+            LenReq::FitContent(space) => space,
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
-
-        ctx.run_layout(&mut self.text, space);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.text, size);
 
         let child_origin = Point::ORIGIN;
-        let child_origin = border.origin_down(child_origin, scale);
-        let child_origin = padding.origin_down(child_origin, scale);
-
         ctx.place_child(&mut self.text, child_origin);
 
         let child_baseline = ctx.child_baseline_offset(&self.text);
-        let child_baseline = border.baseline_up(child_baseline, scale);
-        let child_baseline = padding.baseline_up(child_baseline, scale);
         ctx.set_baseline_offset(child_baseline);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
         if text_is_empty {
-            ctx.run_layout(&mut self.placeholder, space);
+            ctx.run_layout(&mut self.placeholder, size);
             ctx.place_child(&mut self.placeholder, child_origin);
         }
 
         if self.clip {
-            // TODO: We actually want to clip space not size, but we can't here right now.
-            //       Need either a set_clip_path_for_specific_child or TextArea clip support.
             ctx.set_clip_path(size.to_rect());
         } else {
             ctx.clear_clip_path();
@@ -319,7 +283,7 @@ impl Widget for TextInput {
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
+        let bbox = ctx.border_box();
         let mut p = PrePaintProps::fetch(ctx, props);
 
         // We want to show a focus border if our child TextArea is focused
@@ -327,9 +291,9 @@ impl Widget for TextInput {
             p.border_color = &props.get::<FocusedBorderColor>().0;
         }
 
-        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
-        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
-        paint_border(scene, size, p.border_color, p.border_width, p.corner_radius);
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

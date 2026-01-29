@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::{HasProperty, Property, Widget};
-use crate::kurbo::{Axis, Point, RoundedRect, Size, Vec2};
+use crate::kurbo::{Axis, Insets, Point, Rect, RoundedRect, Size, Vec2};
 use crate::layout::Length;
 use crate::properties::CornerRadius;
 
@@ -40,6 +40,19 @@ impl BorderWidth {
         Length::px(self.width * 2.)
     }
 
+    /// Expands the `size` by the border width.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn size_up(&self, size: Size, scale: f64) -> Size {
+        let width = size.width + Length::px(self.width).dp(scale) * 2.;
+        let height = size.height + Length::px(self.width).dp(scale) * 2.;
+        Size::new(width, height)
+    }
+
     /// Shrinks the `size` by the border width.
     ///
     /// The returned [`Size`] will be non-negative and in device pixels.
@@ -51,6 +64,21 @@ impl BorderWidth {
         let width = (size.width - Length::px(self.width).dp(scale) * 2.).max(0.);
         let height = (size.height - Length::px(self.width).dp(scale) * 2.).max(0.);
         Size::new(width, height)
+    }
+
+    /// Returns the [`Insets`] for deriving an area with this border.
+    ///
+    /// The returned [`Insets`] will be in device pixels.
+    ///
+    /// The provided `insets` must be in device pixels.
+    pub fn insets_up(&self, insets: Insets, scale: f64) -> Insets {
+        let width = Length::px(self.width).dp(scale);
+        Insets {
+            x0: insets.x0 + width,
+            y0: insets.y0 + width,
+            x1: insets.x1 + width,
+            y1: insets.y1 + width,
+        }
     }
 
     /// Raises the `baseline` by the border width.
@@ -92,8 +120,8 @@ impl BorderWidth {
     /// Use to display a box's background.
     ///
     /// Helper function to be called in [`Widget::paint`].
-    pub fn bg_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
-        size.to_rect()
+    pub fn bg_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        border_box
             .inset(-self.width)
             .to_rounded_rect((border_radius.radius - self.width).max(0.))
     }
@@ -103,8 +131,8 @@ impl BorderWidth {
     /// Use to display a box's border.
     ///
     /// Helper function to be called in [`Widget::paint`].
-    pub fn border_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
-        size.to_rect()
+    pub fn border_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        border_box
             .inset(-self.width / 2.0)
             .to_rounded_rect(border_radius.radius)
     }

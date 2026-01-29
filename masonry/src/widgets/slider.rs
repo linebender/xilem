@@ -5,6 +5,7 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
+use masonry_core::core::Property;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -168,7 +169,7 @@ impl Widget for Slider {
                 let local_pos = ctx.local_position(state.position);
                 if self.update_value_from_position(
                     local_pos.x,
-                    ctx.size().width,
+                    ctx.content_box_size().width,
                     *props.get(),
                     ctx.is_focus_target(),
                 ) {
@@ -180,7 +181,7 @@ impl Widget for Slider {
                     let local_pos = ctx.local_position(current.position);
                     if self.update_value_from_position(
                         local_pos.x,
-                        ctx.size().width,
+                        ctx.content_box_size().width,
                         *props.get(),
                         ctx.is_focus_target(),
                     ) {
@@ -315,7 +316,7 @@ impl Widget for Slider {
         TrackThickness::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
-        if property_type == TypeId::of::<Background>() {
+        if Background::matches(property_type) {
             ctx.request_paint_only();
         }
     }
@@ -373,7 +374,7 @@ impl Widget for Slider {
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state
-        let size = ctx.size();
+        let size = ctx.content_box_size();
         let thumb_radius = if ctx.is_active() {
             base_thumb_radius + 2.0
         } else if ctx.is_hovered() || ctx.is_focus_target() {
@@ -393,7 +394,7 @@ impl Widget for Slider {
                 crate::peniko::Mix::Normal,
                 DISABLED_ALPHA,
                 crate::kurbo::Affine::IDENTITY,
-                &ctx.size().to_rect(),
+                &ctx.border_box(),
             );
         }
 
@@ -437,7 +438,9 @@ impl Widget for Slider {
 
         // Paint focus ring
         if ctx.is_focus_target() && !ctx.is_disabled() {
-            let focus_rect = ctx.size().to_rect().inset(2.0);
+            // TODO: Either stop painting the focus outside border-box bounds
+            //       or correctly set paint insets in layout.
+            let focus_rect = ctx.border_box().inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
             stroke(scene, &focus_rect.to_rounded_rect(4.0), focus_color, 1.0);

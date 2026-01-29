@@ -100,7 +100,7 @@ pub enum Update {
 
     /// Called when a descendant widget requests to be scrolled to.
     ///
-    /// The included [`Rect`] is in the receiving widget's border-box coordinate space.
+    /// The included [`Rect`] is in the receiving widget's content-box coordinate space.
     ///
     /// See also [`EventCtx::request_scroll_to_this`] and [`EventCtx::request_scroll_to`].
     ///

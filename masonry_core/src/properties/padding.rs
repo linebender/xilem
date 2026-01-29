@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::{HasProperty, Property, Widget};
-use crate::kurbo::{Axis, Point, Size, Vec2};
+use crate::kurbo::{Axis, Insets, Point, Size, Vec2};
 use crate::layout::Length;
 
 // Every widget has padding.
@@ -134,6 +134,19 @@ impl Padding {
         }
     }
 
+    /// Expands the `size` by the padding amount.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn size_up(&self, size: Size, scale: f64) -> Size {
+        let width = size.width + Length::px(self.left + self.right).dp(scale);
+        let height = size.height + Length::px(self.top + self.bottom).dp(scale);
+        Size::new(width, height)
+    }
+
     /// Shrinks the `size` by the padding amount.
     ///
     /// The returned [`Size`] will be non-negative and in device pixels.
@@ -145,6 +158,20 @@ impl Padding {
         let width = (size.width - Length::px(self.left + self.right).dp(scale)).max(0.);
         let height = (size.height - Length::px(self.top + self.bottom).dp(scale)).max(0.);
         Size::new(width, height)
+    }
+
+    /// Returns the [`Insets`] for deriving an area with this padding.
+    ///
+    /// The returned [`Insets`] will be in device pixels.
+    ///
+    /// The provided `insets` must be in device pixels.
+    pub fn insets_up(&self, insets: Insets, scale: f64) -> Insets {
+        Insets {
+            x0: insets.x0 + Length::px(self.left).dp(scale),
+            y0: insets.y0 + Length::px(self.top).dp(scale),
+            x1: insets.x1 + Length::px(self.right).dp(scale),
+            y1: insets.y1 + Length::px(self.bottom).dp(scale),
+        }
     }
 
     /// Raises the `baseline` by the padding amount.

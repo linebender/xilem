@@ -107,11 +107,9 @@ impl Widget for CustomWidget {
     // Basically, anything that changes the appearance of a widget causes a paint.
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
-        // (ctx.size() returns the size of the layout rect we're painting in)
-        // Note: ctx also has a `clear` method, but that clears the whole context,
-        // and we only want to clear this widget's area.
-        let size = ctx.size();
-        let rect = size.to_rect();
+        // (ctx.content_box_size() returns the size of the content rect we're painting in)
+        let size = ctx.content_box_size();
+        let rect = ctx.content_box();
         scene.fill(
             Fill::NonZero,
             Affine::IDENTITY,
@@ -172,7 +170,7 @@ impl Widget for CustomWidget {
             width: 256,
             height: 256,
         });
-        let transform = ObjectFit::Stretch.affine(ctx.size(), Size::new(256., 256.));
+        let transform = ObjectFit::Stretch.affine(size, Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
 
