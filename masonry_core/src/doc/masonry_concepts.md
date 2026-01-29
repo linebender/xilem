@@ -221,7 +221,7 @@ Widgets have a shape, usually one that matches their visual appearance, which ha
 - If the widget is set to clip its contents, pointer events outside the clip shape won't affect the children either.
 - If the widget is set to clip its contents, its scene and the children's scenes will be painted inside of the clip shape.
 
-Currently, the clip shape is hardcoded to be the layout rect.
+Currently, the clip shape is hardcoded to be a rect with the widget's size and position.
 
 <!-- TODO: Rename to "widget shape" instead? -->
 <!-- Need a better name. -->
