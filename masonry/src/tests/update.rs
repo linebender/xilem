@@ -35,6 +35,7 @@ fn app_creation() {
             Record::Layout(_),
             Record::Compose,
             Record::AnimFrame(0),
+            Record::PrePaint,
             Record::Paint,
             Record::PostPaint,
             Record::Accessibility

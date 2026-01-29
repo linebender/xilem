@@ -14,8 +14,7 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, Length};
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, stroke};
+use crate::properties::{BorderWidth, Padding};
 
 /// A widget with bi-directional size enforcement.
 ///
@@ -208,10 +207,6 @@ impl SizedBox {
     }
 }
 
-impl HasProperty<Background> for SizedBox {}
-impl HasProperty<BorderColor> for SizedBox {}
-impl HasProperty<BorderWidth> for SizedBox {}
-impl HasProperty<CornerRadius> for SizedBox {}
 impl HasProperty<Padding> for SizedBox {}
 
 // --- MARK: IMPL WIDGET
@@ -229,10 +224,6 @@ impl Widget for SizedBox {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
     }
 
@@ -319,19 +310,7 @@ impl Widget for SizedBox {
         ctx.set_baseline_offset(child_baseline);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let bg = props.get::<Background>();
-        let border_width = props.get::<BorderWidth>();
-        let border_color = props.get::<BorderColor>();
-        let corner_radius = props.get::<CornerRadius>();
-
-        let bg_rect = border_width.bg_rect(ctx.size(), corner_radius);
-        let border_rect = border_width.border_rect(ctx.size(), corner_radius);
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -366,6 +345,7 @@ mod tests {
     use crate::layout::{AsUnit, UnitPoint};
     use crate::palette;
     use crate::properties::types::Gradient;
+    use crate::properties::{Background, BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;

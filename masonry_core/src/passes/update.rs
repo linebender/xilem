@@ -287,6 +287,9 @@ fn update_disabled_for_widget(
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
+        // DisabledBackground needs pre-paint
+        state.request_pre_paint = true;
+        state.needs_paint = true;
     }
 
     state.needs_update_disabled = false;
@@ -684,11 +687,17 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             widget.update(ctx, props, &Update::FocusChanged(false));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
+            // FocusedBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx, props| {
             widget.update(ctx, props, &Update::FocusChanged(true));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
+            // FocusedBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
         });
 
         if let Some(next_focused) = next_focused {
@@ -847,10 +856,16 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_active_widget != next_active_widget {
         run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = false;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
     }
@@ -942,10 +957,16 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_hovered_widget != next_hovered_widget {
         run_single_update_pass(root, prev_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = false;
+            // HoveredBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(false));
         });
         run_single_update_pass(root, next_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = true;
+            // HoveredBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(true));
         });
     }

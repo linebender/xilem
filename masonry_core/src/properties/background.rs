@@ -1,15 +1,18 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, Widget};
 use crate::kurbo::Rect;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::Gradient;
 
 // TODO - Replace "Background" with "BackgroundColor" and move the gradient case
 // to BackgroundImage to match CSS spec.
+
+// Every widget has a background.
+impl<W: Widget> HasProperty<DisabledBackground> for W {}
+impl<W: Widget> HasProperty<ActiveBackground> for W {}
+impl<W: Widget> HasProperty<Background> for W {}
 
 /// The background color/gradient of a widget.
 #[expect(missing_docs, reason = "field names are self-descriptive")]
@@ -44,14 +47,6 @@ impl Default for Background {
 }
 
 impl Background {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
-    }
-
     /// Returns a brush that can be used for a `fill` operation.
     ///
     /// If `Self` is a `Color`, this returns a solid color brush.
@@ -63,6 +58,19 @@ impl Background {
         match self {
             Self::Color(color) => (*color).into(),
             Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),
+        }
+    }
+
+    /// Returns `false` if the background can be safely treated as non-existent.
+    ///
+    /// May have false positives.
+    pub const fn is_visible(&self) -> bool {
+        match self {
+            Self::Color(color) => {
+                let alpha = color.components[3];
+                alpha != 0.0
+            }
+            Self::Gradient(_) => true,
         }
     }
 }
@@ -84,16 +92,6 @@ impl Default for ActiveBackground {
     }
 }
 
-impl ActiveBackground {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
-    }
-}
-
 // ---
 
 impl Property for DisabledBackground {
@@ -108,15 +106,5 @@ impl Property for DisabledBackground {
 impl Default for DisabledBackground {
     fn default() -> Self {
         Self::static_default().clone()
-    }
-}
-
-impl DisabledBackground {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
     }
 }

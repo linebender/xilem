@@ -16,7 +16,7 @@ use vello::kurbo::{Axis, Point, Size};
 use crate::core::{
     AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
     NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
 };
 use crate::layout::LenReq;
 
@@ -352,15 +352,26 @@ pub trait Widget: AsDynWidget + Any {
     /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}
 
-    /// Paints the widget appearance.
+    /// Paints the widget's background.
     ///
-    /// Container widgets can paint a background before recursing to their
-    /// children. To draw on top of children, see [`Widget::post_paint`].
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
+    /// This is where box shadow, background, and borders are painted.
+    ///
+    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
+    /// and can paint things outside the clip.
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        pre_paint(ctx, props, scene);
+    }
 
-    /// Second paint method, which paints on top of the widget's children.
+    /// Paints the widget's content.
     ///
-    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`], and can paint things outside the clip.
+    /// This is called before the children are drawn.
+    /// To draw on top of children, see [`Widget::post_paint`].
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
+
+    /// Final paint method, which paints on top of the widget's children.
+    ///
+    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
+    /// and can paint things outside the clip.
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     }
 

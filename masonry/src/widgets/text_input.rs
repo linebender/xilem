@@ -10,17 +10,15 @@ use vello::Scene;
 use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PaintCtx, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    Background, BorderColor, BorderWidth, CaretColor, ContentColor, CornerRadius,
-    DisabledBackground, FocusedBorderColor, LineBreaking, Padding, PlaceholderColor,
-    SelectionColor, UnfocusedSelectionColor,
+    BorderWidth, CaretColor, ContentColor, FocusedBorderColor, LineBreaking, Padding,
+    PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
 };
-use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -149,13 +147,7 @@ impl TextInput {
     }
 }
 
-impl HasProperty<Background> for TextInput {}
 impl HasProperty<CaretColor> for TextInput {}
-impl HasProperty<DisabledBackground> for TextInput {}
-impl HasProperty<BorderColor> for TextInput {}
-impl HasProperty<FocusedBorderColor> for TextInput {}
-impl HasProperty<BorderWidth> for TextInput {}
-impl HasProperty<CornerRadius> for TextInput {}
 impl HasProperty<Padding> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
@@ -171,12 +163,6 @@ impl Widget for TextInput {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
@@ -243,7 +229,7 @@ impl Widget for TextInput {
             // We check for `ChildFocusChanged` instead of `FocusChanged`
             // because the actual widget that receives focus is the child `TextArea`
             Update::ChildFocusChanged(_) => {
-                ctx.request_paint_only();
+                ctx.request_pre_paint();
             }
             _ => {}
         }
@@ -335,31 +321,21 @@ impl Widget for TextInput {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let size = ctx.size();
+        let mut p = PrePaintProps::fetch(ctx, props);
 
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
+        // We want to show a focus border if our child TextArea is focused
+        if ctx.has_focus_target() {
+            p.border_color = &props.get::<FocusedBorderColor>().0;
+        }
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if ctx.has_focus_target() {
-            &props.get::<FocusedBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
+        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+        paint_border(scene, size, p.border_color, p.border_width, p.corner_radius);
     }
+
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

@@ -19,12 +19,8 @@ use crate::core::{
 use crate::core::{HasProperty, MeasureCtx};
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    FocusedBorderColor, HoveredBorderColor, Padding,
-};
+use crate::properties::{BorderWidth, Padding};
 use crate::theme;
-use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 /// A button with a child widget.
@@ -101,14 +97,6 @@ pub struct ButtonPress {
     pub button: Option<PointerButton>,
 }
 
-impl HasProperty<DisabledBackground> for Button {}
-impl HasProperty<ActiveBackground> for Button {}
-impl HasProperty<Background> for Button {}
-impl HasProperty<FocusedBorderColor> for Button {}
-impl HasProperty<HoveredBorderColor> for Button {}
-impl HasProperty<BorderColor> for Button {}
-impl HasProperty<BorderWidth> for Button {}
-impl HasProperty<CornerRadius> for Button {}
 impl HasProperty<Padding> for Button {}
 
 // --- MARK: IMPL WIDGET
@@ -173,16 +161,12 @@ impl Widget for Button {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::FocusChanged(_)
-            | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -190,14 +174,6 @@ impl Widget for Button {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
     }
 
@@ -273,38 +249,7 @@ impl Widget for Button {
         ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
-        let is_hovered = ctx.is_hovered();
-        let size = ctx.size();
-
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Button
@@ -346,7 +291,7 @@ mod tests {
     use super::*;
     use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
     use crate::layout::AsUnit;
-    use crate::properties::{BoxShadow, ContentColor, Gap};
+    use crate::properties::{BorderColor, BoxShadow, ContentColor, CornerRadius, Gap};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
