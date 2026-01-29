@@ -340,8 +340,8 @@ fn multi_pointers_hover() {
     );
     let mut harness = TestHarness::create(test_property_set(), flex);
 
-    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_rect();
-    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_rect();
+    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_box();
+    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_box();
 
     // Move pointer 11 over button_1,
     // Verify HoverChange(true), ChildHoveredChanged(true) in flex, and hovered state
@@ -424,8 +424,8 @@ fn multi_pointers_capture() {
     );
     let mut harness = TestHarness::create(test_property_set(), flex);
 
-    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_rect();
-    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_rect();
+    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_box();
+    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_box();
     let button_1_id = harness.get_widget(button_1_tag).id();
 
     fn assert_captured_by(

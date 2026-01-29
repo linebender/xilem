@@ -157,7 +157,8 @@ impl Widget for Prose {
         ctx.place_child(&mut self.text, Point::ORIGIN);
 
         if self.clip {
-            ctx.set_clip_path(size.to_rect());
+            let border_box = size.to_rect() + ctx.border_box_insets();
+            ctx.set_clip_path(border_box);
         } else {
             ctx.clear_clip_path();
         }

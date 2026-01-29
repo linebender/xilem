@@ -4,10 +4,9 @@
 use vello::Scene;
 
 use crate::core::{HasProperty, Property, Widget};
-use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
+use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _};
 use crate::peniko::Fill;
 use crate::peniko::color::{AlphaColor, Srgb};
-use crate::properties::CornerRadius;
 
 // TODO - This is a first implementation of box shadows. A full version would need
 // to address the following points:
@@ -79,11 +78,6 @@ impl BoxShadow {
     pub const fn is_visible(&self) -> bool {
         let alpha = self.color.components[3];
         alpha != 0.0
-    }
-
-    /// Creates a rounded rectangle that will cast the shadow.
-    pub fn shadow_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
-        size.to_rect().to_rounded_rect(border_radius.radius)
     }
 
     /// Helper function to paint the shadow into a scene.

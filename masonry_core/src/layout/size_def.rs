@@ -6,7 +6,7 @@ use vello::kurbo::{Axis, Size};
 use crate::layout::LenDef;
 use crate::util::Sanitize;
 
-/// Widget size definition.
+/// Widget border-box size definition.
 ///
 /// This is how a parent specifies [`Dim::Auto`] behavior for its children.
 ///
@@ -21,7 +21,7 @@ pub struct SizeDef {
 }
 
 impl SizeDef {
-    /// Minimum preferred size.
+    /// Minimum preferred border-box size.
     ///
     /// See [`LenDef::MinContent`] for details.
     pub const MIN: Self = Self {
@@ -29,7 +29,7 @@ impl SizeDef {
         height: LenDef::MinContent,
     };
 
-    /// Maximum preferred size.
+    /// Maximum preferred border-box size.
     ///
     /// See [`LenDef::MaxContent`] for details.
     pub const MAX: Self = Self {

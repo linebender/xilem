@@ -124,6 +124,11 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 /// These trait methods are provided with a corresponding context. The widget can
 /// request things and cause actions by calling methods on that context.
 ///
+/// Generally all coordinates given to the widget and taken as input by context methods
+/// are going to be in the widget's local content-box coordinate space. Exceptions are documented
+/// for the relevant methods, e.g. mouse events will arrive in the window's coordinate space.
+/// There are helper methods on the context to convert these to the local coordinate space.
+///
 /// Widgets also have a [`children_ids`](Self::children_ids) method. Leaf widgets return an empty array,
 /// whereas container widgets return an array of [`WidgetId`].
 /// Container widgets have some validity invariants to maintain regarding their children.
@@ -228,7 +233,7 @@ pub trait Widget: AsDynWidget + Any {
     /// Handles a property being added, changed, or removed.
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {}
 
-    /// Computes the length that the widget wants to be on the given `axis`.
+    /// Computes the content-box length that the widget wants to be on the given `axis`.
     ///
     /// The returned length must be finite, non-negative, and in device pixels.
     /// If an invalid length is returned, Masonry will treat it as zero.
@@ -245,15 +250,15 @@ pub trait Widget: AsDynWidget + Any {
     /// Instead, it's a task of measuring the contents of the widget. Combining both local state
     /// and child measurements to come up with a answer for the total length of this `axis`.
     ///
-    /// Call [`MeasureCtx::compute_length`] to measure children and to get their `axis` length.
+    /// Call [`compute_length`] to measure children and to get their `axis` length.
     /// Then account for the child's positioning and any other unique layout factors you might have
     /// to determine the total length of this widget on the given `axis`.
     ///
     /// If you have a thin wrapper widget that wants to mimic its child in terms of layout,
-    /// then you should use [`MeasureCtx::redirect_measurement`] to have the child answer for you.
+    /// then you should use [`redirect_measurement`] to have the child answer for you.
     ///
     /// The `cross_length`, if present, says that the cross-axis of the given `axis` of this
-    /// measured widget can be presumed to be exactly `cross_length` long, in device pixels.
+    /// measured widget's content-box can be presumed to be `cross_length` long, in device pixels.
     /// This information is often very useful for measuring `axis` and should be used.
     /// However, ultimately it may end up not materializing. That is to say, it is
     /// a valid assumption for the duration of this `measure` call but there is
@@ -301,6 +306,8 @@ pub trait Widget: AsDynWidget + Any {
     /// Masonry will panic if `measure` returns a non-finite or negative value
     /// and debug assertions are enabled.
     ///
+    /// [`compute_length`]: MeasureCtx::compute_length
+    /// [`redirect_measurement`]: MeasureCtx::redirect_measurement
     /// [sanitized]: crate::util::Sanitize
     /// [`cache_result`]: MeasureCtx::cache_result
     /// [`Dimensions`]: crate::properties::Dimensions
@@ -315,22 +322,22 @@ pub trait Widget: AsDynWidget + Any {
         cross_length: Option<f64>,
     ) -> f64;
 
-    /// Lays out the widget with the given `size`.
+    /// Lays out the widget with the given content-box `size`.
     ///
     /// A container widget must ensure all its direct children are laid out in this method.
     ///
     /// For every child widget, as defined by [`children_ids`], the container must:
     ///
-    /// 1. (Optionally) Call [`LayoutCtx::compute_size`] to get the size the child wants to be.
+    /// 1. (Optionally) Call [`compute_size`] to get the border-box size the child wants to be.
     ///    If the container has somehow already decided on the child length on one axis, then it
-    ///    should instead call [`LayoutCtx::compute_length`] with the correct `cross_length`.
-    /// 2. Decide on a final [`Size`] that the child should be. The parent is in control.
+    ///    should instead call [`compute_length`] with the correct border-box `cross_length`.
+    /// 2. Decide on a final border-box [`Size`] that the child should be. The parent is in control.
     ///    Note, however, that the child will still be in control of its own [`paint`] method.
     ///    If a child is given a size smaller than its [`MinContent`], its painting is likely
     ///    to overflow its bounds, depending on both the child's and the parent's clip settings.
-    /// 3. Call [`LayoutCtx::run_layout`] on the child with the chosen size.
+    /// 3. Call [`run_layout`] on the child with the chosen border-box size.
     ///    This will recursively trigger the layout pass on both the child and all its descendants.
-    /// 4. Call [`LayoutCtx::place_child`] to give the child a location, relative to the parent.
+    /// 4. Call [`place_child`] to give the child a location, relative to the parent's content-box.
     ///    With that, the laying out of the child is finished.
     ///
     /// The order of laying out children doesn't matter. It is also valid to interleave the calls.
@@ -344,6 +351,10 @@ pub trait Widget: AsDynWidget + Any {
     /// The `size` given to this method must be finite, non-negative, and in device pixels.
     /// When Masonry calls `layout` during the layout pass, it will guarantee that for `size`.
     ///
+    /// [`compute_size`]: LayoutCtx::compute_size
+    /// [`compute_length`]: LayoutCtx::compute_length
+    /// [`run_layout`]: LayoutCtx::run_layout
+    /// [`place_child`]: LayoutCtx::place_child
     /// [`children_ids`]: Self::children_ids
     /// [`paint`]: Self::paint
     /// [`MinContent`]: crate::layout::Dim::MinContent
@@ -542,7 +553,7 @@ pub fn find_widget_under_pointer<'c>(
     ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    if !ctx.bounding_rect().contains(pos) {
+    if !ctx.bounding_box().contains(pos) {
         return None;
     }
     if ctx.is_stashed() {
@@ -570,7 +581,7 @@ pub fn find_widget_under_pointer<'c>(
     }
 
     // If no child is under pointer, test the current widget.
-    if ctx.accepts_pointer_interaction() && ctx.size().to_rect().contains(local_pos) {
+    if ctx.accepts_pointer_interaction() && ctx.border_box().contains(local_pos) {
         Some(WidgetRef { widget, ctx })
     } else {
         None

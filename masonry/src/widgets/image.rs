@@ -197,6 +197,7 @@ impl Widget for Image {
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let content_box = ctx.content_box();
         let object_fit = props.get::<ObjectFit>();
         // For drawing we want to scale the actual image data lengths, which means
         // we need to avoid using Image::preferred_length which does not match the data.
@@ -204,15 +205,14 @@ impl Widget for Image {
             self.image_data.image.width as f64,
             self.image_data.image.height as f64,
         );
-        let transform = object_fit.affine(ctx.size(), image_size);
+        let transform = object_fit.affine(content_box.size(), image_size);
 
-        let clip_rect = ctx.size().to_rect();
         scene.push_layer(
             Fill::NonZero,
             BlendMode::default(),
             1.,
             Affine::IDENTITY,
-            &clip_rect,
+            &content_box,
         );
         scene.draw_image(&self.image_data, transform);
         scene.pop_layer();

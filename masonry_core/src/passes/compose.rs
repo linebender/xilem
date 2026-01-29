@@ -37,8 +37,8 @@ fn compose_widget(
     state.window_transform =
         parent_window_transform * state.transform.then_translate(local_translation);
 
-    let paint_rect = state.paint_rect();
-    state.bounding_rect = state.window_transform.transform_rect_bbox(paint_rect);
+    let paint_box = state.paint_box();
+    state.bounding_box = state.window_transform.transform_rect_bbox(paint_box);
 
     let mut ctx = ComposeCtx {
         global_state,
@@ -69,10 +69,10 @@ fn compose_widget(
             transformed,
             parent_transform,
         );
-        let parent_bounding_rect = parent_state.bounding_rect;
+        let parent_bounding_box = parent_state.bounding_box;
 
-        if let Some(child_bounding_rect) = parent_state.clip_child(node.item.state.bounding_rect) {
-            parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
+        if let Some(child_bounding_box) = parent_state.clip_child(node.item.state.bounding_box) {
+            parent_state.bounding_box = parent_bounding_box.union(child_bounding_box);
         }
 
         parent_state.merge_up(&mut node.item.state);

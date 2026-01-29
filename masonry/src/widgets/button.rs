@@ -19,7 +19,6 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{BorderWidth, Padding};
 use crate::theme;
 use crate::widgets::Label;
 
@@ -176,7 +175,7 @@ impl Widget for Button {
     fn measure(
         &mut self,
         ctx: &mut MeasureCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
         cross_length: Option<f64>,
@@ -185,61 +184,36 @@ impl Widget for Button {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let border_length = border.length(axis).dp(scale);
-        let padding_length = padding.length(axis).dp(scale);
-
-        let cross = axis.cross();
-        let cross_space = cross_length.map(|cross_length| {
-            let cross_border_length = border.length(cross).dp(scale);
-            let cross_padding_length = padding.length(cross).dp(scale);
-            (cross_length - cross_border_length - cross_padding_length).max(0.)
-        });
-
-        let auto_length = len_req.reduce(border_length + padding_length).into();
-        let context_size = LayoutSize::maybe(cross, cross_space);
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
         let child_length = ctx.compute_length(
             &mut self.child,
             auto_length,
             context_size,
             axis,
-            cross_space,
+            cross_length,
         );
 
-        let length = child_length + border_length + padding_length;
+        let length = child_length;
 
         // TODO - Add MinimumSize property.
         // HACK: to make sure we look okay at default sizes when beside a text input,
         // we make sure we will have at least the same height as the default text input.
         match axis {
             Axis::Horizontal => length,
-            Axis::Vertical => length.max(theme::BORDERED_WIDGET_HEIGHT * scale),
+            Axis::Vertical => length.max(theme::BASIC_WIDGET_HEIGHT.dp(scale)),
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
-
-        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(space), space.into());
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
 
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.child, child_origin);
 
         let child_baseline = ctx.child_baseline_offset(&self.child);
-        let child_baseline = border.baseline_up(child_baseline, scale);
-        let child_baseline = padding.baseline_up(child_baseline, scale);
         let child_bottom = child_origin.y + child_size.height;
         let bottom_gap = size.height - child_bottom;
         ctx.set_baseline_offset(child_baseline + bottom_gap);
@@ -287,7 +261,9 @@ mod tests {
     use super::*;
     use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
     use crate::layout::AsUnit;
-    use crate::properties::{BorderColor, BoxShadow, ContentColor, CornerRadius, Gap};
+    use crate::properties::{
+        BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, Gap, Padding,
+    };
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
