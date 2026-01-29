@@ -10,16 +10,15 @@ use vello::Scene;
 use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PaintCtx, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    BorderColor, BorderWidth, CaretColor, ContentColor, CornerRadius, FocusedBorderColor,
-    LineBreaking, Padding, PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
+    BorderWidth, CaretColor, ContentColor, FocusedBorderColor, LineBreaking, Padding,
+    PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
 };
-use crate::util::stroke;
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -149,10 +148,6 @@ impl TextInput {
 }
 
 impl HasProperty<CaretColor> for TextInput {}
-impl HasProperty<BorderColor> for TextInput {}
-impl HasProperty<FocusedBorderColor> for TextInput {}
-impl HasProperty<BorderWidth> for TextInput {}
-impl HasProperty<CornerRadius> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
 impl HasProperty<UnfocusedSelectionColor> for TextInput {}
@@ -167,11 +162,6 @@ impl Widget for TextInput {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderColor::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -236,7 +226,7 @@ impl Widget for TextInput {
             // We check for `ChildFocusChanged` instead of `FocusChanged`
             // because the actual widget that receives focus is the child `TextArea`
             Update::ChildFocusChanged(_) => {
-                ctx.request_paint_only();
+                ctx.request_pre_paint();
             }
             _ => {}
         }
@@ -328,22 +318,21 @@ impl Widget for TextInput {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let size = ctx.size();
+        let mut p = PrePaintProps::fetch(ctx, props);
 
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
+        // We want to show a focus border if our child TextArea is focused
+        if ctx.has_focus_target() {
+            p.border_color = &props.get::<FocusedBorderColor>().0;
+        }
 
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if ctx.has_focus_target() {
-            &props.get::<FocusedBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
+        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+        paint_border(scene, size, p.border_color, p.border_width, p.corner_radius);
     }
+
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

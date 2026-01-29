@@ -1,11 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
 use vello::Scene;
 
-use crate::core::{HasProperty, Property, UpdateCtx, Widget};
+use crate::core::{HasProperty, Property, Widget};
 use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
 use crate::peniko::Fill;
 use crate::peniko::color::{AlphaColor, Srgb};
@@ -137,17 +135,5 @@ impl BoxShadow {
             x1: (blur_radius + self.offset.x).max(0.),
             y1: (blur_radius + self.offset.y).max(0.),
         }
-    }
-
-    /// Requests layout if this property changed.
-    ///
-    /// This is called by Masonry during widget properties mutation.
-    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        // TODO: We'd like to request a paint pass instead, which should be lighter. However,
-        //       box shadow affects the size of the paint rect, which is handled in layout.
-        ctx.request_layout();
     }
 }

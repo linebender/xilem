@@ -11,8 +11,9 @@ use vello::Scene;
 use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    NewWidget, PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, Property,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    paint_background, paint_box_shadow,
 };
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Point, Rect, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
@@ -86,11 +87,6 @@ impl Checkbox {
     }
 }
 
-impl HasProperty<FocusedBorderColor> for Checkbox {}
-impl HasProperty<HoveredBorderColor> for Checkbox {}
-impl HasProperty<BorderColor> for Checkbox {}
-impl HasProperty<BorderWidth> for Checkbox {}
-impl HasProperty<CornerRadius> for Checkbox {}
 impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
 impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
 impl HasProperty<CheckmarkColor> for Checkbox {}
@@ -166,7 +162,6 @@ impl Widget for Checkbox {
             Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
             }
-
             _ => {}
         }
     }
@@ -176,14 +171,19 @@ impl Widget for Checkbox {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        CheckmarkStrokeWidth::prop_changed(ctx, property_type);
-        DisabledCheckmarkColor::prop_changed(ctx, property_type);
-        CheckmarkColor::prop_changed(ctx, property_type);
+        if BorderWidth::matches(property_type) {
+            ctx.request_layout();
+        }
+        if CornerRadius::matches(property_type)
+            || BorderColor::matches(property_type)
+            || FocusedBorderColor::matches(property_type)
+            || HoveredBorderColor::matches(property_type)
+            || CheckmarkStrokeWidth::matches(property_type)
+            || DisabledCheckmarkColor::matches(property_type)
+            || CheckmarkColor::matches(property_type)
+        {
+            ctx.request_paint_only();
+        }
     }
 
     fn measure(
@@ -270,6 +270,46 @@ impl Widget for Checkbox {
         ctx.set_baseline_offset(label_baseline + bottom_gap);
     }
 
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let size = ctx.size();
+        let p = PrePaintProps::fetch(ctx, props);
+
+        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
+        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+
+        // Paint focus indicator around the entire widget (box + label)
+        if ctx.is_focus_target() || ctx.is_hovered() {
+            // TODO: Replace this custom implementation with the general paint_border()
+
+            let focus_rect = Rect::new(0.0, 0.0, size.width, size.height);
+
+            let focus_rect = focus_rect.inflate(2.0, 2.0);
+
+            let focus_color = p.border_color.color;
+            let focus_width = 2.0;
+            let focus_radius = 4.0;
+
+            let focus_stroke = Stroke {
+                width: focus_width,
+                join: Join::Round,
+                miter_limit: 10.0,
+                start_cap: Cap::Round,
+                end_cap: Cap::Round,
+                dash_pattern: Dashes::default(),
+                dash_offset: 0.0,
+            };
+            let focus_path = focus_rect.to_rounded_rect(focus_radius);
+            scene.stroke(
+                &focus_stroke,
+                Affine::IDENTITY,
+                focus_color,
+                None,
+                &focus_path,
+            );
+        }
+        // Skip painting the regular border while the check border uses that property
+    }
+
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
@@ -321,36 +361,6 @@ impl Widget for Checkbox {
                 dash_offset: 0.0,
             };
             scene.stroke(&style, Affine::IDENTITY, brush.color, None, &path);
-        }
-        // Paint focus indicator around the entire widget (box + label)
-        if is_focused || is_hovered {
-            let widget_size = ctx.size();
-
-            let focus_rect = Rect::new(0.0, 0.0, widget_size.width, widget_size.height);
-
-            let focus_rect = focus_rect.inflate(2.0, 2.0);
-
-            let focus_color = props.get::<FocusedBorderColor>().0.color;
-            let focus_width = 2.0;
-            let focus_radius = 4.0;
-
-            let focus_stroke = Stroke {
-                width: focus_width,
-                join: Join::Round,
-                miter_limit: 10.0,
-                start_cap: Cap::Round,
-                end_cap: Cap::Round,
-                dash_pattern: Dashes::default(),
-                dash_offset: 0.0,
-            };
-            let focus_path = focus_rect.to_rounded_rect(focus_radius);
-            scene.stroke(
-                &focus_stroke,
-                Affine::IDENTITY,
-                focus_color,
-                None,
-                &focus_path,
-            );
         }
     }
 

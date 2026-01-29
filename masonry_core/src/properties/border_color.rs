@@ -1,11 +1,14 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
-use crate::core::{Property, UpdateCtx};
+use crate::core::{HasProperty, Property, Widget};
 use crate::peniko::BrushRef;
 use crate::peniko::color::{AlphaColor, Srgb};
+
+// Every widget has a border color.
+impl<W: Widget> HasProperty<FocusedBorderColor> for W {}
+impl<W: Widget> HasProperty<HoveredBorderColor> for W {}
+impl<W: Widget> HasProperty<BorderColor> for W {}
 
 /// The color of a widget's border.
 #[expect(missing_docs, reason = "field names are self-descriptive")]
@@ -55,12 +58,12 @@ impl BorderColor {
         Self { color }
     }
 
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
+    /// Returns `false` if the color can be safely treated as non-existent.
+    ///
+    /// May have false positives.
+    pub const fn is_visible(&self) -> bool {
+        let alpha = self.color.components[3];
+        alpha != 0.0
     }
 }
 
@@ -81,16 +84,6 @@ impl Property for HoveredBorderColor {
     }
 }
 
-impl HoveredBorderColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
-    }
-}
-
 // ---
 
 impl Default for FocusedBorderColor {
@@ -105,15 +98,5 @@ impl Property for FocusedBorderColor {
             color: AlphaColor::TRANSPARENT,
         });
         &DEFAULT
-    }
-}
-
-impl FocusedBorderColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
     }
 }
