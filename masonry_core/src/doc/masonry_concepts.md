@@ -197,6 +197,22 @@ The bounding-boxes of the widget tree form a kind of "bounding volume hierarchy"
 <!-- TODO - Include illustration. -->
 
 
+## Coordinate spaces
+
+All `Widget` method implementations operate in that widget's content-box coordinate space.
+Which means that `(0, 0)` refers to the top-left point where padding ends and content begins.
+This is easy to reason in for the widget specific operations.
+The widget box can be assumed to be a simple rectangle and Masonry hides all the complicated transforms.
+
+Internally Masonry also operates in the widget's border-box coordinate space, but this is generally hidden from widgets.
+The difference compared to the content-box coordinate space is a simple border and padding based translation.
+
+Finally there is the window's coordinate space.
+Here all widgets have their transforms already applied so widget specific operations are complicated.
+Generally you'll want to convert any window coordinate space geometry into the widget's content-box coordinate space.
+Then easily operate on that geometry and finally convert the results back to the window's coordinate space.
+
+
 ## Layers
 
 A Masonry application is composed of layers.

@@ -36,8 +36,8 @@ use crate::properties::{BorderWidth, Padding};
 ///
 /// ## Child's size
 ///
-/// Whatever size `SizedBox` ends up getting from its parent for layout,
-/// `SizedBox` will also force its child to use that same size.
+/// Whatever content-box size `SizedBox` ends up getting from its parent for layout,
+/// `SizedBox` will force its child to use that same size for its border-box.
 ///
 /// ## No child
 ///
@@ -243,66 +243,46 @@ impl Widget for SizedBox {
 
         // First see if we have an explicitly defined length
         if let Some(length) = self.length(axis) {
-            return length.dp(scale).max(border_length + padding_length);
+            return (length.dp(scale) - border_length - padding_length).max(0.);
         }
 
         // Otherwise measure the child
-        let child_length = if let Some(child) = self.child.as_mut() {
+        if let Some(child) = self.child.as_mut() {
             let cross = axis.cross();
-            let cross_space = cross_length
-                .or_else(|| {
-                    // Can't use self.length() due to borrow checker stupidity,
-                    // so we need to manually inline that method.
-                    let length = match cross {
-                        Axis::Horizontal => self.width,
-                        Axis::Vertical => self.height,
-                    };
-                    length.map(|length| length.dp(scale))
-                })
-                .map(|cross_length| {
+            let cross_length = cross_length.or_else(|| {
+                // Can't use self.length() due to borrow checker stupidity,
+                // so we need to manually inline that method.
+                let length = match cross {
+                    Axis::Horizontal => self.width,
+                    Axis::Vertical => self.height,
+                };
+                length.map(|length| {
                     let cross_border_length = border.length(cross).dp(scale);
                     let cross_padding_length = padding.length(cross).dp(scale);
-                    (cross_length - cross_border_length - cross_padding_length).max(0.)
-                });
+                    (length.dp(scale) - cross_border_length - cross_padding_length).max(0.)
+                })
+            });
 
-            let auto_length = len_req.reduce(border_length + padding_length).into();
-            let context_size = LayoutSize::maybe(cross, cross_space);
+            let auto_length = len_req.into();
+            let context_size = LayoutSize::maybe(cross, cross_length);
 
-            ctx.compute_length(child, auto_length, context_size, axis, cross_space)
+            ctx.compute_length(child, auto_length, context_size, axis, cross_length)
         } else {
             0.
-        };
-
-        child_length + border_length + padding_length
+        }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let Some(child) = self.child.as_mut() else {
             // No child, so no layout work beyond resetting the baseline
-            ctx.set_baseline_offset(0.);
+            ctx.clear_baseline_offset();
             return;
         };
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
-
-        ctx.run_layout(child, space);
-
-        let child_origin = Point::ORIGIN;
-        let child_origin = border.origin_down(child_origin, scale);
-        let child_origin = padding.origin_down(child_origin, scale);
-        ctx.place_child(child, child_origin);
+        ctx.run_layout(child, size);
+        ctx.place_child(child, Point::ORIGIN);
 
         let child_baseline = ctx.child_baseline_offset(child);
-        let child_baseline = border.baseline_up(child_baseline, scale);
-        let child_baseline = padding.baseline_up(child_baseline, scale);
         ctx.set_baseline_offset(child_baseline);
     }
 

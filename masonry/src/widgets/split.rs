@@ -13,7 +13,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Axis, Line, Point, Rect, Size};
+use crate::kurbo::{Axis, Line, Point, Size};
 use crate::layout::{AsUnit, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
@@ -300,6 +300,19 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         }
     }
 
+    fn paint_focus_bar(&mut self, ctx: &mut PaintCtx<'_>, scene: &mut Scene, scale: f64) {
+        let length = ctx.content_box_size().get_coord(self.split_axis);
+        let (edge1, edge2) = self.bar_edges(length, scale);
+
+        let mut rect = ctx.border_box();
+        rect.set_coords(self.split_axis, edge1, edge2);
+        let rect = rect.inset(2.0 * scale);
+
+        let focus_color = theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
+
+        stroke(scene, &rect, focus_color, 1.0 * scale);
+    }
+
     fn paint_solid_bar(
         &mut self,
         ctx: &mut PaintCtx<'_>,
@@ -307,14 +320,11 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         scale: f64,
         color: Color,
     ) {
-        let size = ctx.size();
-        let length = size.get_coord(self.split_axis);
-        let cross_length = size.get_coord(self.split_axis.cross());
+        let length = ctx.content_box_size().get_coord(self.split_axis);
         let (edge1, edge2) = self.bar_edges(length, scale);
 
-        let p1 = self.split_axis.pack_point(edge1, 0.);
-        let p2 = self.split_axis.pack_point(edge2, cross_length);
-        let rect = Rect::from_points(p1, p2);
+        let mut rect = ctx.border_box();
+        rect.set_coords(self.split_axis, edge1, edge2);
 
         fill_color(scene, &rect, color);
     }
@@ -326,9 +336,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         scale: f64,
         color: Color,
     ) {
-        let size = ctx.size();
-        let length = size.get_coord(self.split_axis);
-        let cross_length = size.get_coord(self.split_axis.cross());
+        let length = ctx.content_box_size().get_coord(self.split_axis);
         // Set the line width to a third of the splitter bar thickness,
         // because we'll paint two equal lines at the edges.
         let line_width = self.bar_thickness.dp(scale) / 3.0;
@@ -338,11 +346,14 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let edge1_line_pos = edge1 + line_midpoint;
         let edge2_line_pos = edge2 - line_midpoint;
 
-        let line1_p1 = self.split_axis.pack_point(edge1_line_pos, 0.);
-        let line1_p2 = self.split_axis.pack_point(edge1_line_pos, cross_length);
+        let border_box = ctx.border_box();
+        let (cross1, cross2) = border_box.get_coords(self.split_axis.cross());
 
-        let line2_p1 = self.split_axis.pack_point(edge2_line_pos, 0.);
-        let line2_p2 = self.split_axis.pack_point(edge2_line_pos, cross_length);
+        let line1_p1 = self.split_axis.pack_point(edge1_line_pos, cross1);
+        let line1_p2 = self.split_axis.pack_point(edge1_line_pos, cross2);
+
+        let line2_p1 = self.split_axis.pack_point(edge2_line_pos, cross1);
+        let line2_p2 = self.split_axis.pack_point(edge2_line_pos, cross2);
 
         let (line1, line2) = (Line::new(line1_p1, line1_p2), Line::new(line2_p1, line2_p2));
 
@@ -473,7 +484,7 @@ where
                     let pos = ctx
                         .local_position(state.position)
                         .get_coord(self.split_axis);
-                    let length = ctx.size().get_coord(self.split_axis);
+                    let length = ctx.content_box_size().get_coord(self.split_axis);
                     if self.bar_area_hit_test(length, pos, scale) {
                         ctx.set_handled();
                         ctx.capture_pointer();
@@ -487,7 +498,7 @@ where
                         let pos = ctx
                             .local_position(current.position)
                             .get_coord(self.split_axis);
-                        let length = ctx.size().get_coord(self.split_axis);
+                        let length = ctx.content_box_size().get_coord(self.split_axis);
                         // If widget has pointer capture, assume always it's hovered
                         let effective_center = pos - self.click_offset;
                         self.update_split_point_from_bar_center(length, effective_center, scale);
@@ -523,9 +534,9 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let total_length = ctx.size().get_coord(self.split_axis);
+        let length = ctx.content_box_size().get_coord(self.split_axis);
         let bar_thickness = self.bar_thickness.dp(scale);
-        let split_space = (total_length - bar_thickness).max(0.0);
+        let split_space = (length - bar_thickness).max(0.0);
         if split_space <= f64::EPSILON {
             return;
         }
@@ -579,9 +590,9 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let total_length = ctx.size().get_coord(self.split_axis);
+        let length = ctx.content_box_size().get_coord(self.split_axis);
         let bar_thickness = self.bar_thickness.dp(scale);
-        let split_space = (total_length - bar_thickness).max(0.0);
+        let split_space = (length - bar_thickness).max(0.0);
         if split_space <= f64::EPSILON {
             return;
         }
@@ -733,17 +744,7 @@ where
         }
 
         if ctx.is_focus_target() && self.draggable && !ctx.is_disabled() {
-            let size = ctx.size();
-            let length = size.get_coord(self.split_axis);
-            let cross_length = size.get_coord(self.split_axis.cross());
-            let (edge1, edge2) = self.bar_edges(length, scale);
-
-            let p1 = self.split_axis.pack_point(edge1, 0.);
-            let p2 = self.split_axis.pack_point(edge2, cross_length);
-            let rect = Rect::from_points(p1, p2).inset(2.0);
-            let focus_color =
-                theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
-            stroke(scene, &rect, focus_color, 1.0);
+            self.paint_focus_bar(ctx, scene, scale);
         }
         // TODO: Child painting should probably be clipped, in such a way that
         //       one child won't overflow across the split bar onto the other child.
@@ -755,8 +756,8 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let length = ctx.size().get_coord(self.split_axis);
-        let local_pos = (pos - ctx.window_origin().to_vec2()).get_coord(self.split_axis);
+        let length = ctx.content_box_size().get_coord(self.split_axis);
+        let local_pos = ctx.to_local(pos).get_coord(self.split_axis);
         let is_bar_area_hovered = self.bar_area_hit_test(length, local_pos, scale);
 
         if self.draggable && (ctx.is_active() || is_bar_area_hovered) {
@@ -783,9 +784,9 @@ where
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let total_length = ctx.size().get_coord(self.split_axis);
+        let length = ctx.content_box_size().get_coord(self.split_axis);
         let bar_thickness = self.bar_thickness.dp(scale);
-        let split_space = (total_length - bar_thickness).max(0.0);
+        let split_space = (length - bar_thickness).max(0.0);
         let (min_limit, max_limit) = self.split_side_limits(split_space, scale);
         let child1_len = split_space * self.split_point_effective;
 
@@ -821,6 +822,7 @@ mod tests {
     use super::*;
     use crate::core::{PointerButton, TextEvent, WindowEvent};
     use crate::dpi::PhysicalSize;
+    use crate::properties::Padding;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Label;
@@ -911,7 +913,7 @@ mod tests {
 
         let child1_initial_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
 
         // Initial bar center with default settings:
@@ -925,8 +927,8 @@ mod tests {
             let root = harness.root_widget();
             let children = root.children();
             (
-                children[0].ctx().size().width,
-                children[1].ctx().size().width,
+                children[0].ctx().border_box_size().width,
+                children[1].ctx().border_box_size().width,
             )
         };
 
@@ -951,14 +953,14 @@ mod tests {
 
         let child1_initial_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
 
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowRight)));
 
         let child1_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
 
         assert!(child1_width > child1_initial_width);
@@ -978,14 +980,14 @@ mod tests {
 
         let child1_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
         assert!((child1_width - 50.0).abs() < 0.01);
 
         harness.process_window_event(WindowEvent::Resize(PhysicalSize::new(300, 100)));
         let child1_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
         assert!((child1_width - 50.0).abs() < 0.01);
     }
@@ -1004,14 +1006,14 @@ mod tests {
 
         let child2_width = {
             let root = harness.root_widget();
-            root.children()[1].ctx().size().width
+            root.children()[1].ctx().border_box_size().width
         };
         assert!((child2_width - 50.0).abs() < 0.01);
 
         harness.process_window_event(WindowEvent::Resize(PhysicalSize::new(300, 100)));
         let child2_width = {
             let root = harness.root_widget();
-            root.children()[1].ctx().size().width
+            root.children()[1].ctx().border_box_size().width
         };
         assert!((child2_width - 50.0).abs() < 0.01);
     }
@@ -1019,8 +1021,8 @@ mod tests {
     #[test]
     fn fraction_clamps_when_set() {
         let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
+            Label::new("Hello").with_props(Padding::all(0.)),
+            Label::new("World").with_props(Padding::all(0.)),
         )
         .with_auto_id();
 
@@ -1032,7 +1034,7 @@ mod tests {
         });
         let child1_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
         assert!((child1_width - 144.0).abs() < 0.01);
 
@@ -1041,7 +1043,7 @@ mod tests {
         });
         let child1_width = {
             let root = harness.root_widget();
-            root.children()[0].ctx().size().width
+            root.children()[0].ctx().border_box_size().width
         };
         assert!((child1_width - 0.0).abs() < 0.01);
     }

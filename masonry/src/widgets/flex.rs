@@ -15,8 +15,8 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
+use crate::properties::Gap;
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
-use crate::properties::{BorderWidth, Gap, Padding};
 use crate::util::Sanitize;
 
 /// A container with either horizontal or vertical layout.
@@ -717,27 +717,17 @@ impl Widget for Flex {
         let main = self.direction;
         let cross = main.cross();
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
         let gap = props.get::<Gap>();
-
-        let border_length = border.length(measure_axis).dp(scale);
-        let padding_length = padding.length(measure_axis).dp(scale);
 
         let gap_length = gap.gap.dp(scale);
         let gap_count = self.children.len().saturating_sub(1);
 
-        let perp_space = perp_length.map(|perp_length| {
-            let prep_border_length = border.length(perp).dp(scale);
-            let prep_padding_length = padding.length(perp).dp(scale);
-            (perp_length - prep_border_length - prep_padding_length).max(0.)
-        });
         let (main_space, cross_space) = if perp == main {
-            (perp_space, None)
+            (perp_length, None)
         } else {
-            (None, perp_space)
+            (None, perp_length)
         };
-        let context_size = LayoutSize::maybe(perp, perp_space);
+        let context_size = LayoutSize::maybe(perp, perp_length);
 
         let (len_req, min_result) = match len_req {
             LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
@@ -930,7 +920,7 @@ impl Widget for Flex {
             // Gaps don't contribute to the cross axis
         }
 
-        min_result.max(length + border_length + padding_length)
+        min_result.max(length)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
@@ -938,21 +928,15 @@ impl Widget for Flex {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
-
         let gap = props.get::<Gap>();
         let gap_length = gap.gap.dp(scale);
         let gap_count = self.children.len().saturating_sub(1);
 
         let main = self.direction;
         let cross = main.cross();
-        let cross_space = space.get_coord(cross);
+        let cross_space = size.get_coord(cross);
 
-        let mut main_space = space.get_coord(main) - gap_count as f64 * gap_length;
+        let mut main_space = size.get_coord(main) - gap_count as f64 * gap_length;
         let mut flex_sum = 0.;
         let mut max_ascent: f64 = 0.;
         let mut lowest_baseline: f64 = f64::INFINITY;
@@ -973,7 +957,7 @@ impl Widget for Flex {
                 let child_cross_length = ctx.compute_length(
                     child,
                     cross_auto,
-                    space.into(),
+                    size.into(),
                     cross,
                     Some(child_main_length),
                 );
@@ -1024,7 +1008,7 @@ impl Widget for Flex {
                             *basis_resolved = ctx.compute_length(
                                 widget,
                                 main_auto,
-                                space.into(),
+                                size.into(),
                                 main,
                                 Some(cross_space),
                             );
@@ -1143,8 +1127,6 @@ impl Widget for Flex {
                     };
 
                     let child_origin = main.pack_point(main_offset, child_origin_cross);
-                    let child_origin = border.origin_down(child_origin, scale);
-                    let child_origin = padding.origin_down(child_origin, scale);
                     place_child(ctx, widget, child_origin);
 
                     main_offset += child_size.get_coord(main);
@@ -1168,15 +1150,21 @@ impl Widget for Flex {
             .any(|child| child.is_widget())
             .then_some(lowest_baseline);
 
-        ctx.set_baseline_offset(baseline.unwrap_or(0.));
+        if let Some(baseline) = baseline {
+            ctx.set_baseline_offset(baseline);
+        } else {
+            ctx.clear_baseline_offset();
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
+        if ctx.debug_paint_enabled() {
             let color = ctx.debug_color();
-            let my_baseline = ctx.size().height - ctx.baseline_offset();
-            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+            let border_box = ctx.border_box();
+            let content_box = ctx.content_box();
+            let baseline = content_box.height() - ctx.baseline_offset();
+            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
@@ -1215,7 +1203,7 @@ mod tests {
 
     use super::*;
     use crate::layout::AsUnit;
-    use crate::properties::BorderColor;
+    use crate::properties::{BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Label;

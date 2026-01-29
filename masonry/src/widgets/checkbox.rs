@@ -15,11 +15,11 @@ use crate::core::{
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
     paint_background, paint_box_shadow,
 };
-use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Point, Rect, Size, Stroke};
+use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, CornerRadius,
-    DisabledCheckmarkColor, FocusedBorderColor, HoveredBorderColor, Padding,
+    DisabledCheckmarkColor, FocusedBorderColor, HoveredBorderColor,
 };
 use crate::theme;
 use crate::util::stroke;
@@ -189,7 +189,7 @@ impl Widget for Checkbox {
     fn measure(
         &mut self,
         ctx: &mut MeasureCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
         cross_length: Option<f64>,
@@ -198,21 +198,12 @@ impl Widget for Checkbox {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
+        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
 
-        let calc_other_length = |axis| {
-            let border_length = border.length(axis).dp(scale);
-            let padding_length = padding.length(axis).dp(scale);
-            match axis {
-                Axis::Horizontal => {
-                    let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
-                    border_length + padding_length + check_side + check_padding
-                }
-                Axis::Vertical => border_length + padding_length,
-            }
+        let calc_other_length = |axis| match axis {
+            Axis::Horizontal => check_side + check_padding,
+            Axis::Vertical => 0.,
         };
         let other_length = calc_other_length(axis);
 
@@ -239,23 +230,17 @@ impl Widget for Checkbox {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
 
         let space = Size::new(
-            (space.width - (check_side + check_padding)).max(0.),
-            space.height,
+            (size.width - (check_side + check_padding)).max(0.),
+            size.height,
         );
 
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
@@ -271,19 +256,17 @@ impl Widget for Checkbox {
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
+        let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(ctx, props);
 
-        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
-        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
 
         // Paint focus indicator around the entire widget (box + label)
         if ctx.is_focus_target() || ctx.is_hovered() {
             // TODO: Replace this custom implementation with the general paint_border()
 
-            let focus_rect = Rect::new(0.0, 0.0, size.width, size.height);
-
-            let focus_rect = focus_rect.inflate(2.0, 2.0);
+            let focus_rect = bbox.inflate(2.0, 2.0);
 
             let focus_color = p.border_color.color;
             let focus_width = 2.0;
@@ -324,7 +307,7 @@ impl Widget for Checkbox {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
 
-        let border_rect = border_width.border_rect(check_size, border_radius);
+        let border_rect = border_width.border_rect(check_size.to_rect(), border_radius);
 
         let border_color = if is_focused {
             &props.get::<FocusedBorderColor>().0

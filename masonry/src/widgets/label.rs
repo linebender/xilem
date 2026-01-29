@@ -17,8 +17,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::LenReq;
-use crate::peniko::{BlendMode, Fill};
-use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
+use crate::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
 use crate::{TextAlign, TextAlignOptions, theme};
@@ -345,18 +344,11 @@ impl Widget for Label {
         len_req: LenReq,
         cross_length: Option<f64>,
     ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
 
-        let padding = props.get::<Padding>();
         let line_break_mode = props.get::<LineBreaking>();
-
-        let padding_length = padding.length(axis).dp(scale);
 
         // Calculate the max advance for the inline axis, with None indicating unbounded.
         let max_advance = match line_break_mode {
@@ -371,22 +363,17 @@ impl Widget for Label {
                         // Unbounded space will get us the length of the unwrapped string
                         LenReq::MaxContent => None,
                         // Attempt to wrap according to the parent's request
-                        LenReq::FitContent(space) => Some((space - padding_length).max(0.)),
+                        LenReq::FitContent(space) => Some(space),
                     }
                 } else {
                     // Block axis is dependant on the inline axis, so cross_length dominates.
                     // If there is no explicit cross_length present, we fall back to inline defaults.
-                    let cross_space = cross_length.map(|cross_length| {
-                        let cross = axis.cross();
-                        let cross_padding_length = padding.length(cross).dp(scale);
-                        cross_length - cross_padding_length
-                    });
                     match len_req {
                         // Fallback is inline axis MinContent
-                        LenReq::MinContent => cross_space.or(Some(0.)),
+                        LenReq::MinContent => cross_length.or(Some(0.)),
                         // Fallback is inline axis MaxContent, even for FitContent, because
                         // as we don't have the inline space bound we'll consider it unbounded.
-                        LenReq::MaxContent | LenReq::FitContent(_) => cross_space,
+                        LenReq::MaxContent | LenReq::FitContent(_) => cross_length,
                     }
                 }
             }
@@ -405,23 +392,17 @@ impl Widget for Label {
             self.measure_text_layout.layout.height() // Block length
         };
 
-        length as f64 + padding_length
+        length as f64
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
 
-        let padding = props.get::<Padding>();
         let line_break_mode = props.get::<LineBreaking>();
 
-        let space = padding.size_down(size, scale);
-        let inline_space = space.get_coord(inline) as f32;
+        let inline_space = size.get_coord(inline) as f32;
 
         if self.last_inline_space != inline_space {
             self.last_inline_space = inline_space;
@@ -447,31 +428,17 @@ impl Widget for Label {
         }
 
         let baseline = 0.; // TODO: Use actual baseline, at least for single line text
-        let baseline = padding.baseline_up(baseline, scale);
         ctx.set_baseline_offset(baseline);
+
+        if *line_break_mode == LineBreaking::Clip {
+            let border_box = size.to_rect() + ctx.border_box_insets();
+            ctx.set_clip_path(border_box);
+        } else {
+            ctx.clear_clip_path();
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let padding = *props.get::<Padding>();
-        let line_break_mode = *props.get::<LineBreaking>();
-
-        if line_break_mode == LineBreaking::Clip {
-            let clip_rect = ctx.size().to_rect();
-            scene.push_layer(
-                Fill::NonZero,
-                BlendMode::default(),
-                1.,
-                Affine::IDENTITY,
-                &clip_rect,
-            );
-        }
-        let text_origin = padding.origin_down(Point::ZERO, scale).to_vec2();
-        let transform = Affine::translate(text_origin);
-
         let text_color = if ctx.is_disabled() {
             &props.get::<DisabledContentColor>().0
         } else {
@@ -480,15 +447,11 @@ impl Widget for Label {
 
         render_text(
             scene,
-            transform,
+            Affine::IDENTITY,
             &self.text_layout.layout,
             &[text_color.color.into()],
             self.hint,
         );
-
-        if line_break_mode == LineBreaking::Clip {
-            scene.pop_layer();
-        }
     }
 
     fn accessibility_role(&self) -> Role {
@@ -498,24 +461,19 @@ impl Widget for Label {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
+        let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();
 
-        let padding = *props.get::<Padding>();
-
-        let text_origin = padding.origin_down(Point::ZERO, scale).to_vec2();
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout.layout,
             ctx.tree_update(),
             node,
             AccessCtx::next_node_id,
-            text_origin.x,
-            text_origin.y,
+            text_origin_in_border_box_space.x,
+            text_origin_in_border_box_space.y,
         );
     }
 

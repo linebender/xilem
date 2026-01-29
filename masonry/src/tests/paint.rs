@@ -88,10 +88,10 @@ fn paint_order() {
                 }
             })
             .paint_fn(|_, ctx, _, scene| {
-                fill(scene, &ctx.size().to_rect(), Color::WHITE);
+                fill(scene, &ctx.content_box(), Color::WHITE);
             })
             .post_paint_fn(|_, ctx, _, scene| {
-                let rect = ctx.size().to_rect().inset(-0.5);
+                let rect = ctx.content_box().inset(-0.5);
                 stroke(scene, &rect, Color::BLACK, 1.0);
             }),
     );
@@ -128,7 +128,7 @@ fn paint_clipping() {
                 ctx.set_clip_path(size.to_rect());
             })
             .paint_fn(move |_, ctx, _, scene| {
-                fill(scene, &ctx.size().to_rect(), Color::WHITE);
+                fill(scene, &ctx.content_box(), Color::WHITE);
                 fill(scene, &circle, RED);
             })
             .post_paint_fn(move |_, _, _, scene| {

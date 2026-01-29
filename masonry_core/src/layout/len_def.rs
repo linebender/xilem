@@ -4,9 +4,9 @@
 use crate::layout::LenReq;
 use crate::util::Sanitize;
 
-/// Widget length definition.
+/// Widget border-box length definition.
 ///
-/// This is an intermediate representation of widget length,
+/// This is an intermediate representation of widget border-box length,
 /// used after resolving [`Dim`] but before potentially measuring the widget.
 ///
 /// This is how a parent specifies [`Dim::Auto`] behavior for its children.
@@ -17,23 +17,23 @@ use crate::util::Sanitize;
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LenDef {
-    /// Specific fixed length.
+    /// Specific fixed border-box length.
     ///
     /// The value must be finite, non-negative, and in device pixels.
     Fixed(f64),
-    /// Minimum preferred length.
+    /// Minimum preferred border-box length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///
     /// [`measure`]: crate::core::Widget::measure
     MinContent,
-    /// Maximum preferred length.
+    /// Maximum preferred border-box length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///
     /// [`measure`]: crate::core::Widget::measure
     MaxContent,
-    /// The content should fit in the specified available space.
+    /// The border-box should fit in the specified available space.
     ///
     /// The value must be finite, non-negative, and in device pixels.
     ///
@@ -54,7 +54,7 @@ impl From<LenReq> for LenDef {
 }
 
 impl LenDef {
-    /// Returns the specific fixed length if it is present.
+    /// Returns the specific fixed border-box length if it is present.
     ///
     /// The length will be in device pixels.
     ///
