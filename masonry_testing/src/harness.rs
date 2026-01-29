@@ -1067,7 +1067,7 @@ impl<W: Widget> TestHarness<W> {
     // --- MARK: SNAPSHOT
 
     /// Renders the current widget tree to a pixmap, and writes it to a temporary PNG file.
-    pub fn save_render_screenshot(&mut self) {
+    pub fn save_render_snapshot(&mut self) {
         let image = self.render();
 
         let mut buffer = Cursor::new(Vec::new());
