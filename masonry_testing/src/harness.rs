@@ -1067,7 +1067,7 @@ impl<W: Widget> TestHarness<W> {
     // --- MARK: SNAPSHOT
 
     /// Renders the current widget tree to a pixmap, and writes it to a temporary PNG file.
-    pub fn print_render_snapshot(&mut self) {
+    pub fn save_render_screenshot(&mut self) {
         let image = self.render();
 
         let mut buffer = Cursor::new(Vec::new());
@@ -1081,7 +1081,7 @@ impl<W: Widget> TestHarness<W> {
         let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-screenshot.png"));
 
         std::fs::write(&tmp_path, image_data).unwrap();
-        debug!("Screenshot written to {}", tmp_path.display());
+        debug!("Screenshot saved to {}", tmp_path.display());
     }
 
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
