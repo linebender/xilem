@@ -781,10 +781,10 @@ impl<W: Widget> TestHarness<W> {
     /// Clicks the given widget.
     ///
     /// This will send an accesskit [`Click`] action to the widget,
-    /// which may have different behavior to a normal mouse click.
+    /// which may have different behavior compared to a normal mouse click.
     ///
     /// Unlike [`Self::mouse_click_on`], the event will be routed to the target widget
-    /// event if it's not visible, or hidden behind other widgets.
+    /// even if it's not visible, or hidden behind other widgets.
     ///
     /// # Panics
     ///
