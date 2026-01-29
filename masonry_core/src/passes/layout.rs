@@ -349,6 +349,7 @@ pub(crate) fn run_layout_on(
     state.needs_paint = true;
     state.needs_compose = true;
     state.needs_accessibility = true;
+    state.request_pre_paint = true;
     state.request_paint = true;
     state.request_post_paint = true;
     state.request_compose = true;

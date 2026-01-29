@@ -3,11 +3,10 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::Affine;
-
-use crate::{
-    core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId},
-    properties::{BoxShadow, Dimensions, Padding},
+use crate::core::{FromDynWidget, MutateCtx, Property, UpdateCtx, Widget, WidgetId};
+use crate::kurbo::Affine;
+use crate::properties::{
+    ActiveBackground, Background, BoxShadow, Dimensions, DisabledBackground, Padding,
 };
 
 /// A rich mutable reference to a [`Widget`].
@@ -19,7 +18,7 @@ use crate::{
 /// change.
 ///
 /// You can create a `WidgetMut` from [`RenderRoot`](crate::app::RenderRoot),
-/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
+/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`] or from a parent
 /// `WidgetMut` with [`MutateCtx`].
 ///
 /// # `WidgetMut` as a Receiver
@@ -94,9 +93,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let value = self.ctx.properties.insert(value);
         let mut ctx = self.ctx.update_mut();
         let property_type = TypeId::of::<P>();
-        Dimensions::prop_changed(&mut ctx, property_type);
-        BoxShadow::prop_changed(&mut ctx, property_type);
-        Padding::prop_changed(&mut ctx, property_type);
+        Self::core_property_changed(&mut ctx, property_type);
         self.widget.property_changed(&mut ctx, property_type);
         value
     }
@@ -111,11 +108,19 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let value = self.ctx.properties.remove::<P>();
         let mut ctx = self.ctx.update_mut();
         let property_type = TypeId::of::<P>();
-        Dimensions::prop_changed(&mut ctx, property_type);
-        BoxShadow::prop_changed(&mut ctx, property_type);
-        Padding::prop_changed(&mut ctx, property_type);
+        Self::core_property_changed(&mut ctx, property_type);
         self.widget.property_changed(&mut ctx, property_type);
         value
+    }
+
+    /// Handles core property changes.
+    fn core_property_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        Dimensions::prop_changed(ctx, property_type);
+        BoxShadow::prop_changed(ctx, property_type);
+        DisabledBackground::prop_changed(ctx, property_type);
+        ActiveBackground::prop_changed(ctx, property_type);
+        Background::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
     }
 
     /// Sets the local transform of this widget.

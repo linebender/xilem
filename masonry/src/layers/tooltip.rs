@@ -15,10 +15,9 @@ use crate::core::{
 };
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    FocusedBorderColor, HoveredBorderColor, Padding,
+    BorderColor, BorderWidth, CornerRadius, FocusedBorderColor, HoveredBorderColor, Padding,
 };
-use crate::util::{fill, stroke};
+use crate::util::stroke;
 
 /// A [`Layer`] representing a simple tooltip showing some content until the mouse moves.
 pub struct Tooltip {
@@ -51,7 +50,6 @@ impl Tooltip {
     }
 }
 
-impl HasProperty<Background> for Tooltip {}
 impl HasProperty<BorderColor> for Tooltip {}
 impl HasProperty<BorderWidth> for Tooltip {}
 impl HasProperty<CornerRadius> for Tooltip {}
@@ -86,10 +84,7 @@ impl Widget for Tooltip {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::FocusChanged(_)
-            | Update::DisabledChanged(_) => {
+            Update::HoveredChanged(_) | Update::FocusChanged(_) => {
                 ctx.request_paint_only();
             }
             _ => {}
@@ -101,7 +96,6 @@ impl Widget for Tooltip {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
@@ -173,22 +167,12 @@ impl Widget for Tooltip {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
         let border_color = if is_focused {
@@ -199,8 +183,6 @@ impl Widget for Tooltip {
             props.get::<BorderColor>()
         };
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 

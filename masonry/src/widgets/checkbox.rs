@@ -17,12 +17,11 @@ use crate::core::{
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Dashes, Join, Point, Rect, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
-    CornerRadius, DisabledBackground, DisabledCheckmarkColor, FocusedBorderColor,
-    HoveredBorderColor, Padding,
+    BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, CornerRadius,
+    DisabledCheckmarkColor, FocusedBorderColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::stroke;
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
@@ -87,9 +86,6 @@ impl Checkbox {
     }
 }
 
-impl HasProperty<DisabledBackground> for Checkbox {}
-impl HasProperty<ActiveBackground> for Checkbox {}
-impl HasProperty<Background> for Checkbox {}
 impl HasProperty<FocusedBorderColor> for Checkbox {}
 impl HasProperty<HoveredBorderColor> for Checkbox {}
 impl HasProperty<BorderColor> for Checkbox {}
@@ -167,10 +163,7 @@ impl Widget for Checkbox {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::FocusChanged(_)
-            | Update::DisabledChanged(_) => {
+            Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
             }
 
@@ -183,9 +176,6 @@ impl Widget for Checkbox {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         FocusedBorderColor::prop_changed(ctx, property_type);
@@ -286,7 +276,6 @@ impl Widget for Checkbox {
         let scale = 1.0;
 
         let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
@@ -295,15 +284,6 @@ impl Widget for Checkbox {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(check_size, border_radius);
         let border_rect = border_width.border_rect(check_size, border_radius);
 
         let border_color = if is_focused {
@@ -314,9 +294,7 @@ impl Widget for Checkbox {
             props.get::<BorderColor>()
         };
 
-        // Paint the checkbox box background and border
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
+        // Paint the checkbox box border
         stroke(scene, &border_rect, border_color.color, border_width.width);
 
         // Paint the checkmark if checked

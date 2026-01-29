@@ -15,8 +15,8 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, stroke};
+use crate::properties::{BorderColor, BorderWidth, CornerRadius, Gap, Padding};
+use crate::util::{debug_panic, stroke};
 
 /// A widget that arranges its children in a grid.
 ///
@@ -281,7 +281,6 @@ impl CollectionWidget<GridParams> for Grid {
     }
 }
 
-impl HasProperty<Background> for Grid {}
 impl HasProperty<BorderColor> for Grid {}
 impl HasProperty<BorderWidth> for Grid {}
 impl HasProperty<CornerRadius> for Grid {}
@@ -302,7 +301,6 @@ impl Widget for Grid {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
@@ -422,14 +420,10 @@ impl Widget for Grid {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
         let border_color = props.get::<BorderColor>();
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
         let border_rect = border_width.border_rect(ctx.size(), border_radius);
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
 
         // paint the baseline if we're debugging layout

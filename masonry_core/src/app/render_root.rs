@@ -147,7 +147,7 @@ pub(crate) struct RenderRootState {
     pub(crate) last_sent_ime_area: Rect,
 
     /// Scene cache for the widget tree.
-    pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene)>,
+    pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
@@ -841,6 +841,7 @@ impl RenderRoot {
 
             state.needs_paint = true;
             state.needs_accessibility = true;
+            state.request_pre_paint = true;
             state.request_paint = true;
             state.request_accessibility = true;
             state.request_post_paint = true;

@@ -16,11 +16,10 @@ use crate::core::{
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    Background, BorderColor, BorderWidth, CaretColor, ContentColor, CornerRadius,
-    DisabledBackground, FocusedBorderColor, LineBreaking, Padding, PlaceholderColor,
-    SelectionColor, UnfocusedSelectionColor,
+    BorderColor, BorderWidth, CaretColor, ContentColor, CornerRadius, FocusedBorderColor,
+    LineBreaking, Padding, PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
 };
-use crate::util::{fill, stroke};
+use crate::util::stroke;
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -149,9 +148,7 @@ impl TextInput {
     }
 }
 
-impl HasProperty<Background> for TextInput {}
 impl HasProperty<CaretColor> for TextInput {}
-impl HasProperty<DisabledBackground> for TextInput {}
 impl HasProperty<BorderColor> for TextInput {}
 impl HasProperty<FocusedBorderColor> for TextInput {}
 impl HasProperty<BorderWidth> for TextInput {}
@@ -170,8 +167,6 @@ impl Widget for TextInput {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         FocusedBorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
@@ -339,13 +334,6 @@ impl Widget for TextInput {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
         let border_color = if ctx.has_focus_target() {
@@ -354,8 +342,6 @@ impl Widget for TextInput {
             props.get::<BorderColor>()
         };
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
