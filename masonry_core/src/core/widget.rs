@@ -542,7 +542,7 @@ pub fn find_widget_under_pointer<'c>(
     ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    if !ctx.bounding_rect().contains(pos) {
+    if !ctx.bounding_box().contains(pos) {
         return None;
     }
     if ctx.is_stashed() {

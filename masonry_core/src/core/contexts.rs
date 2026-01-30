@@ -435,9 +435,9 @@ impl EventCtx<'_> {
         self.global_state.needs_pointer_pass = true;
     }
 
-    /// Sends a signal to parent widgets to scroll this widget into view.
+    /// Sends a signal to parent widgets to scroll this widget's border-box into view.
     pub fn request_scroll_to_this(&mut self) {
-        let rect = self.widget_state.size().to_rect();
+        let rect = self.widget_state.border_box_size().to_rect();
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
@@ -540,7 +540,7 @@ impl AccessCtx<'_> {
 
 // --- MARK: COMPUTE LENGTH
 impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
-    /// Computes the length that the `child` widget wants to be on the given `axis`.
+    /// Computes the `child`'s preferred border-box length on the given `axis`.
     ///
     /// The returned length will be finite, non-negative, and in device pixels.
     ///
@@ -562,7 +562,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     ///
     /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
-    /// This is usually the container widget's size, excluding its borders and padding.
+    /// This is usually the container widget's content-box size, i.e. excluding borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
     /// its viewport size.
@@ -631,7 +631,7 @@ impl MeasureCtx<'_> {
 
     /// Returns the context size of this measurement.
     ///
-    /// This is usually the container widget's size, excluding its borders and padding.
+    /// This is usually the container widget's content-box size, i.e. excluding borders and padding.
     ///
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
@@ -737,7 +737,7 @@ impl LayoutCtx<'_> {
         }
     }
 
-    /// Computes the size that the `child` widget wants to be.
+    /// Computes the `child`'s preferred border-box size.
     ///
     /// The returned size will be finite, non-negative, and in device pixels.
     ///
@@ -752,7 +752,7 @@ impl LayoutCtx<'_> {
     ///
     /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
-    /// This is usually the container widget's size, excluding its borders and padding.
+    /// This is usually the container widget's content-box size, i.e. excluding borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
     /// i.e. the union of cell sizes that the child occupies, and `Portal` which will provide
     /// its viewport size.
@@ -778,11 +778,12 @@ impl LayoutCtx<'_> {
         )
     }
 
-    /// Lays out the `child` widget.
+    /// Lays out the `child` widget with a chosen border-box `size`.
     ///
     /// Container widgets must call this on every child as part of their [`layout`] method.
     ///
-    /// The container widget may call [`compute_size`] to see what `size` the child wants to be.
+    /// The container widget should usually call [`compute_size`] on the `child`
+    /// to get its preferred border-box `size`.
     /// However, ultimately the parent is in control and can choose any `size` for the child.
     ///
     /// The provided `size` must be finite, non-negative, and in device pixels.
@@ -794,20 +795,22 @@ impl LayoutCtx<'_> {
     ///
     /// [`layout`]: Widget::layout
     /// [`compute_size`]: Self::compute_size
-    pub fn run_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, size: Size) {
+    pub fn run_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, chosen_size: Size) {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
 
-        run_layout_on(self.global_state, self.default_properties, node, size);
+        run_layout_on(
+            self.global_state,
+            self.default_properties,
+            node,
+            chosen_size,
+        );
 
         let state_mut = &mut self.children.item_mut(id).unwrap().item.state;
         self.widget_state.merge_up(state_mut);
     }
 
     /// Sets the position of the `child` widget, in this widget's coordinate space.
-    ///
-    /// The child widget's paint rect will be automatically merged
-    /// with this widget's paint rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// [`layout`] method, after calling `ctx.run_layout(child, size)`.
@@ -863,7 +866,7 @@ impl LayoutCtx<'_> {
     /// The provided value should be the distance from the *bottom* of the
     /// widget to the baseline.
     pub fn set_baseline_offset(&mut self, baseline: f64) {
-        self.widget_state.baseline_offset = baseline;
+        self.widget_state.layout_baseline_offset = baseline;
     }
 
     /// Returns whether this widget needs to call [`LayoutCtx::run_layout`].
@@ -876,7 +879,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).needs_layout()
     }
 
-    /// The distance from the bottom of the given widget to the baseline.
+    /// The distance from the bottom of the child widget's layout border-box to its baseline.
     ///
     /// # Panics
     ///
@@ -885,10 +888,10 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
-        self.get_child_state(child).baseline_offset
+        self.get_child_state(child).layout_baseline_offset
     }
 
-    /// Returns the given child's size.
+    /// Returns the given child's layout border-box size.
     ///
     /// # Panics
     ///
@@ -897,7 +900,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
-        self.get_child_state(child).layout_size
+        self.get_child_state(child).layout_border_box_size
     }
 
     /// Gives the widget a clip path.
@@ -1025,15 +1028,29 @@ impl_context_method!(
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
-            self.widget_state.size()
+            self.widget_state.border_box_size()
         }
 
         /// Returns the aligned paint-box rect of this widget
         /// in this widget's border-box coordinate space.
         ///
         /// Covers the area we expect to be invalidated when the widget is painted.
-        pub fn paint_rect(&self) -> Rect {
-            self.widget_state.paint_rect()
+        pub fn paint_box(&self) -> Rect {
+            self.widget_state.paint_box()
+        }
+
+        /// Returns the widget's bounding-box rect in the window's coordinate space.
+        ///
+        /// It contains this widget and all of its descendents.
+        ///
+        /// This is the union of clipped effective paint-box rects, i.e. the union of
+        /// globally transformed aligned border-box rects with paint insets applied.
+        ///
+        /// See [bounding box documentation] for more details.
+        ///
+        /// [bounding box documentation]: crate::doc::masonry_concepts#bounding-box
+        pub fn bounding_box(&self) -> Rect {
+            self.widget_state.bounding_box
         }
 
         /// The offset of the baseline relative to the bottom of the widget.
@@ -1043,7 +1060,7 @@ impl_context_method!(
 
         /// Returns the widget's effective border-box origin in the window's coordinate space.
         pub fn window_origin(&self) -> Point {
-            self.widget_state.window_origin()
+            self.widget_state.border_box_window_origin()
         }
 
         /// Global transform of this widget in the window coordinate space.
@@ -1051,14 +1068,6 @@ impl_context_method!(
         /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
         pub fn window_transform(&self) -> Affine {
             self.widget_state.window_transform
-        }
-
-        /// The bounding rect of the widget and all of its descendants in window coordinates.
-        ///
-        /// See [bounding rect documentation](crate::doc::masonry_concepts#bounding-rect)
-        /// for details.
-        pub fn bounding_rect(&self) -> Rect {
-            self.widget_state.bounding_rect()
         }
 
         /// The clip path of the widget, if any was set.

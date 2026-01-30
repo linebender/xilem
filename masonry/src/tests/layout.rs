@@ -40,7 +40,7 @@ fn layout_simple() {
     let harness = TestHarness::create(test_property_set(), widget);
 
     let first_box_size = harness.get_widget(tag_1).ctx().size();
-    let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_rect();
+    let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_box();
 
     assert_eq!(first_box_size.width, BOX_WIDTH);
     assert_eq!(first_box_size.height, BOX_WIDTH);
@@ -245,9 +245,9 @@ fn layout_insets() {
 
     let harness = TestHarness::create(test_property_set(), root_widget);
 
-    let child_paint_rect = harness.get_widget(child_tag).ctx().paint_rect();
-    let parent_paint_rect = harness.get_widget(parent_tag).ctx().paint_rect();
-    let parent_bounding_rect = harness.get_widget(parent_tag).ctx().bounding_rect();
+    let child_paint_rect = harness.get_widget(child_tag).ctx().paint_box();
+    let parent_paint_rect = harness.get_widget(parent_tag).ctx().paint_box();
+    let parent_bounding_rect = harness.get_widget(parent_tag).ctx().bounding_box();
 
     // The child's paint box is affected by its paint insets
     assert_eq!(child_paint_rect.x0, 0.0);
