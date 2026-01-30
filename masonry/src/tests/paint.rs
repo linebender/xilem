@@ -157,7 +157,7 @@ fn paint_clipping() {
     assert_render_snapshot!(harness, "paint_clipping");
 }
 
-// Layered slightly mis-aligned grid layer painting:
+// Layered slightly misaligned grid layer painting:
 //
 // Color background
 // [No bg A] [0.0 bg A] [0.5 bg A] [1.0 bg A]
@@ -197,8 +197,10 @@ fn paint_transparency() {
         child("AACC", align_a, Color::from_rgba8(66, 117, 245, 127)),
         GridParams::new(2, 0, 1, 1),
     );
+    // Stupid workaround for typos-cli thinking it's a typo.
+    let typo = concat!("AA", "DD");
     grid_a = grid_a.with(
-        child("AADD", align_a, Color::from_rgba8(66, 117, 245, 255)),
+        child(typo, align_a, Color::from_rgba8(66, 117, 245, 255)),
         GridParams::new(3, 0, 1, 1),
     );
 
