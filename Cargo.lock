@@ -719,6 +719,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "components"
+version = "0.0.0"
+dependencies = [
+ "console_error_panic_hook",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
