@@ -3,22 +3,21 @@
 
 //! A stopwatch to display elapsed time.
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
+use masonry::layout::AsUnit;
+use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
-use xilem::{WidgetView, Xilem};
+use xilem::view::{FlexSequence, FlexSpacer, flex_col, flex_row, label, task, text_button};
+use xilem::{WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 /// The state of the entire application.
 ///
@@ -59,7 +58,7 @@ impl Stopwatch {
                 self.displayed_error = "".into();
             }
             Err(err) => {
-                self.displayed_error = format!("failed to calculate elapsed time: {}", err);
+                self.displayed_error = format!("failed to calculate elapsed time: {err}");
             }
         }
         self.last_start_time = None;
@@ -108,20 +107,21 @@ fn get_formatted_duration(dur: Duration) -> String {
     format!("{hours}:{minutes:0>2}:{seconds:0>4.1}")
 }
 
-fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     fork(
-        flex((
-            FlexSpacer::Fixed(5.0),
+        flex_col((
+            FlexSpacer::Fixed(5.px()),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
-            flex((lap_reset_button(data), start_stop_button(data))).direction(Axis::Horizontal),
-            FlexSpacer::Fixed(1.0),
+            flex_row((lap_reset_button(data), start_stop_button(data)))
+                .main_axis_alignment(MainAxisAlignment::Center),
+            FlexSpacer::Fixed(1.px()),
             laps_section(data),
             label(data.displayed_error.as_ref()),
         )),
         data.active.then(|| {
             // Only update while active.
             task(
-                |proxy| async move {
+                |proxy, _| async move {
                     let mut interval = time::interval(Duration::from_millis(50));
                     loop {
                         interval.tick().await;
@@ -139,7 +139,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
 }
 
 /// Creates a list of items that shows the lap number, split time, and total cumulative time.
-fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
+fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Edit<Stopwatch>> + use<> {
     let mut items = Vec::new();
     let mut total_dur = Duration::ZERO;
     let current_lap = data.completed_lap_splits.len();
@@ -162,45 +162,43 @@ fn single_lap(
     lap_id: usize,
     split_dur: Duration,
     total_dur: Duration,
-) -> impl WidgetView<Stopwatch> {
-    flex((
+) -> impl WidgetView<Edit<Stopwatch>> {
+    flex_row((
         FlexSpacer::Flex(1.0),
         label(format!("Lap {}", lap_id + 1)),
         label(get_formatted_duration(split_dur)),
         label(get_formatted_duration(total_dur)),
         FlexSpacer::Flex(1.0),
     ))
-    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Start)
-    .must_fill_major_axis(true)
 }
 
-fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     if data.active {
-        Either::A(button("Stop", |data: &mut Stopwatch| {
+        Either::A(text_button("Stop", |data: &mut Stopwatch| {
             data.stop();
         }))
     } else {
-        Either::B(button("Start", |data: &mut Stopwatch| {
+        Either::B(text_button("Start", |data: &mut Stopwatch| {
             data.start();
         }))
     }
 }
 
-fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     if data.active {
-        Either::A(button("  Lap  ", |data: &mut Stopwatch| {
+        Either::A(text_button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
         }))
     } else {
-        Either::B(button("Reset", |data: &mut Stopwatch| {
+        Either::B(text_button("Reset", |data: &mut Stopwatch| {
             data.reset();
         }))
     }
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let mut data = Stopwatch {
         active: false,
         added_duration: Duration::ZERO,
@@ -212,40 +210,16 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
     data.update_display();
 
-    let app = Xilem::new(data, app_logic);
-    let min_window_size = LogicalSize::new(300., 200.);
-    let window_size = LogicalSize::new(450., 300.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Stopwatch")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
-    app.run_windowed_in(event_loop, window_attributes)?;
+    let window_options = WindowOptions::new("Stopwatch")
+        .with_min_inner_size(LogicalSize::new(300., 200.))
+        .with_initial_inner_size(LogicalSize::new(450., 300.));
+    let app = Xilem::new_simple(data, app_logic, window_options);
+    app.run_in(event_loop)?;
     Ok(())
 }
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }

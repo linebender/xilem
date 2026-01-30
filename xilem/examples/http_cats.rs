@@ -4,29 +4,33 @@
 //! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
 //! This also demonstrates image loading.
 
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use std::sync::Arc;
 
-use vello::peniko::{Blob, Image};
+use masonry::layout::{AsUnit, Length, UnitPoint};
+use masonry::properties::{LineBreaking, Padding};
+use tokio::sync::mpsc::UnboundedSender;
+use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
+use xilem::style::Style as _;
 use xilem::view::{
-    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer, Padding,
+    FlexExt, FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose,
+    sized_box, spinner, split, text_button, worker, zstack,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
+use xilem_core::Edit;
 
 /// The main state of the application.
 struct HttpCats {
     statuses: Vec<Status>,
     // The currently active (http status) code.
     selected_code: Option<u32>,
+    /// Send a status code to download the image for it.
+    download_sender: Option<UnboundedSender<u32>>,
 }
 
 #[derive(Debug)]
@@ -42,100 +46,75 @@ enum ImageState {
     NotRequested,
     Pending,
     // Error,
-    Available(Image),
+    Available(ImageData),
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<HttpCats> {
-        let left_column = sized_box(portal(flex((
+    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
+        let left_column = flex_col((
             prose("Status"),
             self.statuses
                 .iter_mut()
                 .map(Status::list_view)
                 .collect::<Vec<_>>(),
-        ))))
-        .padding(Padding::leading(5.));
+        ))
+        .padding(Padding::left(5.));
 
-        let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
+        let info_area = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
                 self.statuses.iter_mut().find(|it| it.code == selected_code)
             {
-                // If we haven't requested the image yet, make sure we do so.
-                let value = match selected_status.image {
-                    ImageState::NotRequested => {
-                        // TODO: Should a view_function be editing `self`?
-                        // This feels too imperative.
-                        selected_status.image = ImageState::Pending;
-                        Some(selected_code)
-                    }
-                    // If the image is pending, that means that worker already knows about it.
-                    // We don't set the requested code to `selected_code` here because we could have been on
-                    // a different view in-between, so we don't want to request the same image twice.
-                    ImageState::Pending => None,
-                    ImageState::Available(_) => None,
-                };
-                (OneOf3::A(selected_status.details_view()), value)
+                OneOf3::A(selected_status.details_view())
             } else {
-                (
-                    OneOf3::B(
-                        prose(format!(
-                            "Status code {selected_code} selected, but this was not found."
-                        ))
-                        .alignment(TextAlignment::Middle)
-                        .brush(Color::YELLOW),
-                    ),
-                    None,
+                OneOf3::B(
+                    prose(format!(
+                        "Status code {selected_code} selected, but this was not found."
+                    ))
+                    .text_alignment(TextAlign::Center)
+                    .text_color(palette::css::YELLOW),
                 )
             }
         } else {
-            (
-                OneOf3::C(
-                    prose("No selection yet made. Select an item from the sidebar to continue.")
-                        .alignment(TextAlignment::Middle),
-                ),
-                None,
+            OneOf3::C(
+                prose("No selection yet made. Select an item from the sidebar to continue.")
+                    .text_alignment(TextAlign::Center),
             )
         };
 
         // TODO: Should `web_image` be a built-in component?
 
         fork(
-            flex((
+            flex_col((
                 // Add padding to the top for Android. Still a horrible hack
-                FlexSpacer::Fixed(40.),
-                flex((
-                    left_column.flex(1.),
-                    portal(sized_box(info_area).expand_width()).flex(1.),
-                ))
-                .direction(Axis::Horizontal)
-                .must_fill_major_axis(true)
-                .flex(1.),
-            ))
-            .must_fill_major_axis(true),
+                FlexSpacer::Fixed(40.px()),
+                split(portal(left_column), info_area)
+                    .split_point(0.4)
+                    .flex(1.),
+            )),
             worker(
-                worker_value,
                 |proxy, mut rx| async move {
-                    while let Some(request) = rx.recv().await {
-                        if let Some(code) = request {
-                            let proxy = proxy.clone();
-                            tokio::task::spawn(async move {
-                                let url = format!("https://http.cat/{code}");
-                                let result = image_from_url(&url).await;
-                                match result {
-                                    // We choose not to handle the case where the event loop has ended
-                                    Ok(image) => drop(proxy.message((code, image))),
-                                    // TODO: Report in the frontend
-                                    Err(err) => {
-                                        tracing::warn!(
-                                            "Loading image for HTTP status code {code} from {url} failed: {err:?}"
-                                        );
-                                    }
+                    while let Some(code) = rx.recv().await {
+                        let proxy = proxy.clone();
+                        tokio::task::spawn(async move {
+                            let url = format!("https://http.cat/{code}");
+                            let result = image_from_url(&url).await;
+                            match result {
+                                // We choose not to handle the case where the event loop has ended
+                                Ok(image) => drop(proxy.message((code, image))),
+                                // TODO: Report in the frontend
+                                Err(err) => {
+                                    tracing::warn!(
+                                        "Loading image for HTTP status code {code} from {url} failed: {err:?}"
+                                    );
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 },
-                |state: &mut HttpCats, (code, image): (u32, Image)| {
+                |state: &mut Self, sender| {
+                    state.download_sender = Some(sender);
+                },
+                |state: &mut Self, (code, image): (u32, ImageData)| {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
                         status.image = ImageState::Available(image);
                     } else {
@@ -147,82 +126,110 @@ impl HttpCats {
     }
 }
 
-/// Load a [`vello::peniko::Image`] from the given url.
-async fn image_from_url(url: &str) -> anyhow::Result<Image> {
+/// Load the [`ImageData`] from the given url.
+///
+/// N.B. This is functionality shared with Placehero and `virtual_cats`.
+async fn image_from_url(url: &str) -> anyhow::Result<ImageData> {
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
     let width = image.width();
     let height = image.height();
     let data = image.into_vec();
-    Ok(Image::new(
-        Blob::new(Arc::new(data)),
-        vello::peniko::Format::Rgba8,
+    Ok(ImageData {
+        data: Blob::new(Arc::new(data)),
+        format: ImageFormat::Rgba8,
+        alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    ))
+    })
 }
 
 impl Status {
-    fn list_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn list_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let code = self.code;
-        flex((
+        flex_row((
             // TODO: Reduce allocations here?
             inline_prose(self.code.to_string()),
             inline_prose(self.message),
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
-            button("Select", move |state: &mut HttpCats| {
+            text_button("Select", move |state: &mut HttpCats| {
+                let status = state
+                    .statuses
+                    .iter_mut()
+                    .find(|it| it.code == code)
+                    .unwrap();
+
+                if matches!(status.image, ImageState::NotRequested) {
+                    state.download_sender.as_ref().unwrap().send(code).unwrap();
+                    status.image = ImageState::Pending;
+                }
+
                 state.selected_code = Some(code);
             }),
-            FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
+            FlexSpacer::Fixed(Length::px(masonry::theme::SCROLLBAR_WIDTH)),
         ))
-        .direction(Axis::Horizontal)
     }
 
-    fn details_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn details_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")
-                    .alignment(TextAlignment::Middle),
+                    .text_alignment(TextAlign::Center),
             ),
-            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
+            ImageState::Pending => OneOf3::B(spinner().dims(80.px())),
             // TODO: Alt text?
-            ImageState::Available(image_data) => OneOf3::C(image(image_data)),
+            ImageState::Available(image_data) => {
+                let attribution = sized_box(
+                    sized_box(
+                        prose("Copyright ©️ https://http.cat")
+                            .line_break_mode(LineBreaking::Clip)
+                            .text_alignment(TextAlign::End),
+                    )
+                    .padding(4.)
+                    .corner_radius(4.)
+                    .background_color(palette::css::BLACK.multiply_alpha(0.5)),
+                )
+                .padding(Padding {
+                    left: 0.,
+                    right: 42.,
+                    top: 30.,
+                    bottom: 0.,
+                });
+                OneOf3::C(zstack((
+                    image(image_data.clone()),
+                    attribution.alignment(UnitPoint::TOP_RIGHT),
+                )))
+            }
         };
-        flex((
-            prose(format!("HTTP Status Code: {}", self.code)).alignment(TextAlignment::Middle),
+        flex_col((
+            prose(format!("HTTP Status Code: {}", self.code)).text_alignment(TextAlign::Center),
             prose(self.message)
                 .text_size(20.)
-                .alignment(TextAlignment::Middle),
-            FlexSpacer::Fixed(10.),
-            image,
-            // TODO: Overlay on top of the image?
-            // HACK: Trailing padding workaround scrollbar covering content
-            // HACK: Bottom padding to workaround https://github.com/linebender/parley/issues/165
-            sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
-                .padding(Padding::new(0., 15., 10., 0.)),
+                .text_alignment(TextAlign::Center),
+            FlexSpacer::Fixed(10.px()),
+            image.flex(1.),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = HttpCats {
         statuses: Status::parse_file(),
         selected_code: None,
+        download_sender: None,
     };
 
-    let app = Xilem::new(data, HttpCats::view);
-    let min_window_size = LogicalSize::new(200., 200.);
+    let app = Xilem::new_simple(
+        data,
+        HttpCats::view,
+        WindowOptions::new("HTTP cats").with_min_inner_size(LogicalSize::new(200., 200.)),
+    );
 
-    let window_attributes = Window::default_attributes()
-        .with_title("HTTP cats")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size);
-
-    app.run_windowed_in(event_loop, window_attributes)
+    app.run_in(event_loop)
 }
 
 impl Status {
@@ -231,7 +238,7 @@ impl Status {
         let mut lines = STATUS_CODES_CSV.lines();
         let first_line = lines.next();
         assert_eq!(first_line, Some("code,message"));
-        lines.flat_map(Status::parse_single).collect()
+        lines.flat_map(Self::parse_single).collect()
     }
 
     fn parse_single(line: &'static str) -> Option<Self> {
@@ -254,26 +261,6 @@ const STATUS_CODES_CSV: &str = include_str!(concat!(
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }

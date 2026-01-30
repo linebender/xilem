@@ -2,20 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple example showing the interaction between SVG and event handling
-// TODO: `expect` doesn't work here
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
-use xilem_web::{
-    document_body,
-    elements::svg::{g, svg, text},
-    interfaces::*,
-    modifiers::style as s,
-    svg::{
-        kurbo::{Circle, Line, Rect, Stroke, Vec2},
-        peniko::Color,
-    },
-    App, DomView, PointerMsg,
-};
+use xilem_web::core::Edit;
+use xilem_web::elements::svg::{g, svg, text};
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::svg::kurbo::{Circle, Line, Rect, Stroke, Vec2};
+use xilem_web::svg::peniko::Color;
+use xilem_web::svg::peniko::color::palette;
+use xilem_web::{App, DomView, PointerMsg, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -57,7 +52,7 @@ impl GrabState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<Edit<AppState>> + use<> {
     let v = (0..10)
         .map(|i| {
             Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0))
@@ -69,12 +64,12 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
             web_sys::console::log_1(&"app logic clicked".into());
         }),
         Rect::new(210.0, 100.0, 310.0, 200.0)
-            .fill(Color::LIGHT_GRAY)
-            .stroke(Color::BLUE, Default::default())
+            .fill(palette::css::LIGHT_GRAY)
+            .stroke(palette::css::BLUE, Stroke::default())
             .scale((state.x / 100.0 + 1.0, state.y / 100.0 + 1.0)),
         Rect::new(320.0, 100.0, 420.0, 200.0).class("red"),
         Rect::new(state.x, state.y, state.x + 100., state.y + 100.)
-            .fill(Color::rgba8(100, 100, 255, 100))
+            .fill(Color::from_rgba8(100, 100, 255, 100))
             .pointer(|s: &mut AppState, msg| s.grab.handle(&mut s.x, &mut s.y, &msg)),
         text("drag me around")
             .style(s(
@@ -88,7 +83,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
             web_sys::console::log_1(&format!("pointer event {e:?}").into());
         }),
         Line::new((310.0, 210.0), (410.0, 310.0)).stroke(
-            Color::YELLOW_GREEN,
+            palette::css::YELLOW_GREEN,
             Stroke::new(1.0).with_dashes(state.x, [7.0, 1.0]),
         ),
         Circle::new((460.0, 260.0), 45.0).on_click(|_, _| {

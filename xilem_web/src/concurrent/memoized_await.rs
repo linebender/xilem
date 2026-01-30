@@ -1,13 +1,18 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker},
-    DynMessage, OptionalAction, ViewCtx,
-};
-use std::{future::Future, marker::PhantomData};
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+use std::future::Future;
+use std::marker::PhantomData;
+
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
+
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
+    ViewPathTracker,
+};
+use crate::{OptionalAction, ViewCtx};
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future. `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
 pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
@@ -62,15 +67,15 @@ where
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, concurrent::memoized_await, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::{fork, Edit}, concurrent::memoized_await, elements::html::div, interfaces::Element};
 ///
-/// fn app_logic(state: &mut i32) -> impl Element<i32> {
+/// fn app_logic(state: &mut i32) -> impl Element<Edit<i32>> {
 ///     fork(
 ///         div(*state),
 ///         memoized_await(
 ///             10,
 ///             |count| std::future::ready(*count),
-///             |state, output| *state = output,
+///             |state: &mut i32, output| *state = output,
 ///         )
 ///     )
 /// }
@@ -81,14 +86,14 @@ pub fn memoized_await<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
     callback: Callback,
 ) -> MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Data: PartialEq + 'static,
     FOut: std::fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State, FOut) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>, FOut) -> OA + 'static,
 {
     MemoizedAwait {
         init_future,
@@ -101,7 +106,10 @@ where
 }
 
 #[derive(Default)]
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct MemoizedAwaitState {
     generation: u64,
     schedule_update: bool,
@@ -157,23 +165,23 @@ impl<State, Action, OA, InitFuture, Data, CB, F, FOut> ViewMarker
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 {
 }
-impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx>
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
     FOut: std::fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Future<Output = FOut> + 'static,
-    CB: Fn(&mut State, FOut) -> OA + 'static,
+    CB: Fn(Arg<'_, State>, FOut) -> OA + 'static,
 {
     type Element = NoElement;
 
     type ViewState = MemoizedAwaitState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let mut state = MemoizedAwaitState::default();
 
         if self.debounce_ms > 0 {
@@ -190,7 +198,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
     ) {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
@@ -226,20 +235,26 @@ where
         }
     }
 
-    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<'_, Self::Element>) {
         state.clear_update_timeout();
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        assert_eq!(id_path.len(), 1);
-        if id_path[0].routing_id() == view_state.generation {
-            match *message.downcast().unwrap_throw() {
+        message: &mut MessageCtx,
+        (): Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        assert_eq!(
+            message.remaining_path().len(),
+            1,
+            "MemoizedAwait doesn't have children but controls a single path element, got {message:?}."
+        );
+        let my_id = message.take_first().unwrap();
+
+        if my_id.routing_id() == view_state.generation {
+            match *message.take_message().unwrap_throw() {
                 MemoizedAwaitMessage::Output(future_output) => {
                     match (self.callback)(app_state, future_output).action() {
                         Some(action) => MessageResult::Action(action),
@@ -253,7 +268,7 @@ where
                 }
             }
         } else {
-            MessageResult::Stale(message)
+            MessageResult::Stale
         }
     }
 }

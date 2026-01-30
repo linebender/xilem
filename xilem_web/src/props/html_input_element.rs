@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::{props, FromWithContext, Pod, PodFlags, ViewCtx};
 use wasm_bindgen::JsCast as _;
 
 use super::WithElementProps;
+use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
+use crate::{FromWithContext, Pod, PodFlags, ViewCtx, props};
 
 /// Props specific to an input element.
 pub struct HtmlInputElement {
@@ -58,7 +58,7 @@ impl HtmlInputElement {
 
 impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::HtmlInputElement> {
     fn from_with_ctx(value: Pod<web_sys::Element>, _ctx: &mut ViewCtx) -> Self {
-        Pod {
+        Self {
             node: value.node.unchecked_into(),
             flags: value.flags,
             props: HtmlInputElement {
@@ -123,12 +123,12 @@ pub trait WithHtmlInputElementProps:
 {
 }
 impl<
-        T: WithElementProps
-            + AsMut<Checked>
-            + AsMut<DefaultChecked>
-            + AsMut<Disabled>
-            + AsMut<Required>
-            + AsMut<Multiple>,
-    > WithHtmlInputElementProps for T
+    T: WithElementProps
+        + AsMut<Checked>
+        + AsMut<DefaultChecked>
+        + AsMut<Disabled>
+        + AsMut<Required>
+        + AsMut<Multiple>,
+> WithHtmlInputElementProps for T
 {
 }

@@ -3,7 +3,11 @@ resolver = "2"
 members = [
     "xilem",
     "xilem_core",
+    "xilem_masonry",
     "masonry",
+    "masonry_core",
+    "masonry_testing",
+    "masonry_winit",
 
     "xilem_web",
     "xilem_web/web_examples/counter",
@@ -18,30 +22,80 @@ members = [
     "xilem_web/web_examples/svgdraw",
     "xilem_web/web_examples/open_and_save_file",
     "tree_arena",
+    "placehero",
+    "include_doc_path",
 ]
 
 [workspace.package]
-edition = "2021"
+# Xilem version, also used by other packages which want to mimic Xilem's version.
+# Right now those packages include: xilem_core, xilem_masonry, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
+#
+# NOTE: When bumping this, remember to also bump the aforementioned other packages'
+#       version in the dependencies section of this file.
+version = "0.4.0"
+
+edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.81"
+rust-version = "1.88"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
-homepage = "https://xilem.dev/"
+
+[workspace.dependencies]
+
+masonry = { version = "0.4.0", path = "masonry", default-features = false }
+masonry_core = { version = "0.4.0", path = "masonry_core", default-features = false }
+masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
+masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
+xilem_core = { version = "0.4.0", path = "xilem_core" }
+xilem_masonry = { version = "0.4.0", path = "xilem_masonry" }
+xilem = { version = "0.4.0", path = "xilem", default-features = false }
+tree_arena = { version = "0.2.0", path = "tree_arena" }
+include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
+
+anymore = "1.0.0"
+vello = { version = "0.7.0", default-features = false, features = ["wgpu"] }
+kurbo = "0.13.0"
+parley = { version = "0.7.0", features = ["accesskit"] }
+# TODO: Use no_std correctly in Xilem Web.
+peniko = "0.6.0"
+winit = "0.30.12"
+tracing = { version = "0.1.44", default-features = false }
+tracing-wasm = "0.2.1"
+console_error_panic_hook = "0.1.7"
+# Remove "std" when that's fixed upstream
+ui-events = { version = "0.3.0", default-features = false, features = ["kurbo"] }
+ui-events-winit = { version = "0.3.0", default-features = false }
+smallvec = "1.15.1"
+hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
+dpi = "0.1.2"
+image = { version = "0.25.9", default-features = false }
+web-time = "1.1.0"
+bitflags = "2.10.0"
+accesskit = "0.21.1"
+accesskit_winit = { version = "0.29.2", default-features = false, features = [
+    "accesskit_unix",
+    "tokio",
+    "rwh_06",
+] }
+accesskit_consumer = "0.31.0"
+time = "0.3.45"
+reqwest = { version = "0.12.28", default-features = false, features = [
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
+] }
+divan = "0.1.21"
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry
 # We would like to set this to `forbid`, but we have to use `deny` because `android_activity`
-# requires us to use the unsafe `#[no_mangle]` attribute
+# requires us to use the `#[unsafe(no_mangle)]` attribute
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
-# Intentional break from the lint set. Intended to be temporary
-rust.unexpected_cfgs = { level = "warn", check-cfg = [
-    'cfg(FALSE)',
-    'cfg(tarpaulin_include)',
-] }
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compile_stress_test)'] }
 
-# LINEBENDER LINT SET - Cargo.toml - v2
+# LINEBENDER LINT SET - Cargo.toml - v8
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -49,50 +103,38 @@ rust.non_local_definitions = "forbid"
 rust.unsafe_op_in_unsafe_fn = "forbid"
 
 rust.elided_lifetimes_in_paths = "warn"
-rust.let_underscore_drop = "warn"
 rust.missing_debug_implementations = "warn"
 rust.missing_docs = "warn"
-rust.single_use_lifetimes = "warn"
 rust.trivial_numeric_casts = "warn"
-# rust.unexpected_cfgs = "warn"
-rust.unit_bindings = "warn"
 rust.unnameable_types = "warn"
 rust.unreachable_pub = "warn"
 rust.unused_import_braces = "warn"
 rust.unused_lifetimes = "warn"
 rust.unused_macro_rules = "warn"
 rust.unused_qualifications = "warn"
-rust.variant_size_differences = "warn"
 
-clippy.allow_attributes = "warn"
+clippy.too_many_arguments = "allow"
+
 clippy.allow_attributes_without_reason = "warn"
 clippy.cast_possible_truncation = "warn"
+clippy.cast_possible_wrap = "warn"
 clippy.collection_is_never_read = "warn"
+clippy.default_trait_access = "warn"
 clippy.dbg_macro = "warn"
 clippy.debug_assert_with_mut_call = "warn"
 clippy.doc_markdown = "warn"
-clippy.exhaustive_enums = "warn"
-clippy.fn_to_numeric_cast_any = "forbid"
+clippy.fn_to_numeric_cast_any = "warn"
 clippy.infinite_loop = "warn"
-clippy.large_include_file = "warn"
 clippy.large_stack_arrays = "warn"
-clippy.match_same_arms = "warn"
 clippy.mismatching_type_param_order = "warn"
 clippy.missing_assert_message = "warn"
-clippy.missing_errors_doc = "warn"
 clippy.missing_fields_in_debug = "warn"
-clippy.missing_panics_doc = "warn"
-clippy.partial_pub_fields = "warn"
-clippy.return_self_not_must_use = "warn"
 clippy.same_functions_in_if_condition = "warn"
 clippy.semicolon_if_nothing_returned = "warn"
-clippy.shadow_unrelated = "warn"
 clippy.should_panic_without_expect = "warn"
 clippy.todo = "warn"
-clippy.trivially_copy_pass_by_ref = "warn"
 clippy.unseparated_literal_suffix = "warn"
 clippy.use_self = "warn"
-clippy.wildcard_imports = "warn"
 
 clippy.cargo_common_metadata = "warn"
 clippy.negative_feature_names = "warn"
@@ -100,37 +142,11 @@ clippy.redundant_feature_names = "warn"
 clippy.wildcard_dependencies = "warn"
 # END LINEBENDER LINT SET
 
-# "https://github.com/rust-lang/rust-clippy/issues/13355"
-# Please remove once 1.83 is stable
-clippy.duplicated_attributes = "allow"
-
-[workspace.dependencies]
-masonry = { version = "0.2.0", path = "masonry" }
-xilem_core = { version = "0.1.0", path = "xilem_core" }
-tree_arena = { version = "0.1.0", path = "tree_arena" }
-vello = "0.3"
-wgpu = "22.1.0"
-kurbo = "0.11.1"
-parley = { git = "https://github.com/linebender/parley", rev = "211878fae20ba8b4bf4dcc39e6bf790eece8aa03", features = [
-    "accesskit",
-] }
-peniko = "0.2.0"
-winit = "0.30.4"
-tracing = { version = "0.1.40", default-features = false }
-smallvec = "1.13.2"
-hashbrown = "0.15.2"
-dpi = "0.1.1"
-image = { version = "0.25.2", default-features = false }
-web-time = "1.1.0"
-bitflags = "2.6.0"
-accesskit = "0.17.0"
-accesskit_winit = "0.23.0"
-nv-flip = "0.1.2"
-time = "0.3.36"
+[profile.build-perf]
+inherits = "dev"
 
 [profile.ci]
 inherits = "dev"
 debug = 0 # Don't compile debug info to reduce compilation artifact size for cache benefits.
-strip = "debuginfo" # Implied by debug = 0 since Rust 1.77, but still needed for an older MSRV.
 [profile.ci.package."*"]
 debug-assertions = true # Keep always on for dependencies for cache reuse.

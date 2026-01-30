@@ -1,0 +1,24 @@
+[package]
+name = "placehero"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = ["xilem/default"]
+
+[dependencies]
+reqwest = { workspace = true }
+html5gum = "0.8.3"
+megalodon = "1.1.1"
+tracing.workspace = true
+xilem = { workspace = true }
+image = { workspace = true, features = ["jpeg", "png"] }
+anyhow = "1.0.100"
+blurhash = "0.2.3"
+serde_json = "1.0.149"
+serde = { version = "1.0.228", features = ["rc"] }
+
+[lints]
+workspace = true

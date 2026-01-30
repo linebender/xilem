@@ -8,14 +8,16 @@
 
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
+use xilem_core::{
+    Arg, MessageCtx, MessageResult, Mut, OrphanView, View, ViewArgument, ViewPathTracker,
+};
 
 mod common;
 use common::*;
 
 /// Simple string view that increments its "generation", when it has changed.
 /// This is more for documentation purposes then an actual test
-impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
+impl<State: ViewArgument, Action> OrphanView<&'static str, State, Action> for TestCtx {
     type OrphanElement = TestElement;
 
     type OrphanViewState = u32;
@@ -23,6 +25,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_build(
         _view: &&'static str,
         ctx: &mut Self,
+        _app_state: Arg<'_, State>,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let id = 0;
         (
@@ -41,6 +44,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         generation: &mut Self::OrphanViewState,
         ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
+        _app_state: Arg<'_, State>,
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
 
@@ -68,11 +72,11 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
-        _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        MessageResult::Stale(message)
+        _message: &mut MessageCtx,
+        _element: Mut<'_, Self::OrphanElement>,
+        _app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        MessageResult::Stale
     }
 }
 
@@ -80,11 +84,11 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
 fn str_as_orphan_view() {
     let view1 = "This string is now also a view";
     let mut ctx = TestCtx::default();
-    let (mut element, mut generation) = View::<(), (), TestCtx>::build(&view1, &mut ctx);
+    let (mut element, mut generation) = View::<(), (), TestCtx>::build(&view1, &mut ctx, ());
 
     let view2 = "This string is now an updated view";
     assert_eq!(element.operations[0], Operation::Build(0));
-    View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element);
+    View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element, ());
     assert_eq!(element.operations[1], Operation::Rebuild { from: 0, to: 1 });
     View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element);
     assert_eq!(element.operations[2], Operation::Teardown(1));

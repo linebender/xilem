@@ -1,13 +1,15 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{AppendVec, MessageResult, ViewId},
-    elements::DomChildrenSplice,
-    AnyPod, DomFragment, DynMessage, ViewCtx,
-};
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use wasm_bindgen::UnwrapThrowExt;
+use xilem_core::Edit;
+
+use crate::core::{AppendVec, MessageCtx, MessageResult, ViewId};
+use crate::elements::DomChildrenSplice;
+use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
 
 pub(crate) struct AppMessage {
     pub id_path: Rc<[ViewId]>,
@@ -15,11 +17,11 @@ pub(crate) struct AppMessage {
 }
 
 /// The type responsible for running your app.
-pub struct App<State, Fragment: DomFragment<State>, InitFragment>(
+pub struct App<State: 'static, Fragment: DomFragment<Edit<State>>, InitFragment>(
     Rc<RefCell<AppInner<State, Fragment, InitFragment>>>,
 );
 
-struct AppInner<State, Fragment: DomFragment<State>, InitFragment> {
+struct AppInner<State: 'static, Fragment: DomFragment<Edit<State>>, InitFragment> {
     data: State,
     root: web_sys::Node,
     app_logic: InitFragment,
@@ -37,24 +39,24 @@ pub(crate) trait AppRunner {
     fn clone_box(&self) -> Box<dyn AppRunner>;
 }
 
-impl<State, Fragment: DomFragment<State>, InitFragment> Clone
+impl<State, Fragment: DomFragment<Edit<State>>, InitFragment> Clone
     for App<State, Fragment, InitFragment>
 {
     fn clone(&self) -> Self {
-        App(self.0.clone())
+        Self(self.0.clone())
     }
 }
 
 impl<State, Fragment, InitFragment> App<State, Fragment, InitFragment>
 where
     State: 'static,
-    Fragment: DomFragment<State> + 'static,
+    Fragment: DomFragment<Edit<State>> + 'static,
     InitFragment: FnMut(&mut State) -> Fragment + 'static,
 {
     /// Create an instance of your app with the given logic and initial state.
     pub fn new(root: impl AsRef<web_sys::Node>, data: State, app_logic: InitFragment) -> Self {
         let inner = AppInner::new(root.as_ref().clone(), data, app_logic);
-        let app = App(Rc::new(RefCell::new(inner)));
+        let app = Self(Rc::new(RefCell::new(inner)));
         app.0.borrow_mut().ctx.set_runner(app.clone());
         app
     }
@@ -70,12 +72,12 @@ where
     }
 }
 
-impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fragment>
+impl<State, Fragment: DomFragment<Edit<State>>, InitFragment: FnMut(&mut State) -> Fragment>
     AppInner<State, Fragment, InitFragment>
 {
     fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
         let ctx = ViewCtx::default();
-        AppInner {
+        Self {
             data,
             root,
             app_logic,
@@ -83,15 +85,19 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
             fragment_state: None,
             elements: Vec::new(),
             ctx,
-            fragment_append_scratch: Default::default(),
-            vec_splice_scratch: Default::default(),
+            fragment_append_scratch: AppendVec::default(),
+            vec_splice_scratch: Vec::default(),
         }
     }
 
     fn ensure_app(&mut self) {
         if self.fragment.is_none() {
             let fragment = (self.app_logic)(&mut self.data);
-            let state = fragment.seq_build(&mut self.ctx, &mut self.fragment_append_scratch);
+            let state = fragment.seq_build(
+                &mut self.ctx,
+                &mut self.fragment_append_scratch,
+                &mut self.data,
+            );
             self.fragment = Some(fragment);
             self.fragment_state = Some(state);
 
@@ -109,7 +115,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
 impl<State, Fragment, InitFragment> AppRunner for App<State, Fragment, InitFragment>
 where
     State: 'static,
-    Fragment: DomFragment<State> + 'static,
+    Fragment: DomFragment<Edit<State>> + 'static,
     InitFragment: FnMut(&mut State) -> Fragment + 'static,
 {
     // For now we handle the message synchronously, but it would also
@@ -118,17 +124,34 @@ where
         let mut inner_guard = self.0.borrow_mut();
         let inner = &mut *inner_guard;
         if let Some(fragment) = &mut inner.fragment {
-            let message_result = fragment.seq_message(
-                inner.fragment_state.as_mut().unwrap(),
-                &message.id_path,
-                message.body,
-                &mut inner.data,
-            );
+            let message_result;
+            {
+                let env = std::mem::take(&mut inner.ctx.environment);
+                let mut message_context =
+                    MessageCtx::new(env, (*message.id_path).into(), message.body);
+                let mut dom_children_splice = DomChildrenSplice::new(
+                    &mut inner.fragment_append_scratch,
+                    &mut inner.elements,
+                    &mut inner.vec_splice_scratch,
+                    &inner.root,
+                    inner.ctx.fragment.clone(),
+                    false,
+                    false,
+                );
+                message_result = fragment.seq_message(
+                    inner.fragment_state.as_mut().unwrap(),
+                    &mut message_context,
+                    &mut dom_children_splice,
+                    &mut inner.data,
+                );
+                let (env, _path, _message) = message_context.finish();
+                inner.ctx.environment = env;
+            }
 
             // Each of those results are currently resulting in a rebuild, that may be subject to change
             match message_result {
                 MessageResult::RequestRebuild | MessageResult::Nop | MessageResult::Action(_) => {}
-                MessageResult::Stale(_) => {
+                MessageResult::Stale => {
                     // TODO perhaps inform the user that a stale request bubbled to the top?
                 }
             }
@@ -148,6 +171,7 @@ where
                 inner.fragment_state.as_mut().unwrap(),
                 &mut inner.ctx,
                 &mut dom_children_splice,
+                &mut inner.data,
             );
             *fragment = new_fragment;
         }

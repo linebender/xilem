@@ -17,8 +17,6 @@
 /// This will be the generic form of this type, which is used for the implementation of [`AnyView`].
 ///
 /// [`AnyView`]: crate::AnyView
-///
-// TODO: Rename so that it doesn't conflict with the type parameter names
 pub trait ViewElement {
     /// The reference form of this `Element` for editing.
     ///

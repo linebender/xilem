@@ -1,14 +1,16 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::{AttributeModifier, Attributes, Modifier, WithModifier},
-    DomView, DynMessage, ViewCtx,
-};
-use peniko::{kurbo, Brush};
 use std::fmt::Write as _;
 use std::marker::PhantomData;
+
+use peniko::{Brush, kurbo};
+
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
+use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
+use crate::{DomView, ViewCtx};
 
 pub struct Fill<V, State, Action> {
     child: V,
@@ -29,7 +31,7 @@ pub fn fill<State, Action, V>(child: V, brush: impl Into<Brush>) -> Fill<V, Stat
     Fill {
         child,
         brush: brush.into(),
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -42,7 +44,7 @@ pub fn stroke<State, Action, V>(
         child,
         brush: brush.into(),
         style,
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -54,23 +56,28 @@ fn join(iter: &mut impl Iterator<Item: std::fmt::Display>, sep: &str) -> String 
             // estimate lower bound of capacity needed
             let (lower, _) = iter.size_hint();
             let mut result = String::with_capacity(sep.len() * lower);
-            write!(&mut result, "{}", first_elt).unwrap();
+            write!(&mut result, "{first_elt}").unwrap();
             iter.for_each(|elt| {
                 result.push_str(sep);
-                write!(&mut result, "{}", elt).unwrap();
+                write!(&mut result, "{elt}").unwrap();
             });
             result
         }
     }
 }
 
+/// Convert a Brush for a color into the hex string.
+///
+/// This will not include any alpha, if present,
+/// as it is handled separately via the opacity attribute
+/// instead.
 fn brush_to_string(brush: &Brush) -> String {
     match brush {
         Brush::Solid(color) => {
-            if color.a == 0 {
+            if color.components[3] == 0.0 {
                 "none".into()
             } else {
-                format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b)
+                format!("{:x}", color.discard_alpha().to_rgba8())
             }
         }
         _ => todo!("gradients not implemented"),
@@ -79,7 +86,10 @@ fn brush_to_string(brush: &Brush) -> String {
 
 fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier {
     let opacity = match brush {
-        Brush::Solid(color) if color.a != u8::MAX => Some(color.a as f64 / 255.0),
+        Brush::Solid(color) => {
+            let a = color.components[3];
+            if a < 1.0 { Some(a as f64) } else { None }
+        }
         _ => None,
     };
 
@@ -87,9 +97,9 @@ fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier
 }
 
 impl<V, State, Action> ViewMarker for Fill<V, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Fill<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -97,9 +107,13 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx, app_state));
         let mut attrs = element.modifier();
         Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
         Attributes::push(
@@ -114,11 +128,17 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Attributes::rebuild(element, 2, |mut element| {
-            self.child
-                .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             let mut attrs = element.modifier();
             if attrs.flags.was_created() {
                 Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
@@ -143,7 +163,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.teardown(view_state, ctx, element);
     }
@@ -151,11 +171,11 @@ where
     fn message(
         &self,
         child_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.child.message(child_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.child.message(child_state, message, element, app_state)
     }
 }
 
@@ -224,9 +244,9 @@ fn update_stroke_modifiers(
 }
 
 impl<V, State, Action> ViewMarker for Stroke<V, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -234,9 +254,13 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx, app_state));
         push_stroke_modifiers(element.modifier(), &self.style, &self.brush);
         (element, state)
     }
@@ -246,11 +270,17 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Attributes::rebuild(element, 5, |mut element| {
-            self.child
-                .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             update_stroke_modifiers(
                 element.modifier(),
                 &prev.style,
@@ -265,7 +295,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.child.teardown(view_state, ctx, element);
     }
@@ -273,10 +303,30 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.child.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.child.message(view_state, message, element, app_state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use peniko::Brush;
+    use peniko::color::palette;
+
+    use super::brush_to_string;
+
+    #[test]
+    fn color_brush_to_string() {
+        let transparent: Brush = palette::css::TRANSPARENT.into();
+        assert_eq!(brush_to_string(&transparent), "none");
+
+        let red: Brush = palette::css::RED.into();
+        assert_eq!(brush_to_string(&red), "#ff0000");
+
+        let lime: Brush = palette::css::LIME.with_alpha(0.5).into();
+        assert_eq!(brush_to_string(&lime), "#00ff00");
     }
 }

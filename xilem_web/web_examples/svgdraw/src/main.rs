@@ -4,35 +4,31 @@
 //! An example showing how SVG paths can be used for a vector-drawing application
 
 use std::rc::Rc;
+
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_web::{
-    document_body,
-    elements::{
-        html::{div, input, label, span},
-        svg::{g, svg},
-    },
-    input_event_target_value,
-    interfaces::{Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement},
-    modifiers::style as s,
-    svg::{
-        kurbo::{BezPath, Point, QuadSpline, Shape, Stroke},
-        peniko::Color,
-    },
-    AnyDomView, App, DomFragment,
+use xilem_web::core::{Edit, ViewArgument};
+use xilem_web::elements::html::{div, input, label, span};
+use xilem_web::elements::svg::{g, svg};
+use xilem_web::interfaces::{
+    Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement,
 };
+use xilem_web::modifiers::style as s;
+use xilem_web::svg::kurbo::{BezPath, Point, QuadSpline, Shape, Stroke};
+use xilem_web::svg::peniko::Color;
+use xilem_web::{AnyDomView, App, DomFragment, document_body, input_event_target_value};
 
 const RAINBOW_COLORS: [Color; 11] = [
-    Color::rgb8(228, 3, 3),     // Red
-    Color::rgb8(255, 140, 0),   // Orange
-    Color::rgb8(255, 237, 0),   // Yellow
-    Color::rgb8(0, 128, 38),    // Green
-    Color::rgb8(0, 76, 255),    // Indigo
-    Color::rgb8(115, 41, 130),  // Violet
-    Color::rgb8(214, 2, 112),   // Magenta
-    Color::rgb8(155, 79, 150),  // Lavender
-    Color::rgb8(0, 56, 168),    // Blue
-    Color::rgb8(91, 206, 250),  // Light Blue
-    Color::rgb8(245, 169, 184), // Pink
+    Color::from_rgb8(228, 3, 3),     // Red
+    Color::from_rgb8(255, 140, 0),   // Orange
+    Color::from_rgb8(255, 237, 0),   // Yellow
+    Color::from_rgb8(0, 128, 38),    // Green
+    Color::from_rgb8(0, 76, 255),    // Indigo
+    Color::from_rgb8(115, 41, 130),  // Violet
+    Color::from_rgb8(214, 2, 112),   // Magenta
+    Color::from_rgb8(155, 79, 150),  // Lavender
+    Color::from_rgb8(0, 56, 168),    // Blue
+    Color::from_rgb8(91, 206, 250),  // Light Blue
+    Color::from_rgb8(245, 169, 184), // Pink
 ];
 
 struct SplineLine {
@@ -50,7 +46,7 @@ impl SplineLine {
         }
     }
 
-    fn view<State: 'static>(&self) -> impl SvgPathElement<State> {
+    fn view<State: ViewArgument>(&self) -> impl SvgPathElement<State> + use<State> {
         QuadSpline::new(self.points.clone())
             .to_quads()
             .fold(BezPath::new(), |mut b, q| {
@@ -69,7 +65,7 @@ struct Draw {
     cursor_position: Point,
     canvas_position: Point,
     draw_position: Point,
-    memoized_line_views: Vec<Rc<AnyDomView<Self>>>,
+    memoized_line_views: Vec<Rc<AnyDomView<Edit<Self>>>>,
     new_line_width: f64,
     is_panning: bool,
     zoom: f64,
@@ -117,7 +113,7 @@ impl Draw {
         let color = RAINBOW_COLORS[self.selected_color];
         let line = SplineLine::new(self.draw_position, color, self.new_line_width);
         self.memoized_line_views
-            .push(Rc::new(line.view()) as Rc<AnyDomView<Self>>);
+            .push(Rc::new(line.view()) as Rc<AnyDomView<Edit<Self>>>);
         self.active_line = Some(line);
     }
 
@@ -125,7 +121,7 @@ impl Draw {
         if let Some(cur_line) = &mut self.active_line {
             cur_line.points.push(self.draw_position);
             *self.memoized_line_views.last_mut().unwrap() =
-                Rc::new(cur_line.view()) as Rc<AnyDomView<Self>>;
+                Rc::new(cur_line.view()) as Rc<AnyDomView<Edit<Self>>>;
         }
     }
 
@@ -140,7 +136,7 @@ impl Draw {
         }
     }
 
-    fn view(&mut self) -> impl DomFragment<Self> {
+    fn view(&mut self) -> impl DomFragment<Edit<Self>> + use<> {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;
@@ -183,10 +179,7 @@ impl Draw {
                     .name("color")
                     .checked(self.selected_color == i)
                     .on_input(move |state: &mut Self, _| state.selected_color = i),
-                div(()).style(s(
-                    "background-color",
-                    format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b),
-                )),
+                div(()).style(s("background-color", format!("{:x}", color.to_rgba8()))),
             ))
             .class("color");
             i += 1;

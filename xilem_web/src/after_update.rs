@@ -3,10 +3,8 @@
 
 use std::marker::PhantomData;
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker},
-    DomNode, DomView, DynMessage, ViewCtx,
-};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::{DomNode, DomView, ViewCtx};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
 /// See [`after_build`] for more details.
@@ -43,7 +41,7 @@ pub struct BeforeTeardown<State, Action, E, F> {
 /// E.g. to be interoperable with external javascript libraries.
 pub fn after_build<State, Action, E, F>(element: E, callback: F) -> AfterBuild<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -69,7 +67,7 @@ pub fn after_rebuild<State, Action, E, F>(
     callback: F,
 ) -> AfterRebuild<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -91,7 +89,7 @@ pub fn before_teardown<State, Action, E, F>(
     callback: F,
 ) -> BeforeTeardown<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -107,10 +105,9 @@ impl<State, Action, E, F> ViewMarker for AfterBuild<State, Action, E, F> {}
 impl<State, Action, E, F> ViewMarker for AfterRebuild<State, Action, E, F> {}
 impl<State, Action, E, F> ViewMarker for BeforeTeardown<State, Action, E, F> {}
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for AfterBuild<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterBuild<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -119,8 +116,12 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut el, view_state) = self.element.build(ctx);
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        let (mut el, view_state) = self.element.build(ctx, app_state);
         el.node.apply_props(&mut el.props, &mut el.flags);
         (self.callback)(&el.node);
         (el, view_state)
@@ -131,17 +132,18 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element);
+            .rebuild(&prev.element, view_state, ctx, element, app_state);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
     ) {
         self.element.teardown(view_state, ctx, el);
     }
@@ -149,19 +151,18 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for AfterRebuild<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterRebuild<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -170,8 +171,12 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        self.element.build(ctx)
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        self.element.build(ctx, app_state)
     }
 
     fn rebuild(
@@ -179,10 +184,16 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
-        self.element
-            .rebuild(&prev.element, view_state, ctx, element.reborrow_mut());
+        self.element.rebuild(
+            &prev.element,
+            view_state,
+            ctx,
+            element.reborrow_mut(),
+            app_state,
+        );
         element.node.apply_props(element.props, element.flags);
         (self.callback)(element.node);
     }
@@ -191,7 +202,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
     ) {
         self.element.teardown(view_state, ctx, el);
     }
@@ -199,19 +210,18 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for BeforeTeardown<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for BeforeTeardown<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -220,8 +230,12 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        self.element.build(ctx)
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        self.element.build(ctx, app_state)
     }
 
     fn rebuild(
@@ -229,17 +243,18 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element);
+            .rebuild(&prev.element, view_state, ctx, element, app_state);
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
     ) {
         (self.callback)(el.node);
         self.element.teardown(view_state, ctx, el);
@@ -248,11 +263,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }

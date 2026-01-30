@@ -1,18 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use wasm_bindgen_futures::spawn_local;
-
-use crate::vecmap::VecMap;
-use std::any::Any;
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::rc::Rc;
 
-use crate::{
-    app::{AppMessage, AppRunner},
-    core::{ViewId, ViewPathTracker},
-    Message,
-};
+use wasm_bindgen_futures::spawn_local;
+
+use crate::app::{AppMessage, AppRunner};
+use crate::core::anymore::AnyDebug;
+use crate::core::{DynMessage, Environment, ViewId, ViewPathTracker};
+use crate::vecmap::VecMap;
 
 /// A thunk to send messages to the views, it's being used for example in event callbacks
 pub struct MessageThunk {
@@ -28,19 +25,19 @@ impl MessageThunk {
     ///
     /// When this is called synchronously (i.e. not via an event callback or by enqueuing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
     /// Use [`MessageThunk::enqueue_message`] instead in this case.
-    pub fn push_message(&self, message_body: impl Message) {
+    pub fn push_message(&self, message_body: impl AnyDebug) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
-            body: Box::new(message_body),
+            body: DynMessage::new(message_body),
         };
         self.app_ref.handle_message(message);
     }
 
     /// Sends a message to the [`View`](`crate::core::View`) this thunk was being created in. This is similar as [`MessageThunk::push_message`] but enqueues the message as next microtask.
-    pub fn enqueue_message(&self, message_body: impl Message) {
+    pub fn enqueue_message(&self, message_body: impl AnyDebug) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
-            body: Box::new(message_body),
+            body: DynMessage::new(message_body),
         };
         let app_ref = self.app_ref.clone_box();
         spawn_local(async move { app_ref.handle_message(message) });
@@ -58,20 +55,22 @@ pub struct ViewCtx {
     /// A stack containing modifier count size-hints for each element context, mostly to avoid unnecessary allocations.
     modifier_size_hints: Vec<VecMap<TypeId, usize>>,
     modifier_size_hint_stack_idx: usize,
+    pub(crate) environment: Environment,
 }
 
 impl Default for ViewCtx {
     fn default() -> Self {
-        ViewCtx {
+        Self {
             id_path: Vec::default(),
             app_ref: None,
             fragment: Rc::new(crate::document().create_document_fragment()),
-            templates: Default::default(),
-            hydration_node_stack: Default::default(),
+            templates: VecMap::default(),
+            hydration_node_stack: Vec::default(),
             is_hydrating: false,
             // One element for the root `DomFragment`. will be extended with `Self::push_size_hints`
             modifier_size_hints: vec![VecMap::default()],
             modifier_size_hint_stack_idx: 0,
+            environment: Environment::new(),
         }
     }
 }
@@ -102,7 +101,7 @@ impl ViewCtx {
     /// });
     /// ```
     pub fn as_owned<R>(&mut self, f: impl FnOnce(Self) -> (Self, R)) -> R {
-        let temporary_owned_ctx = ViewCtx {
+        let temporary_owned_ctx = Self {
             id_path: std::mem::take(&mut self.id_path),
             app_ref: self.app_ref.as_ref().map(|app| app.clone_box()),
             fragment: self.fragment.clone(),
@@ -111,6 +110,7 @@ impl ViewCtx {
             templates: std::mem::take(&mut self.templates),
             modifier_size_hints: std::mem::take(&mut self.modifier_size_hints),
             modifier_size_hint_stack_idx: self.modifier_size_hint_stack_idx,
+            environment: std::mem::take(&mut self.environment),
         };
         let (ctx, retval) = f(temporary_owned_ctx);
         self.id_path = ctx.id_path;
@@ -119,6 +119,7 @@ impl ViewCtx {
         self.templates = ctx.templates;
         self.modifier_size_hints = ctx.modifier_size_hints;
         self.modifier_size_hint_stack_idx = ctx.modifier_size_hint_stack_idx;
+        self.environment = ctx.environment;
         retval
     }
 
@@ -152,8 +153,9 @@ impl ViewCtx {
         if let Some(node) = self.hydration_node_stack.last() {
             if let Some(child) = node.first_child() {
                 self.hydration_node_stack.push(child);
+            } else {
+                // TODO: panic? Probably not, e.g. because of empty view sequences...
             }
-            // TODO panic else? Probably not, e.g. because of empty view sequences...
         }
     }
 
@@ -219,6 +221,9 @@ impl ViewCtx {
 }
 
 impl ViewPathTracker for ViewCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
     fn push_id(&mut self, id: ViewId) {
         self.id_path.push(id);
     }

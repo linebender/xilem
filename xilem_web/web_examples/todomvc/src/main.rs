@@ -4,23 +4,15 @@
 //! A recreation of todomvc in Xilem Web
 // TODO: Link
 
-// TODO: `expect` doesn't work here
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 mod state;
 
 use state::{AppState, Filter, Todo};
-
 use wasm_bindgen::JsCast;
-use xilem_web::{
-    core::{adapt, MessageResult},
-    elements::html as el,
-    get_element_by_id,
-    interfaces::*,
-    modifiers::style as s,
-    Action, App, DomView,
-};
+use xilem_web::core::{Edit, MessageResult, map_message_result, map_state};
+use xilem_web::elements::html as el;
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::{Action, App, DomView, get_element_by_id};
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
 // them.
@@ -33,7 +25,7 @@ enum TodoAction {
 
 impl Action for TodoAction {}
 
-fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
+fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Edit<Todo>, TodoAction> + use<> {
     let checkbox = el::input(())
         .class("toggle")
         .type_("checkbox")
@@ -81,7 +73,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     .class(editing.then_some("editing"))
 }
 
-fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
+fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<Edit<AppState>> + use<> {
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
         el::button("Clear completed")
             .class("clear-completed")
@@ -132,15 +124,18 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
+fn main_view(state: &mut AppState, should_display: bool) -> impl Element<Edit<AppState>> + use<> {
     let editing_id = state.editing_id;
     let todos: Vec<_> = state
         .visible_todos()
         .map(|(idx, todo)| {
-            adapt(
-                todo_item(todo, editing_id == Some(todo.id)),
-                move |data: &mut AppState, thunk| {
-                    if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
+            map_message_result(
+                map_state(
+                    todo_item(todo, editing_id == Some(todo.id)),
+                    move |data: &mut AppState, ()| &mut data.todos[idx],
+                ),
+                move |data: &mut AppState, result| {
+                    if let MessageResult::Action(action) = result {
                         match action {
                             TodoAction::SetEditing(id) => data.start_editing(id),
                             TodoAction::CommitEdit => {
@@ -171,7 +166,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<Edit<AppState>> + use<> {
     tracing::debug!("render: {state:?}");
     let some_todos = !state.todos.is_empty();
     let main = main_view(state, some_todos);

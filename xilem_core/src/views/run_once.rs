@@ -3,7 +3,9 @@
 
 use core::fmt::Debug;
 
-use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker, ViewPathTracker,
+};
 
 /// A view which executes `once` exactly once.
 ///
@@ -11,18 +13,18 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 ///
 /// This is a [`NoElement`] view, and so should either be used in any sequence, or with [`fork`](crate::fork).
 ///
-/// ## Examples
+/// # Examples
 ///
 /// This can be useful for logging a value:
 ///
 /// ```
-/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx, DocsView as WidgetView}};
+/// # use xilem_core::{run_once, View, Edit, docs::{Fake as ViewCtx, DocsView as WidgetView}};
 /// # struct AppData;
-/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<AppData, ()> {
+/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
 ///     run_once(|| eprintln!("View constructed"))
 /// }
 /// ```
-/// ## Capturing
+/// # Capturing
 ///
 /// This method cannot be used with a dynamic `once`.
 /// That is, `once` cannot be a function pointer or capture any (non-zero sized) values.
@@ -32,11 +34,11 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
-/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}};
+/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}, Edit};
 /// # struct AppData {
 /// #    data: u32
 /// # }
-/// fn log_data(app: &mut AppData) -> impl WidgetView<AppData, ()> {
+/// fn log_data(app: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
 ///     let val = app.data;
 ///     run_once(move || println!("{}", val))
 /// }
@@ -45,6 +47,7 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// ```
 pub fn run_once<F>(once: F) -> RunOnce<F>
 where
+    // TODO(DJMcNab): Accept
     F: Fn() + 'static,
 {
     const {
@@ -83,18 +86,17 @@ impl<F> Debug for RunOnce<F> {
 }
 
 impl<F> ViewMarker for RunOnce<F> {}
-impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
+impl<F, State, Action, Context> View<State, Action, Context> for RunOnce<F>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     F: Fn() + 'static,
-    // TODO: Work out what traits we want to require `Message`s to have
-    Message: Debug,
 {
     type Element = NoElement;
 
     type ViewState = ();
 
-    fn build(&self, _: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _: &mut Context, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         (self.once)();
         (NoElement, ())
     }
@@ -104,28 +106,23 @@ where
         _: &Self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        (): crate::Mut<'_, Self::Element>,
+        (): Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
     ) {
         // Nothing to do
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        _: &mut Context,
-        _: crate::Mut<'_, Self::Element>,
-    ) {
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut Context, _: Mut<'_, Self::Element>) {
         // Nothing to do
     }
 
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _: &[crate::ViewId],
-        message: Message,
-        _: &mut State,
-    ) -> MessageResult<Action, Message> {
-        // Nothing to do
+        message: &mut MessageCtx,
+        _: Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }
 }

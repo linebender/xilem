@@ -1,14 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Deferred: Noisy. Fix is to use scopes"
-)]
+//! Tests for [`SequenceView`] with arrays.
 
 mod common;
 use common::*;
-use xilem_core::View;
+use xilem_core::{DynMessage, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -19,7 +16,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn two_element_passthrough() {
     let view = sequence(2, [record_ops(0), record_ops(1)]);
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -35,7 +32,7 @@ fn two_element_passthrough() {
     assert_eq!(second_child.view_path.len(), 1);
 
     let view2 = sequence(5, [record_ops(3), record_ops(4)]);
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -98,7 +95,7 @@ fn two_element_passthrough() {
 fn two_element_message() {
     let view = sequence(2, [record_ops(0), record_ops(1)]);
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -113,9 +110,13 @@ fn two_element_message() {
     assert_eq!(second_child.operations, &[Operation::Build(1)]);
     let second_path = second_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, Box::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(first_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 0);
+    });
 
-    let result = view.message(&mut state, &second_path, Box::new(()), &mut ());
-    assert_action(result, 1);
+    ctx.with_message_context(second_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 1);
+    });
 }

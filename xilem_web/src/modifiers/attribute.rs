@@ -1,14 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::{Modifier, WithModifier},
-    vecmap::VecMap,
-    AttributeValue, DomView, DynMessage, IntoAttributeValue, ViewCtx,
-};
 use std::marker::PhantomData;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
+use crate::modifiers::{Modifier, WithModifier};
+use crate::vecmap::VecMap;
+use crate::{AttributeValue, DomView, IntoAttributeValue, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -24,13 +26,13 @@ pub enum AttributeModifier {
 impl AttributeModifier {
     /// Returns the attribute name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 
     /// Convert this modifier into its attribute name.
     pub fn into_name(self) -> CowStr {
-        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 }
@@ -38,8 +40,8 @@ impl AttributeModifier {
 impl<K: Into<CowStr>, V: IntoAttributeValue> From<(K, V)> for AttributeModifier {
     fn from((name, value): (K, V)) -> Self {
         match value.into_attr_value() {
-            Some(value) => AttributeModifier::Set(name.into(), value),
-            None => AttributeModifier::Remove(name.into()),
+            Some(value) => Self::Set(name.into(), value),
+            None => Self::Remove(name.into()),
         }
     }
 }
@@ -198,11 +200,11 @@ impl Attributes {
         next: &AttributeModifier,
     ) {
         if this.flags.was_created() {
-            Attributes::push(this, next.clone());
+            Self::push(this, next.clone());
         } else if next != prev {
-            Attributes::mutate(this, |modifier| *modifier = next.clone());
+            Self::mutate(this, |modifier| *modifier = next.clone());
         } else {
-            Attributes::skip(this, 1);
+            Self::skip(this, 1);
         }
     }
 
@@ -214,11 +216,11 @@ impl Attributes {
         next: &Value,
     ) {
         if this.flags.was_created() {
-            Attributes::push(this, (key, next.clone()));
+            Self::push(this, (key, next.clone()));
         } else if next != prev {
-            Attributes::mutate(this, |modifier| *modifier = (key, next.clone()).into());
+            Self::mutate(this, |modifier| *modifier = (key, next.clone()).into());
         } else {
-            Attributes::skip(this, 1);
+            Self::skip(this, 1);
         }
     }
 }
@@ -298,9 +300,9 @@ impl<V, State, Action> Attr<V, State, Action> {
 }
 
 impl<V, State, Action> ViewMarker for Attr<V, State, Action> {}
-impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Attr<V, State, Action>
+impl<V, State, Action> View<State, Action, ViewCtx> for Attr<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -309,9 +311,13 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx, app_state));
         Attributes::push(&mut element.modifier(), self.modifier.clone());
         (element, state)
     }
@@ -321,11 +327,17 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
-            self.inner
-                .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
+            self.inner.rebuild(
+                &prev.inner,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             Attributes::update(&mut element.modifier(), &prev.modifier, &self.modifier);
         });
     }
@@ -334,7 +346,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.inner.teardown(view_state, ctx, element);
     }
@@ -342,10 +354,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.inner.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.inner.message(view_state, message, element, app_state)
     }
 }

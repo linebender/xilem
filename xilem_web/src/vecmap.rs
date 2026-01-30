@@ -1,7 +1,10 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{borrow::Borrow, fmt, ops::Index, vec::Drain};
+use std::borrow::Borrow;
+use std::fmt;
+use std::ops::Index;
+use std::vec::Drain;
 
 #[derive(Clone)]
 /// Basically an ordered `Map` (similar as `BTreeMap`) with a `Vec` as backend for very few elements
@@ -23,7 +26,7 @@ impl<K: PartialEq, V: PartialEq> PartialEq for VecMap<K, V> {
 }
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for VecMap<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map().entries(self.iter()).finish()
     }
 }

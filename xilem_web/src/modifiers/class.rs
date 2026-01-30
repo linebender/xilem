@@ -1,15 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    diff::{diff_iters, Diff},
-    modifiers::{Modifier, WithModifier},
-    vecmap::VecMap,
-    DomView, DynMessage, ViewCtx,
-};
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
+use crate::diff::{Diff, diff_iters};
+use crate::modifiers::{Modifier, WithModifier};
+use crate::vecmap::VecMap;
+use crate::{DomView, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -25,7 +28,7 @@ pub enum ClassModifier {
 impl ClassModifier {
     /// Returns the class name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (ClassModifier::Add(name) | ClassModifier::Remove(name)) = self;
+        let (Self::Add(name) | Self::Remove(name)) = self;
         name
     }
 }
@@ -65,7 +68,7 @@ impl ClassIter for &'static str {
 }
 
 impl ClassIter for CowStr {
-    fn class_iter(&self) -> impl Iterator<Item = CowStr> {
+    fn class_iter(&self) -> impl Iterator<Item = Self> {
         std::iter::once(self.clone())
     }
 }
@@ -270,16 +273,16 @@ impl Classes {
         for change in diff_iters(prev, next) {
             match change {
                 Diff::Add(modifier) => {
-                    Classes::insert(this, modifier);
+                    Self::insert(this, modifier);
                     new_len += 1;
                 }
-                Diff::Remove(count) => Classes::delete(this, count),
+                Diff::Remove(count) => Self::delete(this, count),
                 Diff::Change(new_modifier) => {
-                    Classes::mutate(this, |modifier| *modifier = new_modifier);
+                    Self::mutate(this, |modifier| *modifier = new_modifier);
                     new_len += 1;
                 }
                 Diff::Skip(count) => {
-                    Classes::skip(this, count);
+                    Self::skip(this, count);
                     new_len += count;
                 }
             }
@@ -298,11 +301,11 @@ impl Classes {
         next: &T,
     ) -> usize {
         if this.flags.was_created() {
-            Classes::extend(this, next.add_class_iter())
+            Self::extend(this, next.add_class_iter())
         } else if next != prev {
-            Classes::apply_diff(this, prev.add_class_iter(), next.add_class_iter())
+            Self::apply_diff(this, prev.add_class_iter(), next.add_class_iter())
         } else {
-            Classes::skip(this, prev_len);
+            Self::skip(this, prev_len);
             prev_len
         }
     }
@@ -323,7 +326,7 @@ impl<E, C, T, A> Class<E, C, T, A> {
     ///
     /// Usually [`Element::class`](`crate::interfaces::Element::class`) should be used instead of this function.
     pub fn new(el: E, classes: C) -> Self {
-        Class {
+        Self {
             el,
             classes,
             phantom: PhantomData,
@@ -332,9 +335,9 @@ impl<E, C, T, A> Class<E, C, T, A> {
 }
 
 impl<V, C, State, Action> ViewMarker for Class<V, C, State, Action> {}
-impl<V, C, State, Action> View<State, Action, ViewCtx, DynMessage> for Class<V, C, State, Action>
+impl<V, C, State, Action> View<State, Action, ViewCtx> for Class<V, C, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     C: ClassIter,
     V: DomView<State, Action, Element: WithModifier<Classes>>,
@@ -344,10 +347,15 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let add_class_iter = self.classes.add_class_iter();
-        let (mut e, s) = ctx
-            .with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| self.el.build(ctx));
+        let (mut e, s) = ctx.with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| {
+            self.el.build(ctx, app_state)
+        });
         let len = Classes::extend(&mut e.modifier(), add_class_iter);
         (e, (len, s))
     }
@@ -357,11 +365,12 @@ where
         prev: &Self,
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Classes::rebuild(element, *len, |mut elem| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut(), app_state);
             *len = Classes::update_as_add_class_iter(
                 &mut elem.modifier(),
                 *len,
@@ -375,7 +384,7 @@ where
         &self,
         (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -383,10 +392,10 @@ where
     fn message(
         &self,
         (_, view_state): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.el.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.el.message(view_state, message, element, app_state)
     }
 }

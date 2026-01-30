@@ -1,15 +1,13 @@
 [package]
 name = "xilem_core"
-version = "0.1.0"
+version.workspace = true # We mimic Xilem's version
 description = "Common core of the Xilem Rust UI framework."
 keywords = ["xilem", "ui", "reactive", "performance"]
 categories = ["gui"]
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-rust-version.workspace = true
-
-publish = false # We'll publish this alongside Xilem 0.2
 
 [package.metadata.docs.rs]
 all-features = true
@@ -22,9 +20,20 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 [features]
 kurbo = ["dep:kurbo"]
 
+# Currently, we unconditionally use hashbrown for the environment for simplicity.
+# We can change this if someone complains.
+
+# default = ["hashbrown"]
+# # Use the standard library hashmap.
+# std = []
+# Use the hashmap from hashbrown.
+# hashbrown = ["dep:hashbrown"]
+
 [dependencies]
 tracing.workspace = true
 kurbo = { optional = true, workspace = true }
+hashbrown = { workspace = true }
+anymore = { workspace = true }
 
 [lints]
 workspace = true

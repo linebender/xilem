@@ -1,14 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Deferred: Noisy. Fix is to use scopes"
-)]
+//! Tests for [`SequenceView`] with tuples.
 
 mod common;
 use common::*;
-use xilem_core::View;
+use xilem_core::{DynMessage, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -18,7 +15,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn unit_no_elements() {
     let view = sequence(0, ());
     let mut ctx = TestCtx::default();
-    let (element, _state) = view.build(&mut ctx);
+    let (element, _state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert!(element.children.unwrap().active.is_empty());
 }
@@ -28,7 +25,7 @@ fn unit_no_elements() {
 fn one_element_passthrough() {
     let view = sequence(1, (record_ops(0),));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -45,7 +42,7 @@ fn one_element_passthrough() {
     );
 
     let view2 = sequence(3, (record_ops(2),));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     let seq_children = element.children.as_ref().unwrap();
     assert_eq!(
@@ -61,9 +58,11 @@ fn one_element_passthrough() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
     );
 
-    let result = view2.message(&mut state, &[], Box::new(()), &mut ());
-    // The message should have been routed to the only child
-    assert_action(result, 2);
+    ctx.with_message_context(Vec::new(), DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        // The message should have been routed to the only child
+        assert_action(result, 2);
+    });
 
     view2.teardown(&mut state, &mut ctx, &mut element);
     assert_eq!(
@@ -96,7 +95,7 @@ fn one_element_passthrough() {
 fn two_element_passthrough() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -112,7 +111,7 @@ fn two_element_passthrough() {
     assert_eq!(second_child.view_path.len(), 1);
 
     let view2 = sequence(5, (record_ops(3), record_ops(4)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -175,7 +174,7 @@ fn two_element_passthrough() {
 fn two_element_message() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -190,11 +189,14 @@ fn two_element_message() {
     assert_eq!(second_child.operations, &[Operation::Build(1)]);
     let second_path = second_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, Box::new(()), &mut ());
-    assert_action(result, 0);
-
-    let result = view.message(&mut state, &second_path, Box::new(()), &mut ());
-    assert_action(result, 1);
+    ctx.with_message_context(first_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 0);
+    });
+    ctx.with_message_context(second_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 1);
+    });
 }
 
 // We don't test higher tuples, because these all use the same implementation

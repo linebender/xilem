@@ -1,16 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData, rc::Rc};
+use std::future::Future;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
-use crate::{
-    context::MessageThunk,
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
-    DynMessage, Message, ViewCtx,
-};
-use futures::{channel::oneshot, FutureExt};
+use futures_channel::oneshot;
+use futures_util::FutureExt;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
+
+use crate::ViewCtx;
+use crate::context::MessageThunk;
+use crate::core::anymore::AnyDebug;
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -26,12 +29,13 @@ pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F,
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
-    M: Message,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    M: AnyDebug,
+    State: ViewArgument,
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`task` will not be ran again when its captured variables are updated.\n\
             To ignore this warning, use `task_raw`."
         );
@@ -51,7 +55,8 @@ pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Tas
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    State: ViewArgument,
 {
     Task {
         init_future,
@@ -77,7 +82,7 @@ pub struct ShutdownSignal {
 impl ShutdownSignal {
     fn new() -> (Self, AbortHandle) {
         let (abort_tx, shutdown_rx) = oneshot::channel();
-        (ShutdownSignal { shutdown_rx }, AbortHandle { abort_tx })
+        (Self { shutdown_rx }, AbortHandle { abort_tx })
     }
 
     /// Detect whether the view has disappeared and
@@ -102,7 +107,10 @@ pub struct Task<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct TaskState {
     abort_handle: Option<AbortHandle>,
 }
@@ -114,7 +122,7 @@ pub struct TaskProxy {
 impl TaskProxy {
     pub fn send_message<M>(&self, message: M)
     where
-        M: Message,
+        M: AnyDebug,
     {
         let thunk = Rc::clone(&self.thunk);
         spawn_local(async move {
@@ -125,20 +133,20 @@ impl TaskProxy {
 
 impl<F, H, M> ViewMarker for Task<F, H, M> {}
 
-impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx, DynMessage> for Task<F, H, M>
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
-    M: Message,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    M: AnyDebug,
 {
     type Element = NoElement;
 
     type ViewState = TaskState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let (shutdown_signal, abort_handle) = ShutdownSignal::new();
         let view_state = TaskState {
@@ -151,11 +159,23 @@ where
         (NoElement, view_state)
     }
 
-    fn rebuild(&self, _: &Self, _: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn rebuild(
+        &self,
+        _: &Self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        (): Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
+    ) {
         // Nothing to do
     }
 
-    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+    ) {
         let handle = view_state.abort_handle.take().unwrap_throw();
         handle.abort();
     }
@@ -163,15 +183,15 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        _element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         debug_assert!(
-            id_path.is_empty(),
-            "id path should be empty in AsyncRepeat::message"
+            message.remaining_path().is_empty(),
+            "id path should be empty in AsyncRepeat::message, got {message:?}"
         );
-        let message = message.downcast::<M>().unwrap();
+        let message = message.take_message::<M>().unwrap();
         MessageResult::Action((self.on_event)(app_state, *message))
     }
 }

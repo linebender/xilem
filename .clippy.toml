@@ -10,9 +10,37 @@ trivial-copy-size-limit = 16
 # END LINEBENDER LINT SET
 
 # Don't warn about these identifiers when using clippy::doc_markdown.
-doc-valid-idents = ["MathML", ".."]
+doc-valid-idents = [
+    "FizzBuzz",
+    "MathML",
+    "RustNL",
+    # TODO: Get this allowed in upstream clippy?
+    "BiDi",
+    "VSync",
+    # For better or for worse, we don't treat pass names as identifiers in our docs.
+    # TODO: Maybe we should?
+    "update_xxx",
+    "update_pointer",
+    "update_scrolls",
+    "update_focus",
+    "update_focusable",
+    "update_disabled",
+    "update_anim",
+    "update_stashed",
+    "update_widget_tree",
+    "on_access_event",
+    "on_text_event",
+    "on_pointer_event",
+    # `".."` means the default configuration built-in to Clippy.
+    "..",
+]
 
 # The default clippy value for this is 250, which causes warnings for rather simple types
 # like Box<dyn Fn(&mut Env, &T)>, which seems overly strict. The new value of 400 is
 # a simple guess. It might be worth lowering this, or using the default, in the future.
 type-complexity-threshold = 400
+
+disallowed-types = [
+    # For Placehero
+    { path = "megalodon::mastodon::Mastodon", reason = "In case of future changes, we want to keep all our assumptions about using Mastodon centralised", replacement = "placehero::Mastodon" },
+]

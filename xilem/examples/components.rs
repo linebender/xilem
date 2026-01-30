@@ -3,13 +3,11 @@
 
 //! Modularizing state can be done with `lens` which allows using modular components.
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
-use masonry::widget::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
-use xilem::view::{button, flex, label, Axis};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::view::{MainAxisAlignment, flex_col, flex_row, label, text_button};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 #[derive(Default)]
 struct AppState {
@@ -17,28 +15,34 @@ struct AppState {
     global_count: i32,
 }
 
-fn modular_counter(count: &mut i32) -> impl WidgetView<i32> {
-    flex((
+fn modular_counter(count: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
+    flex_col((
         label(format!("modularized count: {count}")),
-        button("+", |count| *count += 1),
-        button("-", |count| *count -= 1),
+        text_button("+", |count: &mut i32| *count += 1),
+        text_button("-", |count: &mut i32| *count -= 1),
     ))
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
-    flex((
-        lens(modular_counter, state, |state| &mut state.modularized_count),
-        button(
+fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
+    flex_row((
+        lens(modular_counter, |state: &mut AppState, ()| {
+            &mut state.modularized_count
+        }),
+        text_button(
             format!("clicked {} times", state.global_count),
             |state: &mut AppState| state.global_count += 1,
         ),
     ))
-    .direction(Axis::Horizontal)
     .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(AppState::default(), app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Components".into())?;
+    let app = Xilem::new_simple(
+        AppState::default(),
+        app_logic,
+        WindowOptions::new("Components"),
+    );
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

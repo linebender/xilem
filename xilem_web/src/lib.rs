@@ -1,53 +1,70 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// https://linebender.org/blog/doc-include
-//! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
-//! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_web/LICENSE
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
+// cargo rdme --workspace-project=xilem_web
+
+//! This is a prototype implementation of the Xilem architecture (through [Xilem Core][]) using DOM elements as Xilem elements (unfortunately the two concepts have the same name).
 //!
-//! <!-- intra-doc-links go here -->
+//! # Quickstart
 //!
-//! <style>
-//! .rustdoc-hidden { display: none; }
-//! </style>
-#![doc = include_str!("../README.md")]
-// LINEBENDER LINT SET - lib.rs - v1
+//! The easiest way to start, is to use [Trunk][] within some of the examples (see the `web_examples/` directory).
+//! Run `trunk serve`, then navigate the browser to the link provided (usually <http://localhost:8080>).
+//!
+//! ## Example
+//!
+//! A minimal example to run an application with `xilem_web`:
+//!
+//! ```rust,no_run
+//! use xilem_web::{
+//!     document_body,
+//!     elements::html::{button, div, p},
+//!     interfaces::{Element as _, HtmlDivElement},
+//!     App,
+//!     core::Edit,
+//! };
+//!
+//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
+//!     div((
+//!         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
+//!         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
+//!     ))
+//! }
+//!
+//! pub fn main() {
+//!     let clicks = 0;
+//!     App::new(document_body(), clicks, app_logic).run();
+//! }
+//! ```
+//!
+//! [Trunk]: https://trunkrs.dev/
+//! [Xilem Core]: xilem_core
+
+// LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
-// These lints aren't included in Cargo.toml because they
-// shouldn't apply to examples and tests
-#![warn(unused_crate_dependencies)]
+// These lints shouldn't apply to examples or tests.
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// These lints shouldn't apply to examples.
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
+#![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(test, expect(clippy::print_stdout, reason = "Deferred: Noisy"))]
-#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(unused_qualifications, reason = "Deferred: Noisy")]
-#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
-// expect doesn't work here: https://github.com/rust-lang/rust/pull/130025
-#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
+#![expect(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
 #![expect(
     unnameable_types,
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
 #![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
-#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Potentially controversial code style"
-)]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
-use std::{any::Any, ops::Deref as _};
+use std::any::Any;
+use std::ops::Deref as _;
 
 use web_sys::wasm_bindgen::JsCast;
 
@@ -63,7 +80,6 @@ mod app;
 mod attribute_value;
 mod context;
 mod dom_helpers;
-mod message;
 mod one_of;
 mod optional_action;
 mod pod;
@@ -82,25 +98,23 @@ pub mod modifiers;
 pub mod props;
 pub mod svg;
 
-pub use self::{
-    after_update::{
-        after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
-    },
-    app::App,
-    attribute_value::{AttributeValue, IntoAttributeValue},
-    context::{MessageThunk, ViewCtx},
-    dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
-    message::{DynMessage, Message},
-    optional_action::{Action, OptionalAction},
-    pod::{AnyPod, Pod, PodFlags, PodMut},
-    pointer::{Pointer, PointerDetails, PointerMsg},
+pub use self::after_update::{
+    AfterBuild, AfterRebuild, BeforeTeardown, after_build, after_rebuild, before_teardown,
 };
+pub use self::app::App;
+pub use self::attribute_value::{AttributeValue, IntoAttributeValue};
+pub use self::context::{MessageThunk, ViewCtx};
+pub use self::core::DynMessage;
+pub use self::dom_helpers::{document, document_body, get_element_by_id, input_event_target_value};
+pub use self::optional_action::{Action, OptionalAction};
+pub use self::pod::{AnyPod, Pod, PodFlags, PodMut};
+pub use self::pointer::{Pointer, PointerDetails, PointerMsg};
 
-pub use templated::{templated, Templated};
+pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewSequence};
+use core::{AnyView, Arg, View, ViewArgument, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -123,11 +137,11 @@ pub trait DomNode: AnyNode {
 }
 
 /// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
-pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod, DynMessage>;
+pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
-pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode>>
+pub trait DomView<State: ViewArgument, Action = ()>:
+    View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
 {
     type DomNode: DomNode;
 
@@ -135,45 +149,23 @@ pub trait DomView<State, Action = ()>:
     ///
     /// # Examples
     /// ```
-    /// use xilem_web::{elements::html::div, DomView};
+    /// use xilem_web::{elements::html::div, DomView, core::ViewArgument};
     ///
-    /// # fn view<State: 'static>() -> impl DomView<State> {
+    /// # fn view<State: ViewArgument>() -> impl DomView<State> {
     /// div("a label").boxed()
     /// # }
     /// ```
     fn boxed(self) -> Box<AnyDomView<State, Action>>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
     {
         Box::new(self)
     }
 
-    /// See [`adapt`](`core::adapt`)
-    fn adapt<ParentState, ParentAction, ProxyFn>(
-        self,
-        f: ProxyFn,
-    ) -> Adapt<ParentState, ParentAction, State, Action, ViewCtx, Self, DynMessage, ProxyFn>
-    where
-        State: 'static,
-        Action: 'static,
-        ParentState: 'static,
-        ParentAction: 'static,
-        Self: Sized,
-        ProxyFn: Fn(
-                &mut ParentState,
-                AdaptThunk<State, Action, ViewCtx, Self, DynMessage>,
-            ) -> MessageResult<ParentAction, DynMessage>
-            + 'static,
-    {
-        core::adapt(self, f)
-    }
-
     /// See [`after_build`](`after_update::after_build`)
     fn after_build<F>(self, callback: F) -> AfterBuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -184,7 +176,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`after_rebuild`](`after_update::after_rebuild`)
     fn after_rebuild<F>(self, callback: F) -> AfterRebuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -195,47 +186,17 @@ pub trait DomView<State, Action = ()>:
     /// See [`before_teardown`](`after_update::before_teardown`)
     fn before_teardown<F>(self, callback: F) -> BeforeTeardown<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
     {
         before_teardown(self, callback)
     }
-
-    /// See [`map_state`](`core::map_state`)
-    fn map_state<ParentState, F>(
-        self,
-        f: F,
-    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx, DynMessage>
-    where
-        State: 'static,
-        ParentState: 'static,
-        Self: Sized,
-        F: Fn(&mut ParentState) -> &mut State + 'static,
-    {
-        core::map_state(self, f)
-    }
-
-    /// See [`map_action`](`core::map_action`)
-    fn map_action<ParentAction, F>(
-        self,
-        f: F,
-    ) -> MapAction<Self, State, ParentAction, Action, ViewCtx, DynMessage, F>
-    where
-        State: 'static,
-        ParentAction: 'static,
-        Action: 'static,
-        Self: Sized,
-        F: Fn(&mut State, Action) -> ParentAction + 'static,
-    {
-        core::map_action(self, f)
-    }
 }
 
-impl<V, State, Action, N> DomView<State, Action> for V
+impl<V, State: ViewArgument, Action, N> DomView<State, Action> for V
 where
-    V: View<State, Action, ViewCtx, DynMessage, Element = Pod<N>>,
+    V: View<State, Action, ViewCtx, Element = Pod<N>>,
     N: DomNode,
 {
     type DomNode = N;
@@ -247,17 +208,18 @@ where
 /// # Examples
 ///
 /// ```
-/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+/// # use xilem_web::core::Edit;
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<Edit<i32>> {
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
-pub trait DomFragment<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+pub trait DomFragment<State: ViewArgument, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }
 
-impl<V, State, Action> DomFragment<State, Action> for V where
-    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+impl<V, State: ViewArgument, Action> DomFragment<State, Action> for V where
+    V: ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }
 

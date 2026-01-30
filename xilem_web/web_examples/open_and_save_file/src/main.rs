@@ -9,8 +9,13 @@ use std::{cell::RefCell, rc::Rc};
 use gloo_file::{Blob, File, FileReadError, ObjectUrl};
 use web_sys::wasm_bindgen::JsCast;
 use xilem_web::{
-    concurrent::memoized_await, core::fork, document_body, elements::html, interfaces::Element,
-    modifiers::style, App, DomView,
+    App, DomView,
+    concurrent::memoized_await,
+    core::{Edit, fork},
+    document_body,
+    elements::html,
+    interfaces::Element,
+    modifiers::style,
 };
 
 struct AppState {
@@ -33,7 +38,7 @@ impl Default for AppState {
     }
 }
 
-fn app_logic(app_state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(app_state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     let open_action = app_state
         .start_opening
         .then(|| {
@@ -96,7 +101,7 @@ fn handle_open_result(state: &mut AppState, result: Result<String, FileReadError
     }
 }
 
-fn open_file_input(app_state: &mut AppState) -> impl Element<AppState> {
+fn open_file_input(app_state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     html::input(())
         .attr("type", "file")
         .attr("accept", "text/plain")
@@ -126,7 +131,7 @@ fn open_file_input(app_state: &mut AppState) -> impl Element<AppState> {
         })
 }
 
-fn hidden_save_link(state: &mut AppState) -> impl Element<AppState> {
+fn hidden_save_link(state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     html::a("Save example text")
         .style(style("display", "none"))
         .attr("save", "example.txt")

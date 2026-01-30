@@ -1,0 +1,234 @@
+// Copyright 2018 the Xilem Authors and the Druid Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// TODO - Improve the ergonomics of widget layout. The Align widget is a bandaid
+// that has several problem; in particular, the fact that Align will pass "loosened"
+// size constraints to its child means that "aligning" a widget may actually change
+// its computed size. See https://github.com/linebender/xilem/issues/378
+
+use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
+use tracing::{Span, trace_span};
+use vello::Scene;
+
+use crate::core::{
+    AccessCtx, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx, PropertiesRef, RegisterCtx,
+    Widget, WidgetId, WidgetPod,
+};
+use crate::core::{MeasureCtx, WidgetMut};
+use crate::kurbo::{Axis, Rect, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
+
+// TODO - Have child widget type as generic argument
+
+/// A widget that aligns its child.
+///
+#[doc = concat!(
+    "![Right-aligned label](",
+    include_doc_path!("screenshots/align_right.png"),
+    ")",
+)]
+pub struct Align {
+    align: UnitPoint,
+    child: WidgetPod<dyn Widget>,
+    width_factor: Option<f64>,
+    height_factor: Option<f64>,
+}
+
+// --- MARK: BUILDERS
+impl Align {
+    /// Creates widget with alignment.
+    ///
+    /// Note that the `align` parameter is specified as a `UnitPoint` in
+    /// terms of left and right. This is inadequate for bidi-aware layout
+    /// and thus the API will change when Masonry gains bidi capability.
+    pub fn new(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self {
+            align,
+            child: child.erased().to_pod(),
+            width_factor: None,
+            height_factor: None,
+        }
+    }
+
+    /// Creates centered widget.
+    pub fn centered(child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self::new(UnitPoint::CENTER, child)
+    }
+
+    /// Creates right-aligned widget.
+    pub fn right(child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self::new(UnitPoint::RIGHT, child)
+    }
+
+    /// Creates left-aligned widget.
+    pub fn left(child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self::new(UnitPoint::LEFT, child)
+    }
+
+    /// Aligns only in the horizontal axis, keeping the child's size in the vertical.
+    pub fn horizontal(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self {
+            align,
+            child: child.erased().to_pod(),
+            width_factor: None,
+            height_factor: Some(1.0),
+        }
+    }
+
+    /// Aligns only in the vertical axis, keeping the child's size in the horizontal.
+    pub fn vertical(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
+        Self {
+            align,
+            child: child.erased().to_pod(),
+            width_factor: Some(1.0),
+            height_factor: None,
+        }
+    }
+}
+
+// --- MARK: WIDGETMUT
+impl Align {
+    /// Replaces the child widget with a new one.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+        this.ctx.remove_child(std::mem::replace(
+            &mut this.widget.child,
+            child.erased().to_pod(),
+        ));
+    }
+
+    /// Returns mutable reference to the child widget.
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
+        this.ctx.get_mut(&mut this.widget.child)
+    }
+}
+
+// --- MARK: IMPL WIDGET
+impl Widget for Align {
+    type Action = NoAction;
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
+        ctx.register_child(&mut self.child);
+    }
+
+    fn measure(
+        &mut self,
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+
+        let child_length = ctx.compute_length(
+            &mut self.child,
+            auto_length,
+            context_size,
+            axis,
+            cross_length,
+        );
+
+        // Default to child length
+        let mut length = child_length;
+
+        // If the parent specified space bounds, use all of it
+        if let LenReq::FitContent(space) = len_req {
+            length = space;
+        }
+
+        // Potentially override with a multiple of child length,
+        // which could be less than the parent specified bounds.
+        if let Some(factor) = match axis {
+            Axis::Horizontal => self.width_factor,
+            Axis::Vertical => self.height_factor,
+        } {
+            length = child_length * factor;
+        }
+
+        // Never return a length larger than the bounds
+        if let LenReq::FitContent(space) = len_req {
+            length = length.min(space);
+        }
+
+        length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
+        ctx.run_layout(&mut self.child, child_size);
+
+        let extra_width = (size.width - child_size.width).max(0.);
+        let extra_height = (size.height - child_size.height).max(0.);
+        let child_origin = self
+            .align
+            .resolve(Rect::new(0., 0., extra_width, extra_height));
+        ctx.place_child(&mut self.child, child_origin);
+
+        let child_baseline = ctx.child_baseline_offset(&self.child);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
+    }
+
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
+
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.child.id()])
+    }
+
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Align", id = id.trace())
+    }
+}
+
+// --- MARK: TESTS
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::theme::test_property_set;
+    use crate::widgets::Label;
+
+    // TODO - Add more unit tests
+
+    #[test]
+    fn centered() {
+        let widget = Align::centered(Label::new("hello").with_auto_id()).with_auto_id();
+
+        let mut harness = TestHarness::create(test_property_set(), widget);
+
+        assert_render_snapshot!(harness, "align_centered");
+    }
+
+    #[test]
+    fn right() {
+        let widget = Align::right(Label::new("hello").with_auto_id()).with_auto_id();
+
+        let mut harness = TestHarness::create(test_property_set(), widget);
+
+        assert_render_snapshot!(harness, "align_right");
+    }
+
+    #[test]
+    fn left() {
+        let widget = Align::left(Label::new("hello").with_auto_id()).with_auto_id();
+
+        let mut harness = TestHarness::create(test_property_set(), widget);
+
+        assert_render_snapshot!(harness, "align_left");
+    }
+}

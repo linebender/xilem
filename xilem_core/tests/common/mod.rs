@@ -6,16 +6,17 @@
     reason = "This is a utility module, which means that some exposed items aren't used in all instantiations"
 )]
 #![deny(unreachable_pub)]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
 
 #[derive(Default)]
-pub(super) struct TestCtx(Vec<ViewId>);
+pub(super) struct TestCtx(Vec<ViewId>, Environment);
 
 impl ViewPathTracker for TestCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.1
+    }
     fn push_id(&mut self, id: ViewId) {
         self.0.push(id);
     }
@@ -35,6 +36,16 @@ impl TestCtx {
             self.0.is_empty(),
             "Views should always match push_ids and pop_ids"
         );
+    }
+    pub(super) fn with_message_context(
+        &mut self,
+        target_id_path: Vec<ViewId>,
+        message: DynMessage,
+        f: impl FnOnce(&mut MessageCtx),
+    ) {
+        let mut ctx = MessageCtx::new(std::mem::take(&mut self.1), target_id_path, message);
+        f(&mut ctx);
+        self.1 = ctx.finish().0;
     }
 }
 
@@ -64,9 +75,10 @@ impl ViewElement for TestElement {
 /// The const generic parameter is used for testing `AnyView`
 pub(super) struct OperationView<const N: u32>(pub(super) u32);
 
-#[allow(clippy::manual_non_exhaustive)]
-// non_exhaustive is crate level, but this is to "protect" against
-// the parent tests from constructing this
+#[allow(
+    clippy::manual_non_exhaustive,
+    reason = "Unlike `#[non_exhaustive]`, this patterns stops the crate's tests from constructing this."
+)]
 pub(super) struct Action {
     pub(super) id: u32,
     _priv: (),
@@ -93,9 +105,9 @@ where
 
     type ViewState = (Seq::SeqState, AppendVec<TestElement>);
 
-    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, app_state: ()) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let state = self.seq.seq_build(ctx, &mut elements);
+        let state = self.seq.seq_build(ctx, &mut elements, app_state);
         (
             TestElement {
                 operations: vec![Operation::Build(self.id)],
@@ -115,6 +127,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
+        app_state: (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -127,7 +140,7 @@ where
             scratch: &mut view_state.1,
         };
         self.seq
-            .seq_rebuild(&prev.seq, &mut view_state.0, ctx, &mut elements);
+            .seq_rebuild(&prev.seq, &mut view_state.0, ctx, &mut elements, app_state);
     }
 
     fn teardown(
@@ -149,12 +162,17 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut (),
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: (),
     ) -> MessageResult<Action> {
+        let mut elements = SeqTracker {
+            inner: element.children.as_mut().unwrap(),
+            ix: 0,
+            scratch: &mut view_state.1,
+        };
         self.seq
-            .seq_message(&mut view_state.0, id_path, message, app_state)
+            .seq_message(&mut view_state.0, message, &mut elements, app_state)
     }
 }
 
@@ -164,7 +182,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
 
     type ViewState = ();
 
-    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, (): ()) -> (Self::Element, Self::ViewState) {
         (
             TestElement {
                 operations: vec![Operation::Build(self.0)],
@@ -181,6 +199,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
+        (): (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -202,9 +221,9 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[ViewId],
-        _: DynMessage,
-        _: &mut (),
+        _: &mut MessageCtx,
+        _: Mut<'_, Self::Element>,
+        _: (),
     ) -> MessageResult<Action> {
         // If we get an `Action` value, we know it came from here
         MessageResult::Action(Action {
@@ -251,6 +270,7 @@ impl AnyElement<Self, TestCtx> for TestElement {
 #[derive(Clone)]
 pub(super) struct SeqChildren {
     pub(super) active: Vec<TestElement>,
+    // The index in the original sequence, and the element.
     pub(super) deleted: Vec<(usize, TestElement)>,
 }
 
@@ -286,6 +306,9 @@ impl ElementSplice<TestElement> for SeqTracker<'_> {
     }
     fn skip(&mut self, n: usize) {
         self.ix += n;
+    }
+    fn index(&self) -> usize {
+        self.ix
     }
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ret = f(&mut self.inner.active[self.ix]);

@@ -2,14 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple counter
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use xilem_web::{
-    document_body,
-    elements::html as el,
-    interfaces::{Element, HtmlButtonElement},
-    App, DomFragment,
-};
+use xilem_web::core::Edit;
+use xilem_web::elements::html as el;
+use xilem_web::interfaces::{Element, HtmlButtonElement};
+use xilem_web::{App, DomFragment, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -46,20 +43,20 @@ impl AppState {
 }
 
 /// You can create functions that generate views.
-fn btn(
+fn btn<F: Fn(&mut AppState, web_sys::PointerEvent) + 'static>(
     label: &'static str,
-    click_fn: impl Fn(&mut AppState, web_sys::PointerEvent) + 'static,
-) -> impl HtmlButtonElement<AppState> {
-    el::button(label).on_click(click_fn)
+    click_fn: F,
+) -> impl HtmlButtonElement<Edit<AppState>> {
+    el::button::<Edit<AppState>, _, _>(label).on_click::<F, _>(click_fn)
 }
 
 /// And functions that return a sequence of views.
-fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> {
+fn huzzah(state: &mut AppState) -> impl DomFragment<Edit<AppState>> + use<> {
     (state.clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 }
 
 /// Even the root `app_logic` can return a sequence of views
-fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomFragment<Edit<AppState>> + use<> {
     (
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),

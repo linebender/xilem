@@ -3,17 +3,14 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.82" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
+  RUST_STABLE_VER: "1.93" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
   # The purpose of checking with the minimum supported Rust toolchain is to detect its staleness.
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.81"
-  # List of packages that will be checked with the minimum supported Rust version.
-  # This should be limited to packages that are intended for publishing.
-  RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
+  RUST_MIN_VER: "1.88"
   # List of packages that can not target Wasm.
-  NO_WASM_PKGS: "--exclude masonry --exclude xilem"
+  NO_WASM_PKGS: "--exclude masonry_core --exclude masonry_testing --exclude masonry --exclude masonry_winit --exclude xilem --exclude xilem_masonry --exclude placehero"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
@@ -44,6 +41,7 @@ env:
 #
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+# Checking is limited to packages that are intended for publishing to keep MSRV as low as possible.
 #
 # If the workspace uses debug_assertions then we verify code twice, with it set to true or false.
 # We always keep it true for external dependencies so that we can reuse the cache for faster builds.
@@ -81,6 +79,14 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all --check
 
+      - name: Install Taplo
+        uses: uncenter/setup-taplo@09968a8ae38d66ddd3d23802c44bf6122d7aa991 # v1
+        with:
+          version: "0.9.3"
+
+      - name: Run taplo fmt
+        run: taplo fmt --check --diff
+
       - name: Install ripgrep
         run: |
           sudo apt update
@@ -95,13 +101,37 @@ jobs:
       - name: Install cargo-rdme
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-rdme
+          tool: cargo-rdme@1.4.8
 
       - name: Run cargo rdme (masonry)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
+        run: cargo rdme --check --workspace-project=masonry
+
+      - name: Run cargo rdme (masonry_core)
+        run: cargo rdme --check --workspace-project=masonry_core
+
+      - name: Run cargo rdme (masonry_testing)
+        run: cargo rdme --check --workspace-project=masonry_testing
+
+      - name: Run cargo rdme (masonry_winit)
+        run: cargo rdme --check --workspace-project=masonry_winit
 
       - name: Run cargo rdme (tree_arena)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
+        run: cargo rdme --check --workspace-project=tree_arena
+
+      - name: Run cargo rdme (xilem)
+        run: cargo rdme --check --workspace-project=xilem
+
+      - name: Run cargo rdme (xilem_core)
+        run: cargo rdme --check --workspace-project=xilem_core
+
+      - name: Run cargo rdme (xilem_masonry)
+        run: cargo rdme --check --workspace-project=xilem_masonry
+
+      - name: Run cargo rdme (xilem_web)
+        run: cargo rdme --check --workspace-project=xilem_web
+
+      - name: Run cargo rdme (placehero)
+        run: cargo rdme --check --workspace-project=placehero
 
   clippy-stable:
     name: cargo clippy
@@ -126,7 +156,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       - name: Restore cache
         uses: Swatinem/rust-cache@v2
@@ -193,31 +223,8 @@ jobs:
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
-  prime-lfs-cache:
-    name: Prime LFS Cache
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Cache git LFS
-      id: lfs-cache
-      uses: actions/cache@v4
-      with:
-        path: .git/lfs
-        # The files stored in git lfs are all in this folder
-        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
-        restore-keys: masonry-lfs-
-        enableCrossOsArchive: true
-
-    - name: Fetch LFS data
-      if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
-      run: git lfs fetch
-
   test-stable:
     name: cargo test
-    needs: prime-lfs-cache
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -234,20 +241,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
-
-      - name: Restore LFS cache
-        id: lfs-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .git/lfs
-          # The files stored in git lfs are all in this folder
-          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
-          enableCrossOsArchive: true
-
-      - name: Checkout LFS files
-        run: git lfs checkout
-        continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
@@ -256,7 +249,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
       - name: Install xvfb, llvmpipe and lavapipe
@@ -266,7 +259,7 @@ jobs:
           sudo apt-get update -y -qq
           sudo add-apt-repository ppa:kisak/turtle -y
           sudo apt-get update
-          sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
+          sudo apt install -y xvfb libegl-mesa0 libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2
@@ -285,16 +278,41 @@ jobs:
           # because those require Vello rendering to be working
           # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
+          # Check that doc file paths are correct
+          CHECK_DOC_PATHS: "true"
 
+      - name: Run cargo nextest on unsafe arena
+        run: cargo nextest run -p tree_arena --locked --no-fail-fast --no-default-features
+  
       - name: Upload test results due to failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: masonry-snapshot-tests-${{ matrix.os }}
-          path: masonry/src/widget/screenshots
+          path: '**/screenshots/*.png'
 
       - name: Run cargo test --doc
         run: cargo test --doc --workspace --locked --profile ci --all-features --no-fail-fast
+
+  miri:
+    name: cargo miri (unsafe tree_arena)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: miri
+
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Run cargo miri
+        run: cargo miri test -p tree_arena --locked --no-default-features --no-fail-fast
 
   test-stable-wasm:
     name: cargo test (wasm32)
@@ -367,7 +385,7 @@ jobs:
 
       - name: Install native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libfontconfig1-dev
 
       - name: Restore cache
         uses: Swatinem/rust-cache@v2
@@ -375,11 +393,11 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: Run cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
 
       - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
@@ -407,11 +425,11 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: Run cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
 
       - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
@@ -432,9 +450,18 @@ jobs:
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libfontconfig1-dev
+
       # We test documentation using nightly to match docs.rs.
       - name: Run cargo doc
         run: cargo doc --workspace --locked --profile ci --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        env:
+          RUSTDOCFLAGS: '--cfg docsrs -D warnings'
+
+      - name: Run cargo doc on unsafe arena
+        run: cargo doc -p tree_arena --locked --profile ci --no-default-features --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
         env:
           RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
@@ -446,4 +473,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check typos
-        uses: crate-ci/typos@v1.27.0
+        uses: crate-ci/typos@v1.42.1

@@ -5,11 +5,10 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx};
-use xilem_core::{MessageResult, Mut, View, ViewId};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId};
 
 mod common;
 use common::*;
@@ -90,67 +89,67 @@ impl
         }
     }
 
-    fn with_downcast_a(
+    fn with_downcast_a<R>(
         elem: &mut Mut<'_, Self::OneOfElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+    ) -> R {
+        f(elem)
     }
 
-    fn with_downcast_b(
+    fn with_downcast_b<R>(
         elem: &mut Mut<'_, Self::OneOfElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+    ) -> R {
+        f(elem)
     }
 
     // when one of the following would be invoked, it would be an error in the impl of `OneOfN`
-    fn with_downcast_c(
+    fn with_downcast_c<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_d(
+    fn with_downcast_d<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_e(
+    fn with_downcast_e<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_f(
+    fn with_downcast_f<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_g(
+    fn with_downcast_g<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_h(
+    fn with_downcast_h<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_i(
+    fn with_downcast_i<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 }
@@ -160,7 +159,7 @@ impl
 fn one_of_path() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (element, _state) = view1.build(&mut ctx);
+    let (element, _state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.view_path.len(), 1);
     assert_eq!(element.view_path[0], ViewId::new(0));
@@ -171,11 +170,11 @@ fn one_of_path() {
 fn one_of_same_type_rebuild() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
 
     let view2 = OneOf2::A(record_ops_0(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(element.view_path[0], ViewId::new(0));
     assert_eq!(
@@ -189,11 +188,11 @@ fn one_of_same_type_rebuild() {
 fn one_of_type_change_rebuild() {
     let view1 = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
 
     let view2 = OneOf2::B(record_ops_1(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(element.view_path[0], ViewId::new(1));
     assert_eq!(
@@ -211,7 +210,7 @@ fn one_of_type_change_rebuild() {
 fn one_of_passthrough_teardown() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
@@ -228,24 +227,26 @@ fn one_of_passthrough_teardown() {
 fn one_of_passthrough_message() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
+        let result = view1.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 0);
+    });
 }
 
 #[test]
 fn one_of_no_message_after_stale() {
     let view1 = OneOf2::A(OperationView::<0>(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
     let path = element.view_path.clone();
 
     let view2 = OneOf2::B(OperationView::<1>(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -256,20 +257,22 @@ fn one_of_no_message_after_stale() {
         ]
     );
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }
 
 #[test]
 fn one_of_no_message_after_stale_then_same_type() {
     let view1 = OneOf2::A(OperationView::<0>(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, ());
     ctx.assert_empty();
     let path = element.view_path.clone();
 
     let view2 = OneOf2::B(OperationView::<1>(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -281,7 +284,7 @@ fn one_of_no_message_after_stale_then_same_type() {
     );
 
     let view3 = OneOf2::A(OperationView::<0>(2));
-    view3.rebuild(&view2, &mut state, &mut ctx, &mut element);
+    view3.rebuild(&view2, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -294,6 +297,8 @@ fn one_of_no_message_after_stale_then_same_type() {
         ]
     );
 
-    let result = view3.message(&mut state, &path, Box::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view3.message(&mut state, ctx, &mut element, ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }

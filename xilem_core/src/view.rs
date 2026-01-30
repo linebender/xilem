@@ -3,13 +3,8 @@
 
 //! The primary view trait and associated trivial implementations.
 
-use alloc::boxed::Box;
-use alloc::rc::Rc;
-use alloc::sync::Arc;
-use core::ops::Deref;
-
 use crate::message::MessageResult;
-use crate::{DynMessage, Mut, ViewElement};
+use crate::{Arg, MessageCtx, Mut, ViewArgument, ViewElement, ViewPathTracker};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -18,7 +13,7 @@ use crate::{DynMessage, Mut, ViewElement};
 /// impl<...> View<...> for Button<...> {...}
 /// ```
 ///
-/// ## Details
+/// # Details
 ///
 /// Because `View` is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
 /// These non-local types can include `Vec<_>` and `Option<_>`.
@@ -55,12 +50,7 @@ pub trait ViewMarker {}
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
-///
-/// ## Alloc
-///
-/// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
-/// allocator to be available.
-pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
+pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
     ViewMarker + 'static
 {
     /// The element type which this view operates on.
@@ -70,10 +60,19 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
     /// This often means routing information for messages to child views or view sequences,
     /// to avoid sending outdated views.
     /// This is also used in [`memoize`](crate::memoize) to store the previously constructed view.
+    ///
+    /// The type used for this associated type cannot be treated as public API; this is
+    /// internal state to the `View` implementation.
+    /// That is, `View` implementations are permitted to change the type they use for this
+    ///  during even a patch release of their crate.
     type ViewState;
 
     /// Create the corresponding Element value.
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
     fn rebuild(
@@ -82,6 +81,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     );
 
     /// Handle `element` being removed from the tree.
@@ -102,240 +102,67 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Message,
-        app_state: &mut State,
-    ) -> MessageResult<Action, Message>;
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action>;
+
+    /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].
+    /// This allows modularization of views based on their state.
+    ///
+    /// See [`map_state`](`crate::map_state`)
+    fn map_state<ParentState, F>(
+        self,
+        f: F,
+    ) -> crate::MapState<Self, F, ParentState, State, Action, Context>
+    where
+        ParentState: ViewArgument,
+        Action: 'static,
+        Context: 'static,
+        Self: Sized,
+        F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, State> + 'static,
+    {
+        crate::map_state(self, f)
+    }
+
+    /// A view which maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
+    ///
+    /// See [`map_message_result`](`crate::map_message_result`)
+    fn map_message_result<ParentAction, F>(
+        self,
+        f: F,
+    ) -> crate::MapMessage<Self, State, ParentAction, Action, Context, F>
+    where
+        ParentAction: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+    {
+        crate::map_message_result(self, f)
+    }
+
+    /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
+    ///
+    /// See [`map_action`](`crate::map_action`)
+    fn map_action<ParentAction, F>(
+        self,
+        f: F,
+    ) -> crate::MapMessage<
+        Self,
+        State,
+        ParentAction,
+        Action,
+        Context,
+        impl Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+    >
+    where
+        ParentAction: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(Arg<'_, State>, Action) -> ParentAction + 'static,
+    {
+        crate::map_action(self, f)
+    }
 
     // fn debug_name?
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-/// An identifier used to differentiation between the direct children of a [`View`].
-///
-/// These are [`u64`] backed identifiers, which will be added to the "view path" in
-/// [`View::build`] and [`View::rebuild`] (and their [`ViewSequence`](crate::ViewSequence) counterparts),
-/// and removed from the start of the path if necessary in [`View::message`].
-/// The value of `ViewId`s are only meaningful for the `View` or `ViewSequence` added them
-/// to the path, and can be used to store indices and/or generations.
-// TODO: maybe also provide debugging information to give e.g. a useful stack trace?
-// TODO: Rethink name, as 'Id' suggests global uniqueness
-pub struct ViewId(u64);
-
-impl ViewId {
-    /// Create a new `ViewId` with the given value.
-    #[must_use]
-    pub const fn new(raw: u64) -> Self {
-        Self(raw)
-    }
-
-    /// Access the raw value of this id.
-    #[must_use]
-    pub const fn routing_id(self) -> u64 {
-        self.0
-    }
-}
-
-/// A tracker for view paths, used in [`View::build`] and [`View::rebuild`].
-/// These paths are used for routing messages in [`View::message`].
-///
-/// Each `View` is expected to be implemented for one logical context type,
-/// and this context may be used to store auxiliary data.
-/// For example, this context could be used to store a mapping from the
-/// id of widget to view path, to enable event routing.
-pub trait ViewPathTracker {
-    /// Add `id` to the end of current view path
-    fn push_id(&mut self, id: ViewId);
-    /// Remove the most recently `push`ed id from the current view path
-    fn pop_id(&mut self);
-
-    /// The path to the current view in the view tree
-    fn view_path(&mut self) -> &[ViewId];
-
-    /// Run `f` in a context with `id` pushed to the current view path
-    fn with_id<R>(&mut self, id: ViewId, f: impl FnOnce(&mut Self) -> R) -> R {
-        self.push_id(id);
-        let res = f(self);
-        self.pop_id();
-        res
-    }
-}
-
-impl<V: ?Sized> ViewMarker for Box<V> {}
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
-where
-    Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
-{
-    type Element = V::Element;
-    type ViewState = V::ViewState;
-
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.deref().build(ctx)
-    }
-
-    fn rebuild(
-        &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        self.deref().rebuild(prev, view_state, ctx, element);
-    }
-
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        self.deref().teardown(view_state, ctx, element);
-    }
-
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Message,
-        app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
-        self.deref()
-            .message(view_state, id_path, message, app_state)
-    }
-}
-
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
-#[derive(Debug)]
-pub struct RcState<ViewState> {
-    view_state: ViewState,
-    /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
-    /// This can happen, e.g. when an inner view wasn't changed by the app-developer directly (i.e. it points to the same view),
-    /// but e.g. through some kind of async action.
-    /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
-    dirty: bool,
-}
-
-impl<V: ?Sized> ViewMarker for Arc<V> {}
-/// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
-where
-    Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
-{
-    type Element = V::Element;
-    type ViewState = RcState<V::ViewState>;
-
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        let (element, view_state) = self.deref().build(ctx);
-        (
-            element,
-            RcState {
-                view_state,
-                dirty: false,
-            },
-        )
-    }
-
-    fn rebuild(
-        &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        #![expect(clippy::use_self, reason = "`Arc::ptr_eq` is the canonical form")]
-        if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
-            self.deref()
-                .rebuild(prev, &mut view_state.view_state, ctx, element);
-        }
-    }
-
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        self.deref()
-            .teardown(&mut view_state.view_state, ctx, element);
-    }
-
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Message,
-        app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
-        let message_result =
-            self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
-        if matches!(message_result, MessageResult::RequestRebuild) {
-            view_state.dirty = true;
-        }
-        message_result
-    }
-}
-
-impl<V: ?Sized> ViewMarker for Rc<V> {}
-/// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Rc<V>
-where
-    Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
-{
-    type Element = V::Element;
-    type ViewState = RcState<V::ViewState>;
-
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        let (element, view_state) = self.deref().build(ctx);
-        (
-            element,
-            RcState {
-                view_state,
-                dirty: false,
-            },
-        )
-    }
-
-    fn rebuild(
-        &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        #![expect(clippy::use_self, reason = "`Rc::ptr_eq` is the canonical form")]
-        if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
-            self.deref()
-                .rebuild(prev, &mut view_state.view_state, ctx, element);
-        }
-    }
-
-    fn teardown(
-        &self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-    ) {
-        self.deref()
-            .teardown(&mut view_state.view_state, ctx, element);
-    }
-
-    fn message(
-        &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: Message,
-        app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
-        let message_result =
-            self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
-        if matches!(message_result, MessageResult::RequestRebuild) {
-            view_state.dirty = true;
-        }
-        message_result
-    }
 }

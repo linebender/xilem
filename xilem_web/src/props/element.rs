@@ -1,13 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    document,
-    modifiers::{Attributes, Children, Classes, Modifier, Styles},
-    AnyPod, Pod, PodFlags, ViewCtx,
-};
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::modifiers::{Attributes, Children, Classes, Modifier, Styles};
+use crate::{AnyPod, Pod, PodFlags, ViewCtx, document};
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...
@@ -72,7 +69,7 @@ impl Pod<web_sys::Element> {
         }
 
         let props = Element::new(children, attr_size_hint, style_size_hint, class_size_hint);
-        Pod::new(element.unchecked_into(), props, PodFlags::new(false))
+        Self::new(element.unchecked_into(), props, PodFlags::new(false))
     }
 
     /// Creates a new Pod that hydrates an existing node (within the `ViewCtx`) as [`web_sys::Element`] and [`Element`] as its [`DomNode::Props`](`crate::DomNode::Props`).
@@ -83,7 +80,7 @@ impl Pod<web_sys::Element> {
         let element = ctx.hydrate_node().unwrap_throw();
 
         let props = Element::new(children, attr_size_hint, style_size_hint, class_size_hint);
-        Pod::new(element.unchecked_into(), props, PodFlags::new(true))
+        Self::new(element.unchecked_into(), props, PodFlags::new(true))
     }
 }
 

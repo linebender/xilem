@@ -1,16 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, OrphanView, ViewId},
-    DynMessage, Pod, PodFlags, ViewCtx,
-};
 use wasm_bindgen::JsCast;
+
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, OrphanView, ViewArgument};
+use crate::{Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
     ($ty:ty) => {
-        impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
+        impl<State: ViewArgument, Action> OrphanView<$ty, State, Action> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
@@ -18,6 +17,7 @@ macro_rules! impl_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
+                _: Arg<'_, State>,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -32,7 +32,8 @@ macro_rules! impl_string_view {
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<Self::OrphanElement>,
+                element: Mut<'_, Self::OrphanElement>,
+                _: Arg<'_, State>,
             ) {
                 if prev != new {
                     element.node.set_data(new);
@@ -43,18 +44,19 @@ macro_rules! impl_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<Self::OrphanElement>,
+                _element: Mut<'_, Self::OrphanElement>,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[ViewId],
-                message: DynMessage,
-                _app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
-                MessageResult::Stale(message)
+                _message: &mut MessageCtx,
+                _element: Mut<'_, Self::OrphanElement>,
+                _app_state: Arg<'_, State>,
+            ) -> MessageResult<Action> {
+                // TODO: Panic?
+                MessageResult::Stale
             }
         }
     };
@@ -66,7 +68,7 @@ impl_string_view!(std::borrow::Cow<'static, str>);
 
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
-        impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
+        impl<State: ViewArgument, Action> OrphanView<$ty, State, Action> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
@@ -74,6 +76,7 @@ macro_rules! impl_to_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
+                _: Arg<'_, State>,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -88,7 +91,8 @@ macro_rules! impl_to_string_view {
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<Self::OrphanElement>,
+                element: Mut<'_, Self::OrphanElement>,
+                _: Arg<'_, State>,
             ) {
                 if prev != new {
                     element.node.set_data(&new.to_string());
@@ -99,18 +103,18 @@ macro_rules! impl_to_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<Pod<web_sys::Text>>,
+                _element: Mut<'_, Pod<web_sys::Text>>,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[ViewId],
-                message: DynMessage,
-                _app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
-                MessageResult::Stale(message)
+                _message: &mut MessageCtx,
+                _element: Mut<'_, Self::OrphanElement>,
+                _app_state: Arg<'_, State>,
+            ) -> MessageResult<Action> {
+                MessageResult::Stale
             }
         }
     };

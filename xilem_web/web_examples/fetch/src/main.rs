@@ -3,21 +3,17 @@
 
 //! Demonstrates fetching other web content from Xilem Web
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-// TODO: `expect` doesn't work here for unknown reasons
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
-
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::{
-    concurrent::memoized_await,
-    core::{fork, one_of::Either},
-    document_body,
-    elements::html::*,
-    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement},
-    App,
+use xilem_web::concurrent::memoized_await;
+use xilem_web::core::one_of::Either;
+use xilem_web::core::{Edit, fork};
+use xilem_web::elements::html::*;
+use xilem_web::interfaces::{
+    Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
 };
+use xilem_web::{App, document_body};
 
 const TOO_MANY_CATS: usize = 8;
 
@@ -105,7 +101,7 @@ where
         .unchecked_into::<web_sys::HtmlInputElement>()
 }
 
-fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<Edit<AppState>> + use<> {
     div((
         cat_fetch_controls(state),
         fork(
@@ -141,7 +137,9 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     ))
 }
 
-fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> {
+fn cat_images_and_fetching_indicator(
+    state: &AppState,
+) -> impl HtmlDivElement<Edit<AppState>> + use<> {
     let cat_images = state
         .cats
         .iter()
@@ -167,7 +165,7 @@ fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<Ap
     div((error_message, fetch_state, cat_images))
 }
 
-fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
+fn cat_fetch_controls(state: &AppState) -> impl Element<Edit<AppState>> + use<> {
     fieldset((
         legend("Cat fetch controls"),
         table((

@@ -3,13 +3,12 @@
 
 //! An example using Xilem Core to manipulate a filesystem.
 
-#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
-
 use std::io::stdin;
 use std::path::PathBuf;
 
 use xilem_core::{
-    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    AnyElement, AnyView, Arg, Edit, Environment, MessageCtx, Mut, SuperElement, View, ViewArgument,
+    ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 #[derive(Debug)]
@@ -19,15 +18,15 @@ enum State {
     Complex(String),
 }
 
-fn complex_state(value: &str) -> impl FileView<State> {
+fn complex_state(value: &str) -> impl FileView<Edit<State>> + use<> {
     File {
         name: value.to_string(),
         contents: value.to_string(),
     }
 }
 
-fn app_logic(state: &mut State) -> impl FileView<State> {
-    let res: DynFileView<State> = match state {
+fn app_logic(state: &mut State) -> impl FileView<Edit<State>> + use<> {
+    let res: DynFileView<Edit<State>> = match state {
         State::Setup => Box::new(File {
             name: "file1.txt".into(),
             contents: "Test file contents".into(),
@@ -59,8 +58,9 @@ fn main() {
     let mut root_ctx = ViewCtx {
         current_folder_path: path.clone(),
         view_path: Vec::new(),
+        environment: Environment::new(),
     };
-    let (mut element, mut initial_state) = previous.build(&mut root_ctx);
+    let (mut element, mut initial_state) = previous.build(&mut root_ctx, &mut state);
     loop {
         input_buf.clear();
         let read_count = stdin()
@@ -89,14 +89,23 @@ fn main() {
         };
         let new_view = app_logic(&mut state);
         root_ctx.current_folder_path.clone_from(&path);
-        new_view.rebuild(&previous, &mut initial_state, &mut root_ctx, &mut element.0);
+        new_view.rebuild(
+            &previous,
+            &mut initial_state,
+            &mut root_ctx,
+            &mut element.0,
+            &mut state,
+        );
         previous = new_view;
     }
 }
 
-trait FileView<State, Action = ()>: View<State, Action, ViewCtx, Element = FsPath> {}
+trait FileView<State: ViewArgument, Action = ()>:
+    View<State, Action, ViewCtx, Element = FsPath>
+{
+}
 
-impl<V, State, Action> FileView<State, Action> for V where
+impl<V, State: ViewArgument, Action> FileView<State, Action> for V where
     V: View<State, Action, ViewCtx, Element = FsPath>
 {
 }
@@ -151,11 +160,15 @@ impl ViewElement for FsPath {
 }
 
 impl ViewMarker for File {}
-impl<State, Action> View<State, Action, ViewCtx> for File {
+impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        _app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let path = ctx.current_folder_path.join(&*self.name);
 
         // TODO: How to handle errors here?
@@ -169,6 +182,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _app_state: Arg<'_, State>,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -192,9 +206,9 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _id_path: &[ViewId],
-        _message: xilem_core::DynMessage,
-        _app_state: &mut State,
+        _message: &mut MessageCtx,
+        _element: Mut<'_, Self::Element>,
+        _app_state: Arg<'_, State>,
     ) -> xilem_core::MessageResult<Action> {
         unreachable!()
     }
@@ -203,9 +217,13 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
 struct ViewCtx {
     view_path: Vec<ViewId>,
     current_folder_path: PathBuf,
+    environment: Environment,
 }
 
 impl ViewPathTracker for ViewCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
     fn push_id(&mut self, id: ViewId) {
         self.view_path.push(id);
     }

@@ -1,12 +1,13 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
-    DynMessage, OptionalAction, ViewCtx,
-};
 use std::marker::PhantomData;
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker};
+use crate::{OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {
@@ -23,9 +24,9 @@ pub struct Interval<Callback, State, Action> {
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, concurrent::interval, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::{fork, Edit}, concurrent::interval, elements::html::div, interfaces::Element};
 ///
-/// fn timer(seconds: &mut u32) -> impl Element<u32> {
+/// fn timer(seconds: &mut u32) -> impl Element<Edit<u32>> {
 ///     fork(
 ///         div(format!("{seconds} seconds have passed, since creating this view")),
 ///         interval(
@@ -45,10 +46,10 @@ pub fn interval<State, Action, OA, Callback>(
     callback: Callback,
 ) -> Interval<Callback, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>) -> OA + 'static,
 {
     Interval {
         ms,
@@ -57,7 +58,10 @@ where
     }
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct IntervalState {
     // Closures are retained so they can be called by environment
     interval_fn: Closure<dyn FnMut()>,
@@ -87,19 +91,18 @@ fn clear_interval(handle: i32) {
 
 impl<Callback, State, Action> ViewMarker for Interval<Callback, State, Action> {}
 
-impl<State, Action, Callback, OA> View<State, Action, ViewCtx, DynMessage>
-    for Interval<Callback, State, Action>
+impl<State, Action, Callback, OA> View<State, Action, ViewCtx> for Interval<Callback, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>) -> OA + 'static,
 {
     type Element = NoElement;
 
     type ViewState = IntervalState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let interval_fn = Closure::new(move || thunk.push_message(()));
         let state = IntervalState {
@@ -115,7 +118,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
     ) {
         if prev.ms != self.ms {
             clear_interval(view_state.interval_handle);
@@ -123,19 +127,24 @@ where
         }
     }
 
-    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+    ) {
         clear_interval(view_state.interval_handle);
     }
 
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        debug_assert!(id_path.is_empty());
-        message.downcast::<()>().unwrap_throw();
+        message: &mut MessageCtx,
+        _element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        debug_assert!(message.remaining_path().is_empty());
+        message.take_message::<()>().unwrap_throw();
         match (self.callback)(app_state).action() {
             Some(action) => MessageResult::Action(action),
             None => MessageResult::Nop,

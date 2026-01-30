@@ -1,22 +1,21 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    diff::{diff_iters, Diff},
-    vecmap::VecMap,
-    DomView, DynMessage, ViewCtx,
-};
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::{Debug, Display};
+use std::hash::{BuildHasher, Hash};
+use std::marker::PhantomData;
+
 use peniko::kurbo::Vec2;
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt::{Debug, Display},
-    hash::{BuildHasher, Hash},
-    marker::PhantomData,
-};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{Modifier, WithModifier};
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
+use crate::diff::{Diff, diff_iters};
+use crate::vecmap::VecMap;
+use crate::{DomView, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -32,13 +31,13 @@ pub enum StyleModifier {
 impl StyleModifier {
     /// Returns the property name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (StyleModifier::Set(name, _) | StyleModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 
     /// Convert this modifier into its property name.
     pub fn into_name(self) -> CowStr {
-        let (StyleModifier::Set(name, _) | StyleModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 }
@@ -46,8 +45,8 @@ impl StyleModifier {
 impl<V: Into<Option<CowStr>>, K: Into<CowStr>> From<(K, V)> for StyleModifier {
     fn from((name, value): (K, V)) -> Self {
         match value.into() {
-            Some(value) => StyleModifier::Set(name.into(), value),
-            None => StyleModifier::Remove(name.into()),
+            Some(value) => Self::Set(name.into(), value),
+            None => Self::Remove(name.into()),
         }
     }
 }
@@ -81,7 +80,7 @@ where
     T2: Into<Option<CowStr>> + Clone + PartialEq + Debug + 'static,
 {
     fn styles_iter(&self) -> impl Iterator<Item = (CowStr, Option<CowStr>)> {
-        let StyleTuple(key, value) = self;
+        let Self(key, value) = self;
         std::iter::once((key.clone().into(), value.clone().into()))
     }
 }
@@ -452,7 +451,7 @@ impl<E, S, T, A> Style<E, S, T, A> {
     ///
     /// Usually [`Element::style`](`crate::interfaces::Element::style`) should be used instead of this function.
     pub fn new(el: E, styles: S) -> Self {
-        Style {
+        Self {
             el,
             styles,
             phantom: PhantomData,
@@ -461,9 +460,9 @@ impl<E, S, T, A> Style<E, S, T, A> {
 }
 
 impl<E, S, State, Action> ViewMarker for Style<E, S, State, Action> {}
-impl<V, S, State, Action> View<State, Action, ViewCtx, DynMessage> for Style<V, S, State, Action>
+impl<V, S, State, Action> View<State, Action, ViewCtx> for Style<V, S, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     S: StyleIter,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
@@ -473,10 +472,15 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let style_iter = self.styles.style_modifiers_iter();
-        let (mut e, s) =
-            ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| self.el.build(ctx));
+        let (mut e, s) = ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| {
+            self.el.build(ctx, app_state)
+        });
         let len = Styles::extend(&mut e.modifier(), style_iter);
         (e, (len, s))
     }
@@ -486,11 +490,12 @@ where
         prev: &Self,
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Styles::rebuild(element, *len, |mut elem| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut(), app_state);
             let styles = &mut elem.modifier();
             *len = Styles::update_style_modifier_iter(styles, *len, &prev.styles, &self.styles);
         });
@@ -500,7 +505,7 @@ where
         &self,
         (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -508,11 +513,11 @@ where
     fn message(
         &self,
         (_, view_state): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.el.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.el.message(view_state, message, element, app_state)
     }
 }
 
@@ -525,7 +530,7 @@ pub struct Rotate<E, State, Action> {
 
 impl<E, State, Action> Rotate<E, State, Action> {
     pub(crate) fn new(element: E, radians: f64) -> Self {
-        Rotate {
+        Self {
             el: element,
             phantom: PhantomData,
             radians,
@@ -547,9 +552,9 @@ fn rotate_transform_modifier(transform: Option<&CowStr>, radians: &f64) -> Style
 }
 
 impl<V, State, Action> ViewMarker for Rotate<V, State, Action> {}
-impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Rotate<V, State, Action>
+impl<V, State, Action> View<State, Action, ViewCtx> for Rotate<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
@@ -558,8 +563,13 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        let (mut element, state) =
+            ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
         Styles::push(
             styles,
@@ -573,11 +583,12 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut(), app_state);
             let mut styles = element.modifier();
             Styles::update_with_modify_style(
                 &mut styles,
@@ -593,7 +604,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -601,11 +612,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.el.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.el.message(view_state, message, element, app_state)
     }
 }
 
@@ -619,27 +630,27 @@ pub enum ScaleValue {
 impl Display for ScaleValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScaleValue::Uniform(uniform) => write!(f, "{uniform}"),
-            ScaleValue::NonUniform(x, y) => write!(f, "{x}, {y}"),
+            Self::Uniform(uniform) => write!(f, "{uniform}"),
+            Self::NonUniform(x, y) => write!(f, "{x}, {y}"),
         }
     }
 }
 
 impl From<f64> for ScaleValue {
     fn from(value: f64) -> Self {
-        ScaleValue::Uniform(value)
+        Self::Uniform(value)
     }
 }
 
 impl From<(f64, f64)> for ScaleValue {
     fn from(value: (f64, f64)) -> Self {
-        ScaleValue::NonUniform(value.0, value.1)
+        Self::NonUniform(value.0, value.1)
     }
 }
 
 impl From<Vec2> for ScaleValue {
     fn from(value: Vec2) -> Self {
-        ScaleValue::NonUniform(value.x, value.y)
+        Self::NonUniform(value.x, value.y)
     }
 }
 
@@ -652,7 +663,7 @@ pub struct Scale<E, State, Action> {
 
 impl<E, State, Action> Scale<E, State, Action> {
     pub(crate) fn new(element: E, scale: impl Into<ScaleValue>) -> Self {
-        Scale {
+        Self {
             el: element,
             phantom: PhantomData,
             scale: scale.into(),
@@ -670,9 +681,9 @@ fn scale_transform_modifier(transform: Option<&CowStr>, scale: &ScaleValue) -> S
 }
 
 impl<E, State, Action> ViewMarker for Scale<E, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Scale<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Scale<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
@@ -681,8 +692,13 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        let (mut element, state) =
+            ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
         Styles::push(
             styles,
@@ -696,11 +712,12 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut(), app_state);
             let styles = &mut element.modifier();
             Styles::update_with_modify_style(
                 styles,
@@ -716,7 +733,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         self.el.teardown(view_state, ctx, element);
     }
@@ -724,10 +741,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.el.message(view_state, id_path, message, app_state)
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        self.el.message(view_state, message, element, app_state)
     }
 }

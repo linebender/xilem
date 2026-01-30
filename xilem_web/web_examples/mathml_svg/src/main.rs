@@ -3,16 +3,14 @@
 
 //! Shows using mathml and SVG on the web
 
-// TODO: `expect` doesn't work here for unknown reasons
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::{
-    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
-    modifiers::style as s, App,
-};
+use xilem_web::core::Edit;
+use xilem_web::elements::{html, mathml as ml, svg};
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::{App, document_body};
 
 struct Triangle {
     a: u32,
@@ -34,7 +32,7 @@ fn label(
     y: u32,
     dy: &'static str,
     anchor: &'static str,
-) -> impl SvgTextElement<Triangle> {
+) -> impl SvgTextElement<Edit<Triangle>> {
     svg::text(l.to_string())
         .attr("x", x)
         .attr("y", y)
@@ -46,7 +44,7 @@ fn slider(
     max: u32,
     value: u32,
     cb: fn(&mut Triangle, web_sys::Event),
-) -> impl HtmlInputElement<Triangle> {
+) -> impl HtmlInputElement<Edit<Triangle>> {
     html::input(())
         .type_("range")
         .attr("min", 1)

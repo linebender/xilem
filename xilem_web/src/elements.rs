@@ -3,29 +3,35 @@
 
 //! Basic builder functions to create DOM elements, such as [`html::div`]
 
+use std::any::Any;
 use std::borrow::Cow;
 use std::marker::PhantomData;
-use std::{any::Any, rc::Rc};
+use std::rc::Rc;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::{
-    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
-    document,
-    modifiers::Children,
-    vec_splice::VecSplice,
-    AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
+use crate::core::{
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker,
 };
+use crate::modifiers::Children;
+use crate::vec_splice::VecSplice;
+use crate::{AnyPod, DomFragment, DomNode, FromWithContext, HTML_NS, Pod, ViewCtx, document};
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`][crate::core::ViewSequence], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.
 /// It's mostly a hack to avoid a completely static view tree, which unfortunately brings rustc (type-checking) down to its knees and results in long compile-times
-pub(crate) trait DomViewSequence<State, Action>: 'static {
+pub(crate) trait DomViewSequence<State: ViewArgument, Action>: 'static {
     /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
 
     /// Build the associated widgets into `elements` and initialize all states.
     #[must_use]
-    fn dyn_seq_build(&self, ctx: &mut ViewCtx, elements: &mut AppendVec<AnyPod>) -> Box<dyn Any>;
+    fn dyn_seq_build(
+        &self,
+        ctx: &mut ViewCtx,
+        elements: &mut AppendVec<AnyPod>,
+        app_state: Arg<'_, State>,
+    ) -> Box<dyn Any>;
 
     /// Update the associated widgets.
     fn dyn_seq_rebuild(
@@ -33,7 +39,8 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
+        app_state: Arg<'_, State>,
     );
 
     /// Update the associated widgets.
@@ -41,7 +48,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         &self,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
     );
 
     /// Propagate a message.
@@ -51,15 +58,15 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
     fn dyn_seq_message(
         &self,
         seq_state: &mut Box<dyn Any>,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage>;
+        message: &mut MessageCtx,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action>;
 }
 
 impl<State, Action, S> DomViewSequence<State, Action> for S
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     S: DomFragment<State, Action>,
 {
@@ -67,8 +74,13 @@ where
         self
     }
 
-    fn dyn_seq_build(&self, ctx: &mut ViewCtx, elements: &mut AppendVec<AnyPod>) -> Box<dyn Any> {
-        Box::new(self.seq_build(ctx, elements))
+    fn dyn_seq_build(
+        &self,
+        ctx: &mut ViewCtx,
+        elements: &mut AppendVec<AnyPod>,
+        app_state: Arg<'_, State>,
+    ) -> Box<dyn Any> {
+        Box::new(self.seq_build(ctx, elements, app_state))
     }
 
     fn dyn_seq_rebuild(
@@ -76,13 +88,15 @@ where
         prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
+        app_state: Arg<'_, State>,
     ) {
         self.seq_rebuild(
             prev.as_any().downcast_ref().unwrap_throw(),
             seq_state.downcast_mut().unwrap_throw(),
             ctx,
             elements,
+            app_state,
         );
     }
 
@@ -90,7 +104,7 @@ where
         &self,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
     ) {
         self.seq_teardown(seq_state.downcast_mut().unwrap_throw(), ctx, elements);
     }
@@ -98,14 +112,14 @@ where
     fn dyn_seq_message(
         &self,
         seq_state: &mut Box<dyn Any>,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        element: &mut DomChildrenSplice<'_, '_, '_, '_>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         self.seq_message(
             seq_state.downcast_mut().unwrap_throw(),
-            id_path,
             message,
+            element,
             app_state,
         )
     }
@@ -185,7 +199,7 @@ impl ElementSplice<AnyPod> for DomChildrenSplice<'_, '_, '_, '_> {
         self.children.insert(element);
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let child = self.children.mutate();
         let ret = f(child.as_mut(self.parent, self.parent_was_removed));
         self.ix += 1;
@@ -197,7 +211,11 @@ impl ElementSplice<AnyPod> for DomChildrenSplice<'_, '_, '_, '_> {
         self.ix += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
+    fn index(&self) -> usize {
+        self.ix
+    }
+
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let mut child = self.children.delete_next();
         let child = child.as_mut(self.parent, true);
         // This is an optimization to avoid too much DOM traffic, otherwise first the children would be deleted from that node in an up-traversal
@@ -219,8 +237,8 @@ impl ElementState {
     pub fn new(seq_state: Box<dyn Any>) -> Self {
         Self {
             seq_state,
-            append_scratch: Default::default(),
-            vec_splice_scratch: Default::default(),
+            append_scratch: AppendVec::default(),
+            vec_splice_scratch: Vec::default(),
         }
     }
 }
@@ -232,15 +250,17 @@ pub(crate) fn build_element<State, Action, Element>(
     tag_name: &str,
     ns: &str,
     ctx: &mut ViewCtx,
+    app_state: Arg<'_, State>,
 ) -> (Element, ElementState)
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Element: 'static,
     Element: FromWithContext<Pod<web_sys::Element>>,
 {
     let mut elements = AppendVec::default();
-    let children_state = ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements));
+    let children_state =
+        ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements, app_state));
     let element = if ctx.is_hydrating() {
         Pod::hydrate_element_with_ctx(elements.into_inner(), ctx)
     } else {
@@ -255,11 +275,12 @@ where
 pub(crate) fn rebuild_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
     prev_children: &dyn DomViewSequence<State, Action>,
-    element: Mut<Pod<Element>>,
+    element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
+    app_state: Arg<'_, State>,
 ) where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Element: 'static,
     Element: DomNode<Props: AsMut<Children>>,
@@ -278,16 +299,17 @@ pub(crate) fn rebuild_element<State, Action, Element>(
         &mut state.seq_state,
         ctx,
         &mut dom_children_splice,
+        app_state,
     );
 }
 
 pub(crate) fn teardown_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
-    element: Mut<Pod<Element>>,
+    element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
 ) where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Element: 'static,
     Element: DomNode<Props: AsMut<Children>>,
@@ -304,6 +326,39 @@ pub(crate) fn teardown_element<State, Action, Element>(
     children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
 }
 
+pub(crate) fn message_element<State, Action, Element>(
+    children: &dyn DomViewSequence<State, Action>,
+    element: Mut<'_, Pod<Element>>,
+    state: &mut ElementState,
+    ctx: &mut MessageCtx,
+    app_state: Arg<'_, State>,
+) -> MessageResult<Action>
+where
+    State: ViewArgument,
+    Action: 'static,
+    Element: 'static,
+    Element: DomNode<Props: AsMut<Children>>,
+{
+    let mut dom_children_splice = DomChildrenSplice::new(
+        &mut state.append_scratch,
+        element.props.as_mut(),
+        &mut state.vec_splice_scratch,
+        element.node.as_ref(),
+        // HACK: This will never be read, since we're handling a message rather than making any tree changes
+        // As such, for now we just use a dummy value
+        Rc::new(web_sys::DocumentFragment::new().unwrap()),
+        true,
+        // Hydration should only be used within `View::{build,rebuild}`, a message reaching this would indicate that the element is already build and hydrated, so this can safely be false.
+        false,
+    );
+    children.dyn_seq_message(
+        &mut state.seq_state,
+        ctx,
+        &mut dom_children_splice,
+        app_state,
+    )
+}
+
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
 pub struct CustomElement<Children, State, Action> {
     name: Cow<'static, str>,
@@ -317,7 +372,7 @@ pub fn custom_element<State, Action, Children>(
     children: Children,
 ) -> CustomElement<Children, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Children: DomFragment<State, Action>,
 {
@@ -328,19 +383,23 @@ where
     }
 }
 impl<State, Action, Children> ViewMarker for CustomElement<Children, State, Action> {}
-impl<State, Action, Children> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, Children> View<State, Action, ViewCtx>
     for CustomElement<Children, State, Action>
 where
     Children: 'static,
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
 {
     type Element = Pod<web_sys::HtmlElement>;
 
     type ViewState = ElementState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        build_element(&*self.children, &self.name, HTML_NS, ctx)
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
+        build_element(&*self.children, &self.name, HTML_NS, ctx, app_state)
     }
 
     fn rebuild(
@@ -348,7 +407,8 @@ where
         prev: &Self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         if prev.name != self.name {
             let new_element = document()
@@ -372,6 +432,7 @@ where
             element,
             element_state,
             ctx,
+            app_state,
         );
     }
 
@@ -379,20 +440,19 @@ where
         &self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         teardown_element(&*self.children, element, element_state, ctx);
     }
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        self.children
-            .dyn_seq_message(&mut view_state.seq_state, id_path, message, app_state)
+        element_state: &mut Self::ViewState,
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        message_element(&*self.children, element, element_state, message, app_state)
     }
 }
 
@@ -409,7 +469,7 @@ macro_rules! define_element {
         /// Builder function for a
         #[doc = concat!("`", $tag_name, "`")]
         /// element view.
-        pub fn $name<State: 'static, Action: 'static, Children: DomFragment<State, Action>>(
+        pub fn $name<State: ViewArgument, Action: 'static, Children: DomFragment<State, Action>>(
             children: Children,
         ) -> $ty_name<Children, State, Action> {
             $ty_name {
@@ -419,19 +479,23 @@ macro_rules! define_element {
         }
 
         impl<Children, State, Action> ViewMarker for $ty_name<Children, State, Action> {}
-        impl<Children, State, Action> View<State, Action, ViewCtx, DynMessage>
+        impl<Children, State, Action> View<State, Action, ViewCtx>
             for $ty_name<Children, State, Action>
         where
             Children: 'static,
-            State: 'static,
+            State: ViewArgument,
             Action: 'static,
         {
             type Element = Pod<web_sys::$dom_interface>;
 
             type ViewState = ElementState;
 
-            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-                build_element(&*self.children, $tag_name, $ns, ctx)
+            fn build(
+                &self,
+                ctx: &mut ViewCtx,
+                app_state: Arg<'_, State>,
+            ) -> (Self::Element, Self::ViewState) {
+                build_element(&*self.children, $tag_name, $ns, ctx, app_state)
             }
 
             fn rebuild(
@@ -439,7 +503,8 @@ macro_rules! define_element {
                 prev: &Self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
+                app_state: Arg<'_, State>,
             ) {
                 rebuild_element(
                     &*self.children,
@@ -447,6 +512,7 @@ macro_rules! define_element {
                     element,
                     element_state,
                     ctx,
+                    app_state,
                 );
             }
 
@@ -454,24 +520,19 @@ macro_rules! define_element {
                 &self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
             ) {
                 teardown_element(&*self.children, element, element_state, ctx);
             }
 
             fn message(
                 &self,
-                view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: DynMessage,
-                app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
-                self.children.dyn_seq_message(
-                    &mut view_state.seq_state,
-                    id_path,
-                    message,
-                    app_state,
-                )
+                element_state: &mut Self::ViewState,
+                message: &mut MessageCtx,
+                element: Mut<'_, Self::Element>,
+                app_state: Arg<'_, State>,
+            ) -> MessageResult<Action> {
+                message_element(&*self.children, element, element_state, message, app_state)
             }
         }
     };
@@ -480,10 +541,10 @@ macro_rules! define_element {
 macro_rules! define_elements {
     ($ns:ident, $($element_def:tt,)*) => {
         use std::marker::PhantomData;
-        use super::{build_element, rebuild_element, teardown_element, DomViewSequence, ElementState};
+        use super::{build_element, rebuild_element, teardown_element, message_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut, ViewId, ViewMarker},
-            DomFragment, DynMessage, Pod, View, ViewCtx,
+            core::{MessageResult, Mut,  ViewMarker, MessageCtx},
+            DomFragment, Pod, View, Arg, ViewArgument, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*
     };

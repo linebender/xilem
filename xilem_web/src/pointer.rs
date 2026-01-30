@@ -3,18 +3,22 @@
 
 //! Interactivity with pointer events.
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    interfaces::Element,
-    DomView, DynMessage, ViewCtx,
-};
-use peniko::kurbo::Point;
 use std::marker::PhantomData;
-use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
+
+use peniko::kurbo::Point;
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+};
+use crate::interfaces::Element;
+use crate::{DomView, ViewCtx};
+
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 305418260 in decimal.
 const POINTER_VIEW_ID: ViewId = ViewId::new(0x1234_5014);
 
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
@@ -26,17 +30,13 @@ pub struct Pointer<V, T, A, F> {
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
-#[allow(
+#[expect(
     unnameable_types,
     reason = "Implementation detail, public because of trait visibility rules"
 )]
 pub struct PointerState<S> {
-    // reason: Closures are retained so they can be called by environment
-    #[allow(unused)]
     down_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(unused)]
     move_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(unused)]
     up_closure: Closure<dyn FnMut(PointerEvent)>,
     child_state: S,
 }
@@ -52,19 +52,19 @@ pub enum PointerMsg {
 impl PointerMsg {
     pub fn position(&self) -> Point {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.position,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.position,
         }
     }
 
     pub fn button(&self) -> i16 {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.button,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.button,
         }
     }
 
     pub fn id(&self) -> i32 {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.id,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.id,
         }
     }
 }
@@ -79,7 +79,7 @@ pub struct PointerDetails {
 
 impl PointerDetails {
     fn from_pointer_event(e: &PointerEvent) -> Self {
-        PointerDetails {
+        Self {
             id: e.pointer_id(),
             button: e.button(),
             position: Point::new(e.client_x() as f64, e.client_y() as f64),
@@ -87,14 +87,14 @@ impl PointerDetails {
     }
 }
 
-pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
+pub fn pointer<T: ViewArgument, A, F: Fn(Arg<'_, T>, PointerMsg), V: Element<T, A>>(
     child: V,
     callback: F,
 ) -> Pointer<V, T, A, F> {
     Pointer {
         child,
         callback,
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -136,20 +136,24 @@ fn build_event_listeners(
 }
 
 impl<V, State, Action, Callback> ViewMarker for Pointer<V, State, Action, Callback> {}
-impl<State, Action, Callback, V> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, Callback, V> View<State, Action, ViewCtx>
     for Pointer<V, State, Action, Callback>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
-    Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
+    Callback: Fn(Arg<'_, State>, PointerMsg) -> Action + 'static,
     V: DomView<State, Action, DomNode: AsRef<web_sys::Element>>,
 {
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
-            let (element, child_state) = self.child.build(ctx);
+            let (element, child_state) = self.child.build(ctx, app_state);
             let el = element.node.as_ref();
 
             let [down_closure, move_closure, up_closure] = build_event_listeners(ctx, el);
@@ -168,11 +172,17 @@ where
         prev: &Self,
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut el: Mut<Self::Element>,
+        mut el: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
-            self.child
-                .rebuild(&prev.child, &mut state.child_state, ctx, el.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                &mut state.child_state,
+                ctx,
+                el.reborrow_mut(),
+                app_state,
+            );
 
             if el.flags.was_created() {
                 [state.down_closure, state.move_closure, state.up_closure] =
@@ -185,7 +195,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             // TODO remove event listeners from child or is this not necessary?
@@ -197,22 +207,22 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        let Some((first, remainder)) = id_path.split_first() else {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        let Some(first) = message.take_first() else {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         };
-        if *first != POINTER_VIEW_ID {
+        if first != POINTER_VIEW_ID {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         }
-        if remainder.is_empty() {
-            let msg = message.downcast().unwrap_throw();
+        if message.remaining_path().is_empty() {
+            let msg = message.take_message().unwrap_throw();
             MessageResult::Action((self.callback)(app_state, *msg))
         } else {
             self.child
-                .message(&mut view_state.child_state, remainder, message, app_state)
+                .message(&mut view_state.child_state, message, element, app_state)
         }
     }
 }

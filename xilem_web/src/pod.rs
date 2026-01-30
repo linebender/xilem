@@ -3,9 +3,10 @@
 
 use std::ops::DerefMut as _;
 
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::core::{AnyElement, SuperElement, ViewElement};
 use crate::{AnyNode, DomNode, ViewCtx};
-use wasm_bindgen::UnwrapThrowExt;
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
 ///
@@ -21,11 +22,11 @@ pub type AnyPod = Pod<Box<dyn AnyNode>>;
 
 impl<N: DomNode> Pod<N> {
     pub const fn new(node: N, props: N::Props, flags: PodFlags) -> Self {
-        Pod { node, props, flags }
+        Self { node, props, flags }
     }
 
     /// Erases the type of this [`Pod`] and applies props if necessary.
-    pub fn into_any_pod(mut pod: Pod<N>) -> AnyPod {
+    pub fn into_any_pod(mut pod: Self) -> AnyPod {
         pod.apply_changes();
         Pod {
             node: Box::new(pod.node),
@@ -70,7 +71,7 @@ impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(PodMut<N>) -> R,
+        f: impl FnOnce(PodMut<'_, N>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -113,8 +114,8 @@ impl<'a, N: DomNode> PodMut<'a, N> {
         flags: &'a mut PodFlags,
         parent: Option<&'a web_sys::Node>,
         was_removed: bool,
-    ) -> PodMut<'a, N> {
-        PodMut {
+    ) -> Self {
+        Self {
             node,
             props,
             flags,
@@ -124,7 +125,7 @@ impl<'a, N: DomNode> PodMut<'a, N> {
         }
     }
 
-    pub fn reborrow_mut(&mut self) -> PodMut<N> {
+    pub fn reborrow_mut(&mut self) -> PodMut<'_, N> {
         PodMut {
             node: self.node,
             props: self.props,
@@ -144,7 +145,7 @@ impl<'a, N: DomNode> PodMut<'a, N> {
 }
 
 impl PodMut<'_, Box<dyn AnyNode>> {
-    fn downcast<N: DomNode>(&mut self) -> PodMut<N> {
+    fn downcast<N: DomNode>(&mut self) -> PodMut<'_, N> {
         PodMut::new(
             self.node.deref_mut().as_any_mut().downcast_mut().unwrap(),
             self.props.downcast_mut().unwrap(),
@@ -187,9 +188,9 @@ impl PodFlags {
 
     pub(crate) fn new(in_hydration: bool) -> Self {
         if in_hydration {
-            PodFlags(Self::WAS_CREATED | Self::IN_HYDRATION)
+            Self(Self::WAS_CREATED | Self::IN_HYDRATION)
         } else {
-            PodFlags(Self::WAS_CREATED)
+            Self(Self::WAS_CREATED)
         }
     }
 

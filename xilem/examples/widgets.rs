@@ -2,28 +2,39 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A widget gallery for xilem/masonry
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+use masonry::layout::{AsUnit, Length};
+use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
-use winit::window::Window;
-use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
-use xilem::{Color, WidgetView, Xilem};
+use xilem::style::Style as _;
+use xilem::view::{
+    FlexSpacer, MainAxisAlignment, checkbox, flex_col, flex_row, indexed_stack, progress_bar,
+    sized_box, text_button,
+};
+use xilem::{Color, WidgetView, WindowOptions, Xilem};
+use xilem_core::{Edit, lens};
 
-const SPACER_WIDTH: f64 = 10.;
+const SPACER_WIDTH: Length = Length::const_px(10.);
 
 /// The state of the entire application.
 ///
 /// This is owned by Xilem, used to construct the view tree, and updated by event handlers.
 struct WidgetGallery {
+    tab: GalleryTab,
     progress: Option<f64>,
     checked: bool,
 }
 
-fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
-    flex((
+#[repr(usize)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GalleryTab {
+    Progress = 0,
+    Checkbox,
+}
+
+fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Edit<Option<f64>>> {
+    flex_col((
         progress_bar(data),
         checkbox(
             "set indeterminate progress",
@@ -36,83 +47,89 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
                 }
             },
         ),
-        button("change progress", |state: &mut Option<f64>| match state {
-            Some(ref mut v) => *v = (*v + 0.1).rem_euclid(1.),
+        text_button("change progress", |state: &mut Option<f64>| match state {
+            Some(v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),
     ))
 }
 
-fn checkbox_view(data: bool) -> impl WidgetView<bool> {
-    checkbox("a simple checkbox", data, |data, new_state| {
+fn checkbox_view(data: bool) -> impl WidgetView<Edit<bool>> {
+    checkbox("a simple checkbox", data, |data: &mut bool, new_state| {
         *data = new_state;
     })
 }
 
 /// Wrap `inner` in a box with a border
 fn border_box<State: 'static, Action: 'static>(
-    inner: impl WidgetView<State, Action>,
-) -> impl WidgetView<State, Action> {
-    sized_box(
-        flex((
-            FlexSpacer::Flex(1.),
-            flex((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
-            FlexSpacer::Flex(1.),
-        ))
-        .direction(Axis::Horizontal),
-    )
+    inner: impl WidgetView<Edit<State>, Action>,
+) -> impl WidgetView<Edit<State>, Action> {
+    flex_row((
+        FlexSpacer::Flex(1.),
+        flex_col((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
+        FlexSpacer::Flex(1.),
+    ))
+    .dims((450.px(), 200.px()))
     .border(Color::WHITE, 2.)
-    .width(450.)
-    .height(200.)
 }
 
 /// Top-level view
-fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
+fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<Edit<WidgetGallery>> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
-        flex((
-            adapt(
-                flex_item(border_box(progress_bar_view(data.progress)), 1.),
-                |data: &mut WidgetGallery, thunk| thunk.call(&mut data.progress),
-            ),
-            adapt(
-                flex_item(border_box(checkbox_view(data.checked)), 1.),
-                |data: &mut WidgetGallery, thunk| thunk.call(&mut data.checked),
-            ),
+        flex_col((
+            flex_row((
+                text_button("Progress", |data: &mut WidgetGallery| {
+                    data.tab = GalleryTab::Progress;
+                })
+                .disabled(data.tab == GalleryTab::Progress),
+                text_button("Checkbox", |data: &mut WidgetGallery| {
+                    data.tab = GalleryTab::Checkbox;
+                })
+                .disabled(data.tab == GalleryTab::Checkbox),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Center),
+            indexed_stack((
+                lens(
+                    |progress: &mut Option<f64>| border_box(progress_bar_view(*progress)),
+                    |data: &mut WidgetGallery, ()| &mut data.progress,
+                ),
+                lens(
+                    |checked: &mut bool| border_box(checkbox_view(*checked)),
+                    |data: &mut WidgetGallery, ()| &mut data.checked,
+                ),
+            ))
+            .active(data.tab as usize),
         ))
-        .gap(SPACER_WIDTH)
-        .direction(Axis::Horizontal),
+        .gap(SPACER_WIDTH),
     )
-    .border(Color::TRANSPARENT, SPACER_WIDTH)
+    .padding(SPACER_WIDTH.get())
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     // Set up the initial state of the app
     let data = WidgetGallery {
+        tab: GalleryTab::Progress,
         progress: Some(0.5),
         checked: false,
     };
 
     // Instantiate and run the UI using the passed event loop.
-    let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(300., 200.);
     let window_size = LogicalSize::new(650., 500.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Xilem Widgets")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
-    app.run_windowed_in(event_loop, window_attributes)?;
+    let app = Xilem::new_simple(
+        data,
+        app_logic,
+        WindowOptions::new("Xilem widgets")
+            .with_min_inner_size(min_window_size)
+            .with_initial_inner_size(window_size),
+    );
+    app.run_in(event_loop)?;
     Ok(())
 }
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }
@@ -122,7 +139,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

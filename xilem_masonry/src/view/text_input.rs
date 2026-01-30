@@ -1,0 +1,403 @@
+// Copyright 2024 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+use masonry::core::{ArcStr, NewWidget, Properties};
+use masonry::parley::StyleProperty;
+use masonry::parley::style::{FontStack, FontWeight};
+use masonry::properties::{
+    CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
+};
+use masonry::widgets::{self, TextAction};
+use vello::peniko::Color;
+
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::view::Prop;
+use crate::{InsertNewline, Pod, TextAlign, ViewCtx, WidgetView as _};
+
+// FIXME - A major problem of the current approach (always setting the text_input contents)
+// is that if the user forgets to hook up the modify the state's contents in the callback,
+// the text_input will always be reset to the initial state. This will be very annoying for the user.
+
+type Callback<State, Action> =
+    Box<dyn Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static>;
+
+/// A view which displays editable text.
+///
+/// The text input's current text currently *must* be stored in your app's state, and so
+/// will not work if it isn't managed correctly.
+/// If the user has made an input, the updated value is provided by the `on_changed`
+/// callback, which is the second parameter to this function (where the first is a
+/// clone of the current contents).
+/// See the examples for how to use this.
+///
+/// By default, the text input is single-line - that is, pressing Enter <kbd>↵</kbd> does
+/// not insert a newline.
+/// This can be configured using [`insert_newline`](TextInput::insert_newline) on the
+/// returned view.
+/// In the default state, Enter <kbd>↵</kbd> being pressed can therefore be used as a
+/// "submit" operation.
+/// This can be detected by setting the [`on_enter`](TextInput::on_enter) callback.
+///
+/// # Examples
+///
+/// Create a basic text input with its content stored in the app state:
+///
+/// ```
+/// # use xilem_masonry as xilem;
+/// # use xilem::view::text_input;
+/// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
+///
+/// struct State {
+///     content: String,
+/// }
+///
+/// fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
+///     text_input(state.content.clone(), |state: &mut State, input: String| {
+///         state.content = input;
+///     })
+/// }
+/// ```
+///
+/// Create a multiline `text_input`:
+///
+/// ```
+/// # use xilem_masonry as xilem;
+/// use xilem::view::text_input;
+/// use xilem::masonry::widgets::InsertNewline;
+/// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
+///
+/// # struct State {
+/// #    content: String,
+/// # }
+///
+/// # fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// text_input(state.content.clone(), |state: &mut State, input: String| {
+///     state.content = input;
+/// })
+/// .insert_newline(InsertNewline::OnEnter)
+/// # }
+/// ```
+pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
+where
+    F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
+    State: ViewArgument,
+{
+    TextInput {
+        contents,
+        on_changed: Box::new(on_changed),
+        on_enter: None,
+        text_color: None,
+        disabled_text_color: None,
+        placeholder: ArcStr::default(),
+        text_alignment: TextAlign::default(),
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        weight: FontWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        insert_newline: InsertNewline::default(),
+        disabled: false,
+        // Since we don't support setting the word wrapping, we can default to
+        // not clipping
+        clip: true,
+    }
+}
+
+/// The [`View`] created by [`text_input`].
+#[must_use = "View values do nothing unless provided to Xilem."]
+pub struct TextInput<State: ViewArgument, Action> {
+    contents: String,
+    on_changed: Callback<State, Action>,
+    on_enter: Option<Callback<State, Action>>,
+    text_color: Option<Color>,
+    disabled_text_color: Option<Color>,
+    placeholder: ArcStr,
+    text_alignment: TextAlign,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>,
+    insert_newline: InsertNewline,
+    disabled: bool,
+    clip: bool,
+    // TODO: add more attributes of `masonry::widgets::TextInput`
+}
+
+impl<State: ViewArgument, Action: 'static> TextInput<State, Action> {
+    /// Set the text's color.
+    ///
+    /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
+    pub fn text_color(mut self, color: Color) -> Self {
+        self.text_color = Some(color);
+        self
+    }
+
+    /// Set the text's color when the text input is disabled.
+    ///
+    /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
+    pub fn disabled_text_color(mut self, color: Color) -> Self {
+        self.disabled_text_color = Some(color);
+        self
+    }
+
+    /// Set the insertion caret's color.
+    ///
+    /// This overwrites the default `CaretColor` property for the inner `TextArea` widget.
+    pub fn caret_color(self, color: Color) -> Prop<CaretColor, Self, State, Action> {
+        self.prop(CaretColor { color })
+    }
+
+    /// Set the selection's color.
+    ///
+    /// This overwrites the default `SelectionColor` property for the inner `TextArea` widget.
+    pub fn selection_color(self, color: Color) -> Prop<SelectionColor, Self, State, Action> {
+        self.prop(SelectionColor { color })
+    }
+
+    /// Set the selection's color when the window is unfocused.
+    ///
+    /// This overwrites the default `UnfocusedSelectionColor` property for the inner `TextArea` widget.
+    pub fn unfocused_selection_color(
+        self,
+        color: Color,
+    ) -> Prop<UnfocusedSelectionColor, Self, State, Action> {
+        self.prop(UnfocusedSelectionColor(SelectionColor { color }))
+    }
+
+    /// Set the string which is shown when the input is empty.
+    pub fn placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
+        self.placeholder = placeholder_text.into();
+        self
+    }
+
+    /// Set the [`PlaceholderColor`] property, which sets the color of the text shown when the input is empty.
+    pub fn placeholder_color(self, color: Color) -> Prop<PlaceholderColor, Self, State, Action> {
+        self.prop(PlaceholderColor::new(color))
+    }
+
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
+        self
+    }
+
+    /// Sets text size.
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
+        self
+    }
+
+    /// Sets font weight.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Set the [font stack](FontStack) this label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
+
+    /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
+    ///
+    /// See also [`on_enter`](Self::on_enter), which provides a callback for enter
+    /// being used for submitting.
+    pub fn insert_newline(mut self, insert_newline: InsertNewline) -> Self {
+        self.insert_newline = insert_newline;
+        self
+    }
+
+    /// Set a callback that will be run when the user presses Enter <kbd>↵</kbd> to submit their input.
+    ///
+    /// Note that if [`insert_newline`](Self::insert_newline) is `InsertNewline::OnEnter`, this
+    /// will never be called.
+    pub fn on_enter<F>(mut self, on_enter: F) -> Self
+    where
+        F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
+    {
+        self.on_enter = Some(Box::new(on_enter));
+        self
+    }
+
+    /// Set the disabled state of the widget.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+
+    /// Set whether the contained text will be clipped to the box if it overflows.
+    ///
+    /// Please note:
+    /// 1) We don't currently support scrolling within a text area, so this can make some content
+    ///    unviewable (without the user adding spaces and/or copy/pasting to extract content).
+    ///    You should probably set this to false for small text inputs (and probably also lower
+    ///    the default padding).
+    /// 2) This view currently always uses word wrapping, so if there are any linebreaking
+    ///    opportunities in the text, they will be taken.
+    ///
+    /// The default value is true (i.e. clipping is enabled).
+    pub fn clip(mut self, clip: bool) -> Self {
+        self.clip = clip;
+        self
+    }
+}
+
+impl<State: ViewArgument, Action> ViewMarker for TextInput<State, Action> {}
+impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
+    for TextInput<State, Action>
+{
+    type Element = Pod<widgets::TextInput>;
+    type ViewState = ();
+
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+        // TODO: Maybe we want a shared TextArea View?
+        let text_area = widgets::TextArea::new_editable(&self.contents)
+            .with_text_alignment(self.text_alignment)
+            .with_insert_newline(self.insert_newline)
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
+            .with_style(StyleProperty::FontStack(self.font.clone()));
+
+        // TODO - Replace this with properties on the TextInput view
+        // once we implement property inheritance or something like it.
+        let mut props = Properties::new();
+        if let Some(color) = self.text_color {
+            props.insert(ContentColor { color });
+        }
+        if let Some(color) = self.disabled_text_color {
+            props.insert(DisabledContentColor(ContentColor { color }));
+        }
+
+        let text_input =
+            widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
+                .with_text_alignment(self.text_alignment)
+                .with_clip(self.clip)
+                .with_placeholder(self.placeholder.clone());
+
+        // Ensure that the actions from the *inner* TextArea get routed correctly.
+        let id = text_input.area_pod().id();
+        ctx.record_action_source(id);
+
+        let mut pod = ctx.create_pod(text_input);
+        pod.new_widget.options.disabled = self.disabled;
+        (pod, ())
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        _: &mut Self::ViewState,
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'_, Self::Element>,
+        _: Arg<'_, State>,
+    ) {
+        // TODO - Replace this with properties on the TextInput view
+        if self.text_color != prev.text_color {
+            if let Some(color) = self.text_color {
+                element.insert_prop(ContentColor { color });
+            } else {
+                element.remove_prop::<ContentColor>();
+            }
+        }
+        if self.disabled_text_color != prev.disabled_text_color {
+            if let Some(color) = self.disabled_text_color {
+                element.insert_prop(DisabledContentColor(ContentColor { color }));
+            } else {
+                element.remove_prop::<DisabledContentColor>();
+            }
+        }
+        if self.placeholder != prev.placeholder {
+            widgets::TextInput::set_placeholder(&mut element, self.placeholder.clone());
+        }
+
+        if self.disabled != prev.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
+
+        if self.clip != prev.clip {
+            widgets::TextInput::set_clip(&mut element, self.clip);
+        }
+
+        if self.text_alignment != prev.text_alignment {
+            widgets::TextInput::set_text_alignment(&mut element, self.text_alignment);
+        }
+
+        let mut text_area = widgets::TextInput::text_mut(&mut element);
+
+        // Unlike the other properties, we don't compare to the previous value;
+        // instead, we compare directly to the element's text. This is to handle
+        // cases like "Previous data says contents is 'fooba', user presses 'r',
+        // now data and contents are both 'foobar' but previous data is 'fooba'"
+        // without calling `set_text`.
+
+        // This is probably not the right behaviour, but determining what is the right behaviour is hard
+        if text_area.widget.text() != &self.contents {
+            widgets::TextArea::reset_text(&mut text_area, &self.contents);
+        }
+
+        if prev.text_size != self.text_size {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontSize(self.text_size),
+            );
+        }
+        if prev.weight != self.weight {
+            widgets::TextArea::insert_style(&mut text_area, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontStack(self.font.clone()),
+            );
+        }
+        if prev.insert_newline != self.insert_newline {
+            widgets::TextArea::set_insert_newline(&mut text_area, self.insert_newline);
+        }
+    }
+
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
+        ctx.teardown_action_source(element);
+    }
+
+    fn message(
+        &self,
+        _: &mut Self::ViewState,
+        message: &mut MessageCtx,
+        _: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        debug_assert!(
+            message.remaining_path().is_empty(),
+            "id path should be empty in TextInput::message"
+        );
+        match message.take_message::<TextAction>() {
+            Some(action) => match *action {
+                TextAction::Changed(text) => {
+                    MessageResult::Action((self.on_changed)(app_state, text))
+                }
+                TextAction::Entered(text) if self.on_enter.is_some() => {
+                    MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
+                }
+
+                TextAction::Entered(_) => {
+                    tracing::error!("Textbox::message: on_enter is not set");
+                    MessageResult::Stale
+                }
+            },
+            None => {
+                tracing::error!(?message, "Wrong message type in TextInput::message");
+                MessageResult::Stale
+            }
+        }
+    }
+}

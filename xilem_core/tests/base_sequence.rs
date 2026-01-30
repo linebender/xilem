@@ -5,14 +5,9 @@
 //!
 //! [`ViewSequence`]: xilem_core::ViewSequence
 
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Deferred: Noisy. Fix is to use scopes"
-)]
-
 mod common;
 use common::*;
-use xilem_core::{MessageResult, View};
+use xilem_core::{DynMessage, MessageResult, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -23,7 +18,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn one_element_sequence_passthrough() {
     let view = sequence(1, record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -40,7 +35,7 @@ fn one_element_sequence_passthrough() {
     );
 
     let view2 = sequence(3, record_ops(2));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     let seq_children = element.children.as_ref().unwrap();
     assert_eq!(
@@ -56,9 +51,11 @@ fn one_element_sequence_passthrough() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
     );
 
-    let result = view2.message(&mut state, &[], Box::new(()), &mut ());
-    // The message should have been routed to the only child
-    assert_action(result, 2);
+    ctx.with_message_context(Vec::new(), DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        // The message should have been routed to the only child
+        assert_action(result, 2);
+    });
 
     view2.teardown(&mut state, &mut ctx, &mut element);
     assert_eq!(
@@ -90,7 +87,7 @@ fn one_element_sequence_passthrough() {
 fn option_none_none() {
     let view = sequence(0, None::<OperationView<0>>);
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
     assert_eq!(element.view_path, &[]);
@@ -100,7 +97,7 @@ fn option_none_none() {
     assert!(seq_children.active.is_empty());
 
     let view2 = sequence(1, None);
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -131,7 +128,7 @@ fn option_none_none() {
 fn option_some_some() {
     let view = sequence(1, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -145,7 +142,7 @@ fn option_some_some() {
     assert_eq!(child.view_path.len(), 1);
 
     let view2 = sequence(3, Some(record_ops(2)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -191,7 +188,7 @@ fn option_some_some() {
 fn option_none_some() {
     let view = sequence(0, None);
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
     assert_eq!(element.view_path, &[]);
@@ -201,7 +198,7 @@ fn option_none_some() {
     assert!(seq_children.active.is_empty());
 
     let view2 = sequence(2, Some(record_ops(1)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -240,7 +237,7 @@ fn option_none_some() {
 fn option_some_none() {
     let view = sequence(1, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -254,7 +251,7 @@ fn option_some_none() {
     assert_eq!(child.view_path.len(), 1);
 
     let view2 = sequence(2, None);
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -291,7 +288,7 @@ fn option_some_none() {
 fn option_message_some() {
     let view = sequence(1, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
 
     let seq_children = element.children.as_ref().unwrap();
@@ -299,15 +296,17 @@ fn option_message_some() {
     let child = seq_children.active.first().unwrap();
     let path = child.view_path.to_vec();
 
-    let result = view.message(&mut state, &path, Box::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 0);
+    });
 }
 
 #[test]
 fn option_message_some_some() {
     let view = sequence(0, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
 
     let seq_children = element.children.as_ref().unwrap();
@@ -316,17 +315,19 @@ fn option_message_some_some() {
     let path = child.view_path.to_vec();
 
     let view2 = sequence(0, Some(record_ops(1)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
-    assert_action(result, 1);
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        assert_action(result, 1);
+    });
 }
 
 #[test]
 fn option_message_some_none_stale() {
     let view = sequence(0, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
 
     let seq_children = element.children.as_ref().unwrap();
@@ -335,17 +336,19 @@ fn option_message_some_none_stale() {
     let path = child.view_path.to_vec();
 
     let view2 = sequence(0, None);
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }
 
 #[test]
 fn option_message_some_none_some_stale() {
     let view = sequence(0, Some(record_ops(0)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
 
     let seq_children = element.children.as_ref().unwrap();
@@ -354,11 +357,13 @@ fn option_message_some_none_some_stale() {
     let path = child.view_path.to_vec();
 
     let view2 = sequence(0, None);
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
 
     let view3 = sequence(0, Some(record_ops(1)));
-    view3.rebuild(&view2, &mut state, &mut ctx, &mut element);
+    view3.rebuild(&view2, &mut state, &mut ctx, &mut element, ());
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }

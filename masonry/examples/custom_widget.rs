@@ -5,82 +5,127 @@
 //! We draw an image, some text, a shape, and a curve.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use accesskit::{Node, Role};
-use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{ObjectFit, RootWidget};
-use masonry::{
-    AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size, TextEvent, Widget,
+use masonry::accesskit::{Node, Role};
+use masonry::core::{
+    AccessCtx, AccessEvent, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetId,
 };
-use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack, StyleProperty};
-use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::peniko::{Fill, Format, Image};
-use vello::Scene;
-use winit::window::Window;
+use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
+use masonry::layout::LenReq;
+use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
+use masonry::peniko::{Color, Fill, ImageBrush, ImageFormat};
+use masonry::peniko::{ImageAlphaType, ImageData};
+use masonry::properties::ObjectFit;
+use masonry::theme::default_property_set;
+use masonry::vello::Scene;
+use masonry::{TextAlign, TextAlignOptions, palette};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
+use masonry_winit::winit::window::Window;
+use tracing::{Span, trace_span};
 
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn on_action(
+        &mut self,
+        _window_id: WindowId,
+        _ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        _action: ErasedAction,
+    ) {
+    }
 }
 
-struct CustomWidget(String);
+/// A widget with a custom implementation of the Widget trait.
+#[derive(Debug)]
+pub struct CustomWidget(pub String);
 
 impl Widget for CustomWidget {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    type Action = NoAction;
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        // BoxConstraints are passed by the parent widget.
-        // This method can return any Size within those constraints:
-        // bc.constrain(my_size)
-        //
-        // To check if a dimension is infinite or not (e.g. scrolling):
-        // bc.is_width_bounded() / bc.is_height_bounded()
-        //
-        // bx.max() returns the maximum size of the widget. Be careful
-        // using this, since always make sure the widget is bounded.
-        // If bx.max() is used in a scrolling widget things will probably
-        // not work correctly.
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
-        } else {
-            let size = Size::new(100.0, 100.0);
-            bc.constrain(size)
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
+
+    fn measure(
+        &mut self,
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // We currently just define our preferred min/max,
+        // but often it takes actual work to derive these.
+        let min_size = Size::new(100., 50.);
+        let max_size = Size::new(200., 200.);
+
+        // Measurement is per axis, so we only care about a single dimension right now
+        let min_length = min_size.get_coord(axis);
+        let max_length = max_size.get_coord(axis);
+
+        // Return a result based on the parent's request
+        match len_req {
+            LenReq::MinContent => min_length,
+            LenReq::MaxContent => max_length,
+            LenReq::FitContent(space) => space.clamp(min_length, max_length),
         }
+    }
+
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
+        // This method is a good place to calculate size-dependent values
     }
 
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
         // (ctx.size() returns the size of the layout rect we're painting in)
         // Note: ctx also has a `clear` method, but that clears the whole context,
         // and we only want to clear this widget's area.
         let size = ctx.size();
         let rect = size.to_rect();
-        scene.fill(Fill::NonZero, Affine::IDENTITY, Color::WHITE, None, &rect);
+        scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            palette::css::WHITE,
+            None,
+            &rect,
+        );
 
         // Create an arbitrary bezier path
         let mut path = BezPath::new();
         path.move_to(Point::ORIGIN);
         path.quad_to((60.0, 120.0), (size.width, size.height));
         // Create a color
-        let stroke_color = Color::rgb8(0, 128, 0);
+        let stroke_color = Color::from_rgb8(0, 128, 0);
         // Stroke the path with thickness 5.0
         scene.stroke(
             &Stroke::new(5.0),
@@ -92,25 +137,25 @@ impl Widget for CustomWidget {
 
         // Rectangles: the path for practical people
         let rect = Rect::from_origin_size((10.0, 10.0), (100.0, 100.0));
-        // Note the Color:rgba8 which includes an alpha channel (7F in this case)
-        let fill_color = Color::rgba8(0x00, 0x00, 0x00, 0x7F);
+        // Note the Color:from_rgba8 which includes an alpha channel (7F in this case)
+        let fill_color = Color::from_rgba8(0x00, 0x00, 0x00, 0x7F);
         scene.fill(Fill::NonZero, Affine::IDENTITY, fill_color, None, &rect);
 
-        // To render text, we first create a LayoutBuilder and set the text properties.
-        let mut lcx = parley::LayoutContext::new();
-        let mut text_layout_builder = lcx.ranged_builder(ctx.text_contexts().0, &self.0, 1.0);
+        // To render text, we first create a text layout builder and then set the text properties.
+        let (fcx, lcx) = ctx.text_contexts();
+        let mut text_layout_builder = lcx.ranged_builder(fcx, &self.0, 1.0, true);
 
         text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
-            FontFamily::Generic(parley::style::GenericFamily::Serif),
+            FontFamily::Generic(GenericFamily::Serif),
         )));
         text_layout_builder.push_default(StyleProperty::FontSize(24.0));
 
         let mut text_layout = text_layout_builder.build(&self.0);
         text_layout.break_all_lines(None);
-        text_layout.align(None, Alignment::Start);
+        text_layout.align(None, TextAlign::Start, TextAlignOptions::default());
 
         // We can pass a transform matrix to rotate the text we render
-        masonry::text::render_text(
+        masonry::core::render_text(
             scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
@@ -120,8 +165,14 @@ impl Widget for CustomWidget {
 
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
-        let image_data = Image::new(image_data.into(), Format::Rgba8, 256, 256);
-        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), size);
+        let image_data = ImageBrush::new(ImageData {
+            data: image_data.into(),
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 256,
+            height: 256,
+        });
+        let transform = ObjectFit::Stretch.affine(ctx.size(), Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
 
@@ -129,19 +180,24 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         let text = &self.0;
         node.set_label(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),
         );
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("CustomWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("CustomWidget", id = id.trace())
     }
 }
 
@@ -149,11 +205,13 @@ fn main() {
     let my_string = "Masonry + Vello".to_string();
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(CustomWidget(my_string)),
+    masonry_winit::app::run(
+        vec![NewWindow::new(
+            window_attributes,
+            NewWidget::new(CustomWidget(my_string)).erased(),
+        )],
         Driver,
+        default_property_set(),
     )
     .unwrap();
 }
@@ -170,4 +228,29 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
         }
     }
     result
+}
+
+// --- MARK: TESTS
+#[cfg(test)]
+mod tests {
+    use masonry::theme::default_property_set;
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let my_string = "Masonry + Vello".to_string();
+
+        let mut test_params = TestHarnessParams::default();
+        // This is a screenshot of an example, so it being slightly larger than a normal test is expected.
+        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+
+        let mut harness = TestHarness::create_with(
+            default_property_set(),
+            NewWidget::new(CustomWidget(my_string)),
+            test_params,
+        );
+        assert_render_snapshot!(harness, "example_custom_widget_initial");
+    }
 }

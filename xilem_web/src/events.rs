@@ -1,17 +1,23 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    DomView, DynMessage, OptionalAction, ViewCtx,
-};
-use std::{borrow::Cow, marker::PhantomData};
-use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
-use web_sys::{js_sys, AddEventListenerOptions};
+use std::borrow::Cow;
+use std::marker::PhantomData;
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
-const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x2357_1113);
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
+use web_sys::{AddEventListenerOptions, js_sys};
+
+use crate::core::anymore::AnyDebug;
+use crate::core::{
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+};
+use crate::{DomView, OptionalAction, ViewCtx};
+
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 592908563 in decimal.
+const ON_EVENT_VIEW_ID: ViewId = ViewId::new(0x23571113);
 
 /// Wraps a [`View`] `V` and attaches an event listener.
 ///
@@ -31,7 +37,7 @@ where
     Event: JsCast + 'static,
 {
     pub fn new(dom_view: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
-        OnEvent {
+        Self {
             dom_view,
             event: event.into(),
             passive: true,
@@ -64,7 +70,7 @@ where
     }
 }
 
-fn create_event_listener<Event: JsCast + crate::Message>(
+fn create_event_listener<Event: JsCast + AnyDebug>(
     target: &web_sys::EventTarget,
     event: &str,
     // TODO options
@@ -109,7 +115,10 @@ fn remove_event_listener(
 
 mod hidden {
     use wasm_bindgen::prelude::Closure;
-    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
     /// State for the `OnEvent` view.
     pub struct OnEventState<S> {
         pub(crate) child_state: S,
@@ -127,16 +136,17 @@ fn build_event_listener<State, Action, V, Event>(
     capture: bool,
     passive: bool,
     ctx: &mut ViewCtx,
+    app_state: Arg<'_, State>,
 ) -> (V::Element, OnEventState<V::ViewState>)
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + crate::Message,
+    Event: JsCast + 'static + AnyDebug,
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-        let (element, child_state) = element_view.build(ctx);
+        let (element, child_state) = element_view.build(ctx, app_state);
         let callback =
             create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
         let state = OnEventState {
@@ -147,11 +157,10 @@ where
     })
 }
 
-#[allow(clippy::too_many_arguments)] // reason: This is only used to avoid more boilerplate in macros, also so that rust-analyzer can be of help here.
 fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
-    mut element: Mut<V::Element>,
+    mut element: Mut<'_, V::Element>,
     event: &str,
     capture: bool,
     passive: bool,
@@ -159,11 +168,12 @@ fn rebuild_event_listener<State, Action, V, Event>(
     prev_passive: bool,
     state: &mut OnEventState<V::ViewState>,
     ctx: &mut ViewCtx,
+    app_state: Arg<'_, State>,
 ) where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + crate::Message,
+    Event: JsCast + 'static + AnyDebug,
 {
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
         element_view.rebuild(
@@ -171,6 +181,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
             &mut state.child_state,
             ctx,
             element.reborrow_mut(),
+            app_state,
         );
         let was_created = element.flags.was_created();
         let needs_update = prev_capture != capture || prev_passive != passive || was_created;
@@ -187,13 +198,13 @@ fn rebuild_event_listener<State, Action, V, Event>(
 
 fn teardown_event_listener<State, Action, V>(
     element_view: &V,
-    element: Mut<V::Element>,
+    element: Mut<'_, V::Element>,
     _event: &str,
     state: &mut OnEventState<V::ViewState>,
     _capture: bool,
     ctx: &mut ViewCtx,
 ) where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
 {
@@ -207,58 +218,63 @@ fn teardown_event_listener<State, Action, V>(
 fn message_event_listener<State, Action, V, Event, OA, Callback>(
     element_view: &V,
     state: &mut OnEventState<V::ViewState>,
-    id_path: &[ViewId],
-    message: DynMessage,
-    app_state: &mut State,
+    message: &mut MessageCtx,
+    element: Mut<'_, V::Element>,
+    app_state: Arg<'_, State>,
     handler: &Callback,
-) -> MessageResult<Action, DynMessage>
+) -> MessageResult<Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + crate::Message,
+    Event: JsCast + 'static + AnyDebug,
     OA: OptionalAction<Action>,
-    Callback: Fn(&mut State, Event) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>, Event) -> OA + 'static,
 {
-    let Some((first, remainder)) = id_path.split_first() else {
+    let Some(first) = message.take_first() else {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     };
-    if *first != ON_EVENT_VIEW_ID {
+    if first != ON_EVENT_VIEW_ID {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     }
-    if remainder.is_empty() {
-        let event = message.downcast::<Event>().unwrap_throw();
+    if message.remaining_path().is_empty() {
+        let event = message.take_message::<Event>().unwrap_throw();
         match (handler)(app_state, *event).action() {
             Some(a) => MessageResult::Action(a),
             None => MessageResult::Nop,
         }
     } else {
-        element_view.message(&mut state.child_state, remainder, message, app_state)
+        element_view.message(&mut state.child_state, message, element, app_state)
     }
 }
 
 impl<V, State, Action, Event, Callback> ViewMarker for OnEvent<V, State, Action, Event, Callback> {}
-impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx, DynMessage>
+impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
     for OnEvent<V, State, Action, Event, Callback>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
     OA: OptionalAction<Action>,
-    Callback: Fn(&mut State, Event) -> OA + 'static,
-    Event: JsCast + 'static + crate::Message,
+    Callback: Fn(Arg<'_, State>, Event) -> OA + 'static,
+    Event: JsCast + 'static + AnyDebug,
 {
     type ViewState = OnEventState<V::ViewState>;
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         build_event_listener::<_, _, _, Event>(
             &self.dom_view,
             &self.event,
             self.capture,
             self.passive,
             ctx,
+            app_state,
         )
     }
 
@@ -267,7 +283,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
@@ -276,6 +293,7 @@ where
                 &mut view_state.child_state,
                 ctx,
                 element.reborrow_mut(),
+                app_state,
             );
 
             let was_created = element.flags.was_created();
@@ -309,7 +327,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         teardown_event_listener(
             &self.dom_view,
@@ -324,15 +342,15 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: crate::DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
         message_event_listener(
             &self.dom_view,
             view_state,
-            id_path,
             message,
+            element,
             app_state,
             &self.handler,
         )
@@ -386,26 +404,27 @@ macro_rules! event_definitions {
         }
 
 
-        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx, DynMessage>
+        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx>
             for $ty_name<V, State, Action, Callback>
         where
-            State: 'static,
+            State: ViewArgument,
             Action: 'static,
             V: DomView<State, Action>,
             OA: OptionalAction<Action> + 'static,
-            Callback: Fn(&mut State, web_sys::$web_sys_ty) -> OA + 'static,
+            Callback: Fn(Arg<'_, State>, web_sys::$web_sys_ty) -> OA + 'static,
         {
             type ViewState = OnEventState<V::ViewState>;
 
             type Element = V::Element;
 
-            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
                 build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.dom_view,
                     $event_name,
                     self.capture,
                     self.passive,
                     ctx,
+                    app_state
                 )
             }
 
@@ -414,7 +433,8 @@ macro_rules! event_definitions {
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
+                app_state: Arg<'_, State>
             ) {
                 rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.dom_view,
@@ -427,6 +447,7 @@ macro_rules! event_definitions {
                     prev.passive,
                     view_state,
                     ctx,
+                    app_state
                 );
             }
 
@@ -434,7 +455,7 @@ macro_rules! event_definitions {
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
             ) {
                 teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx);
             }
@@ -442,11 +463,11 @@ macro_rules! event_definitions {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: crate::DynMessage,
-                app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
-                message_event_listener(&self.dom_view, view_state, id_path, message, app_state, &self.handler)
+                 message: &mut MessageCtx,
+                 element: Mut<'_, Self::Element>,
+                app_state: Arg<'_, State>,
+            ) -> MessageResult<Action> {
+                message_event_listener(&self.dom_view, view_state, message, element, app_state, &self.handler)
             }
         }
         )*
@@ -544,27 +565,33 @@ pub struct OnResize<V, State, Action, Callback> {
 
 pub struct OnResizeState<VState> {
     child_state: VState,
-    // reason: Closures are retained so they can be called by environment
-    #[allow(unused)]
+    #[expect(
+        dead_code,
+        reason = "Closures are retained so they can be called by environment"
+    )]
     callback: Closure<dyn FnMut(js_sys::Array)>,
     observer: web_sys::ResizeObserver,
 }
 
 impl<V, State, Action, Callback> ViewMarker for OnResize<V, State, Action, Callback> {}
-impl<State, Action, OA, Callback, V: View<State, Action, ViewCtx, DynMessage>>
-    View<State, Action, ViewCtx, DynMessage> for OnResize<V, State, Action, Callback>
+impl<State, Action, OA, Callback, V: View<State, Action, ViewCtx>> View<State, Action, ViewCtx>
+    for OnResize<V, State, Action, Callback>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action>,
-    Callback: Fn(&mut State, web_sys::ResizeObserverEntry) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>, web_sys::ResizeObserverEntry) -> OA + 'static,
     V: DomView<State, Action, DomNode: AsRef<web_sys::Element>>,
 {
     type Element = V::Element;
 
     type ViewState = OnResizeState<V::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             let thunk = ctx.message_thunk();
             let callback = Closure::new(move |entries: js_sys::Array| {
@@ -574,7 +601,7 @@ where
 
             let observer =
                 web_sys::ResizeObserver::new(callback.as_ref().unchecked_ref()).unwrap_throw();
-            let (element, child_state) = self.dom_view.build(ctx);
+            let (element, child_state) = self.dom_view.build(ctx, app_state);
             observer.observe(element.as_ref());
 
             let state = OnResizeState {
@@ -592,7 +619,8 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             self.dom_view.rebuild(
@@ -600,6 +628,7 @@ where
                 &mut view_state.child_state,
                 ctx,
                 element.reborrow_mut(),
+                app_state,
             );
             if element.flags.was_created() {
                 view_state.observer.disconnect();
@@ -612,7 +641,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             view_state.observer.disconnect();
@@ -624,19 +653,19 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
-        app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
-        let Some((first, remainder)) = id_path.split_first() else {
+        message: &mut MessageCtx,
+        element: Mut<'_, Self::Element>,
+        app_state: Arg<'_, State>,
+    ) -> MessageResult<Action> {
+        let Some(first) = message.take_first() else {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         };
-        if *first != ON_EVENT_VIEW_ID {
+        if first != ON_EVENT_VIEW_ID {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         }
-        if remainder.is_empty() {
+        if message.remaining_path().is_empty() {
             let event = message
-                .downcast::<web_sys::ResizeObserverEntry>()
+                .take_message::<web_sys::ResizeObserverEntry>()
                 .unwrap_throw();
             match (self.handler)(app_state, *event).action() {
                 Some(a) => MessageResult::Action(a),
@@ -644,7 +673,7 @@ where
             }
         } else {
             self.dom_view
-                .message(&mut view_state.child_state, remainder, message, app_state)
+                .message(&mut view_state.child_state, message, element, app_state)
         }
     }
 }

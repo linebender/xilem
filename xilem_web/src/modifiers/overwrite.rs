@@ -177,17 +177,16 @@ macro_rules! overwrite_bool_modifier_view {
         }
 
         impl<V, State, Action> $crate::core::ViewMarker for $modifier<V, State, Action> {}
-        impl<V, State, Action>
-            $crate::core::View<State, Action, $crate::ViewCtx, $crate::DynMessage>
+        impl<V, State, Action> $crate::core::View<State, Action, $crate::ViewCtx>
             for $modifier<V, State, Action>
         where
-            State: 'static,
+            State: $crate::core::ViewArgument,
             Action: 'static,
             V: $crate::DomView<
-                State,
-                Action,
-                Element: $crate::modifiers::WithModifier<super::$modifier>,
-            >,
+                    State,
+                    Action,
+                    Element: $crate::modifiers::WithModifier<super::$modifier>,
+                >,
             for<'a> <V::Element as $crate::core::ViewElement>::Mut<'a>:
                 $crate::modifiers::WithModifier<super::$modifier>,
         {
@@ -195,9 +194,13 @@ macro_rules! overwrite_bool_modifier_view {
 
             type ViewState = V::ViewState;
 
-            fn build(&self, ctx: &mut $crate::ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn build(
+                &self,
+                ctx: &mut $crate::ViewCtx,
+                app_state: $crate::core::Arg<'_, State>,
+            ) -> (Self::Element, Self::ViewState) {
                 use $crate::modifiers::WithModifier;
-                let (mut el, state) = self.inner.build(ctx);
+                let (mut el, state) = self.inner.build(ctx, app_state);
                 let modifier = &mut super::$modifier::as_overwrite_bool_modifier(el.modifier());
                 $crate::modifiers::OverwriteBool::push(modifier, self.value);
                 (el, state)
@@ -208,12 +211,18 @@ macro_rules! overwrite_bool_modifier_view {
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
-                mut element: $crate::core::Mut<Self::Element>,
+                mut element: $crate::core::Mut<'_, Self::Element>,
+                app_state: $crate::core::Arg<'_, State>,
             ) {
                 use $crate::modifiers::WithModifier;
                 element.modifier().modifier.0.rebuild(1);
-                self.inner
-                    .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
+                self.inner.rebuild(
+                    &prev.inner,
+                    view_state,
+                    ctx,
+                    element.reborrow_mut(),
+                    app_state,
+                );
                 let mut modifier = super::$modifier::as_overwrite_bool_modifier(element.modifier());
                 $crate::modifiers::OverwriteBool::update(&mut modifier, prev.value, self.value);
             }
@@ -222,7 +231,7 @@ macro_rules! overwrite_bool_modifier_view {
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
-                element: $crate::core::Mut<Self::Element>,
+                element: $crate::core::Mut<'_, Self::Element>,
             ) {
                 self.inner.teardown(view_state, ctx, element);
             }
@@ -230,11 +239,11 @@ macro_rules! overwrite_bool_modifier_view {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                id_path: &[$crate::core::ViewId],
-                message: $crate::DynMessage,
-                app_state: &mut State,
-            ) -> $crate::core::MessageResult<Action, $crate::DynMessage> {
-                self.inner.message(view_state, id_path, message, app_state)
+                message: &mut $crate::core::MessageCtx,
+                element: $crate::core::Mut<'_, Self::Element>,
+                app_state: $crate::core::Arg<'_, State>,
+            ) -> $crate::core::MessageResult<Action> {
+                self.inner.message(view_state, message, element, app_state)
             }
         }
     };
@@ -242,9 +251,8 @@ macro_rules! overwrite_bool_modifier_view {
 
 #[cfg(test)]
 mod tests {
-    use crate::PodFlags;
-
     use super::*;
+    use crate::PodFlags;
 
     #[test]
     fn overwrite_bool_push() {

@@ -3,21 +3,32 @@
 
 //! A to-do-list app, loosely inspired by todomvc.
 
-// On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
-use winit::error::EventLoopError;
-use xilem::view::{button, checkbox, flex, textbox, Axis, FlexSpacer};
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::core::Edit;
+use xilem::masonry::layout::Length;
+use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
+use xilem::style::Style as _;
+use xilem::view::{
+    FlexExt, FlexSpacer, MainAxisAlignment, button, checkbox, flex_col, flex_row, label,
+    text_button, text_input,
+};
+use xilem::winit::error::EventLoopError;
+use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
     description: String,
     done: bool,
 }
 
+#[derive(PartialEq, Eq, Copy, Clone)]
+enum Filter {
+    All,
+    Active,
+    Completed,
+}
+
 struct TaskList {
     next_task: String,
+    filter: Filter,
     tasks: Vec<Task>,
 }
 
@@ -33,54 +44,98 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
-    let input_box = textbox(
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<> {
+    let header_text = label("todos").text_size(80.);
+    let input_box = text_input(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
             task_list.next_task = new_value;
         },
     )
+    .text_size(16.)
+    .placeholder("What needs to be done?")
+    .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });
-    let first_line = flex((
-        input_box,
-        button("Add task".to_string(), |task_list: &mut TaskList| {
-            task_list.add_task();
-        }),
-    ))
-    .direction(Axis::Vertical);
+
+    let input_line = flex_row((
+        input_box.flex(1.0),
+        button(
+            label("Add task".to_string()).text_size(16.),
+            |task_list: &mut TaskList| {
+                task_list.add_task();
+            },
+        ),
+    ));
 
     let tasks = task_list
         .tasks
         .iter()
         .enumerate()
-        .map(|(i, task)| {
-            let checkbox = checkbox(
-                task.description.clone(),
-                task.done,
-                move |data: &mut TaskList, checked| {
-                    data.tasks[i].done = checked;
-                },
-            );
-            let delete_button = button("Delete", move |data: &mut TaskList| {
-                data.tasks.remove(i);
-            });
-            flex((checkbox, delete_button)).direction(Axis::Horizontal)
+        .filter_map(|(i, task)| {
+            if (task_list.filter == Filter::Active && task.done)
+                || (task_list.filter == Filter::Completed && !task.done)
+            {
+                None
+            } else {
+                let checkbox = checkbox(
+                    task.description.clone(),
+                    task.done,
+                    move |data: &mut TaskList, checked| {
+                        data.tasks[i].done = checked;
+                    },
+                )
+                .text_size(16.);
+                let delete_button = text_button("Delete", move |data: &mut TaskList| {
+                    data.tasks.remove(i);
+                })
+                .padding(5.0);
+                Some(
+                    flex_row((checkbox, FlexSpacer::Flex(1.), delete_button))
+                        .padding(DEFAULT_GAP.get())
+                        .border(ZYNC_800, 1.0),
+                )
+            }
         })
         .collect::<Vec<_>>();
 
-    flex((
-        FlexSpacer::Fixed(40.), // HACK: Spacer for Androird
-        first_line,
+    let filter_tasks = |label, filter| {
+        // TODO: replace with combo-buttons
+        checkbox::<_, Edit<TaskList>, _>(
+            label,
+            task_list.filter == filter,
+            move |state: &mut TaskList, _| state.filter = filter,
+        )
+    };
+    let has_tasks = !task_list.tasks.is_empty();
+    let footer = has_tasks.then(|| {
+        flex_row((
+            filter_tasks("All", Filter::All),
+            filter_tasks("Active", Filter::Active),
+            filter_tasks("Completed", Filter::Completed),
+        ))
+        .main_axis_alignment(MainAxisAlignment::Center)
+    });
+
+    flex_col((
+        header_text,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        input_line,
+        FlexSpacer::Fixed(DEFAULT_GAP),
         tasks,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        footer,
     ))
+    .gap(Length::px(4.))
+    .padding(50.0)
 }
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = TaskList {
         // Add a placeholder task for Android, whilst the
         next_task: "My Next Task".into(),
+        filter: Filter::All,
         tasks: vec![
             Task {
                 description: "Buy milk".into(),
@@ -97,32 +152,12 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         ],
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(event_loop, "First Example".into())
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("To Do MVC"));
+    app.run_in(event_loop)
 }
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }

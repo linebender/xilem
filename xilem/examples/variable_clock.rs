@@ -2,20 +2,25 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This example uses variable fonts in a touch sensitive digital clock.
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
+use std::sync::Arc;
 use std::time::Duration;
 
+use masonry::layout::{AsUnit, Dim};
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::style::Style as _;
 use xilem::view::{
-    button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
-    FlexExt, FlexSpacer,
+    FlexExt, FlexSpacer, MainAxisAlignment, flex_col, flex_row, inline_prose, label, portal, prose,
+    task, text_button, variable_label,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
+use xilem::{
+    Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,
+};
+use xilem_core::Edit;
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
@@ -35,22 +40,26 @@ struct TimeZone {
     offset: UtcOffset,
 }
 
-fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    let view = flex((
+fn app_logic(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
+    let view = flex_col((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
-        FlexSpacer::Fixed(40.),
+        FlexSpacer::Fixed(40.px()),
         local_time(data),
         controls(),
-        portal(flex(
-            // TODO: When we get responsive layouts, move this into a two-column view on desktop.
-            TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
-        ))
+        portal(
+            flex_col(
+                // TODO: When we get responsive layouts, move this into a two-column view on desktop.
+                TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+            )
+            .width(Dim::Stretch),
+        )
         .flex(1.),
-    ));
+    ))
+    .padding(10.0);
     fork(
         view,
         task(
-            |proxy| async move {
+            |proxy, _| async move {
                 // TODO: Synchronise with the actual "second" interval. This is expected to show the wrong second
                 // ~50% of the time.
                 let mut interval = tokio::time::interval(Duration::from_secs(1));
@@ -68,17 +77,20 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
 
 /// Shows the current system time on a best-effort basis.
 // TODO: Maybe make this have a larger font size?
-fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
+fn local_time(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
     let (error_view, offset) = if let Ok(offset) = data.local_offset {
         (None, offset)
     } else {
         (
-            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
+            Some(
+                prose("Could not determine local UTC offset, using UTC")
+                    .text_color(palette::css::ORANGE_RED),
+            ),
             UtcOffset::UTC,
         )
     };
 
-    flex((
+    flex_col((
         TimeZone {
             region: "Here",
             offset,
@@ -89,45 +101,42 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
 }
 
 /// Controls for the variable font weight.
-fn controls() -> impl WidgetView<Clocks> {
-    flex((
-        button("Increase", |data: &mut Clocks| {
+fn controls() -> impl WidgetView<Edit<Clocks>> {
+    flex_row((
+        text_button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
-        button("Decrease", |data: &mut Clocks| {
+        text_button("Decrease", |data: &mut Clocks| {
             data.weight = (data.weight - 100.).clamp(1., 1000.);
         }),
-        button("Minimum", |data: &mut Clocks| {
+        text_button("Minimum", |data: &mut Clocks| {
             data.weight = 1.;
         }),
-        button("Maximum", |data: &mut Clocks| {
+        text_button("Maximum", |data: &mut Clocks| {
             data.weight = 1000.;
         }),
     ))
-    .direction(Axis::Horizontal)
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
-    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
+    fn view(&self, data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
-        sized_box(flex((
-            flex((
+        flex_col((
+            flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
-                label(format!("UTC{}", self.offset)).brush(
+                label(format!("UTC{}", self.offset)).color(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
                         // TODO: Consider accessibility here.
-                        Color::ORANGE
+                        palette::css::ORANGE
                     } else {
                         masonry::theme::TEXT_COLOR
                     },
                 ),
-            ))
-            .must_fill_major_axis(true)
-            .direction(Axis::Horizontal)
-            .flex(1.),
-            flex((
+            )),
+            flex_row((
                 variable_label(
                     date_time_in_self
                         .format(format_description!("[hour repr:24]:[minute]:[second]"))
@@ -136,7 +145,7 @@ impl TimeZone {
                 )
                 .text_size(48.)
                 // Use the roboto flex we have just loaded.
-                .with_font("Roboto Flex")
+                .font("Roboto Flex")
                 .target_weight(data.weight, 400.),
                 FlexSpacer::Flex(1.0),
                 (data.local_now().date() != date_time_in_self.date()).then(|| {
@@ -147,10 +156,9 @@ impl TimeZone {
                     )
                 }),
             ))
-            .direction(Axis::Horizontal),
-        )))
-        .expand_width()
-        .height(72.)
+            .height(30.px()),
+        ))
+        .dims((Dim::Stretch, 80.px()))
     }
 }
 
@@ -179,7 +187,7 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
     "RobotoFlex-Subset.ttf"
 ));
 
-fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
         weight: FontWeight::BLACK.value(),
         // TODO: We can't get this on Android, because
@@ -188,9 +196,10 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     // Load Roboto Flex so that it can be used at runtime.
-    let app = Xilem::new(data, app_logic).with_font(ROBOTO_FLEX);
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Clocks"))
+        .with_font(Blob::new(Arc::new(ROBOTO_FLEX)));
 
-    app.run_windowed(event_loop, "Clocks".into())?;
+    app.run_in(event_loop)?;
     Ok(())
 }
 
@@ -235,26 +244,6 @@ const TIMEZONES: &[TimeZone] = &[
 
 // Boilerplate code: Identical across all applications which support Android
 
-#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
-#[allow(dead_code, reason = "False positive: needed in not-_android version")]
-// This is treated as dead code by the Android version of the example, but is actually live
-// This hackery is required because Cargo doesn't care to support this use case, of one
-// example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
-}
-#[cfg(target_os = "android")]
-// Safety: We are following `android_activity`'s docs here
-#[expect(
-    unsafe_code,
-    reason = "We believe that there are no other declarations using this name in the compiled objects here"
-)]
-#[no_mangle]
-fn android_main(app: winit::platform::android::activity::AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
-
-    let mut event_loop = EventLoop::with_user_event();
-    event_loop.with_android_app(app);
-
-    run(event_loop).expect("Can create app");
 }
