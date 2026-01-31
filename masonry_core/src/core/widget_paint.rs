@@ -77,10 +77,11 @@ pub fn paint_box_shadow(
     box_shadow: &BoxShadow,
     corner_radius: &CornerRadius,
 ) {
-    if box_shadow.is_visible() {
-        let box_shadow_rect = box_shadow.shadow_rect(size, corner_radius);
-        box_shadow.paint(scene, Affine::IDENTITY, box_shadow_rect);
+    if !box_shadow.is_visible() {
+        return;
     }
+    let box_shadow_rect = box_shadow.shadow_rect(size, corner_radius);
+    box_shadow.paint(scene, Affine::IDENTITY, box_shadow_rect);
 }
 
 /// Paints the widget's background.
@@ -91,9 +92,11 @@ pub fn paint_background(
     border_width: &BorderWidth,
     corner_radius: &CornerRadius,
 ) {
+    if !background.is_visible() {
+        return;
+    }
     // TODO: Fix remaining issues, see https://github.com/linebender/xilem/issues/1592
-    //    1. Figure out how to skip painting fully transparent backgrounds.
-    //    2. Don't subtract the border from the background rect. Will need solution for border
+    //    1. Don't subtract the border from the background rect. Will need solution for border
     //       painting, as background should go exactly to the outer border and not beyond.
     let bg_rect = border_width.bg_rect(size, corner_radius);
     let bg_brush = background.get_peniko_brush_for_rect(bg_rect.rect());
