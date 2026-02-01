@@ -2,18 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
 
-use crate::core::{NewWidget, WidgetTag};
+use crate::core::{NewWidget, Properties, Widget, WidgetTag};
 use crate::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
-use crate::layout::{Length, SizeDef};
+use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::Color;
-use crate::properties::Background;
+use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::MainAxisAlignment;
+use crate::properties::{Background, Dimensions, Gap, Padding};
+use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::test_property_set;
 use crate::util::{fill, stroke};
-use crate::widgets::{Flex, SizedBox};
+use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
 
 #[test]
 fn request_paint() {
@@ -154,4 +155,83 @@ fn paint_clipping() {
     // The red circle should be clipped by the square.
     // The dashed circle shouldn't.
     assert_render_snapshot!(harness, "paint_clipping");
+}
+
+// Layered slightly misaligned grid layer painting:
+//
+// Color background
+// [No bg A] [0.0 bg A] [0.5 bg A] [1.0 bg A]
+//   [No bg B] [0.0 bg B] [0.5 bg B] [1.0 bg B]
+#[test]
+fn paint_transparency() {
+    fn child(
+        text: &str,
+        align: UnitPoint,
+        bg_color: impl Into<Option<AlphaColor<Srgb>>>,
+    ) -> NewWidget<Align> {
+        let bg_color = bg_color.into();
+
+        let label = Label::new(text).with_props((
+            Background::Color(Color::TRANSPARENT),
+            Dimensions::fixed(20.px(), 20.px()),
+        ));
+
+        let mut props = Properties::new();
+        if let Some(bg_color) = bg_color {
+            props = props.with(Background::Color(bg_color));
+        }
+
+        Align::new(align, label).with_props(props)
+    }
+
+    let align_a = UnitPoint::TOP_LEFT;
+    let align_b = UnitPoint::BOTTOM_LEFT;
+
+    let mut grid_a = Grid::with_dimensions(4, 1);
+    grid_a = grid_a.with(child("AAAA", align_a, None), GridParams::new(0, 0, 1, 1));
+    grid_a = grid_a.with(
+        child("AABB", align_a, Color::TRANSPARENT),
+        GridParams::new(1, 0, 1, 1),
+    );
+    grid_a = grid_a.with(
+        child("AACC", align_a, Color::from_rgba8(66, 117, 245, 127)),
+        GridParams::new(2, 0, 1, 1),
+    );
+    // Stupid workaround for typos-cli thinking it's a typo.
+    let typo = concat!("AA", "DD");
+    grid_a = grid_a.with(
+        child(typo, align_a, Color::from_rgba8(66, 117, 245, 255)),
+        GridParams::new(3, 0, 1, 1),
+    );
+
+    let mut grid_b = Grid::with_dimensions(16, 1);
+    grid_b = grid_b.with(child("BBAA", align_b, None), GridParams::new(1, 0, 3, 1));
+    grid_b = grid_b.with(
+        child("BBBB", align_b, Color::TRANSPARENT),
+        GridParams::new(5, 0, 3, 1),
+    );
+    grid_b = grid_b.with(
+        child("BBCC", align_b, Color::from_rgba8(245, 66, 191, 127)),
+        GridParams::new(9, 0, 3, 1),
+    );
+    grid_b = grid_b.with(
+        child("BBDD", align_b, Color::from_rgba8(245, 66, 191, 255)),
+        GridParams::new(13, 0, 3, 1),
+    );
+
+    let props = (Padding::all(20.), Gap::new(10.px()));
+    let grid_a = grid_a.with_props(props);
+    let grid_b = grid_b.with_props(props);
+
+    let mut root = ZStack::new();
+    root = root.with(grid_a, ChildAlignment::ParentAligned);
+    root = root.with(grid_b, ChildAlignment::ParentAligned);
+
+    let mut harness = TestHarness::create_with_size(
+        test_property_set(),
+        root.with_auto_id(),
+        Size::new(350., 80.),
+    );
+
+    assert_render_snapshot!(harness, "paint_transparency");
 }
