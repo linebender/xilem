@@ -10,7 +10,7 @@ use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::Color;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::MainAxisAlignment;
-use crate::properties::{Background, Dimensions};
+use crate::properties::{Background, Dimensions, Gap, Padding};
 use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::test_property_set;
 use crate::util::{fill, stroke};
@@ -219,14 +219,18 @@ fn paint_transparency() {
         GridParams::new(13, 0, 3, 1),
     );
 
+    let props = (Padding::all(20.), Gap::new(10.px()));
+    let grid_a = grid_a.with_props(props);
+    let grid_b = grid_b.with_props(props);
+
     let mut root = ZStack::new();
-    root = root.with(grid_a.with_auto_id(), ChildAlignment::ParentAligned);
-    root = root.with(grid_b.with_auto_id(), ChildAlignment::ParentAligned);
+    root = root.with(grid_a, ChildAlignment::ParentAligned);
+    root = root.with(grid_b, ChildAlignment::ParentAligned);
 
     let mut harness = TestHarness::create_with_size(
         test_property_set(),
         root.with_auto_id(),
-        Size::new(250., 40.),
+        Size::new(350., 80.),
     );
 
     assert_render_snapshot!(harness, "paint_transparency");
