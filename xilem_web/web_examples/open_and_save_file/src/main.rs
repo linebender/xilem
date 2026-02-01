@@ -134,7 +134,7 @@ fn open_file_input(app_state: &mut AppState) -> impl Element<Edit<AppState>> + u
 fn hidden_save_link(state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     html::a("Save example text")
         .style(style("display", "none"))
-        .attr("save", "example.txt")
+        .attr("download", "example.txt")
         .after_build({
             let el_ref = Rc::clone(&state.raw_save_link);
             move |el| {
