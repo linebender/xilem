@@ -77,7 +77,7 @@ pub fn paint_box_shadow(
     box_shadow: &BoxShadow,
     corner_radius: &CornerRadius,
 ) {
-    if box_shadow.is_visible() {
+    if !box_shadow.is_visible() {
         return;
     }
     let box_shadow_rect = border_box.to_rounded_rect(corner_radius.radius);
