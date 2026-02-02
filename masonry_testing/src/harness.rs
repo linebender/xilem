@@ -1064,7 +1064,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Returns the rectangle of the IME session.
     ///
-    /// This is usually the border-box layout rectangle of the focused widget.
+    /// This is usually the effective border-box rectangle of the focused widget.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
         self.ime_rect
     }
