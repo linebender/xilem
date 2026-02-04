@@ -86,8 +86,16 @@ pub(crate) struct WidgetState {
     ///
     /// It is used to:
     /// * Determine layout cache validity.
+    /// * Derive the widget's layout content-box size that will be given to `Widget::layout`.
     /// * Compute `end_point` when the widget is placed to an `origin` by its parent.
     pub(crate) layout_border_box_size: Size,
+    /// The insets for converting between content-box and border-box rects.
+    ///
+    /// Add these insets to the content-box to get the border-box,
+    /// and subtract these insets from the border-box to get the content-box.
+    ///
+    /// These insets are derived from the widget's border and padding properties.
+    pub(crate) border_box_insets: Insets,
     /// The insets for converting between border-box and paint-box rects.
     ///
     /// Add these insets to the border-box to get the paint-box,
@@ -117,7 +125,7 @@ pub(crate) struct WidgetState {
     /// The widget's clip path in the widget's border-box coordinate space.
     ///
     /// This clips the painting of `Widget::paint` and all the painting of children.
-    /// It does not clip this widget's `Widget::post_paint`.
+    /// It does not clip this widget's `Widget::pre_paint` nor `Widget::post_paint`.
     pub(crate) clip_path: Option<Rect>,
 
     /// Local transform used during the mapping of this widget's border-box coordinate space
@@ -262,6 +270,7 @@ impl WidgetState {
             origin: Point::ORIGIN,
             end_point: Point::ORIGIN,
             layout_border_box_size: Size::ZERO,
+            border_box_insets: Insets::ZERO,
             paint_insets: Insets::ZERO,
             bounding_box: Rect::ZERO,
             layout_baseline_offset: 0.0,
@@ -362,6 +371,15 @@ impl WidgetState {
     /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
     pub(crate) fn paint_box(&self) -> Rect {
         self.border_box_size().to_rect() + self.paint_insets
+    }
+
+    /// Returns the [`Vec2`] for translating between this widget's
+    /// content-box and border-box coordinate spaces.
+    ///
+    /// Add this [`Vec2`] to translate from content-box to border-box,
+    /// and subtract this [`Vec2`] to translate from border-box to content-box.
+    pub(crate) fn border_box_translation(&self) -> Vec2 {
+        Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
     }
 
     /// Returns the widget's effective border-box origin in the window's coordinate space.

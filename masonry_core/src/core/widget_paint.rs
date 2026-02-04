@@ -4,7 +4,7 @@
 use vello::Scene;
 
 use crate::core::{PaintCtx, PropertiesRef};
-use crate::kurbo::{Affine, Join, Size, Stroke};
+use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::peniko::Fill;
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -62,32 +62,32 @@ impl<'a> PrePaintProps<'a> {
 
 /// Paints the widget's box shadow, background, and border.
 pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-    let size = ctx.size();
+    let bbox = ctx.border_box();
     let p = PrePaintProps::fetch(ctx, props);
 
-    paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
-    paint_background(scene, size, p.background, p.border_width, p.corner_radius);
-    paint_border(scene, size, p.border_color, p.border_width, p.corner_radius);
+    paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+    paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+    paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
 }
 
 /// Paints the widget's box shadow.
 pub fn paint_box_shadow(
     scene: &mut Scene,
-    size: Size,
+    border_box: Rect,
     box_shadow: &BoxShadow,
     corner_radius: &CornerRadius,
 ) {
     if !box_shadow.is_visible() {
         return;
     }
-    let box_shadow_rect = box_shadow.shadow_rect(size, corner_radius);
+    let box_shadow_rect = border_box.to_rounded_rect(corner_radius.radius);
     box_shadow.paint(scene, Affine::IDENTITY, box_shadow_rect);
 }
 
 /// Paints the widget's background.
 pub fn paint_background(
     scene: &mut Scene,
-    size: Size,
+    border_box: Rect,
     background: &Background,
     border_width: &BorderWidth,
     corner_radius: &CornerRadius,
@@ -98,7 +98,7 @@ pub fn paint_background(
     // TODO: Fix remaining issues, see https://github.com/linebender/xilem/issues/1592
     //    1. Don't subtract the border from the background rect. Will need solution for border
     //       painting, as background should go exactly to the outer border and not beyond.
-    let bg_rect = border_width.bg_rect(size, corner_radius);
+    let bg_rect = border_width.bg_rect(border_box, corner_radius);
     let bg_brush = background.get_peniko_brush_for_rect(bg_rect.rect());
     scene.fill(Fill::NonZero, Affine::IDENTITY, &bg_brush, None, &bg_rect);
 }
@@ -106,7 +106,7 @@ pub fn paint_background(
 /// Paints the widget's border.
 pub fn paint_border(
     scene: &mut Scene,
-    size: Size,
+    border_box: Rect,
     border_color: &BorderColor,
     border_width: &BorderWidth,
     corner_radius: &CornerRadius,
@@ -114,7 +114,7 @@ pub fn paint_border(
     if border_width.width == 0. || !border_color.is_visible() {
         return;
     }
-    let border_rect = border_width.border_rect(size, corner_radius);
+    let border_rect = border_width.border_rect(border_box, corner_radius);
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let border_style = Stroke {
         width: border_width.width,

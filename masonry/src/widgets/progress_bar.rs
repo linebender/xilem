@@ -136,7 +136,7 @@ impl Widget for ProgressBar {
     fn measure(
         &mut self,
         ctx: &mut MeasureCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
         cross_length: Option<f64>,
@@ -148,25 +148,15 @@ impl Widget for ProgressBar {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-
-        let border_length = border.length(axis).dp(scale);
-
-        let cross = axis.cross();
-        let cross_space = cross_length.map(|cross_length| {
-            let cross_border_length = border.length(cross).dp(scale);
-            (cross_length - cross_border_length).max(0.)
-        });
-
-        let auto_length = len_req.reduce(border_length).into();
-        let context_size = LayoutSize::maybe(cross, cross_space);
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
         let label_length = ctx.compute_length(
             &mut self.label,
             auto_length,
             context_size,
             axis,
-            cross_space,
+            cross_length,
         );
 
         let potential_length = match axis {
@@ -178,19 +168,11 @@ impl Widget for ProgressBar {
         };
 
         // Make sure we always report a length big enough to fit our painting
-        potential_length.max(label_length + border_length)
+        potential_length.max(label_length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-
-        let space = border.size_down(size, scale);
-
-        let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.label, label_size);
 
         let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
@@ -198,16 +180,16 @@ impl Widget for ProgressBar {
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
+        let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(ctx, props);
 
-        paint_box_shadow(scene, size, p.box_shadow, p.corner_radius);
-        paint_background(scene, size, p.background, p.border_width, p.corner_radius);
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
         // We need to delay painting the border until after we paint the filled bar area.
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
+        let border_box = ctx.border_box();
         let border_width = props.get::<BorderWidth>();
         let corner_radius = props.get::<CornerRadius>();
         let border_color = props.get::<BorderColor>();
@@ -215,14 +197,11 @@ impl Widget for ProgressBar {
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
             // The bar width is without the borders.
-            let bar_width = size.width - 2. * border_width.width;
+            let bar_width = border_box.width() - 2. * border_width.width;
             if bar_width > 0. {
                 let bar_color = props.get::<BarColor>().0;
-                let bar_start = border_width.width;
-                let bar_stop = bar_start + bar_width;
-
                 // Paint with a gradient so we get a straight line slice of the rounded rect.
-                let gradient = Gradient::new_linear((bar_start, 0.), (bar_stop, 0.)).with_stops([
+                let gradient = Gradient::new_linear((0., 0.), (bar_width, 0.)).with_stops([
                     (0., bar_color),
                     (progress as f32, bar_color),
                     (progress as f32, Color::TRANSPARENT),
@@ -232,13 +211,13 @@ impl Widget for ProgressBar {
                 // Currently bg_rect() gives a rect without borders, so we can use it.
                 // However in the future when bg_rect() gets expanded to include borders,
                 // we'll need to create a special sans-border rect for this fill.
-                let bg_rect = border_width.bg_rect(size, corner_radius);
+                let bg_rect = border_width.bg_rect(border_box, corner_radius);
 
                 fill(scene, &bg_rect, &gradient);
             }
         }
 
-        paint_border(scene, size, border_color, border_width, corner_radius);
+        paint_border(scene, border_box, border_color, border_width, corner_radius);
     }
 
     fn accessibility_role(&self) -> Role {

@@ -15,7 +15,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{BorderWidth, Gap, Padding};
+use crate::properties::Gap;
 use crate::util::debug_panic;
 
 /// A widget that arranges its children in a grid.
@@ -313,24 +313,15 @@ impl Widget for Grid {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
         let gap = props.get::<Gap>();
 
-        let border_length = border.length(axis).dp(scale);
-        let padding_length = padding.length(axis).dp(scale);
         let gap_length = gap.gap.dp(scale);
 
         let cross = axis.cross();
-        let cross_space = cross_length.map(|cross_length| {
-            let cross_border_length = border.length(cross).dp(scale);
-            let cross_padding_length = padding.length(cross).dp(scale);
-            (cross_length - cross_border_length - cross_padding_length).max(0.)
-        });
         let cross_track_cells = self.track_cells(cross) as f64;
-        let cross_cell_length = cross_space
+        let cross_cell_length = cross_length
             .filter(|_| cross_track_cells > 0.) // Guard against div by zero
-            .map(|cross_space| (cross_space + gap_length) / cross_track_cells);
+            .map(|cross_length| (cross_length + gap_length) / cross_track_cells);
 
         let (len_req, min_result) = match len_req {
             LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
@@ -371,7 +362,7 @@ impl Widget for Grid {
         let track_cells = self.track_cells(axis) as f64;
         let length = track_cells * cell_length - gap_length;
 
-        min_result.max(length + border_length + padding_length)
+        min_result.max(length)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
@@ -379,16 +370,12 @@ impl Widget for Grid {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
         let gap = props.get::<Gap>();
 
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
         let gap_length = gap.gap.dp(scale);
 
-        let cell_width = (space.width + gap_length) / self.grid_column_count as f64;
-        let cell_height = (space.height + gap_length) / self.grid_row_count as f64;
+        let cell_width = (size.width + gap_length) / self.grid_column_count as f64;
+        let cell_height = (size.height + gap_length) / self.grid_row_count as f64;
 
         for child in &mut self.children {
             let area = Size::new(
@@ -405,18 +392,18 @@ impl Widget for Grid {
 
             let child_origin =
                 Point::new(child.x as f64 * cell_width, child.y as f64 * cell_height);
-            let child_origin = border.origin_down(child_origin, scale);
-            let child_origin = padding.origin_down(child_origin, scale);
             ctx.place_child(&mut child.widget, child_origin);
         }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
+        if ctx.debug_paint_enabled() {
             let color = ctx.debug_color();
-            let my_baseline = ctx.size().height - ctx.baseline_offset();
-            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+            let border_box = ctx.border_box();
+            let content_box = ctx.content_box();
+            let baseline = content_box.height() - ctx.baseline_offset();
+            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
