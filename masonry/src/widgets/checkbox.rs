@@ -309,10 +309,11 @@ impl Widget for Checkbox {
 
         let border_rect = border_width.border_rect(check_size.to_rect(), border_radius);
 
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
+        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            &fb.0
+        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
+            &hb.0
         } else {
             props.get::<BorderColor>()
         };
@@ -323,8 +324,10 @@ impl Widget for Checkbox {
         // Paint the checkmark if checked
         if self.checked {
             let checkmark_width = props.get::<CheckmarkStrokeWidth>();
-            let brush = if ctx.is_disabled() {
-                &props.get::<DisabledCheckmarkColor>().0
+            let brush = if ctx.is_disabled()
+                && let Some(dc) = props.get_defined::<DisabledCheckmarkColor>()
+            {
+                &dc.0
             } else {
                 props.get::<CheckmarkColor>()
             };

@@ -995,10 +995,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         };
         if ctx.is_focus_target() {
             let caret_color = props.get::<CaretColor>().color;
-            let selection_color = if ctx.is_window_focused() {
-                props.get::<SelectionColor>().color
+            let selection_color = if !ctx.is_window_focused()
+                && let Some(us) = props.get_defined::<UnfocusedSelectionColor>()
+            {
+                us.0.color
             } else {
-                props.get::<UnfocusedSelectionColor>().0.color
+                props.get::<SelectionColor>().color
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
@@ -1023,8 +1025,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             };
         }
 
-        let text_color = if ctx.is_disabled() {
-            &props.get::<DisabledContentColor>().0
+        let text_color = if ctx.is_disabled()
+            && let Some(dc) = props.get_defined::<DisabledContentColor>()
+        {
+            &dc.0
         } else {
             props.get::<ContentColor>()
         };

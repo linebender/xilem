@@ -248,12 +248,14 @@ impl Widget for Switch {
         ) - ctx.border_box_translation();
 
         // Determine track background color
-        let track_bg = if is_disabled {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else if self.on {
-            &props.get::<ToggledBackground>().0
+        let track_bg = if is_disabled && let Some(db) = props.get_defined::<DisabledBackground>() {
+            &db.0
+        } else if is_pressed && let Some(ab) = props.get_defined::<ActiveBackground>() {
+            &ab.0
+        } else if self.on
+            && let Some(tb) = props.get_defined::<ToggledBackground>()
+        {
+            &tb.0
         } else {
             props.get::<Background>()
         };
@@ -265,10 +267,11 @@ impl Widget for Switch {
         fill(scene, &track_rounded, &brush);
 
         // Determine border color
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
+        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            &fb.0
+        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
+            &hb.0
         } else {
             props.get::<BorderColor>()
         };

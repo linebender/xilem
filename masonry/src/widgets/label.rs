@@ -439,8 +439,10 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let text_color = if ctx.is_disabled() {
-            &props.get::<DisabledContentColor>().0
+        let text_color = if ctx.is_disabled()
+            && let Some(dc) = props.get_defined::<DisabledContentColor>()
+        {
+            &dc.0
         } else {
             props.get::<ContentColor>()
         };

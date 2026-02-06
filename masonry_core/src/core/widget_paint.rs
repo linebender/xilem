@@ -33,21 +33,29 @@ impl<'a> PrePaintProps<'a> {
     /// Returns common pre-paint properties based on widget state.
     pub fn fetch(ctx: &mut PaintCtx<'_>, props: &'a PropertiesRef<'_>) -> Self {
         let box_shadow = props.get::<BoxShadow>();
-        let background = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if ctx.is_active() {
-            &props.get::<ActiveBackground>().0
+        let background = if ctx.is_disabled()
+            && let Some(db) = props.get_defined::<DisabledBackground>()
+        {
+            &db.0
+        } else if ctx.is_active()
+            && let Some(ab) = props.get_defined::<ActiveBackground>()
+        {
+            &ab.0
         } else {
             props.get::<Background>()
         };
-        let border_width = props.get::<BorderWidth>();
-        let border_color = if ctx.is_focus_target() {
-            &props.get::<FocusedBorderColor>().0
-        } else if ctx.is_hovered() {
-            &props.get::<HoveredBorderColor>().0
+        let border_color = if ctx.is_focus_target()
+            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            &fb.0
+        } else if ctx.is_hovered()
+            && let Some(hb) = props.get_defined::<HoveredBorderColor>()
+        {
+            &hb.0
         } else {
             props.get::<BorderColor>()
         };
+        let border_width = props.get::<BorderWidth>();
         let corner_radius = props.get::<CornerRadius>();
 
         Self {

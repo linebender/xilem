@@ -287,8 +287,10 @@ impl Widget for TextInput {
         let mut p = PrePaintProps::fetch(ctx, props);
 
         // We want to show a focus border if our child TextArea is focused
-        if ctx.has_focus_target() {
-            p.border_color = &props.get::<FocusedBorderColor>().0;
+        if ctx.has_focus_target()
+            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            p.border_color = &fb.0;
         }
 
         paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);

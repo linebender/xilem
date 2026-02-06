@@ -358,13 +358,13 @@ impl Widget for Slider {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Get parameters and resolve colors
         // TODO: Create a dedicated TrackColor property
-        let track_color = if props.contains::<Background>() {
-            props.get::<Background>()
+        let track_color = if let Some(b) = props.get_defined::<Background>() {
+            b
         } else {
             &Background::Color(theme::ZYNC_800)
         };
-        let active_track_color = if props.contains::<BarColor>() {
-            props.get::<BarColor>().0
+        let active_track_color = if let Some(bc) = props.get_defined::<BarColor>() {
+            bc.0
         } else {
             theme::ACCENT_COLOR
         };
