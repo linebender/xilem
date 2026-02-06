@@ -1072,8 +1072,8 @@ impl_context_method!(
         pub fn content_box_size(&self) -> Size {
             let border_box_size = self.widget_state.border_box_size();
             Size::new(
-                (border_box_size.width + self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height + self.widget_state.border_box_insets.y_value()).max(0.),
+                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
+                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
             )
         }
 
@@ -1094,8 +1094,8 @@ impl_context_method!(
             Rect::new(
                 0.,
                 0.,
-                (border_box_size.width + self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height + self.widget_state.border_box_insets.y_value()).max(0.),
+                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
+                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
             )
         }
 

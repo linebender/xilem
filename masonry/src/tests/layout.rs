@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_testing::{TestWidgetExt, assert_debug_panics};
 
-use crate::core::Widget;
-use crate::core::{NewWidget, WidgetTag};
-use crate::kurbo::{Insets, Point, Size};
+use crate::core::{NewWidget, Widget, WidgetOptions, WidgetTag};
+use crate::kurbo::{Insets, Point, Rect, Size};
 use crate::layout::{AsUnit, Length, SizeDef};
-use crate::testing::{ModularWidget, TestHarness};
+use crate::properties::{BorderWidth, Dimensions, Padding};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, assert_debug_panics};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, Portal, SizedBox, ZStack};
 
@@ -266,4 +265,60 @@ fn layout_insets() {
     assert_eq!(parent_bounding_rect.y0, -20.0);
     assert_eq!(parent_bounding_rect.x1, BOX_WIDTH);
     assert_eq!(parent_bounding_rect.y1, BOX_WIDTH + 20.0);
+}
+
+#[test]
+fn content_box() {
+    let tag = WidgetTag::named("hero");
+
+    let props = (
+        Dimensions::fixed(100.px(), 100.px()),
+        Padding {
+            left: 1.,
+            right: 2.,
+            top: 3.,
+            bottom: 4.,
+        },
+        BorderWidth::all(1.),
+    );
+
+    let hero = NewWidget::new_with(
+        Button::with_text("Hero"),
+        Some(tag),
+        WidgetOptions::default(),
+        props,
+    );
+
+    let harness = TestHarness::create(test_property_set(), hero);
+
+    let border_box = harness.get_widget(tag).ctx().border_box();
+    let border_box_size = harness.get_widget(tag).ctx().border_box_size();
+    let content_box = harness.get_widget(tag).ctx().content_box();
+    let content_box_size = harness.get_widget(tag).ctx().content_box_size();
+    let border_box_translation = harness.get_widget(tag).ctx().border_box_translation();
+
+    let expected_border_box_size = Size::new(100., 100.);
+    let expected_content_box_size = Size::new(95., 91.);
+
+    assert_eq!(border_box_size, expected_border_box_size);
+    assert_eq!(border_box.size(), expected_border_box_size);
+
+    assert_eq!(content_box_size, expected_content_box_size);
+    assert_eq!(content_box.size(), expected_content_box_size);
+
+    let expected_border_box_origin = Point::new(-2., -4.);
+    let expected_content_box_origin = Point::ORIGIN;
+
+    assert_eq!(
+        border_box_translation,
+        -expected_border_box_origin.to_vec2()
+    );
+
+    let expected_border_box =
+        Rect::from_origin_size(expected_border_box_origin, expected_border_box_size);
+    let expected_content_box =
+        Rect::from_origin_size(expected_content_box_origin, expected_content_box_size);
+
+    assert_eq!(border_box, expected_border_box);
+    assert_eq!(content_box, expected_content_box);
 }
