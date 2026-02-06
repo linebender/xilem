@@ -27,6 +27,7 @@ dpi.workspace = true
 masonry_core.workspace = true
 masonry_testing = { workspace = true, optional = true }
 parley.workspace = true
+smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 vello.workspace = true
 include_doc_path.workspace = true

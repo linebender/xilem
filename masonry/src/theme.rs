@@ -18,7 +18,7 @@ use crate::properties::{
     UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
+    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -93,6 +93,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // Divider
+    properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
 
     // Switch
     properties.insert::<Switch, _>(CornerRadius { radius: 10. }); // Full pill shape

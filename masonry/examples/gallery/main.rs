@@ -13,6 +13,7 @@
 mod basics;
 mod checkbox;
 mod demo;
+mod divider;
 mod image;
 mod kitchen_sink;
 mod progress;
@@ -228,6 +229,7 @@ fn build_demos() -> Vec<Box<dyn DemoPage>> {
     let mut demos: Vec<Box<dyn DemoPage>> = vec![
         Box::new(basics::BasicsDemo::new(new_demo_shell_tags())),
         Box::new(checkbox::CheckboxDemo::new(new_demo_shell_tags())),
+        Box::new(divider::DividerDemo::new(new_demo_shell_tags())),
         Box::new(image::ImageDemo::new(new_demo_shell_tags())),
         Box::new(kitchen_sink::KitchenSinkDemo::new(new_demo_shell_tags())),
         Box::new(progress::ProgressDemo::new(new_demo_shell_tags())),
