@@ -34,6 +34,14 @@ accesskit_winit.workspace = true
 wgpu-profiler = { optional = true, version = "0.25.0", default-features = false }
 copypasta = "0.10.2"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# Enables masonry_core/default -> vello -> wgpu -> wgpu_hal -> metal,
+# which we need to interact with CoreAnimation during window resizing.
+# This is not a very elegant fix and also enables all other HAL's.
+# Remove this once a feature gating solution is found.
+# See: https://github.com/linebender/xilem/pull/1551
+masonry_core = { workspace = true, features = ["default"] }
+
 [dev-dependencies]
 # We don't use the "workspace" dependency here, because this makes a loop in publishing.
 # This does mean that this dev-dependency edge won't be recorded in the uploaded Cargo.toml,
