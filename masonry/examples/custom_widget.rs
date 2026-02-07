@@ -10,13 +10,15 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
+    WidgetId,
 };
-use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
+use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
+use masonry::layout::LenReq;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, ImageBrush, ImageFormat};
+use masonry::peniko::{ImageAlphaType, ImageData};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
@@ -24,7 +26,6 @@ use masonry::{TextAlign, TextAlignOptions, palette};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
-use vello::peniko::{ImageAlphaType, ImageData};
 
 struct Driver;
 
@@ -72,29 +73,33 @@ impl Widget for CustomWidget {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn layout(
+    fn measure(
         &mut self,
-        _layout_ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // BoxConstraints are passed by the parent widget.
-        // This method can return any Size within those constraints:
-        // bc.constrain(my_size)
-        //
-        // To check if a dimension is infinite or not (e.g. scrolling):
-        // bc.is_width_bounded() / bc.is_height_bounded()
-        //
-        // bx.max() returns the maximum size of the widget. Be careful
-        // using this, since always make sure the widget is bounded.
-        // If bx.max() is used in a scrolling widget things will probably
-        // not work correctly.
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
-        } else {
-            let size = Size::new(100.0, 100.0);
-            bc.constrain(size)
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // We currently just define our preferred min/max,
+        // but often it takes actual work to derive these.
+        let min_size = Size::new(100., 50.);
+        let max_size = Size::new(200., 200.);
+
+        // Measurement is per axis, so we only care about a single dimension right now
+        let min_length = min_size.get_coord(axis);
+        let max_length = max_size.get_coord(axis);
+
+        // Return a result based on the parent's request
+        match len_req {
+            LenReq::MinContent => min_length,
+            LenReq::MaxContent => max_length,
+            LenReq::FitContent(space) => space.clamp(min_length, max_length),
         }
+    }
+
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
+        // This method is a good place to calculate size-dependent values
     }
 
     // The paint method gets called last, after an event flow.
@@ -102,11 +107,9 @@ impl Widget for CustomWidget {
     // Basically, anything that changes the appearance of a widget causes a paint.
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
-        // (ctx.size() returns the size of the layout rect we're painting in)
-        // Note: ctx also has a `clear` method, but that clears the whole context,
-        // and we only want to clear this widget's area.
-        let size = ctx.size();
-        let rect = size.to_rect();
+        // (ctx.content_box_size() returns the size of the content rect we're painting in)
+        let size = ctx.content_box_size();
+        let rect = ctx.content_box();
         scene.fill(
             Fill::NonZero,
             Affine::IDENTITY,
@@ -167,7 +170,7 @@ impl Widget for CustomWidget {
             width: 256,
             height: 256,
         });
-        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), Size::new(256., 256.));
+        let transform = ObjectFit::Stretch.affine(size, Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
 

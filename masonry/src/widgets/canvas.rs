@@ -1,18 +1,19 @@
 // Copyright 2025 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A canvas widget.
-
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, ChildrenIds};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Size;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Widget, WidgetId, WidgetMut,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::{Axis, Size};
+use crate::layout::{LenReq, Length};
+
+/// The preferred size of the square Canvas.
+const DEFAULT_LENGTH: Length = Length::const_px(100.);
 
 /// A widget allowing custom drawing.
 ///
@@ -22,6 +23,7 @@ use crate::core::{
 #[derive(Default)]
 pub struct Canvas {
     alt_text: Option<ArcStr>,
+    /// The drawable area size, which matches the widget's content-box.
     size: Size,
     scene: Scene,
 }
@@ -44,7 +46,7 @@ impl Canvas {
 
 // --- MARK: METHODS
 impl Canvas {
-    /// Returns the current size of the canvas
+    /// Returns the current size of the canvas, which matches its content-box size.
     pub fn size(&self) -> Size {
         self.size
     }
@@ -53,9 +55,12 @@ impl Canvas {
 // --- MARK: WIDGETMUT
 impl Canvas {
     /// Updates the canvas scene.
-    pub fn update_scene(this: &mut WidgetMut<'_, Self>, f: impl FnOnce(&mut Scene, Size)) {
+    pub fn update_scene(
+        this: &mut WidgetMut<'_, Self>,
+        f: impl FnOnce(&mut MutateCtx<'_>, &mut Scene, Size),
+    ) {
         this.widget.scene.reset();
-        f(&mut this.widget.scene, this.widget.size);
+        f(&mut this.ctx, &mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
 
@@ -85,23 +90,33 @@ impl Widget for Canvas {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-    fn layout(
+
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // We use all the available space as possible.
-        let size = bc.max();
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        // We use all the available space or fall back to our const preferred size.
+        match len_req {
+            LenReq::FitContent(space) => space,
+            _ => DEFAULT_LENGTH.dp(scale),
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         if self.size != size {
             self.size = size;
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
         }
-
         // We clip the contents we draw.
         ctx.set_clip_path(size.to_rect());
-
-        size
     }
 
     fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -139,13 +154,16 @@ impl Widget for Canvas {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{DefaultProperties, Properties};
     use masonry_testing::assert_render_snapshot;
-    use vello::kurbo::{Affine, BezPath, Stroke};
-    use vello::peniko::{Color, Fill};
 
     use super::*;
-    use crate::testing::TestHarness;
+    use crate::core::{DefaultProperties, Properties, render_text};
+    use crate::kurbo::{Affine, BezPath, Stroke};
+    use crate::parley::{
+        Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
+    };
+    use crate::peniko::{Color, Fill};
+    use crate::testing::{TestHarness, TestHarnessParams};
 
     #[test]
     fn simple_canvas() {
@@ -158,7 +176,7 @@ mod tests {
         );
 
         harness.edit_root_widget(|mut canvas| {
-            Canvas::update_scene(&mut canvas, |scene, size| {
+            Canvas::update_scene(&mut canvas, |_ctx, scene, size| {
                 let scale = Affine::scale_non_uniform(size.width, size.height);
                 let mut path = BezPath::new();
                 path.move_to((0.1, 0.1));
@@ -184,5 +202,46 @@ mod tests {
         });
 
         assert_render_snapshot!(harness, "canvas_simple");
+    }
+
+    #[test]
+    fn text_canvas() {
+        let canvas =
+            Canvas::default().with_alt_text("The text 'Canvas' with a bright mint green fill");
+
+        let mut harness_params = TestHarnessParams::DEFAULT;
+        harness_params.window_size = Size::new(200., 200.);
+        let mut harness = TestHarness::create_with(
+            DefaultProperties::default(),
+            canvas.with_props(Properties::default()),
+            harness_params,
+        );
+
+        harness.edit_root_widget(|mut canvas| {
+            Canvas::update_scene(&mut canvas, |ctx, scene, size| {
+                let (fcx, lcx) = ctx.text_contexts();
+                let mut text_layout_builder = lcx.ranged_builder(fcx, "Canvas", 1., true);
+                text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
+                    FontFamily::Generic(GenericFamily::Serif),
+                )));
+                text_layout_builder.push_default(StyleProperty::FontSize(size.height as f32));
+                let mut text_layout = text_layout_builder.build("Canvas");
+                text_layout.break_all_lines(None);
+                text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+                let scale = Affine::scale_non_uniform(
+                    size.width / text_layout.width() as f64,
+                    size.height / text_layout.height() as f64,
+                );
+                render_text(
+                    scene,
+                    scale,
+                    &text_layout,
+                    &[Color::from_rgb8(100, 240, 150).into()],
+                    true,
+                );
+            });
+        });
+
+        assert_render_snapshot!(harness, "canvas_text");
     }
 }

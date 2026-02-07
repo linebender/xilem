@@ -27,14 +27,17 @@ dpi.workspace = true
 masonry_core.workspace = true
 masonry_testing = { workspace = true, optional = true }
 parley.workspace = true
+smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 vello.workspace = true
+include_doc_path.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"
+divan.workspace = true
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }
-insta = { version = "1.44.3" }
+insta = { version = "1.46.1" }
 masonry_testing = { workspace = true, features = ["default"] }
 masonry_winit = { workspace = true, features = ["default"] }
 
@@ -43,6 +46,13 @@ profiling = { version = "1.0.17", features = ["profile-with-tracing"] }
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "widget_list"
+# We use divan's harness instead of the default one.
+harness = false
+# Ensures the benchmark is ran included when running bare `cargo test`.
+test = true
 
 [[example]]
 name = "calc_masonry"

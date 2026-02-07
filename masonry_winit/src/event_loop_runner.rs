@@ -7,6 +7,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
+use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::keyboard::{Key, KeyState};
@@ -19,7 +20,7 @@ use masonry_core::util::Instant;
 use masonry_core::vello::{
     AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu,
 };
-use tracing::{debug, info, info_span};
+use tracing::{info, info_span, trace};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
@@ -28,7 +29,10 @@ use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as Win
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
-use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
+use crate::app::{
+    AppDriver, DriverCtx, WgpuContext, WgpuLimits, masonry_resize_direction_to_winit,
+    winit_ime_to_masonry,
+};
 use crate::app_driver::WindowId;
 use crate::vello_util::{RenderContext, RenderSurface};
 
@@ -192,6 +196,7 @@ pub struct MasonryState<'a> {
     is_suspended: bool,
     render_cx: RenderContext,
     renderer: Option<Renderer>,
+    image_overrides: HashMap<u64, ImageOverrideState>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     event_loop_proxy: EventLoopProxy,
@@ -206,7 +211,7 @@ pub struct MasonryState<'a> {
     #[cfg(target_os = "macos")]
     resized_window: Option<HandleId>,
 
-    clipboard_cx: ClipboardContext,
+    clipboard_cx: Box<dyn ClipboardProvider>,
 
     // Is `Some` if the most recently displayed frame was an animation frame.
     last_anim: Option<Instant>,
@@ -218,6 +223,14 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
+}
+
+#[derive(Debug)]
+struct ImageOverrideState {
+    image: masonry_core::peniko::ImageData,
+    texture: wgpu::Texture,
+    applied: bool,
+    prev: Option<wgpu::TexelCopyTextureInfoBase<wgpu::Texture>>,
 }
 
 // TODO - Merge into MasonryState?
@@ -358,10 +371,21 @@ impl MasonryState<'_> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
 
+        let clipboard_cx =
+            ClipboardContext::new().map(|cx| -> Box<dyn ClipboardProvider> { Box::new(cx) });
+        let clipboard_cx = if cfg!(target_os = "linux") {
+            // If we're running on Linux, we might fail to get the clipboard context because
+            // we're using Wayland, so we fall back to NopClipboardContext to be safe.
+            clipboard_cx.unwrap_or_else(|_| Box::new(NopClipboardContext))
+        } else {
+            clipboard_cx.unwrap()
+        };
+
         MasonryState {
             is_suspended: true,
             render_cx,
             renderer: None,
+            image_overrides: HashMap::new(),
             event_loop_proxy,
             #[cfg(feature = "tracy")]
             frame: None,
@@ -374,7 +398,7 @@ impl MasonryState<'_> {
             #[cfg(target_os = "macos")]
             resized_window: None,
 
-            clipboard_cx: ClipboardContext::new().unwrap(),
+            clipboard_cx,
 
             signal_sender,
             default_properties: Arc::new(default_properties),
@@ -382,6 +406,46 @@ impl MasonryState<'_> {
             new_windows,
             need_first_frame: Vec::new(),
         }
+    }
+
+    /// Configure how Masonry requests the WGPU device (features and limits).
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// `features` is best-effort: Masonry intersects it with `adapter.features()`, so unsupported
+    /// feature bits are ignored.
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn set_wgpu_device_options(
+        &mut self,
+        features: wgpu::Features,
+        limits: WgpuLimits,
+    ) -> bool {
+        self.render_cx.set_wgpu_device_options(features, limits)
+    }
+
+    /// Add extra WGPU features to request when creating the device.
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn add_wgpu_features(&mut self, features: wgpu::Features) -> bool {
+        self.render_cx.add_wgpu_features(features)
+    }
+
+    /// Configure the WGPU limits strategy used when requesting the device.
+    ///
+    /// This must be called before the first surface/device is created (i.e. before the first
+    /// redraw). A good place is [`AppDriver::on_start`].
+    ///
+    /// This method will return `false` if it was called too late and a device had already been
+    /// created.
+    pub fn set_wgpu_limits(&mut self, limits: WgpuLimits) -> bool {
+        self.render_cx.set_wgpu_limits(limits)
     }
 
     // --- MARK: RESUMED
@@ -507,8 +571,70 @@ impl MasonryState<'_> {
         window.handle.set_ime_allowed(false);
     }
 
+    pub(crate) fn set_image_override(
+        &mut self,
+        image: masonry_core::peniko::ImageData,
+        texture: wgpu::Texture,
+    ) {
+        let image_id = image.data.id();
+
+        if let Some(existing) = self.image_overrides.get_mut(&image_id) {
+            existing.texture = texture;
+            if existing.applied {
+                if let Some(renderer) = &mut self.renderer {
+                    renderer.override_image(
+                        &existing.image,
+                        Some(wgpu::TexelCopyTextureInfoBase {
+                            texture: existing.texture.clone(),
+                            mip_level: 0,
+                            origin: wgpu::Origin3d::ZERO,
+                            aspect: wgpu::TextureAspect::All,
+                        }),
+                    );
+                } else {
+                    existing.applied = false;
+                }
+            }
+            return;
+        }
+
+        let mut state = ImageOverrideState {
+            image,
+            texture,
+            applied: false,
+            prev: None,
+        };
+
+        if let Some(renderer) = &mut self.renderer {
+            state.prev = renderer.override_image(
+                &state.image,
+                Some(wgpu::TexelCopyTextureInfoBase {
+                    texture: state.texture.clone(),
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                }),
+            );
+            state.applied = true;
+        }
+
+        self.image_overrides.insert(image_id, state);
+    }
+
+    pub(crate) fn clear_image_override(&mut self, image: &masonry_core::peniko::ImageData) {
+        let image_id = image.data.id();
+        let Some(state) = self.image_overrides.remove(&image_id) else {
+            return;
+        };
+        if state.applied
+            && let Some(renderer) = &mut self.renderer
+        {
+            renderer.override_image(&state.image, state.prev);
+        }
+    }
+
     // --- MARK: REDRAW
-    fn redraw(&mut self, handle_id: HandleId) {
+    fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
         let _span = info_span!("redraw");
 
         let window = self.windows.get_mut(&handle_id).unwrap();
@@ -533,9 +659,24 @@ impl MasonryState<'_> {
             }
             surface
         } else {
+            let devices_before = self.render_cx.devices.len();
             let surface = create_surface(&mut self.render_cx, window.handle.clone(), size);
+            let dev_id = surface.dev_id;
             self.surfaces.insert(handle_id, surface);
-            self.surfaces.get_mut(&handle_id).unwrap()
+            let surface = self.surfaces.get_mut(&handle_id).unwrap();
+
+            if self.render_cx.devices.len() != devices_before {
+                let device_handle = &self.render_cx.devices[dev_id];
+                let wgpu = WgpuContext {
+                    instance: &self.render_cx.instance,
+                    adapter: &device_handle.adapter,
+                    device: &device_handle.device,
+                    queue: &device_handle.queue,
+                };
+                app_driver.on_wgpu_ready(&wgpu);
+            }
+
+            surface
         };
 
         let now = Instant::now();
@@ -561,7 +702,14 @@ impl MasonryState<'_> {
         }
 
         let (scene, tree_update) = window.render_root.redraw();
-        Self::render(surface, window, scene, &self.render_cx, &mut self.renderer);
+        Self::render(
+            surface,
+            window,
+            scene,
+            &self.render_cx,
+            &mut self.renderer,
+            &mut self.image_overrides,
+        );
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
         if let Some(tree_update) = tree_update {
@@ -576,6 +724,7 @@ impl MasonryState<'_> {
         scene: Scene,
         render_cx: &RenderContext,
         renderer: &mut Option<Renderer>,
+        image_overrides: &mut HashMap<u64, ImageOverrideState>,
     ) {
         let size = window.render_root.size();
         let scale_factor = window.handle.scale_factor();
@@ -628,25 +777,47 @@ impl MasonryState<'_> {
         };
 
         let _render_span = tracing::info_span!("Rendering using Vello").entered();
+        let renderer = renderer.get_or_insert_with(|| {
+            #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
+            let mut renderer = Renderer::new(device, renderer_options).unwrap();
+            #[cfg(feature = "tracy")]
+            {
+                let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
+                    wgpu_profiler::GpuProfilerSettings::default(),
+                    // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                    // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
+                    wgpu::Backend::Vulkan,
+                    device,
+                    queue,
+                )
+                .unwrap_or(renderer.profiler);
+                renderer.profiler = new_profiler;
+            }
+            renderer
+        });
+
+        // Apply any persistent image overrides.
+        //
+        // `Renderer` is shared across windows, so these overrides are global to the current
+        // renderer/device. We apply them once (lazily, when a renderer exists) and only restore
+        // when explicitly cleared.
+        for ovr in image_overrides.values_mut() {
+            if ovr.applied {
+                continue;
+            }
+            ovr.prev = renderer.override_image(
+                &ovr.image,
+                Some(wgpu::TexelCopyTextureInfoBase {
+                    texture: ovr.texture.clone(),
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                }),
+            );
+            ovr.applied = true;
+        }
+
         renderer
-            .get_or_insert_with(|| {
-                #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
-                let mut renderer = Renderer::new(device, renderer_options).unwrap();
-                #[cfg(feature = "tracy")]
-                {
-                    let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
-                        wgpu_profiler::GpuProfilerSettings::default(),
-                        // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
-                        // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
-                        wgpu::Backend::Vulkan,
-                        device,
-                        queue,
-                    )
-                    .unwrap_or(renderer.profiler);
-                    renderer.profiler = new_profiler;
-                }
-                renderer
-            })
             .render_to_texture(
                 device,
                 queue,
@@ -774,7 +945,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
-                self.redraw(handle_id);
+                self.redraw(handle_id, app_driver);
             }
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
@@ -912,7 +1083,7 @@ impl MasonryState<'_> {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     let window_id = window.id;
-                    debug!(
+                    trace!(
                         "Action {:?} on widget {:?}",
                         (*action).type_name(),
                         widget_id
@@ -989,7 +1160,9 @@ impl MasonryState<'_> {
                     };
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
                 }
-                RenderRootSignal::NewLayer(root, pos) => window.render_root.add_layer(root, pos),
+                RenderRootSignal::NewLayer(_type, root, pos) => {
+                    window.render_root.add_layer(root, pos);
+                }
                 RenderRootSignal::RemoveLayer(root_id) => window.render_root.remove_layer(root_id),
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
                     window.render_root.reposition_layer(root_id, new_pos);
@@ -1000,7 +1173,7 @@ impl MasonryState<'_> {
         // If an app creates a visible window, we firstly create it as invisible
         // and then render the first frame before making it visible to avoid flashing.
         for handle_id in std::mem::take(&mut self.need_first_frame) {
-            self.redraw(handle_id);
+            self.redraw(handle_id, app_driver);
             let window = self.windows.get_mut(&handle_id).unwrap();
             window.handle.set_visible(true);
         }

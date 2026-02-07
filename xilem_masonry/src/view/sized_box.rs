@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::properties::types::Length;
+use masonry::layout::Length;
 use masonry::widgets;
 
 use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
@@ -25,7 +25,6 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use masonry::properties::Padding;
 ///
 /// sized_box(button("Button", |data: &mut i32| *data+=1))
-///     .expand()
 ///     .background(palette::css::RED)
 ///     .border(palette::css::YELLOW, 20.)
 ///     .rounded(RoundedRectRadii::from_single_radius(5.))
@@ -51,51 +50,21 @@ where
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct SizedBox<V, State, Action = ()> {
     inner: V,
-    width: Option<f64>,
-    height: Option<f64>,
+    width: Option<Length>,
+    height: Option<Length>,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
 impl<V, State, Action> SizedBox<V, State, Action> {
     /// Set container's width.
-    pub fn width(mut self, width: Length) -> Self {
-        self.width = Some(width.get());
+    pub fn fixed_width(mut self, width: Length) -> Self {
+        self.width = Some(width);
         self
     }
 
     /// Set container's height.
-    pub fn height(mut self, height: Length) -> Self {
-        self.height = Some(height.get());
-        self
-    }
-
-    /// Expand container to fit the parent.
-    ///
-    /// Only call this method if you want your widget to occupy all available
-    /// space. If you only care about expanding in one of width or height, use
-    /// [`expand_width`] or [`expand_height`] instead.
-    ///
-    /// [`expand_height`]: Self::expand_height
-    /// [`expand_width`]: Self::expand_width
-    pub fn expand(mut self) -> Self {
-        self.width = Some(f64::INFINITY);
-        self.height = Some(f64::INFINITY);
-        self
-    }
-
-    /// Expand the container on the x-axis.
-    ///
-    /// This will force the child to have maximum width.
-    pub fn expand_width(mut self) -> Self {
-        self.width = Some(f64::INFINITY);
-        self
-    }
-
-    /// Expand the container on the y-axis.
-    ///
-    /// This will force the child to have maximum height.
-    pub fn expand_height(mut self) -> Self {
-        self.height = Some(f64::INFINITY);
+    pub fn fixed_height(mut self, height: Length) -> Self {
+        self.height = Some(height);
         self
     }
 }

@@ -41,7 +41,7 @@ impl Circles {
     }
     fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         zstack((
-            canvas(|state: &mut Self, scene: &mut Scene, size: Size| {
+            canvas(|state: &mut Self, _ctx, scene: &mut Scene, size: Size| {
                 for (circle, color) in &state.circles {
                     scene.fill(Fill::NonZero, Affine::IDENTITY, *color, None, &circle);
                 }

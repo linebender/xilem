@@ -20,8 +20,10 @@ members = [
     "xilem_web/web_examples/spawn_tasks",
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
+    "xilem_web/web_examples/open_and_save_file",
     "tree_arena",
     "placehero",
+    "include_doc_path",
 ]
 
 [workspace.package]
@@ -48,21 +50,21 @@ xilem_core = { version = "0.4.0", path = "xilem_core" }
 xilem_masonry = { version = "0.4.0", path = "xilem_masonry" }
 xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
+include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
-vello = { version = "0.6.0", git = "https://github.com/linebender/vello", rev = "cad558fcd7067ea4097cf9299dfedc8ecc53dc41", default-features = false, features = [
-    "wgpu",
-] }
-kurbo = "0.12.0"
+vello = { version = "0.7.0", default-features = false, features = ["wgpu"] }
+kurbo = "0.13.0"
 parley = { version = "0.7.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.
-peniko = "0.5.0"
+peniko = "0.6.0"
 winit = "0.30.12"
-tracing = { version = "0.1.43", default-features = false }
+tracing = { version = "0.1.44", default-features = false }
 tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"
-ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
-ui-events-winit = { version = "0.2.0", default-features = false }
+# Remove "std" when that's fixed upstream
+ui-events = { version = "0.3.0", default-features = false, features = ["kurbo"] }
+ui-events-winit = { version = "0.3.0", default-features = false }
 smallvec = "1.15.1"
 hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
 dpi = "0.1.2"
@@ -76,12 +78,13 @@ accesskit_winit = { version = "0.29.2", default-features = false, features = [
     "rwh_06",
 ] }
 accesskit_consumer = "0.31.0"
-time = "0.3.44"
-reqwest = { version = "0.12.26", default-features = false, features = [
+time = "0.3.45"
+reqwest = { version = "0.12.28", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
     "rustls-tls",
 ] }
+divan = "0.1.21"
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry
@@ -92,7 +95,7 @@ rust.unsafe_code = "deny"
 
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compile_stress_test)'] }
 
-# LINEBENDER LINT SET - Cargo.toml - v7
+# LINEBENDER LINT SET - Cargo.toml - v8
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -114,6 +117,7 @@ clippy.too_many_arguments = "allow"
 
 clippy.allow_attributes_without_reason = "warn"
 clippy.cast_possible_truncation = "warn"
+clippy.cast_possible_wrap = "warn"
 clippy.collection_is_never_read = "warn"
 clippy.default_trait_access = "warn"
 clippy.dbg_macro = "warn"

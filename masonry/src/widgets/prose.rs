@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, NoAction,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::util::include_screenshot;
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::LenReq;
 use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
@@ -28,7 +29,11 @@ use crate::widgets::TextArea;
 ///
 /// This widget has no actions.
 ///
-#[doc = include_screenshot!("prose_alignment_flex.png", "Multiple lines with different alignments.")]
+#[doc = concat!(
+    "![Multiple lines with different alignments](",
+    include_doc_path!("screenshots/prose_alignment_flex.png"),
+    ")",
+)]
 pub struct Prose {
     text: WidgetPod<TextArea<false>>,
 
@@ -136,21 +141,27 @@ impl Widget for Prose {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        // TODO: Set minimum to deal with alignment
-        let size = ctx.run_layout(&mut self.text, bc);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        ctx.redirect_measurement(&mut self.text, axis, cross_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.text, size);
         ctx.place_child(&mut self.text, Point::ORIGIN);
+
         if self.clip {
-            ctx.set_clip_path(size.to_rect());
+            let border_box = size.to_rect() + ctx.border_box_insets();
+            ctx.set_clip_path(border_box);
         } else {
             ctx.clear_clip_path();
         }
-        size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {
@@ -186,14 +197,15 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
     use parley::StyleProperty;
-    use vello::kurbo::Size;
 
     use super::*;
     use crate::TextAlign;
+    use crate::core::Properties;
+    use crate::kurbo::Size;
+    use crate::layout::AsUnit;
     use crate::properties::Gap;
-    use crate::properties::types::{AsUnit, CrossAxisAlignment};
+    use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Flex, SizedBox, TextArea};

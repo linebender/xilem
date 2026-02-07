@@ -8,16 +8,17 @@
 use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
+use crate::layout::Length;
 use crate::peniko::Color;
-use crate::properties::types::Length;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
     DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
-    SelectionColor, UnfocusedSelectionColor,
+    SelectionColor, ThumbColor, ThumbRadius, ToggledBackground, TrackThickness,
+    UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Flex, Grid, Label, ProgressBar, Spinner, TextArea, TextInput,
+    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -44,7 +45,7 @@ pub const FOCUS_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 
 // TODO: The following constants are not being used in properties
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
-pub const BASIC_WIDGET_HEIGHT: f64 = 18.0;
+pub const BASIC_WIDGET_HEIGHT: Length = Length::const_px(18.0);
 pub const BORDERED_WIDGET_HEIGHT: f64 = 24.0;
 pub const SCROLLBAR_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_BORDER_COLOR: Color = Color::from_rgb8(0x77, 0x77, 0x77);
@@ -55,7 +56,7 @@ pub const SCROLLBAR_RADIUS: f64 = 5.;
 pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
 pub const DEFAULT_GAP: Length = Length::const_px(10.0);
 pub const DEFAULT_SPACER_LEN: Length = Length::const_px(10.0);
-pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
+pub const WIDGET_CONTROL_COMPONENT_PADDING: Length = Length::const_px(4.0);
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
@@ -92,6 +93,26 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // Divider
+    properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
+
+    // Switch
+    properties.insert::<Switch, _>(CornerRadius { radius: 10. }); // Full pill shape
+    properties.insert::<Switch, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<Switch, _>(Background::Color(ZYNC_700));
+    properties.insert::<Switch, _>(ActiveBackground(Background::Color(ZYNC_600)));
+    properties.insert::<Switch, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<Switch, _>(ToggledBackground(Background::Color(ACCENT_COLOR)));
+    properties.insert::<Switch, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Switch, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Switch, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+    properties.insert::<Switch, _>(ThumbColor(Color::WHITE));
+    properties.insert::<Switch, _>(ThumbRadius(8.0));
+    properties.insert::<Switch, _>(TrackThickness(20.0));
 
     // Flex
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));

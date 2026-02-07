@@ -9,11 +9,10 @@
 use masonry::TextAlign;
 use masonry::core::{
     ErasedAction, NewWidget, PointerButton, Properties, StyleProperty, Widget as _, WidgetId,
-    WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
+use masonry::layout::Length;
 use masonry::peniko::Color;
-use masonry::properties::types::Length;
 use masonry::properties::{BorderColor, BorderWidth, Gap};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
@@ -71,12 +70,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
     let props = Properties::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
         .with(BorderWidth::all(1.0));
-    let label = SizedBox::new(NewWidget::new_with(
-        label,
-        WidgetId::next(),
-        WidgetOptions::default(),
-        props,
-    ));
+    let label = SizedBox::new(NewWidget::new_with_props(label, props));
 
     let button_inputs = vec![
         GridParams {

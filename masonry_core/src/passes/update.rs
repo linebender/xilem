@@ -4,13 +4,14 @@
 use std::collections::HashSet;
 
 use tracing::{info_span, trace};
-use tree_arena::ArenaMut;
+use tree_arena::{ArenaMut, ArenaMutList};
 use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
     QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode, WidgetId,
+    WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -140,49 +141,8 @@ fn update_widget_tree(
     if !state.children_changed {
         return;
     }
-    state.children_changed = false;
 
-    {
-        let mut ctx = RegisterCtx {
-            global_state,
-            children: children.reborrow_mut(),
-            #[cfg(debug_assertions)]
-            registered_ids: Vec::new(),
-        };
-        // The widget will call `RegisterCtx::register_child` on all its children,
-        // which will add the new widgets to the arena.
-        widget.register_children(&mut ctx);
-
-        #[cfg(debug_assertions)]
-        {
-            let children_ids = widget.children_ids();
-            for child_id in ctx.registered_ids {
-                if !children_ids.contains(&child_id) {
-                    panic!(
-                        "Error in '{}' {}: method register_children() called \
-                        RegisterCtx::register_child() on child {}, which isn't \
-                        in the list returned by children_ids()",
-                        widget.short_type_name(),
-                        id,
-                        child_id
-                    );
-                }
-            }
-        }
-
-        #[cfg(debug_assertions)]
-        for child_id in widget.children_ids() {
-            if !children.has(child_id) {
-                panic!(
-                    "Error in '{}' {}: method register_children() did not call \
-                    RegisterCtx::register_child() on child {} returned by children_ids()",
-                    widget.short_type_name(),
-                    id,
-                    child_id
-                );
-            }
-        }
-    }
+    register_children(global_state, widget, state, children.reborrow_mut());
 
     if state.is_new {
         let mut ctx = UpdateCtx {
@@ -204,6 +164,10 @@ fn update_widget_tree(
         state.accepts_text_input = widget.accepts_text_input();
         state.trace_span = widget.make_trace_span(state.id);
         state.is_new = false;
+
+        if state.children_changed {
+            register_children(global_state, widget, state, children.reborrow_mut());
+        }
     }
 
     // We can recurse on this widget's children, because they have already been added
@@ -213,6 +177,55 @@ fn update_widget_tree(
         update_widget_tree(global_state, default_properties, node.reborrow_mut());
         parent_state.merge_up(&mut node.item.state);
     });
+}
+
+fn register_children(
+    global_state: &mut RenderRootState,
+    widget: &mut (dyn Widget + 'static),
+    state: &mut WidgetState,
+    mut children: ArenaMutList<'_, WidgetArenaNode>,
+) {
+    state.children_changed = false;
+
+    let mut ctx = RegisterCtx {
+        global_state,
+        children: children.reborrow_mut(),
+        #[cfg(debug_assertions)]
+        registered_ids: Vec::new(),
+    };
+    // The widget will call `RegisterCtx::register_child` on all its children,
+    // which will add the new widgets to the arena.
+    widget.register_children(&mut ctx);
+
+    #[cfg(debug_assertions)]
+    {
+        let children_ids = widget.children_ids();
+        for child_id in ctx.registered_ids {
+            if !children_ids.contains(&child_id) {
+                panic!(
+                    "Error in '{}' {}: method register_children() called \
+                    RegisterCtx::register_child() on child {}, which isn't \
+                    in the list returned by children_ids()",
+                    widget.short_type_name(),
+                    state.id,
+                    child_id
+                );
+            }
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    for child_id in widget.children_ids() {
+        if !children.has(child_id) {
+            panic!(
+                "Error in '{}' {}: method register_children() did not call \
+                RegisterCtx::register_child() on child {} returned by children_ids()",
+                widget.short_type_name(),
+                state.id,
+                child_id
+            );
+        }
+    }
 }
 
 /// See the [passes documentation](crate::doc::pass_system#update-tree-pass).
@@ -274,6 +287,9 @@ fn update_disabled_for_widget(
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
+        // DisabledBackground needs pre-paint
+        state.request_pre_paint = true;
+        state.needs_paint = true;
     }
 
     state.needs_update_disabled = false;
@@ -352,7 +368,7 @@ fn update_stashed_for_widget(
         // Items may have been changed while they were stashed in ways that require a
         // relayout and a re-render.
         if !stashed {
-            state.needs_layout = true;
+            state.set_needs_layout(true);
             state.request_layout = true;
             state.request_paint = true;
             state.needs_paint = true;
@@ -432,7 +448,7 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
     let mut focus_anchor_id = root.global_state.focus_anchor;
 
     if let Some(id) = focus_anchor_id
-        && !root.is_still_interactive(id)
+        && !root.has_widget(id)
     {
         focus_anchor_id = None;
     }
@@ -546,9 +562,9 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     {
         root.global_state.next_focused_widget = None;
     }
-    // Same thing for the anchor.
+    // We are more permissive with the anchor.
     if let Some(id) = root.global_state.focus_anchor
-        && !root.is_still_interactive(id)
+        && !root.has_widget(id)
     {
         root.global_state.focus_anchor = None;
     }
@@ -671,11 +687,17 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             widget.update(ctx, props, &Update::FocusChanged(false));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
+            // FocusedBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx, props| {
             widget.update(ctx, props, &Update::FocusChanged(true));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
+            // FocusedBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
         });
 
         if let Some(next_focused) = next_focused {
@@ -712,18 +734,26 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
     let scroll_request_targets = std::mem::take(&mut root.global_state.scroll_request_targets);
     for (target, rect) in scroll_request_targets {
+        // We start with target_rect being in the target's border-box coordinate space.
         let mut target_rect = rect;
 
+        // We run the update pass on the target itself and then its ancestors.
         run_targeted_update_pass(root, Some(target), |widget, ctx, props| {
-            let event = Update::RequestPanToChild(rect);
+            // Convert the target_rect from border-box space to content-box space.
+            let local_rect = target_rect - ctx.widget_state.border_box_translation();
+
+            let event = Update::RequestPanToChild(local_rect);
             widget.update(ctx, props, &event);
 
             // TODO - We should run the compose method after this, so
             // translations are updated and the rect passed to parents
-            // is more accurate.
+            // is more accurate. Until then we don't add scroll_translation
+            // at all and only support a single scrolling parent.
 
+            // Before continuing to the parent, we need to convert the target_rect from this
+            // widget's border-box coordinate space to the parent's border-box coordinate space.
             let state = &ctx.widget_state;
-            target_rect = target_rect + state.scroll_translation + state.origin.to_vec2();
+            target_rect = target_rect + state.origin.to_vec2();
         });
     }
 }
@@ -829,10 +859,16 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_active_widget != next_active_widget {
         run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = false;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
+            // ActiveBackground needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
     }
@@ -924,10 +960,16 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_hovered_widget != next_hovered_widget {
         run_single_update_pass(root, prev_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = false;
+            // HoveredBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(false));
         });
         run_single_update_pass(root, next_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = true;
+            // HoveredBorderColor needs pre-paint
+            ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(true));
         });
     }

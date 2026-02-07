@@ -1,31 +1,36 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A progress bar widget.
-
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{NewWidget, Properties};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PrePaintProps, Properties, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, paint_background, paint_border,
+    paint_box_shadow,
 };
-use crate::properties::{
-    Background, BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking,
-};
-use crate::util::{fill, include_screenshot, stroke};
+use crate::kurbo::{Axis, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::peniko::{Color, Gradient};
+use crate::properties::{BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking};
+use crate::theme;
+use crate::util::fill;
 use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
 
 /// A progress bar.
 ///
-#[doc = include_screenshot!("progress_bar_25_percent.png", "25% progress bar.")]
+#[doc = concat!(
+    "![25% progress bar](",
+    include_doc_path!("screenshots/progress_bar_25_percent.png"),
+    ")",
+)]
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///
@@ -111,11 +116,13 @@ impl Widget for ProgressBar {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        BarColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
+        if BarColor::matches(property_type)
+            || BorderWidth::matches(property_type)
+            || BorderColor::matches(property_type)
+            || CornerRadius::matches(property_type)
+        {
+            ctx.request_paint_only();
+        }
     }
 
     fn update(
@@ -126,51 +133,91 @@ impl Widget for ProgressBar {
     ) {
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        const DEFAULT_WIDTH: f64 = 400.;
-        // TODO: Clearer constraints here
-        let label_size = ctx.run_layout(&mut self.label, &bc.loosen());
-        let desired_size = Size::new(
-            DEFAULT_WIDTH.max(label_size.width),
-            crate::theme::BASIC_WIDGET_HEIGHT.max(label_size.height),
-        );
-        let final_size = bc.constrain(desired_size);
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Move this to theme?
+        const DEFAULT_WIDTH: f64 = 400.; // In logical pixels
 
-        // center text
-        let text_pos = Point::new(
-            ((final_size.width - label_size.width) * 0.5).max(0.),
-            ((final_size.height - label_size.height) * 0.5).max(0.),
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
+
+        let label_length = ctx.compute_length(
+            &mut self.label,
+            auto_length,
+            context_size,
+            axis,
+            cross_length,
         );
-        ctx.place_child(&mut self.label, text_pos);
-        final_size
+
+        let potential_length = match axis {
+            Axis::Horizontal => match len_req {
+                LenReq::MinContent | LenReq::MaxContent => DEFAULT_WIDTH * scale,
+                LenReq::FitContent(space) => space,
+            },
+            Axis::Vertical => theme::BASIC_WIDGET_HEIGHT.dp(scale),
+        };
+
+        // Make sure we always report a length big enough to fit our painting
+        potential_length.max(label_length)
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(size), size.into());
+        ctx.run_layout(&mut self.label, label_size);
+
+        let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
+        ctx.place_child(&mut self.label, child_origin);
+    }
+
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let bbox = ctx.border_box();
+        let p = PrePaintProps::fetch(ctx, props);
+
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        // We need to delay painting the border until after we paint the filled bar area.
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let border_box = ctx.border_box();
         let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
-        let bar_color = props.get::<BarColor>();
+        let corner_radius = props.get::<CornerRadius>();
         let border_color = props.get::<BorderColor>();
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
+        let progress = self.progress.unwrap_or(1.);
+        if progress > 0. {
+            // The bar width is without the borders.
+            let bar_width = border_box.width() - 2. * border_width.width;
+            if bar_width > 0. {
+                let bar_color = props.get::<BarColor>().0;
+                // Paint with a gradient so we get a straight line slice of the rounded rect.
+                let gradient = Gradient::new_linear((0., 0.), (bar_width, 0.)).with_stops([
+                    (0., bar_color),
+                    (progress as f32, bar_color),
+                    (progress as f32, Color::TRANSPARENT),
+                    (1., Color::TRANSPARENT),
+                ]);
 
-        let progress_rect_size = Size::new(
-            ctx.size().width * self.progress.unwrap_or(1.),
-            ctx.size().height,
-        );
-        let progress_rect = border_width.bg_rect(progress_rect_size, border_radius);
+                // Currently bg_rect() gives a rect without borders, so we can use it.
+                // However in the future when bg_rect() gets expanded to include borders,
+                // we'll need to create a special sans-border rect for this fill.
+                let bg_rect = border_width.bg_rect(border_box, corner_radius);
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        fill(scene, &progress_rect, bar_color.0);
+                fill(scene, &bg_rect, &gradient);
+            }
+        }
 
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        paint_border(scene, border_box, border_color, border_width, corner_radius);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -206,11 +253,10 @@ impl Widget for ProgressBar {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
-
     use super::*;
-    use crate::core::Properties;
+    use crate::core::{NewWidget, Properties};
     use crate::palette;
+    use crate::properties::{BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
@@ -222,6 +268,32 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_indeterminate");
+    }
+
+    #[test]
+    fn _5_percent_styled_progressbar() {
+        let widget = ProgressBar::new(Some(0.05)).with_props((
+            CornerRadius::all(50.),
+            BorderWidth::all(10.),
+            BorderColor::new(palette::css::PINK),
+        ));
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "progress_bar_5_percent_styled");
+    }
+
+    #[test]
+    fn _95_percent_styled_progressbar() {
+        let widget = ProgressBar::new(Some(0.95)).with_props((
+            CornerRadius::all(50.),
+            BorderWidth::all(10.),
+            BorderColor::new(palette::css::PINK),
+        ));
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "progress_bar_95_percent_styled");
     }
 
     #[test]

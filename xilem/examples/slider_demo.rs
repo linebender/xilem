@@ -9,14 +9,16 @@
 //! react to and manipulate a shared application state.
 
 use masonry::kurbo::Axis;
+use masonry::layout::{AsUnit, Dim};
 use masonry::peniko::Color;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BarColor, ThumbColor, ThumbRadius};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    FlexExt, FlexSpacer, checkbox, flex, flex_col, flex_row, label, sized_box, slider, text_button,
+    FlexExt, FlexSpacer, MainAxisAlignment, checkbox, flex, flex_col, flex_row, label, sized_box,
+    slider, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
@@ -68,9 +70,9 @@ where
     F: Fn(&mut AppState, f64) + Send + Sync + 'static,
 {
     flex_row((
-        sized_box(label(label_text)).width(40.px()),
-        slider::<Edit<AppState>, _, _>(0.0, 100.0, value, on_change),
-        sized_box(label(format!("{:.0}% [{}]", value, u_value))).width(60.px()),
+        label(label_text).width(40.px()),
+        slider::<Edit<AppState>, _, _>(0.0, 100.0, value, on_change).width(200.px()),
+        label(format!("{:.0}% [{}]", value, u_value)).width(60.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .gap(10.0.px())
@@ -108,16 +110,17 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
                 state.blue = val;
             }),
             flex_row((
-                sized_box(label("Alpha")).width(40.px()),
+                label("Alpha").width(40.px()),
                 slider(0.0, 100.0, state.alpha, |state: &mut AppState, val| {
                     state.alpha = val;
                 })
                 .step(5.0)
                 .disabled(!state.use_transparency)
+                .width(200.px())
                 .prop(BarColor(Color::from_rgb8(0x78, 0x71, 0x6c)))
                 .prop(ThumbColor(Color::WHITE))
                 .prop(ThumbRadius(10.0)),
-                sized_box(label(format!("{:.0}% [{}]", state.alpha, color_alpha))).width(60.px()),
+                label(format!("{:.0}% [{}]", state.alpha, color_alpha)).width(60.px()),
             ))
             .cross_axis_alignment(CrossAxisAlignment::Center)
             .gap(10.0.px()),
@@ -140,6 +143,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
                     text_button("Reset", |state: &mut AppState| state.reset()),
                 ),
             )
+            .main_axis_alignment(MainAxisAlignment::Center)
             .gap(20.0.px()),
             FlexSpacer::Flex(1.0),
         ))
@@ -150,7 +154,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
             // An empty label to create a view with a background.
             label(""),
         )
-        .expand()
+        .dims(Dim::Stretch)
         .background(Background::Color(final_color))
         .corner_radius(8.0)
         .flex(1.0),

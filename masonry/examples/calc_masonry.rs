@@ -15,12 +15,13 @@ use std::str::FromStr;
 
 use masonry::core::{
     CollectionWidget, ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget,
-    WidgetId, WidgetOptions,
+    WidgetId,
 };
 use masonry::dpi::LogicalSize;
+use masonry::layout::AsUnit;
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, Gap, HoveredBorderColor, Padding,
 };
@@ -195,10 +196,8 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
             .with_auto_id(),
     );
 
-    NewWidget::new_with(
+    NewWidget::new_with_props(
         button,
-        WidgetId::next(),
-        WidgetOptions::default(),
         Properties::new()
             .with(Background::Color(BLUE))
             .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
@@ -223,10 +222,8 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
             .with_auto_id(),
     );
 
-    NewWidget::new_with(
+    NewWidget::new_with_props(
         button,
-        WidgetId::next(),
-        WidgetOptions::default(),
         Properties::new()
             .with(Background::Color(GRAY))
             .with(ActiveBackground(Background::Color(LIGHT_GRAY)))

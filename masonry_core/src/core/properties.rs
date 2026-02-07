@@ -31,6 +31,12 @@ pub trait Property: Default + Send + Sync + 'static {
     ///
     /// Ideally, when const generics are stable, we'll want to use `const Default` directly in the default impl.
     fn static_default() -> &'static Self;
+
+    /// Returns `true` if the given `property_type` matches this property.
+    #[inline(always)]
+    fn matches(property_type: TypeId) -> bool {
+        property_type == TypeId::of::<Self>()
+    }
 }
 
 // TODO - Implement Debug.
@@ -111,6 +117,12 @@ impl Properties {
     }
 }
 
+impl<P: Property> From<P> for Properties {
+    fn from(prop: P) -> Self {
+        Self::one(prop)
+    }
+}
+
 macro_rules! impl_props_from_tuple {
     (
         $(
@@ -169,6 +181,14 @@ impl PropertiesRef<'_> {
             P::static_default()
         }
     }
+
+    /// Returns the defined value of property `P`.
+    ///
+    /// If the widget has an explicit entry, or the default property map has an explicit entry,
+    /// then this will return a value. Otherwise it will return `None`.
+    pub fn get_defined<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
+    }
 }
 
 impl PropertiesMut<'_> {
@@ -192,6 +212,14 @@ impl PropertiesMut<'_> {
         } else {
             P::static_default()
         }
+    }
+
+    /// Returns the defined value of property `P`.
+    ///
+    /// If the widget has an explicit entry, or the default property map has an explicit entry,
+    /// then this will return a value. Otherwise it will return `None`.
+    pub fn get_defined<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
     }
 
     /// Sets local property `P` to given value. Returns the previous value if `P` was already set.

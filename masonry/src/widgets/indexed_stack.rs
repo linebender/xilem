@@ -4,17 +4,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{CollectionWidget, HasProperty};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 
 // TODO - Rename "active" widget to "visible" widget?
 // Active already means something else.
@@ -25,9 +24,12 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 /// state loaded, such as in a tab stack.
 ///
 /// The indexed stack acts as a simple container around the active child.
-/// If there is no active child, it acts like a leaf node, and takes up
-/// the minimum space.
-#[doc = include_screenshot!("indexed_stack_builder_new_widget.png", "Indexed stack element showing only the fourth element in its children.")]
+/// If there is no active child, it acts like a leaf node with no content.
+#[doc = concat!(
+    "![Indexed stack element showing only the fourth element in its children](",
+    include_doc_path!("screenshots/indexed_stack_builder_new_widget.png"),
+    ")",
+)]
 #[derive(Default)]
 pub struct IndexedStack {
     children: Vec<WidgetPod<dyn Widget>>,
@@ -211,12 +213,6 @@ impl CollectionWidget<()> for IndexedStack {
     }
 }
 
-impl HasProperty<Background> for IndexedStack {}
-impl HasProperty<BorderColor> for IndexedStack {}
-impl HasProperty<BorderWidth> for IndexedStack {}
-impl HasProperty<CornerRadius> for IndexedStack {}
-impl HasProperty<Padding> for IndexedStack {}
-
 // --- MARK: IMPL WIDGET
 impl Widget for IndexedStack {
     type Action = NoAction;
@@ -227,74 +223,67 @@ impl Widget for IndexedStack {
         }
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
-    }
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx<'_>, _property_type: TypeId) {}
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        if !self.children.is_empty() {
+            let auto_length = len_req.into();
+            let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-        let bc = *bc;
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
-
-        let origin = Point::ORIGIN;
-        let origin = border.place_down(origin);
-        let origin = padding.place_down(origin);
-
-        if !(self.children.is_empty() && self.active_child == 0)
-            && self.active_child >= self.children.len()
-        {
-            debug_panic!(
-                "IndexedStack active child index ({}) is not within the children vector (len {})",
-                self.active_child,
-                self.children.len()
-            );
+            ctx.compute_length(
+                &mut self.children[self.active_child],
+                auto_length,
+                context_size,
+                axis,
+                cross_length,
+            )
+        } else {
+            0.
         }
-        let mut child_size = bc.min();
-        for (idx, child) in self.children.iter_mut().enumerate() {
-            if idx == self.active_child {
-                ctx.set_stashed(child, false);
-                let child_bc = bc;
-                child_size = ctx.run_layout(child, &child_bc);
-                ctx.place_child(child, origin);
-            } else {
-                // TODO: move set_stashed to a different layout pass when possible,
-                ctx.set_stashed(child, true);
-            }
-        }
-
-        child_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
-        let border_color = props.get::<BorderColor>();
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        // There's nothing to lay out if we don't have any children
+        if self.children.is_empty() {
+            return;
+        }
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
+        // TODO: move set_stashed to a different layout pass when possible
+        for (idx, child) in self.children.iter_mut().enumerate() {
+            ctx.set_stashed(child, idx != self.active_child);
+        }
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        let child_size = ctx.compute_size(
+            &mut self.children[self.active_child],
+            SizeDef::fit(size),
+            size.into(),
+        );
+        ctx.run_layout(&mut self.children[self.active_child], child_size);
 
+        let child_origin = Point::ORIGIN;
+        ctx.place_child(&mut self.children[self.active_child], child_origin);
+
+        let child_baseline = ctx.child_baseline_offset(&self.children[self.active_child]);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
+        if ctx.debug_paint_enabled() {
             let color = ctx.debug_color();
-            let my_baseline = ctx.size().height - ctx.baseline_offset();
-            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+            let border_box = ctx.border_box();
+            let content_box = ctx.content_box();
+            let baseline = content_box.height() - ctx.baseline_offset();
+            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
@@ -326,6 +315,7 @@ impl Widget for IndexedStack {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Button;
@@ -339,14 +329,30 @@ mod tests {
         assert_render_snapshot!(harness, "indexed_stack_empty");
 
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add(&mut stack, Button::with_text("A").with_auto_id(), ());
+            IndexedStack::add(
+                &mut stack,
+                Button::with_text("A").with_props(Dimensions::STRETCH),
+                (),
+            );
         });
         assert_render_snapshot!(harness, "indexed_stack_single");
 
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add(&mut stack, Button::with_text("B").with_auto_id(), ());
-            IndexedStack::add(&mut stack, Button::with_text("C").with_auto_id(), ());
-            IndexedStack::add(&mut stack, Button::with_text("D").with_auto_id(), ());
+            IndexedStack::add(
+                &mut stack,
+                Button::with_text("B").with_props(Dimensions::STRETCH),
+                (),
+            );
+            IndexedStack::add(
+                &mut stack,
+                Button::with_text("C").with_props(Dimensions::STRETCH),
+                (),
+            );
+            IndexedStack::add(
+                &mut stack,
+                Button::with_text("D").with_props(Dimensions::STRETCH),
+                (),
+            );
         });
         assert_render_snapshot!(harness, "indexed_stack_single"); // the active child should not change
 
@@ -359,9 +365,9 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = IndexedStack::new()
-            .with(Button::with_text("A").with_auto_id())
-            .with(Button::with_text("B").with_auto_id())
-            .with(Button::with_text("C").with_auto_id())
+            .with(Button::with_text("A").with_props(Dimensions::STRETCH))
+            .with(Button::with_text("B").with_props(Dimensions::STRETCH))
+            .with(Button::with_text("C").with_props(Dimensions::STRETCH))
             .with_active_child(1)
             .with_auto_id();
         let window_size = Size::new(50.0, 50.0);
@@ -383,7 +389,11 @@ mod tests {
 
         // Add another widget at the end
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::add(&mut stack, Button::with_text("D").with_auto_id(), ());
+            IndexedStack::add(
+                &mut stack,
+                Button::with_text("D").with_props(Dimensions::STRETCH),
+                (),
+            );
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_removed_widget"); // Should not change
 
@@ -395,8 +405,18 @@ mod tests {
 
         // Insert back the first two at the start
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::insert(&mut stack, 0, Button::with_text("A").with_auto_id(), ());
-            IndexedStack::insert(&mut stack, 1, Button::with_text("B").with_auto_id(), ());
+            IndexedStack::insert(
+                &mut stack,
+                0,
+                Button::with_text("A").with_props(Dimensions::STRETCH),
+                (),
+            );
+            IndexedStack::insert(
+                &mut stack,
+                1,
+                Button::with_text("B").with_props(Dimensions::STRETCH),
+                (),
+            );
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget"); // Should not change
 
@@ -408,7 +428,12 @@ mod tests {
 
         // Change the active widget
         harness.edit_root_widget(|mut stack| {
-            IndexedStack::set(&mut stack, 1, Button::with_text("D").with_auto_id(), ());
+            IndexedStack::set(
+                &mut stack,
+                1,
+                Button::with_text("D").with_props(Dimensions::STRETCH),
+                (),
+            );
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget");
     }

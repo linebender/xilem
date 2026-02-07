@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::types::{AsUnit, UnitPoint};
+use masonry::layout::{AsUnit, Dim, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
@@ -113,7 +113,7 @@ impl VirtualCats {
                 ));
                 OneOf3::A(imgview)
             }
-            ImageState::Pending => OneOf::B(sized_box(spinner()).width(80.px()).height(80.px())),
+            ImageState::Pending => OneOf::B(spinner().dims(80.px())),
             ImageState::Error(err) => {
                 // the people deserve their cat.
                 // It is vital that the cat explains what went wrong.
@@ -131,12 +131,15 @@ impl VirtualCats {
                 OneOf::C(view)
             }
         };
-        fork(flex_col((prose(item.message.clone()), img)), task)
+        fork(
+            flex_col((prose(item.message.clone()), img)).width(Dim::Stretch),
+            task,
+        )
     }
 
     fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         sized_box(virtual_scroll(
-            0..self.statuses.len() as i64,
+            0..i64::try_from(self.statuses.len()).unwrap(),
             Self::virtual_item,
         ))
         .padding(Padding::horizontal(10.0))

@@ -3,9 +3,9 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::Affine;
-
 use crate::core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId};
+use crate::kurbo::Affine;
+use crate::properties::core_property_changed;
 
 /// A rich mutable reference to a [`Widget`].
 ///
@@ -15,14 +15,17 @@ use crate::core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId};
 /// This helps Masonry make sure that internal metadata is propagated after every widget
 /// change.
 ///
-/// You can create a `WidgetMut` from [`RenderRoot`](crate::app::RenderRoot),
-/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
-/// `WidgetMut` with [`MutateCtx`].
+/// You can create a `WidgetMut` from [`RenderRoot`], [`EventCtx`], [`UpdateCtx`],
+/// or from a parent `WidgetMut` with [`MutateCtx`].
 ///
 /// # `WidgetMut` as a Receiver
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
+///
+/// [`RenderRoot`]: crate::app::RenderRoot
+/// [`EventCtx`]: crate::core::EventCtx
+/// [`UpdateCtx`]: crate::core::UpdateCtx
 #[non_exhaustive]
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
     /// The widget we're mutating.
@@ -89,8 +92,10 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn insert_prop<P: Property>(&mut self, value: P) -> Option<P> {
         self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.insert(value);
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        let mut ctx = self.ctx.update_mut();
+        let property_type = TypeId::of::<P>();
+        core_property_changed(&mut ctx, property_type);
+        self.widget.property_changed(&mut ctx, property_type);
         value
     }
 
@@ -102,8 +107,10 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn remove_prop<P: Property>(&mut self) -> Option<P> {
         self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.remove::<P>();
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        let mut ctx = self.ctx.update_mut();
+        let property_type = TypeId::of::<P>();
+        core_property_changed(&mut ctx, property_type);
+        self.widget.property_changed(&mut ctx, property_type);
         value
     }
 

@@ -8,6 +8,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
+use masonry_core::peniko::ImageData;
+use masonry_core::vello::wgpu;
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 
@@ -49,6 +51,33 @@ impl<'a, 's> DriverCtx<'a, 's> {
     }
 }
 
+/// Access to Masonry's WGPU device state.
+///
+/// This is provided via [`AppDriver::on_wgpu_ready`] so applications can create GPU resources
+/// (textures, pipelines, etc.) using the same `Device`/`Queue` as Masonry.
+pub struct WgpuContext<'a> {
+    /// The WGPU instance used by Masonry.
+    pub instance: &'a wgpu::Instance,
+    /// The WGPU adapter used to create the device.
+    pub adapter: &'a wgpu::Adapter,
+    /// The shared WGPU device.
+    pub device: &'a wgpu::Device,
+    /// The shared WGPU queue.
+    pub queue: &'a wgpu::Queue,
+}
+
+/// Strategy for selecting `wgpu::Limits` when requesting the WGPU device.
+#[derive(Clone, Debug, Default)]
+pub enum WgpuLimits {
+    /// Use `wgpu::Limits::default()`.
+    #[default]
+    Default,
+    /// Use `adapter.limits()` (maximum supported by the selected adapter).
+    Adapter,
+    /// Use the provided limits.
+    Custom(wgpu::Limits),
+}
+
 /// A trait for defining how your app interacts with the Masonry widget tree.
 ///
 /// When launching your app with [`crate::app::run`], you need to provide
@@ -82,6 +111,9 @@ pub trait AppDriver {
     fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
         ctx.exit();
     }
+
+    /// Called when Masonry has created its WGPU device.
+    fn on_wgpu_ready(&mut self, _wgpu: &WgpuContext<'_>) {}
 }
 
 impl DriverCtx<'_, '_> {
@@ -121,6 +153,41 @@ impl DriverCtx<'_, '_> {
     /// Panics if the window cannot be found.
     pub fn close_window(&mut self, window_id: WindowId) {
         self.state.close_window(window_id);
+    }
+
+    /// Set a persistent Vello image override.
+    ///
+    /// This associates the given [`ImageData`] with the provided GPU texture.
+    ///
+    /// Correct behaviour is not guaranteed if the texture does not have the same
+    /// dimensions as the image.
+    ///
+    /// Overrides persist until cleared with [`DriverCtx::clear_image_override`].
+    ///
+    /// Note: Masonry currently uses a shared Vello renderer, so overrides are global to that
+    /// renderer/device.
+    ///
+    /// ## When does this take effect?
+    ///
+    /// The underlying Vello [`Renderer`](masonry_core::vello::Renderer) is created lazily during
+    /// rendering. If you call this method before the renderer exists, Masonry will store the
+    /// override and apply it automatically once a renderer has been created.
+    ///
+    /// # Texture requirements
+    ///
+    /// When set, Vello will copy from `texture` into its internal image atlas whenever the
+    /// `image` is drawn in the UI scene.
+    ///
+    /// The texture must be `Rgba8Unorm` and include `COPY_SRC` usage.
+    pub fn set_image_override(&mut self, image: ImageData, texture: wgpu::Texture) {
+        self.state.set_image_override(image, texture);
+    }
+
+    /// Clear a previously-set image override for the given `ImageData`.
+    ///
+    /// Note: overrides are global to the current renderer/device; see [`set_image_override`](Self::set_image_override).
+    pub fn clear_image_override(&mut self, image: &ImageData) {
+        self.state.clear_image_override(image);
     }
 
     /// Exits the application (stops the event loop).

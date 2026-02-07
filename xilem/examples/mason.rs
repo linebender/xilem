@@ -5,15 +5,15 @@
 
 use std::time::Duration;
 
-use masonry::properties::types::Length;
+use masonry::layout::{Dim, Length};
 use vello::kurbo::{Axis, Size};
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
-    FlexExt as _, FlexSpacer, PointerButton, button_any_pointer, checkbox, flex, flex_col,
-    flex_row, label, prose, resize_observer, task, text_button, text_input,
+    FlexExt as _, FlexSpacer, MainAxisAlignment, PointerButton, button_any_pointer, checkbox, flex,
+    flex_col, flex_row, label, prose, resize_observer, task, text_button, text_input,
 };
 use xilem::{
     AnyWidgetView, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView,
@@ -96,7 +96,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
                     label("Bold Label").weight(FontWeight::BOLD),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
-                )),
+                ))
+                .main_axis_alignment(MainAxisAlignment::Center),
                 flex_row(
                     text_input(
                         data.text_input_contents.clone(),
@@ -104,7 +105,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
                             data.text_input_contents = new_value;
                         },
                     )
-                    .insert_newline(InsertNewline::OnEnter),
+                    .insert_newline(InsertNewline::OnEnter)
+                    .flex(1.),
                 ),
                 prose(LOREM)
                     .text_alignment(TextAlign::Center)
@@ -123,11 +125,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
                 ),
                 resize_observer(
                     |data: &mut AppData, new_size| data.observed_size = new_size,
-                    // Correct to use this `label` as a child of resize_observer, because it is center aligned,
-                    // and therefore the widget (currently) takes up the full width of the window.
+                    // Correct to use this `label` as a child of resize_observer,
+                    // because it currently takes up the full width of the window.
                     label(format!("The window is {}px wide", data.observed_size.width))
                         .text_alignment(TextAlign::Center)
-                        .line_break_mode(masonry::properties::LineBreaking::WordWrap),
+                        .line_break_mode(masonry::properties::LineBreaking::WordWrap)
+                        .width(Dim::Stretch),
                 ),
                 checkbox(
                     "Check me",
@@ -180,7 +183,8 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
                     tracing::warn!("The pathway to unlimited power has been revealed");
                 })),
                 env_using(),
-            )),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Center),
         )
         .boxed()
     } else {

@@ -4,24 +4,30 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{CollectionWidget, HasProperty};
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Gap, Padding};
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::properties::Gap;
+use crate::util::debug_panic;
 
 /// A widget that arranges its children in a grid.
 ///
 /// Children are drawn in index order,
 /// i.e. each child is drawn on top of the other children with lower indices.
 ///
-#[doc = include_screenshot!("grid_with_changed_spacing.png", "Grid with buttons of various sizes.")]
+#[doc = concat!(
+    "![Grid with buttons of various sizes](",
+    include_doc_path!("screenshots/grid_with_changed_spacing.png"),
+    ")",
+)]
 pub struct Grid {
     children: Vec<Child>,
     grid_column_count: i32,
@@ -68,6 +74,17 @@ impl Grid {
     }
 }
 
+// --- MARK: METHODS
+impl Grid {
+    /// Returns the number of cells tracks have on the given `axis`.
+    fn track_cells(&self, axis: Axis) -> i32 {
+        match axis {
+            Axis::Horizontal => self.grid_column_count,
+            Axis::Vertical => self.grid_row_count,
+        }
+    }
+}
+
 // --- MARK: IMPL CHILD
 impl Child {
     fn update_params(&mut self, params: GridParams) {
@@ -75,6 +92,14 @@ impl Child {
         self.y = params.y;
         self.width = params.width;
         self.height = params.height;
+    }
+
+    /// Returns the number of cells the child's area spans on the given `axis`.
+    fn area_cells(&self, axis: Axis) -> i32 {
+        match axis {
+            Axis::Horizontal => self.width,
+            Axis::Vertical => self.height,
+        }
     }
 }
 
@@ -256,11 +281,6 @@ impl CollectionWidget<GridParams> for Grid {
     }
 }
 
-impl HasProperty<Background> for Grid {}
-impl HasProperty<BorderColor> for Grid {}
-impl HasProperty<BorderWidth> for Grid {}
-impl HasProperty<CornerRadius> for Grid {}
-impl HasProperty<Padding> for Grid {}
 impl HasProperty<Gap> for Grid {}
 
 // --- MARK: IMPL WIDGET
@@ -278,78 +298,112 @@ impl Widget for Grid {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
         Gap::prop_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-        let gap = props.get::<Gap>().gap;
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        let bc = *bc;
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let gap = props.get::<Gap>();
 
-        let origin = Point::ORIGIN;
-        let origin = border.place_down(origin);
-        let origin = padding.place_down(origin);
-        let origin = origin.to_vec2();
+        let gap_length = gap.gap.dp(scale);
 
-        let total_size = bc.max();
-        if !total_size.is_finite() {
-            debug_panic!(
-                "Error while computing layout for grid; infinite BoxConstraint max provided {}",
-                total_size
-            );
-        }
-        let gap = gap.get();
-        let width_unit = (total_size.width + gap) / (self.grid_column_count as f64);
-        let height_unit = (total_size.height + gap) / (self.grid_row_count as f64);
+        let cross = axis.cross();
+        let cross_track_cells = self.track_cells(cross) as f64;
+        let cross_cell_length = cross_length
+            .filter(|_| cross_track_cells > 0.) // Guard against div by zero
+            .map(|cross_length| (cross_length + gap_length) / cross_track_cells);
+
+        let (len_req, min_result) = match len_req {
+            LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
+            // We always want to use up all offered space but may need even more,
+            // so we implement FitContent as space.max(MinContent).
+            LenReq::FitContent(space) => (LenReq::MinContent, space),
+        };
+
+        // Find the largest desired cell length
+        let mut cell_length: f64 = 0.;
         for child in &mut self.children {
-            let cell_size = Size::new(
-                (child.width as f64 * width_unit - gap).max(0.0),
-                (child.height as f64 * height_unit - gap).max(0.0),
-            );
-            let child_bc = BoxConstraints::new(cell_size, cell_size);
-            let _ = ctx.run_layout(&mut child.widget, &child_bc);
+            let desired_cell_length = {
+                let area_cells = child.area_cells(axis) as f64;
+                let cross_area_length = cross_cell_length.map(|cross_cell_length| {
+                    let cross_area_cells = child.area_cells(cross) as f64;
+                    let length = cross_area_cells * cross_cell_length - gap_length;
+                    // Guard against the derived area length becoming negative,
+                    // which can happen if total space can't fit all cells and gaps.
+                    length.max(0.)
+                });
 
-            let child_pos = Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit);
-            ctx.place_child(&mut child.widget, child_pos + origin);
+                let auto_length = len_req.into();
+                let context_size = LayoutSize::maybe(cross, cross_area_length);
+
+                let child_length = ctx.compute_length(
+                    &mut child.widget,
+                    auto_length,
+                    context_size,
+                    axis,
+                    cross_area_length,
+                );
+
+                (child_length + gap_length) / area_cells
+            };
+            cell_length = cell_length.max(desired_cell_length);
         }
 
-        let (total_size, _) = padding.layout_up(total_size, 0.);
-        let (total_size, _) = border.layout_up(total_size, 0.);
-        total_size
+        let track_cells = self.track_cells(axis) as f64;
+        let length = track_cells * cell_length - gap_length;
+
+        min_result.max(length)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
-        let border_color = props.get::<BorderColor>();
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
-        let border_rect = border_width.border_rect(ctx.size(), border_radius);
+        let gap = props.get::<Gap>();
 
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        let gap_length = gap.gap.dp(scale);
 
+        let cell_width = (size.width + gap_length) / self.grid_column_count as f64;
+        let cell_height = (size.height + gap_length) / self.grid_row_count as f64;
+
+        for child in &mut self.children {
+            let area = Size::new(
+                child.width as f64 * cell_width - gap_length,
+                child.height as f64 * cell_height - gap_length,
+            )
+            // Guard against the derived area becoming negative,
+            // which can happen if total space can't fit all cells and gaps.
+            .max(Size::ZERO);
+            let auto_size = SizeDef::fixed(area);
+
+            let child_size = ctx.compute_size(&mut child.widget, auto_size, area.into());
+            ctx.run_layout(&mut child.widget, child_size);
+
+            let child_origin =
+                Point::new(child.x as f64 * cell_width, child.y as f64 * cell_height);
+            ctx.place_child(&mut child.widget, child_origin);
+        }
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
+        if ctx.debug_paint_enabled() {
             let color = ctx.debug_color();
-            let my_baseline = ctx.size().height - ctx.baseline_offset();
-            let line = Line::new((0.0, my_baseline), (ctx.size().width, my_baseline));
+            let border_box = ctx.border_box();
+            let content_box = ctx.content_box();
+            let baseline = content_box.height() - ctx.baseline_offset();
+            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
 
             let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
             scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
@@ -384,7 +438,8 @@ impl Widget for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::properties::types::AsUnit;
+    use crate::layout::AsUnit;
+    use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::Button;
@@ -392,10 +447,13 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = NewWidget::new(Grid::with_dimensions(1, 1).with(
-            Button::with_text("A").with_auto_id(),
-            GridParams::new(0, 0, 1, 1),
-        ));
+        let widget = NewWidget::new_with_props(
+            Grid::with_dimensions(1, 1).with(
+                Button::with_text("A").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            ),
+            Dimensions::STRETCH,
+        );
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.

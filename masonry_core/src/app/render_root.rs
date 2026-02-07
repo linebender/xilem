@@ -9,17 +9,17 @@ use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
-use tracing::{info_span, warn};
+use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
-    AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled,
-    Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget,
-    WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WidgetTag, WidgetTagInner, WindowEvent,
+    AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
+    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
+    TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -36,6 +36,7 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
+use crate::properties::Dimensions;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
@@ -103,6 +104,11 @@ pub(crate) struct RenderRootState {
     pub(crate) window_focused: bool,
 
     /// Widgets that have requested to be scrolled into view.
+    ///
+    /// The `WidgetId` is the id of the widget that made the request.
+    ///
+    /// The `Rect` is the area it wants to be scrolled into view,
+    /// in its border-box coordinate space.
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
 
     /// List of ancestors of the currently hovered widget.
@@ -141,7 +147,7 @@ pub(crate) struct RenderRootState {
     pub(crate) last_sent_ime_area: Rect,
 
     /// Scene cache for the widget tree.
-    pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene)>,
+    pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
@@ -171,13 +177,12 @@ pub(crate) struct MutateCallback {
     pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn Widget>)>,
 }
 
-/// Defines how a windows size should be determined
+/// Defines how a window's size is determined.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum WindowSizePolicy {
-    /// Use the content of the window to determine the size.
+    /// Measure the content to determine the window size.
     ///
-    /// If you use this option, your root widget will be passed infinite constraints;
-    /// you are responsible for ensuring that your content picks an appropriate size.
+    /// The window size will match the root widget's maximum preferred size.
     Content,
     /// Use the provided window size.
     #[default]
@@ -270,11 +275,17 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
-    /// A new layer should be created with the widget as root.
-    NewLayer(NewWidget<dyn Widget>, Point),
+    /// A new [layer] should be created with the widget as root.
+    ///
+    /// The given [`Point`] must be in the window's coordinate space.
+    ///
+    /// [layer]: crate::doc::masonry_concepts#layers
+    NewLayer(LayerType, NewWidget<dyn Widget>, Point),
     /// The layer with the given widget as root should be removed.
     RemoveLayer(WidgetId),
     /// The layer with the given widget as root should be repositioned to the specified point.
+    ///
+    /// The given [`Point`] must be in the window's coordinate space.
     RepositionLayer(WidgetId, Point),
 }
 
@@ -312,11 +323,15 @@ impl RenderRoot {
         } = options;
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
-        let layer_stack = WidgetPod::new(LayerStack::new(root_widget));
+        // LayerStack can't use Dimensions::AUTO because it'll resolve to the window size.
+        // Instead we want to always measure LayerStack, so it can measure its base layer.
+        let layer_stack = LayerStack::new(root_widget)
+            .with_props(Dimensions::MAX)
+            .to_pod();
 
         let mut root = Self {
             layer_stack,
-            window_node_id: WidgetId::next().into(),
+            window_node_id: AccessCtx::next_node_id(),
             size_policy,
             size,
             last_mouse_pos: None,
@@ -438,7 +453,7 @@ impl RenderRoot {
             WindowEvent::Resize(size) => {
                 self.size = size;
                 self.root_state_mut().request_layout = true;
-                self.root_state_mut().needs_layout = true;
+                self.root_state_mut().set_needs_layout(true);
                 self.run_rewrite_passes();
                 Handled::Yes
             }
@@ -544,7 +559,7 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS
-    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
     pub fn get_layer_root(&self, layer_idx: usize) -> WidgetRef<'_, dyn Widget> {
         self.get_widget(self.layer_root_id(layer_idx))
             .expect("layer root not in widget tree")
@@ -600,7 +615,7 @@ impl RenderRoot {
         res
     }
 
-    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     ///
@@ -665,8 +680,10 @@ impl RenderRoot {
     }
 
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
+    ///
+    /// The given `pos` must be in the window's coordinate space.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
-        tracing::debug!("added layer to stack");
+        debug!("added layer to stack");
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::add_layer(&mut layer_stack, root, pos);
@@ -693,6 +710,8 @@ impl RenderRoot {
     }
 
     /// Repositions the layer with the given widget as root.
+    ///
+    /// The given `new_origin` must be in the window's coordinate space.
     ///
     /// The base layer cannot be repositioned.
     ///
@@ -822,6 +841,7 @@ impl RenderRoot {
 
             state.needs_paint = true;
             state.needs_accessibility = true;
+            state.request_pre_paint = true;
             state.request_paint = true;
             state.request_accessibility = true;
             state.request_post_paint = true;
@@ -851,7 +871,7 @@ impl RenderRoot {
             let widget = &mut *node.item.widget;
             let state = &mut node.item.state;
 
-            state.needs_layout = true;
+            state.set_needs_layout(true);
             state.request_layout = true;
 
             let id = state.id;

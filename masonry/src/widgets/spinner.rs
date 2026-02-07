@@ -1,34 +1,32 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! An animated spinner widget.
-
 use std::any::TypeId;
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
+    AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
 };
+use crate::kurbo::{Affine, Axis, Cap, Line, Point, Size, Stroke, Vec2};
+use crate::layout::LenReq;
 use crate::properties::ContentColor;
 use crate::theme;
-use crate::util::include_screenshot;
 
 /// An animated spinner widget for showing a loading state.
 ///
 /// You can customize the look of this spinner with the [`ContentColor`] property.
-/// To customize the spinner's size, you can place it inside a [`SizedBox`]
-/// that has a fixed width and height.
 ///
-/// [`SizedBox`]: crate::widgets::SizedBox
-///
-#[doc = include_screenshot!("spinner_init.png", "Spinner frame.")]
+#[doc = concat!(
+    "![Spinner frame](",
+    include_doc_path!("screenshots/spinner_init.png"),
+    ")",
+)]
 pub struct Spinner {
     t: f64,
 }
@@ -83,29 +81,37 @@ impl Widget for Spinner {
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        if bc.is_width_bounded() && bc.is_height_bounded() {
-            bc.max()
-        } else {
-            bc.constrain(Size::new(
-                theme::BASIC_WIDGET_HEIGHT,
-                theme::BASIC_WIDGET_HEIGHT,
-            ))
+        _ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match len_req {
+            // For preferred length we try to keep a square aspect ratio,
+            // and when the cross length is unknown we fall back to the theme's default.
+            LenReq::MinContent | LenReq::MaxContent => {
+                cross_length.unwrap_or(theme::BASIC_WIDGET_HEIGHT.dp(scale))
+            }
+            LenReq::FitContent(space) => space,
         }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let color = props.get::<ContentColor>();
 
         let t = self.t;
-        let (width, height) = (ctx.size().width, ctx.size().height);
-        let center = Point::new(width / 2.0, height / 2.0);
-        let scale_factor = width.min(height) / 40.0;
+        let size = ctx.content_box_size();
+        let center = Point::new(size.width / 2.0, size.height / 2.0);
+        let scale_factor = size.width.min(size.height) / 40.0;
 
         for step in 1..=12 {
             let step = f64::from(step);
@@ -150,9 +156,8 @@ impl Widget for Spinner {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::{NewWidget, Properties};
-
     use super::*;
+    use crate::core::{NewWidget, Properties};
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;

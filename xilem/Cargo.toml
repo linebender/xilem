@@ -42,7 +42,7 @@ masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
 vello.workspace = true
-tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [dev-dependencies]
 # Used for `variable_clock`
@@ -82,6 +82,12 @@ name = "variable_clock"
 
 [[example]]
 name = "emoji_picker"
+# Need to disable emoji_picker scarping, it crashes Rust 1.94.0-nightly (b54051b15 2025-12-30)
+# When running the following command:
+# cargo +nightly doc -p xilem --no-deps -Zunstable-options -Zrustdoc-scrape-examples
+# Rust compiler panics:
+# assertion failed: bpos.to_u32() >= mbc.pos.to_u32() + mbc.bytes as u32
+doc-scrape-examples = false
 
 [[example]]
 name = "http_cats"
@@ -123,6 +129,7 @@ name = "emoji_picker_android"
 path = "examples/android/emoji_picker_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+doc-scrape-examples = false # Mirrors non-android disable
 
 [[example]]
 name = "http_cats_android"

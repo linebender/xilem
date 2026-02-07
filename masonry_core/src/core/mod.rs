@@ -3,27 +3,28 @@
 
 //! Basic types and traits Masonry is built on.
 
-mod box_constraints;
 mod contexts;
 mod events;
-mod layout_cache;
+mod layer;
 mod properties;
 mod text;
 mod widget;
 mod widget_arena;
 mod widget_mut;
+mod widget_paint;
 mod widget_pod;
 mod widget_ref;
 mod widget_state;
 mod widget_tag;
 
-pub use box_constraints::*;
 pub use contexts::*;
 pub use events::*;
+pub use layer::*;
 pub use properties::*;
 pub use text::*;
 pub use widget::*;
 pub use widget_mut::*;
+pub use widget_paint::*;
 pub use widget_pod::*;
 pub use widget_ref::*;
 pub use widget_tag::*;
@@ -36,7 +37,6 @@ pub use ui_events::pointer::{
 };
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
-pub(crate) use layout_cache::*;
 pub(crate) use widget_arena::*;
 pub(crate) use widget_state::*;
 

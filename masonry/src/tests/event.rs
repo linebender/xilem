@@ -3,17 +3,21 @@
 
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
-use masonry_core::core::keyboard::{Key, NamedKey};
-use masonry_core::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
-use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
-use masonry_testing::{
-    ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics,
-};
-use vello::kurbo::Size;
+use dpi::PhysicalPosition;
 
-use crate::properties::types::AsUnit;
+use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
+use crate::core::{
+    AccessEvent, NewWidget, PointerButtonEvent, PointerId, PointerState, PointerUpdate, TextEvent,
+    Update, Widget, WidgetId, WidgetTag,
+};
+use crate::kurbo::Point;
+use crate::layout::AsUnit;
+use crate::testing::{
+    ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics, assert_none,
+};
 use crate::theme::test_property_set;
-use crate::widgets::{Button, Flex, SizedBox, TextArea};
+use crate::widgets::{Button, ButtonPress, Flex, SizedBox, TextArea};
 
 // POINTER EVENTS
 
@@ -24,7 +28,7 @@ fn create_capture_target() -> ModularWidget<()> {
                 ctx.capture_pointer();
             }
         })
-        .layout_fn(|_, _, _, _| Size::new(10., 10.))
+        .measure_fn(|_, _, _, _, _, _| 10.)
 }
 
 #[test]
@@ -233,7 +237,10 @@ fn click_anchors_focus() {
         ))
         .with_fixed(NewWidget::new(Button::with_text("")))
         .with_fixed(NewWidget::new(Button::with_text("")))
-        .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_fixed(NewWidget::new_with_tag(
+            Button::with_text("Click me!"),
+            child_3,
+        ))
         .with_fixed(NewWidget::new_with_tag(Button::with_text(""), child_4))
         .with_fixed(NewWidget::new(Button::with_text("")))
         .with_auto_id();
@@ -244,7 +251,8 @@ fn click_anchors_focus() {
     let child_4_id = harness.get_widget(child_4).id();
     let other_id = harness.get_widget(other).id();
 
-    // Clicking a button doesn't focus it.
+    // Clicking a disabled button doesn't focus it.
+    harness.set_disabled(child_3, true);
     harness.mouse_click_on(child_3_id);
     assert_eq!(harness.focused_widget_id(), None);
 
@@ -252,11 +260,225 @@ fn click_anchors_focus() {
     harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
     assert_eq!(harness.focused_widget_id(), Some(child_4_id));
 
+    // TODO - Remove use of mouse_move_to_unchecked after
+    // https://github.com/linebender/xilem/issues/1620
+    // is resolved.
+
     // Clicking another non-focusable widget clears focus.
     harness.mouse_move_to_unchecked(other_id);
     harness.mouse_button_press(PointerButton::Primary);
     harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.focused_widget_id(), None);
+}
+
+#[track_caller]
+fn make_pointer_info(pos: impl Into<Point>, id: u64) -> (PointerInfo, PointerState) {
+    let pointer_id = PointerId::new(id).unwrap();
+    let mut pointer_state = PointerState::default();
+
+    let Point { x, y } = pos.into();
+    let pos = PhysicalPosition { x, y };
+    pointer_state.position = pos;
+
+    let pointer_info = PointerInfo {
+        pointer_id: Some(pointer_id),
+        persistent_device_id: None,
+        pointer_type: PointerType::Mouse,
+    };
+
+    (pointer_info, pointer_state)
+}
+
+#[track_caller]
+fn pointer_move(pos: impl Into<Point>, id: u64) -> PointerEvent {
+    let (pointer_info, pointer_state) = make_pointer_info(pos, id);
+    PointerEvent::Move(PointerUpdate {
+        pointer: pointer_info,
+        current: pointer_state,
+        coalesced: vec![],
+        predicted: vec![],
+    })
+}
+
+#[track_caller]
+fn pointer_press(pos: impl Into<Point>, id: u64) -> PointerEvent {
+    let (pointer_info, pointer_state) = make_pointer_info(pos, id);
+    PointerEvent::Down(PointerButtonEvent {
+        pointer: pointer_info,
+        button: Some(PointerButton::Primary),
+        state: pointer_state,
+    })
+}
+
+#[track_caller]
+fn pointer_release(pos: impl Into<Point>, id: u64) -> PointerEvent {
+    let (pointer_info, pointer_state) = make_pointer_info(pos, id);
+    PointerEvent::Up(PointerButtonEvent {
+        pointer: pointer_info,
+        button: Some(PointerButton::Primary),
+        state: pointer_state,
+    })
+}
+
+// TODO - Implement multi-pointer hover
+#[test]
+#[ignore]
+fn multi_pointers_hover() {
+    let button_1_tag = WidgetTag::named("button_1");
+    let button_2_tag = WidgetTag::named("button_2");
+    let flex_tag = WidgetTag::named("flex");
+
+    let button_1 = NewWidget::new_with_tag(Button::with_text("Button 1").record(), button_1_tag);
+    let button_2 = NewWidget::new_with_tag(Button::with_text("Button 2").record(), button_2_tag);
+
+    let flex = NewWidget::new_with_tag(
+        Flex::row()
+            .with_fixed(button_1)
+            .with_fixed(button_2)
+            .record(),
+        flex_tag,
+    );
+    let mut harness = TestHarness::create(test_property_set(), flex);
+
+    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_box();
+    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_box();
+
+    // Move pointer 11 over button_1,
+    // Verify HoverChange(true), ChildHoveredChanged(true) in flex, and hovered state
+    harness.process_pointer_event(pointer_move(button_1_rect.center(), 11));
+
+    assert_any(harness.take_records_of(button_1_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(true)))
+    });
+    assert_any(harness.take_records_of(flex_tag), |r| {
+        matches!(r, Record::Update(Update::ChildHoveredChanged(true)))
+    });
+    assert!(harness.get_widget(button_1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(flex_tag).ctx().has_hovered());
+
+    // Move pointer 22 over button_1,
+    // Verify no HoverChange(true), no ChildHoveredChanged(true) in flex
+    harness.process_pointer_event(pointer_move(button_1_rect.center(), 22));
+
+    assert_none(harness.take_records_of(button_1_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(_)))
+    });
+    assert_none(harness.take_records_of(flex_tag), |r| {
+        matches!(r, Record::Update(Update::ChildHoveredChanged(_)))
+    });
+
+    // Move pointer 22 over button_2,
+    // Verify HoverChange(true), and hovered state on button_2
+    // Verify no HoverChange(false), no ChildHoveredChanged(false) in flex, and hovered state on button_1
+    harness.process_pointer_event(pointer_move(button_2_rect.center(), 22));
+
+    assert_any(harness.take_records_of(button_2_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(true)))
+    });
+    assert_none(harness.take_records_of(button_1_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
+    assert_none(harness.take_records_of(flex_tag), |r| {
+        matches!(r, Record::Update(Update::ChildHoveredChanged(false)))
+    });
+    assert!(harness.get_widget(button_2_tag).ctx().is_hovered());
+    assert!(harness.get_widget(button_1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(flex_tag).ctx().has_hovered());
+
+    // Move pointer 11 outside window,
+    // Verify HoverChange(true), and hovered state on button_2
+    // no ChildHoveredChanged(false) in flex
+    harness.process_pointer_event(pointer_move((10_000., 10_000.), 11));
+
+    assert_any(harness.take_records_of(button_1_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
+    assert_none(harness.take_records_of(button_2_tag), |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
+    assert_none(harness.take_records_of(flex_tag), |r| {
+        matches!(r, Record::Update(Update::ChildHoveredChanged(false)))
+    });
+    assert!(!harness.get_widget(button_1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(button_2_tag).ctx().is_hovered());
+    assert!(harness.get_widget(flex_tag).ctx().has_hovered());
+}
+
+// TODO - Implement multi-pointer capture
+#[test]
+#[ignore]
+fn multi_pointers_capture() {
+    let button_1_tag = WidgetTag::named("button_1");
+    let button_2_tag = WidgetTag::named("button_2");
+    let flex_tag = WidgetTag::named("flex");
+
+    let button_1 = NewWidget::new_with_tag(Button::with_text("Button 1").record(), button_1_tag);
+    let button_2 = NewWidget::new_with_tag(Button::with_text("Button 2").record(), button_2_tag);
+
+    let flex = NewWidget::new_with_tag(
+        Flex::row()
+            .with_fixed(button_1)
+            .with_fixed(button_2)
+            .record(),
+        flex_tag,
+    );
+    let mut harness = TestHarness::create(test_property_set(), flex);
+
+    let button_1_rect = harness.get_widget(button_1_tag).ctx().bounding_box();
+    let button_2_rect = harness.get_widget(button_2_tag).ctx().bounding_box();
+    let button_1_id = harness.get_widget(button_1_tag).id();
+
+    fn assert_captured_by(
+        harness: &TestHarness<impl Widget>,
+        _pointer_id: PointerId,
+        id: WidgetId,
+    ) {
+        #![allow(unused, reason = "Placeholder code")]
+        unimplemented!("Per-pointer capture check is unimplemented");
+    }
+
+    // Move mouse to button 1, mouse press
+    // Check mouse is captured, button 1 is active
+    harness.mouse_move_to(button_1_id);
+    harness.mouse_button_press(PointerButton::Primary);
+
+    assert_captured_by(&harness, PointerId::PRIMARY, button_1_id);
+    assert!(harness.get_widget(button_1_tag).ctx().is_active());
+
+    // Move pointer 22 to button 2, pointer press
+    // Check mouse is still captured, button 1 is active, button 2 is active
+    harness.process_pointer_event(pointer_move(button_2_rect.center(), 22));
+    harness.process_pointer_event(pointer_press(button_2_rect.center(), 22));
+
+    assert_captured_by(&harness, PointerId::PRIMARY, button_1_id);
+    assert!(harness.get_widget(button_1_tag).ctx().is_active());
+    assert!(harness.get_widget(button_2_tag).ctx().is_active());
+
+    // Release pointer 22
+    // Check mouse is still captured, button 1 is active, button 2 is not active, action was emitted
+    harness.process_pointer_event(pointer_release(button_2_rect.center(), 22));
+
+    assert_captured_by(&harness, PointerId::PRIMARY, button_1_id);
+    assert!(harness.get_widget(button_1_tag).ctx().is_active());
+    assert!(!harness.get_widget(button_2_tag).ctx().is_active());
+    assert_matches!(harness.pop_action::<ButtonPress>(), Some((_, _)));
+
+    // Move pointer 22 to button 1, pointer release
+    // Check mouse is still captured, button 1 is active, no action was emitted
+    harness.process_pointer_event(pointer_move(button_1_rect.center(), 22));
+    harness.process_pointer_event(pointer_release(button_1_rect.center(), 22));
+
+    assert!(harness.get_widget(button_1_tag).ctx().is_active());
+    assert_matches!(harness.pop_action::<ButtonPress>(), None);
+
+    // Press and release pointer 22 on button 1
+    // Check mouse is no longer captured, button 1 is not active, action was emitted
+    // This is because clicking a button should clear all captured pointers, even from other pointers.
+    harness.process_pointer_event(pointer_press(button_1_rect.center(), 22));
+    harness.process_pointer_event(pointer_release(button_1_rect.center(), 22));
+
+    assert!(!harness.get_widget(button_1_tag).ctx().is_active());
+    assert_matches!(harness.pop_action::<ButtonPress>(), Some((_, _)));
 }
 
 // TEXT EVENTS

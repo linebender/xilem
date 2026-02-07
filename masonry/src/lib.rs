@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! Masonry is a foundational framework for building GUI libraries in Rust.
 //!
 //! The developers of Masonry are developing [Xilem][], a reactive UI library built on top of Masonry.
@@ -38,9 +42,9 @@
 //! ```rust
 //! use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 //! use masonry::dpi::LogicalSize;
+//! use masonry::layout::Length;
 //! use masonry::peniko::color::AlphaColor;
 //! use masonry::properties::Padding;
-//! use masonry::properties::types::Length;
 //! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -173,7 +177,10 @@
     doc = "\n**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
 )]
 // Screenshot generated in the unit test for the `to_do_list` example.
-#![doc = util::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
+#![doc = concat!(
+    "[to-do-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/example_to_do_list_initial.png")
+)]
 //!
 
 // LINEBENDER LINT SET - lib.rs - v3
@@ -198,14 +205,13 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
 
-// TODO - Add logo
-
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
 
 #[cfg(test)]
 mod tests;
 
+pub mod layers;
 pub mod properties;
 pub mod theme;
 pub mod widgets;
@@ -216,6 +222,6 @@ pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
 pub use {dpi, parley, vello};
 
-pub use masonry_core::{app, core, ui_events, util};
+pub use masonry_core::{app, core, layout, ui_events, util};
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;

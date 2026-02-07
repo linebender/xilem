@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple calculator example
-#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use masonry::properties::types::{AsUnit, CrossAxisAlignment, Length, MainAxisAlignment};
+use masonry::layout::{AsUnit, Length};
+use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::widgets::GridParams;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, sized_box,
-    text_button,
+    FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 use xilem_core::{Edit, ViewArgument};
@@ -195,7 +194,7 @@ impl Calculator {
 fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Edit<Calculator>> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
-        views.push(digit_button(num).grid_pos(i as i32, row));
+        views.push(digit_button(num).grid_pos(i32::try_from(i).unwrap(), row));
     }
     views
 }
@@ -220,7 +219,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<>
             ))
             .grid_item(GridParams::new(0, 0, 4, 1)),
             // Top row
-            expanded_button(
+            one_button(
                 label("CE").color(if data.get_current_number().is_empty() {
                     palette::css::MEDIUM_VIOLET_RED
                 } else {
@@ -229,8 +228,8 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<>
                 Calculator::clear_entry,
             )
             .grid_pos(0, 1),
-            expanded_button(label("C"), Calculator::clear_all).grid_pos(1, 1),
-            expanded_button(label("DEL"), Calculator::on_delete).grid_pos(2, 1),
+            one_button(label("C"), Calculator::clear_all).grid_pos(1, 1),
+            one_button(label("DEL"), Calculator::on_delete).grid_pos(2, 1),
             operator_button(MathOperator::Divide).grid_pos(3, 1),
             num_row(["7", "8", "9"], 2),
             operator_button(MathOperator::Multiply).grid_pos(3, 2),
@@ -239,13 +238,13 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<>
             num_row(["1", "2", "3"], 4),
             operator_button(MathOperator::Add).grid_pos(3, 4),
             // bottom row
-            expanded_button(label("±"), Calculator::negate).grid_pos(0, 5),
+            one_button(label("±"), Calculator::negate).grid_pos(0, 5),
             digit_button("0").grid_pos(1, 5),
-            expanded_button(label("."), |data: &mut Calculator| {
+            one_button(label("."), |data: &mut Calculator| {
                 data.on_entered_digit(".");
             })
             .grid_pos(2, 5),
-            expanded_button(label("="), Calculator::on_equals).grid_pos(3, 5),
+            one_button(label("="), Calculator::on_equals).grid_pos(3, 5),
         ),
         4,
         6,
@@ -269,28 +268,23 @@ fn display_label(text: &str) -> impl WidgetView<Edit<Calculator>> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
-/// Returns a button contained in an expanded box. Useful for the buttons so that
-/// they take up all available space in flex containers.
-fn expanded_button(
+/// Returns one button
+fn one_button(
     content: impl WidgetView<Edit<Calculator>>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Edit<Calculator>> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
-
-    sized_box(
-        button(content, callback)
-            .background_color(BLUE)
-            .corner_radius(10.)
-            .border_color(Color::TRANSPARENT)
-            .hovered_border_color(Color::WHITE),
-    )
-    .expand()
+    button(content, callback)
+        .background_color(BLUE)
+        .corner_radius(10.)
+        .border_color(Color::TRANSPARENT)
+        .hovered_border_color(Color::WHITE)
 }
 
-/// Returns an expanded button that triggers the calculator's operator handler,
+/// Returns a button that triggers the calculator's operator handler,
 /// `on_entered_operator()`.
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<Edit<Calculator>> {
-    expanded_button(
+    one_button(
         label(math_operator.as_str()),
         move |data: &mut Calculator| {
             data.on_entered_operator(math_operator);
@@ -302,15 +296,12 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Edit<Calculat
 fn digit_button(digit: &'static str) -> impl WidgetView<Edit<Calculator>> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
 
-    sized_box(
-        text_button(digit, |data: &mut Calculator| {
-            data.on_entered_digit(digit);
-        })
-        .background_color(GRAY)
-        .corner_radius(10.)
-        .border_color(Color::TRANSPARENT),
-    )
-    .expand()
+    text_button(digit, |data: &mut Calculator| {
+        data.on_entered_digit(digit);
+    })
+    .background_color(GRAY)
+    .corner_radius(10.)
+    .border_color(Color::TRANSPARENT)
 }
 
 pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

@@ -35,6 +35,78 @@ macro_rules! debug_panic {
 
 pub use crate::debug_panic;
 
+/// Provides sanitization of values.
+///
+/// This is a generic trait that doesn't specify what sanitization exactly means,
+/// as that will be implementations specific per type.
+///
+/// Right now it is also implemented for `f64` and `Option<f64>` in a way
+/// where it forbids non-finite and negative values. This is immediately useful for
+/// Masonry itself but is likely to go away as we migrate our float usage to newtypes.
+pub trait Sanitize {
+    /// Returns the sanitized value.
+    ///
+    /// Generally should remove all invariants.
+    /// Depending on the implementation, may also panic or log.
+    ///
+    /// See the specific implementation docs for more details.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self;
+}
+
+impl Sanitize for f64 {
+    /// Ensures the value is finite and non-negative.
+    ///
+    /// Non-finite or negative value falls back to zero.
+    ///
+    /// `name` is how the value will be named in the log message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value is non-finite or negative and debug assertions are enabled.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self {
+        if !self.is_finite() {
+            debug_panic!("{name} must be finite. Received: {self}");
+            0.
+        } else if self < 0. {
+            debug_panic!("{name} must be non-negative. Received: {self}");
+            0.
+        } else {
+            self
+        }
+    }
+}
+
+impl Sanitize for Option<f64> {
+    /// Ensures the value is finite and non-negative.
+    ///
+    /// Non-finite or negative value falls back to `None`.
+    ///
+    /// `name` is how the value will be named in the log message.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value is non-finite or negative and debug assertions are enabled.
+    #[track_caller]
+    fn sanitize(self, name: &str) -> Self {
+        match self {
+            Some(val) => {
+                if !val.is_finite() {
+                    debug_panic!("{name} must be finite. Received: {val}");
+                    None
+                } else if val < 0. {
+                    debug_panic!("{name} must be non-negative. Received: {val}");
+                    None
+                } else {
+                    Some(val)
+                }
+            }
+            None => None,
+        }
+    }
+}
+
 // ---
 
 pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
@@ -129,110 +201,4 @@ static DEBUG_COLOR: &[Color] = &[
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]
-}
-
-// ---
-
-// Macros are exported from crate root by default. Re-export them from here.
-pub use crate::include_screenshot;
-pub use crate::include_screenshot_reference;
-
-// If we made this into proc macros, we would gain the following features:
-// 1) Automatic detection of the file existing - see https://github.com/linebender/xilem/issues/1080
-// 2) Extract the "repository" from CARGO_PKG_REPOSITORY and auto-generate the online URL version.
-
-// We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
-// The image won't be available locally if our docs are being built on docs.rs or from a crates.io dependency,
-// as we don't include the screenshots in the published package (for space/bandwidth reasons).
-// This fall back uses `raw.githubusercontent.com`, which allows it to access the correct version of the screenshot for the crate's version.
-// Unfortunately, it isn't currently possible to detect that this fallback is needed (without a procedural macro or build script);
-// as such, we currently use `cfg(docsrs)` as a proxy for whether to use a fallback.
-// This does mean that screenshots may fail to display in some cases, e.g. the user is pulling a crate as a
-// crates.io dependency and then generating its doc locally.
-// Masonry's documentation has a few warnings for these cases.
-
-/// Markdown content to display a screenshot from the current crate's `screenshots` directory.
-///
-/// This can be added to docs as follows:
-///
-/// ```rust,ignore
-/// /// Some docs here.
-/// ///
-/// #[doc = include_screenshot!("button_hello.png", "Button with text label.")]
-/// ```
-///
-/// The caption should have a full-stop at the end, as it's being used as alt-text.
-///
-/// **Warning: This macro will only function correctly for packages in the Xilem repository,
-/// as it hardcodes the supported GitHub repository.**
-#[cfg(not(docsrs))]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot {
-    ($path:literal $(, $caption:literal)? $(,)?) => {
-        concat!(
-            "![", $($caption,)? "]",
-            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
-        )
-    };
-}
-
-#[cfg(docsrs)]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot {
-    ($path:literal $(, $caption:literal)? $(,)?) => {
-        concat!(
-            "![", $($caption,)? "]",
-            // The online path to the screenshot, on this released version.
-            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
-            // The `v` is because of our tag name convention.
-            "(https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path, ")",
-        )
-    };
-}
-
-/// Markdown content to provide a screenshot from the current crate's `screenshots` directory as a [Markdown link reference definition](https://spec.commonmark.org/0.31.2/#link-reference-definition).
-///
-/// This can be added to docs as follows:
-///
-/// ```rust,ignore
-/// /// Some docs here.
-/// ///
-/// /// ![Alt text][my-screenshot]
-/// ///
-/// #[doc = include_screenshot_reference!("my-screenshot", "button_hello.png"]
-/// ```
-///
-/// **Warning: This macro will only function correctly for packages in the Xilem repository,
-/// as it hardcodes the supported GitHub repository.**
-#[cfg(not(docsrs))]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot_reference {
-    ($label:literal, $path:literal $(,)?) => {
-        concat!(
-            "[",
-            $label,
-            "]: ",
-            env!("CARGO_MANIFEST_DIR"),
-            "/screenshots/",
-            $path,
-        )
-    };
-}
-
-#[cfg(docsrs)]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot_reference {
-    ($label:literal, $path:literal $(,)?) => {
-        concat!(
-            "[", $label, "]: ",
-            // The online path to the screenshot, on this released version.
-            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
-            // The `v` is because of our tag name convention.
-            "https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
-        )
-    };
 }

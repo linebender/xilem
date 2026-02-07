@@ -19,7 +19,7 @@ fn paint_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
-    scene_cache: &mut HashMap<WidgetId, (Scene, Scene)>,
+    scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
     let mut children = node.children;
@@ -39,7 +39,7 @@ fn paint_widget(
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
 
-    if (state.request_paint || state.request_post_paint) && !is_stashed {
+    if (state.request_pre_paint || state.request_paint || state.request_post_paint) && !is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
@@ -49,40 +49,51 @@ fn paint_widget(
             widget_state: state,
             children: children.reborrow_mut(),
         };
-
-        // TODO - Reserve scene
-        // https://github.com/linebender/xilem/issues/524
-        let (scene, postfix_scene) = scene_cache.entry(id).or_default();
-        scene.reset();
-        postfix_scene.reset();
         let props = PropertiesRef {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
-        if ctx.widget_state.request_paint {
+
+        // TODO - Reserve scene
+        // https://github.com/linebender/xilem/issues/524
+        let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
+
+        if state.request_pre_paint {
+            pre_scene.reset();
+            widget.pre_paint(&mut ctx, &props, pre_scene);
+        }
+        if state.request_paint {
+            scene.reset();
             widget.paint(&mut ctx, &props, scene);
         }
-        if ctx.widget_state.request_post_paint {
-            widget.post_paint(&mut ctx, &props, postfix_scene);
+        if state.request_post_paint {
+            post_scene.reset();
+            widget.post_paint(&mut ctx, &props, post_scene);
         }
     }
 
+    state.request_pre_paint = false;
     state.request_paint = false;
     state.request_post_paint = false;
     state.needs_paint = false;
 
+    let transform = state
+        .window_transform
+        .pre_translate(state.border_box_translation());
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
-        let transform = state.window_transform;
-        let Some((scene, _)) = &mut scene_cache.get(&id) else {
+        let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
             );
             return;
         };
 
+        complete_scene.append(pre_scene, Some(transform));
+
         if let Some(clip) = state.clip_path {
-            complete_scene.push_clip_layer(transform, &clip);
+            // The clip path is stored in border-box space, so need just window transform.
+            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));
@@ -106,14 +117,13 @@ fn paint_widget(
     });
 
     if !is_stashed {
-        let transform = state.window_transform;
-        let bounding_rect = state.bounding_rect;
+        let bounding_box = state.bounding_box;
 
         // draw the global axis aligned bounding rect of the widget
         if global_state.debug_paint {
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
-            let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
+            let rect = bounding_box.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
         }
 
@@ -121,14 +131,14 @@ fn paint_widget(
             complete_scene.pop_layer();
         }
 
-        let Some((_, postfix_scene)) = &mut scene_cache.get(&id) else {
+        let Some((_, _, post_scene)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
             );
             return;
         };
 
-        complete_scene.append(postfix_scene, Some(transform));
+        complete_scene.append(post_scene, Some(transform));
     }
 }
 
@@ -160,7 +170,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
-        let rect = Rect::from_origin_size(state.window_origin(), state.size());
+        let rect =
+            Rect::from_origin_size(state.border_box_window_origin(), state.border_box_size());
 
         complete_scene.fill(
             Fill::NonZero,

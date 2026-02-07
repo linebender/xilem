@@ -6,7 +6,8 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{LayoutCache, WidgetId, WidgetOptions};
+use crate::core::{WidgetId, WidgetOptions};
+use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -69,35 +70,87 @@ pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
-    // TODO - Better explain origin and end_point
-    /// The origin (top-left) of the widget in the `window_transform` coordinate space.
-    /// Together with `end_point`, these constitute the widget's layout rect.
+    /// The origin (top-left) of the widget's aligned border-box
+    /// in the parent's border-box coordinate space.
+    ///
+    /// Together with `end_point`, these constitute the widget's aligned border-box.
     pub(crate) origin: Point,
-    /// The bottom right of the widget in the `window_transform` coordinate space.
-    /// Computed from the widget's origin and size, with some pixel snapping.
+    /// The bottom right of the widget's aligned border-box
+    /// in the parent's border-box coordinate space.
+    ///
+    /// Computed from the widget's `origin` and `layout_border_box_size`, with some pixel snapping.
     pub(crate) end_point: Point,
-    /// The value returned by the widget's layout method.
-    /// Used to compute `end_point`.
-    pub(crate) layout_size: Size,
-    /// The insets applied to the layout rect to generate the paint rect.
+    /// The widget's layout border-box size.
+    ///
+    /// This is the chosen border-box size with min/max constraints applied.
+    ///
+    /// It is used to:
+    /// * Determine layout cache validity.
+    /// * Derive the widget's layout content-box size that will be given to `Widget::layout`.
+    /// * Compute `end_point` when the widget is placed to an `origin` by its parent.
+    pub(crate) layout_border_box_size: Size,
+    /// The insets for converting between content-box and border-box rects.
+    ///
+    /// Add these insets to the content-box to get the border-box,
+    /// and subtract these insets from the border-box to get the content-box.
+    ///
+    /// These insets are derived from the widget's border and padding properties.
+    pub(crate) border_box_insets: Insets,
+    /// The insets for converting between border-box and paint-box rects.
+    ///
+    /// Add these insets to the border-box to get the paint-box,
+    /// and subtract these insets from the paint-box to get the border-box.
+    ///
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
     pub(crate) paint_insets: Insets,
-    // TODO - Document
-    // The computed paint rect, in local coordinates.
-    pub(crate) local_paint_rect: Rect,
-    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `paint_insets`.
-    pub(crate) bounding_rect: Rect,
-    /// The offset of the baseline relative to the bottom of the widget.
+    /// An axis aligned bounding rect (AABB in 2D),
+    /// containing itself and all its descendents in the window's coordinate space.
+    ///
+    /// This is the union of clipped effective paint-box rects, i.e. the union of
+    /// globally transformed aligned border-box rects with paint insets applied.
+    pub(crate) bounding_box: Rect,
+    /// The offset of the baseline relative to the bottom of the widget's layout border-box.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
-    pub(crate) baseline_offset: f64,
-    /// The pixel-snapped position of the baseline, computed from `baseline_offset`
+    pub(crate) layout_baseline_offset: f64,
+    /// The pixel-snapped position of the baseline in the parent's border-box coordinate space.
     pub(crate) baseline_y: f64,
-    /// Data cached from previous layout passes.
-    pub(crate) layout_cache: LayoutCache,
+
+    // TODO - Use general Shape
+    // Currently Kurbo doesn't really provide a type that lets us
+    // efficiently hold an arbitrary shape.
+    /// The widget's clip path in the widget's border-box coordinate space.
+    ///
+    /// This clips the painting of `Widget::paint` and all the painting of children.
+    /// It does not clip this widget's `Widget::pre_paint` nor `Widget::post_paint`.
+    pub(crate) clip_path: Option<Rect>,
+
+    /// Local transform used during the mapping of this widget's border-box coordinate space
+    /// to the parent's border-box coordinate space.
+    ///
+    /// When calculating the effective border-box of this widget, first this transform
+    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    pub(crate) transform: Affine,
+    /// Global transform mapping this widget's border-box coordinate space
+    /// to the window's coordinate space.
+    ///
+    /// Computed from all `transform`, `scroll_translation`, and `origin` values
+    /// from this widget all the way up to the window.
+    ///
+    /// Multiply by this to convert from this widget's border-box coordinate space to the window's,
+    /// or use the inverse of this transform to go from window's space to this widget's border-box.
+    pub(crate) window_transform: Affine,
+    /// Translation applied by scrolling, applied after applying `transform` to this widget.
+    pub(crate) scroll_translation: Vec2,
+    /// The `transform` or `scroll_translation` has changed.
+    pub(crate) transform_changed: bool,
+
+    // --- INTERACTIONS ---
+    /// The `TypeId` of the widget's `Widget::Action` type.
+    pub(crate) action_type: TypeId,
 
     /// Tracks whether widget gets pointer events.
     /// Should be immutable after `WidgetAdded` event.
@@ -109,28 +162,9 @@ pub(crate) struct WidgetState {
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) accepts_text_input: bool,
-    /// The area of the widget that is being edited by
-    /// an IME, in local coordinates.
+    /// The area of the widget that is being edited by an IME,
+    /// in the widget's border-box coordinate space.
     pub(crate) ime_area: Option<Rect>,
-
-    // TODO - Use general Shape
-    // Currently Kurbo doesn't really provide a type that lets us
-    // efficiently hold an arbitrary shape.
-    pub(crate) clip_path: Option<Rect>,
-
-    /// Local transform of this widget in the parent coordinate space.
-    pub(crate) transform: Affine,
-    /// Global transform of this widget in the window coordinate space.
-    ///
-    /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
-    pub(crate) window_transform: Affine,
-    /// Translation applied by scrolling, applied after applying `transform` to this widget.
-    pub(crate) scroll_translation: Vec2,
-    /// The `transform` or `scroll_translation` has changed.
-    pub(crate) transform_changed: bool,
-
-    /// The `TypeId` of the widget's `Widget::Action` type.
-    pub(crate) action_type: TypeId,
 
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
@@ -142,13 +176,17 @@ pub(crate) struct WidgetState {
     /// This widget explicitly requested layout
     pub(crate) request_layout: bool,
     /// This widget or a descendant explicitly requested layout
-    pub(crate) needs_layout: bool,
+    needs_layout: bool,
+    /// Cached measurement results.
+    pub(crate) measurement_cache: MeasurementCache,
 
     /// The `compose` method must be called on this widget
     pub(crate) request_compose: bool,
     /// The `compose` method must be called on this widget or a descendant
     pub(crate) needs_compose: bool,
 
+    /// The `pre_paint` method must be called on this widget
+    pub(crate) request_pre_paint: bool,
     /// The `paint` method must be called on this widget
     pub(crate) request_paint: bool,
     /// The `post_paint` method must be called on this widget
@@ -228,57 +266,63 @@ impl WidgetState {
     ) -> Self {
         Self {
             id,
+
             origin: Point::ORIGIN,
             end_point: Point::ORIGIN,
-            layout_size: Size::ZERO,
-            is_expecting_place_child_call: false,
+            layout_border_box_size: Size::ZERO,
+            border_box_insets: Insets::ZERO,
             paint_insets: Insets::ZERO,
-            local_paint_rect: Rect::ZERO,
-            layout_cache: LayoutCache::empty(),
+            bounding_box: Rect::ZERO,
+            layout_baseline_offset: 0.0,
+            baseline_y: 0.0,
+            clip_path: Option::default(),
+            transform: options.transform,
+            window_transform: Affine::IDENTITY,
+            scroll_translation: Vec2::ZERO,
+            transform_changed: false,
+
+            action_type,
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,
-            clip_path: Option::default(),
-            scroll_translation: Vec2::ZERO,
-            transform_changed: false,
-            action_type,
-            is_explicitly_disabled: options.disabled,
-            is_explicitly_stashed: false,
-            is_disabled: false,
-            is_stashed: false,
-            baseline_offset: 0.0,
-            baseline_y: 0.0,
+
             is_new: true,
-            has_hovered: false,
-            is_hovered: false,
-            has_active: false,
-            is_active: false,
+            is_expecting_place_child_call: false,
             request_layout: true,
             needs_layout: true,
+            measurement_cache: MeasurementCache::new(),
             request_compose: true,
             needs_compose: true,
+            request_pre_paint: true,
             request_paint: true,
             request_post_paint: true,
             needs_paint: true,
             request_accessibility: true,
             needs_accessibility: true,
-            has_focus_target: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
             needs_update_stashed: true,
-            children_changed: true,
             descendant_is_focusable: false,
             needs_update_focusable: true,
+            children_changed: true,
+
+            is_explicitly_disabled: options.disabled,
+            is_disabled: false,
+            is_explicitly_stashed: false,
+            is_stashed: false,
+            has_hovered: false,
+            is_hovered: false,
+            has_active: false,
+            is_active: false,
+            has_focus_target: false,
+
+            trace_span: Span::none(),
             #[cfg(debug_assertions)]
             widget_name,
             #[cfg(debug_assertions)]
             action_type_name,
-            window_transform: Affine::IDENTITY,
-            bounding_rect: Rect::ZERO,
-            trace_span: Span::none(),
-            transform: options.transform,
         }
     }
 
@@ -290,6 +334,9 @@ impl WidgetState {
     // mutated anymore. This method may start doing so again in the future, so keep taking &mut for
     // now.
     pub(crate) fn merge_up(&mut self, child_state: &mut Self) {
+        if child_state.needs_layout {
+            self.measurement_cache.clear();
+        }
         self.needs_layout |= child_state.needs_layout;
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
@@ -301,53 +348,61 @@ impl WidgetState {
         self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
-    /// The paint region for this widget.
-    pub(crate) fn paint_rect(&self) -> Rect {
-        self.local_paint_rect + self.origin.to_vec2()
+    /// Returns `true` if this widget or a descendant explicitly requested layout.
+    pub(crate) fn needs_layout(&self) -> bool {
+        self.needs_layout
     }
 
-    /// The size of this widget.
+    /// Sets the flag for whether this widget or a descendant explicitly requested layout.
     ///
-    /// This may be different from the value returned by [`Widget::layout`](crate::core::Widget::layout)
-    /// depending on pixel snapping.
-    pub(crate) fn size(&self) -> Size {
+    /// If set to `true` this also clears the measurement cache.
+    pub(crate) fn set_needs_layout(&mut self, needs_layout: bool) {
+        if needs_layout {
+            self.measurement_cache.clear();
+        }
+        self.needs_layout = needs_layout;
+    }
+
+    /// The aligned border-box size of this widget.
+    pub(crate) fn border_box_size(&self) -> Size {
         (self.end_point - self.origin).to_size()
     }
 
-    /// The offset of the baseline relative to the bottom of the widget.
+    /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
+    pub(crate) fn paint_box(&self) -> Rect {
+        self.border_box_size().to_rect() + self.paint_insets
+    }
+
+    /// Returns the [`Vec2`] for translating between this widget's
+    /// content-box and border-box coordinate spaces.
     ///
-    /// This may be different from the value set by [`LayoutCtx::set_baseline_offset`](crate::core::LayoutCtx::set_baseline_offset)
-    /// depending on pixel snapping.
+    /// Add this [`Vec2`] to translate from content-box to border-box,
+    /// and subtract this [`Vec2`] to translate from border-box to content-box.
+    pub(crate) fn border_box_translation(&self) -> Vec2 {
+        Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
+    }
+
+    /// Returns the widget's effective border-box origin in the window's coordinate space.
+    pub(crate) fn border_box_window_origin(&self) -> Point {
+        // We can just use the translation for (0,0)
+        self.window_transform.translation().to_point()
+    }
+
+    /// Returns the baseline offset relative to the bottom of the widget's aligned border-box.
     pub(crate) fn baseline_offset(&self) -> f64 {
         self.end_point.y - self.baseline_y
     }
 
-    // TODO - Remove
-    /// The rectangle used when calculating layout with other widgets.
-    pub(crate) fn layout_rect(&self) -> Rect {
-        Rect::from_points(self.origin, self.end_point)
-    }
-
-    /// The axis-aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
+    /// Returns the area being edited by an IME, in the window's coordinate space.
     ///
-    /// This might not map to a visible area of the screen, eg if the widget is scrolled
-    /// away.
-    pub(crate) fn bounding_rect(&self) -> Rect {
-        self.bounding_rect
-    }
-
-    /// Returns the area being edited by an IME, in global coordinates.
-    ///
-    /// By default, returns the same as [`Self::bounding_rect`].
+    /// If no explicit `ime_area` has been defined this will return the effective border-box area.
     pub(crate) fn get_ime_area(&self) -> Rect {
         // Note: this returns sensible values for a widget that is translated and/or rescaled.
         // Other transformations like rotation may produce weird IME areas.
-        self.window_transform
-            .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size().to_rect()))
-    }
-
-    pub(crate) fn window_origin(&self) -> Point {
-        self.window_transform.translation().to_point()
+        self.window_transform.transform_rect_bbox(
+            self.ime_area
+                .unwrap_or_else(|| self.border_box_size().to_rect()),
+        )
     }
 
     /// Returns the result of intersecting the widget's clip path (if any) with the given rect.

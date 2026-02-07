@@ -9,7 +9,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{ArcStr, ErasedAction, NewWidget, StyleProperty, WidgetId};
+use masonry::core::{ArcStr, ErasedAction, NewWidget, StyleProperty, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
@@ -23,7 +23,7 @@ fn init() -> VirtualScroll {
 }
 
 struct Driver {
-    scroll_id: WidgetId,
+    scroll_tag: WidgetTag<VirtualScroll>,
     fizz: ArcStr,
     buzz: ArcStr,
     fizzbuzz: ArcStr,
@@ -40,7 +40,12 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        if widget_id == self.scroll_id {
+        let scroll_id = ctx
+            .render_root(window_id)
+            .get_widget_with_tag(self.scroll_tag)
+            .map(|w| w.id());
+
+        if Some(widget_id) == scroll_id {
             // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
             // items to be loaded or unloaded.
             let action = action
@@ -84,10 +89,10 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let scroll_id = WidgetId::next();
-    let main_widget = NewWidget::new_with_id(init(), scroll_id).erased();
+    let scroll_tag = WidgetTag::unique();
+    let main_widget = NewWidget::new_with_tag(init(), scroll_tag).erased();
     let driver = Driver {
-        scroll_id,
+        scroll_tag,
         fizz: "Fizz".into(),
         buzz: "Buzz".into(),
         fizzbuzz: "FizzBuzz".into(),

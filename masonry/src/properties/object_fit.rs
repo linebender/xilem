@@ -3,29 +3,57 @@
 
 use std::any::TypeId;
 
-use masonry_core::core::{Property, UpdateCtx};
-use vello::kurbo::{Affine, Size};
+use crate::core::{Property, UpdateCtx};
+use crate::kurbo::{Affine, Size};
+use crate::util::Sanitize;
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.
 ///
 /// Default value is [`Self::Contain`].
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ObjectFit {
-    /// As large as possible without changing aspect ratio of image and all of image shown
+    /// The content is scaled to fully fit within the container.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will not cover the whole container and nothing will overflow.
     Contain,
-    /// As large as possible with no dead space so that some of the image may be clipped
+    /// The content is scaled to fully fill the container.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will overflow the container.
     Cover,
-    /// Fill the widget with no dead space, aspect ratio of widget is used
-    Fill,
-    /// Fill the height with the images aspect ratio, some of the image may be clipped
+    /// The content is scaled to fully fill the container's height.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// This may result in letterboxed or overflowing width.
     FitHeight,
-    /// Fill the width with the images aspect ratio, some of the image may be clipped
+    /// The content is scaled to fully fill the container's width.
+    ///
+    /// The content's aspect ratio is maintained.
+    ///
+    /// This may result in letterboxed or overflowing height.
     FitWidth,
-    /// Do not scale
+    /// The content's size is not changed at all.
     None,
-    /// Scale down to fit but do not scale up
+    /// The content is only scaled down.
+    ///
+    /// This behaves as a mix of [`None`] and [`Contain`], resulting in whichever variant
+    /// gives the smaller size.
+    ///
+    /// [`None`]: ObjectFit::None
+    /// [`Contain`]: ObjectFit::Contain
     ScaleDown,
+    /// The content is stretched to fully fill the container.
+    ///
+    /// If the content's aspect ratio does not match the aspect ratio of its container,
+    /// then the content will be stretched to fit exactly, changing its aspect ratio.
+    Stretch,
 }
 
 impl Property for ObjectFit {
@@ -51,17 +79,31 @@ impl ObjectFit {
         ctx.request_layout();
     }
 
-    /// Calculates an origin and scale for an image with a given `ObjectFit`.
+    /// Calculates an [`Affine`] transform to fit `content` inside `container`.
     ///
-    /// This takes some properties of a widget and an object fit and returns an affine matrix
-    /// used to position and scale the image in the widget.
-    pub fn affine_to_fill(self, parent: Size, fit_box: Size) -> Affine {
-        if fit_box.width == 0. || fit_box.height == 0. {
+    /// See [`ObjectFit`] variant documentation for fitting details.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either `content` or `container` is non-finite or negative
+    /// and debug assertions are enabled.
+    pub fn affine(self, container: Size, content: Size) -> Affine {
+        // Guard against invalid input
+        let container = Size::new(
+            container.width.sanitize("container width"),
+            container.height.sanitize("container height"),
+        );
+        let content = Size::new(
+            content.width.sanitize("content width"),
+            content.height.sanitize("content height"),
+        );
+        // Guard against division by zero
+        if content.width == 0. || content.height == 0. {
             return Affine::IDENTITY;
         }
 
-        let raw_scalex = parent.width / fit_box.width;
-        let raw_scaley = parent.height / fit_box.height;
+        let raw_scalex = container.width / content.width;
+        let raw_scaley = container.height / content.height;
 
         let (scalex, scaley) = match self {
             Self::Contain => {
@@ -72,18 +114,18 @@ impl ObjectFit {
                 let scale = raw_scalex.max(raw_scaley);
                 (scale, scale)
             }
-            Self::Fill => (raw_scalex, raw_scaley),
             Self::FitHeight => (raw_scaley, raw_scaley),
             Self::FitWidth => (raw_scalex, raw_scalex),
+            Self::None => (1.0, 1.0),
             Self::ScaleDown => {
                 let scale = raw_scalex.min(raw_scaley).min(1.0);
                 (scale, scale)
             }
-            Self::None => (1.0, 1.0),
+            Self::Stretch => (raw_scalex, raw_scaley),
         };
 
-        let origin_x = (parent.width - (fit_box.width * scalex)) / 2.0;
-        let origin_y = (parent.height - (fit_box.height * scaley)) / 2.0;
+        let origin_x = (container.width - (content.width * scalex)) * 0.5;
+        let origin_y = (container.height - (content.height * scaley)) * 0.5;
 
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
     }

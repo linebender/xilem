@@ -1,29 +1,35 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A slider widget.
-
 use std::any::TypeId;
 
-use accesskit::{ActionData, Node, Role};
+use accesskit::{ActionData, Node, Orientation, Role};
+use include_doc_path::include_doc_path;
+use masonry_core::core::Property;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Circle, Point, Rect, Size};
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
-    PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::kurbo::{Axis, Circle, Point, Rect, Size};
+use crate::layout::LenReq;
+use crate::peniko::Fill;
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
+use crate::util::{fill, stroke};
 
 /// A widget that allows a user to select a value from a continuous range.
 ///
-#[doc = include_screenshot!("slider_initial_state.png", "Slider.")]
+#[doc = concat!(
+    "![Slider](",
+    include_doc_path!("screenshots/slider_initial_state.png"),
+    ")",
+)]
 pub struct Slider {
     // --- Logic ---
     min: f64,
@@ -130,7 +136,6 @@ impl Slider {
     }
 }
 
-impl HasProperty<Background> for Slider {}
 impl HasProperty<BarColor> for Slider {}
 impl HasProperty<TrackThickness> for Slider {}
 impl HasProperty<ThumbColor> for Slider {}
@@ -164,7 +169,7 @@ impl Widget for Slider {
                 let local_pos = ctx.local_position(state.position);
                 if self.update_value_from_position(
                     local_pos.x,
-                    ctx.size().width,
+                    ctx.content_box_size().width,
                     *props.get(),
                     ctx.is_focus_target(),
                 ) {
@@ -176,21 +181,13 @@ impl Widget for Slider {
                     let local_pos = ctx.local_position(current.position);
                     if self.update_value_from_position(
                         local_pos.x,
-                        ctx.size().width,
+                        ctx.content_box_size().width,
                         *props.get(),
                         ctx.is_focus_target(),
                     ) {
                         ctx.submit_action::<f64>(self.value);
                     }
                     ctx.request_render();
-                }
-            }
-            PointerEvent::Up(PointerButtonEvent {
-                button: Some(PointerButton::Primary),
-                ..
-            }) => {
-                if ctx.is_active() {
-                    ctx.release_pointer();
                 }
             }
             _ => {}
@@ -315,34 +312,59 @@ impl Widget for Slider {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        Background::prop_changed(ctx, property_type);
         BarColor::prop_changed(ctx, property_type);
         TrackThickness::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
+        if Background::matches(property_type) {
+            ctx.request_paint_only();
+        }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        _ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let height =
-            (props.get::<ThumbRadius>().0 * 2.0).max(props.get::<TrackThickness>().0) + 16.0;
-        let width = bc.max().width.clamp(100.0, 200.0);
-        Size::new(width, height)
+        _ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        _cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
+
+        match axis {
+            Axis::Horizontal => match len_req {
+                // TODO: Move this 100. to theme?
+                LenReq::MinContent | LenReq::MaxContent => 100. * scale,
+                LenReq::FitContent(space) => space,
+            },
+            Axis::Vertical => {
+                let thumb_radius = props.get::<ThumbRadius>();
+                let track_thickness = props.get::<TrackThickness>();
+
+                let thumb_length = thumb_radius.0 * 2.0 * scale;
+                let track_length = track_thickness.0 * scale;
+                // TODO: Move the padding 16. to theme or make it otherwise configurable?
+                let padding_length = 16. * scale;
+
+                thumb_length.max(track_length) + padding_length
+            }
+        }
     }
+
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Get parameters and resolve colors
-        let track_color = if props.contains::<Background>() {
-            props.get::<Background>()
+        // TODO: Create a dedicated TrackColor property
+        let track_color = if let Some(b) = props.get_defined::<Background>() {
+            b
         } else {
             &Background::Color(theme::ZYNC_800)
         };
-        let active_track_color = if props.contains::<BarColor>() {
-            props.get::<BarColor>().0
+        let active_track_color = if let Some(bc) = props.get_defined::<BarColor>() {
+            bc.0
         } else {
             theme::ACCENT_COLOR
         };
@@ -352,7 +374,7 @@ impl Widget for Slider {
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state
-        let size = ctx.size();
+        let size = ctx.content_box_size();
         let thumb_radius = if ctx.is_active() {
             base_thumb_radius + 2.0
         } else if ctx.is_hovered() || ctx.is_focus_target() {
@@ -368,10 +390,11 @@ impl Widget for Slider {
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
             scene.push_layer(
-                vello::peniko::Mix::Normal,
+                Fill::NonZero,
+                crate::peniko::Mix::Normal,
                 DISABLED_ALPHA,
-                vello::kurbo::Affine::IDENTITY,
-                &ctx.size().to_rect(),
+                crate::kurbo::Affine::IDENTITY,
+                &ctx.border_box(),
             );
         }
 
@@ -415,7 +438,9 @@ impl Widget for Slider {
 
         // Paint focus ring
         if ctx.is_focus_target() && !ctx.is_disabled() {
-            let focus_rect = ctx.size().to_rect().inset(2.0);
+            // TODO: Either stop painting the focus outside border-box bounds
+            //       or correctly set paint insets in layout.
+            let focus_rect = ctx.border_box().inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
             stroke(scene, &focus_rect.to_rounded_rect(4.0), focus_color, 1.0);
@@ -437,7 +462,9 @@ impl Widget for Slider {
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
+        node.set_orientation(Orientation::Horizontal);
         node.set_value(self.value.to_string());
+        node.set_numeric_value(self.value);
         node.set_min_numeric_value(self.min);
         node.set_max_numeric_value(self.max);
         if let Some(step) = self.step {
@@ -460,10 +487,9 @@ impl Widget for Slider {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use vello::kurbo::{Point, Size};
-
     use super::*;
     use crate::core::{PointerButton, TextEvent};
+    use crate::kurbo::{Point, Size};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 

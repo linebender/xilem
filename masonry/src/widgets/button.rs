@@ -1,37 +1,36 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A button widget.
-
 use std::any::TypeId;
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
+use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Size};
 
+use crate::core::MeasureCtx;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
     PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
-};
+use crate::kurbo::{Axis, Size};
+use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::theme;
-use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::Label;
 
 /// A button with a child widget.
 ///
 /// Emits [`ButtonPress`] when pressed.
 ///
-#[doc = include_screenshot!("button_hello.png", "Button with text label.")]
+#[doc = concat!(
+    "![Button with text label](",
+    include_doc_path!("screenshots/button_hello.png"),
+    ")",
+)]
 pub struct Button {
     child: WidgetPod<dyn Widget>,
 }
@@ -97,17 +96,6 @@ pub struct ButtonPress {
     pub button: Option<PointerButton>,
 }
 
-impl HasProperty<DisabledBackground> for Button {}
-impl HasProperty<ActiveBackground> for Button {}
-impl HasProperty<Background> for Button {}
-impl HasProperty<FocusedBorderColor> for Button {}
-impl HasProperty<HoveredBorderColor> for Button {}
-impl HasProperty<BorderColor> for Button {}
-impl HasProperty<BorderWidth> for Button {}
-impl HasProperty<CornerRadius> for Button {}
-impl HasProperty<Padding> for Button {}
-impl HasProperty<BoxShadow> for Button {}
-
 // --- MARK: IMPL WIDGET
 impl Widget for Button {
     type Action = ButtonPress;
@@ -120,6 +108,7 @@ impl Widget for Button {
     ) {
         match event {
             PointerEvent::Down(..) => {
+                ctx.request_focus();
                 ctx.capture_pointer();
                 // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
@@ -169,121 +158,68 @@ impl Widget for Button {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::FocusChanged(_)
-            | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
-        BoxShadow::prop_changed(ctx, property_type);
-    }
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx<'_>, _property_type: TypeId) {}
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+        //       https://github.com/linebender/xilem/issues/1264
+        let scale = 1.0;
 
-        let initial_bc = bc;
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-        let bc = bc.loosen();
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+        let child_length = ctx.compute_length(
+            &mut self.child,
+            auto_length,
+            context_size,
+            axis,
+            cross_length,
+        );
 
-        let label_size = ctx.run_layout(&mut self.child, &bc);
-        let baseline = ctx.child_baseline_offset(&self.child);
-
-        let size = label_size;
-        let (size, baseline) = padding.layout_up(size, baseline);
-        let (size, baseline) = border.layout_up(size, baseline);
+        let length = child_length;
 
         // TODO - Add MinimumSize property.
         // HACK: to make sure we look okay at default sizes when beside a text input,
         // we make sure we will have at least the same height as the default text input.
-        let mut size = size;
-        size.height = size.height.max(theme::BORDERED_WIDGET_HEIGHT);
-
-        // TODO - Figure out how to handle cases where label size doesn't fit bc.
-        let size = initial_bc.constrain(size);
-        let label_offset = (size.to_vec2() - label_size.to_vec2()) / 2.0;
-        ctx.place_child(&mut self.child, label_offset.to_point());
-
-        // TODO - pos = (size - label_size) / 2
-
-        if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
+        match axis {
+            Axis::Horizontal => length,
+            Axis::Vertical => length.max(theme::BASIC_WIDGET_HEIGHT.dp(scale)),
         }
-
-        ctx.set_baseline_offset(baseline);
-        size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
-        let is_hovered = ctx.is_hovered();
-        let size = ctx.size();
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
+        ctx.run_layout(&mut self.child, child_size);
 
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
+        let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
+        ctx.place_child(&mut self.child, child_origin);
 
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        let child_baseline = ctx.child_baseline_offset(&self.child);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
-        let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
-
-        let shadow_rect = shadow.shadow_rect(size, border_radius);
-
-        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Button
@@ -320,13 +256,14 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::CollectionWidget;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::{PointerButton, Properties, StyleProperty};
-    use crate::properties::types::AsUnit;
-    use crate::properties::{ContentColor, Gap};
+    use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
+    use crate::layout::AsUnit;
+    use crate::properties::{
+        BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, Gap, Padding,
+    };
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
@@ -368,6 +305,19 @@ mod tests {
             harness.pop_action(),
             Some((ButtonPress { button: None }, button_id))
         );
+    }
+
+    #[test]
+    fn mouse_down_requests_focus() {
+        let widget = NewWidget::new(Button::with_text("Hello"));
+        let mut harness = TestHarness::create(test_property_set(), widget);
+        let button_id = harness.root_id();
+
+        harness.focus_on(None);
+        harness.mouse_move_to(button_id);
+        harness.mouse_button_press(PointerButton::Primary);
+
+        assert_eq!(harness.focused_widget_id(), Some(button_id));
     }
 
     #[test]

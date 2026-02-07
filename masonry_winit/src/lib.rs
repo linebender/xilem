@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_winit
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! This is the [Winit][winit] backend for the [Masonry][] GUI framework.
 //!
 //! See [Masonry's documentation][] for more details, examples and resources.
@@ -80,13 +84,7 @@
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![expect(
-    clippy::needless_doctest_main,
-    reason = "Having a main function is a deliberate part of the root doc."
-)]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-
-// TODO - Add logo
 
 mod app_driver;
 mod convert_winit_event;
@@ -97,7 +95,7 @@ pub use winit;
 
 /// Types needed for running a Masonry app.
 pub mod app {
-    pub use super::app_driver::{AppDriver, DriverCtx, WindowId};
+    pub use super::app_driver::{AppDriver, DriverCtx, WgpuContext, WgpuLimits, WindowId};
     pub use super::event_loop_runner::{
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
         Window, run, run_with,

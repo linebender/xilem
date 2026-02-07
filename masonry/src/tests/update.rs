@@ -4,18 +4,17 @@
 use std::sync::mpsc;
 
 use assert_matches::assert_matches;
-use masonry_core::core::pointer::{PointerButton, PointerEvent};
-use masonry_core::core::{
-    CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
-    WidgetTag,
-};
 use masonry_testing::{
     DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
     assert_debug_panics,
 };
-use vello::kurbo::{Point, Size};
 
-use crate::properties::types::Length;
+use crate::core::pointer::{PointerButton, PointerEvent};
+use crate::core::{
+    CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
+    WidgetTag,
+};
+use crate::layout::Length;
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
@@ -36,6 +35,7 @@ fn app_creation() {
             Record::Layout(_),
             Record::Compose,
             Record::AnimFrame(0),
+            Record::PrePaint,
             Record::Paint,
             Record::PostPaint,
             Record::Accessibility
@@ -246,6 +246,10 @@ fn stash_parent() {
         [
             Record::Update(Update::StashedChanged(false)),
             // Un-stashing also requests a layout pass.
+            Record::Measure(_),
+            Record::Measure(_),
+            Record::Measure(_),
+            Record::Measure(_),
             Record::Layout(_),
             Record::Compose
         ]
@@ -557,7 +561,7 @@ fn create_icon_widget() -> ModularWidget<()> {
             }
         })
         .cursor_icon(CursorIcon::Crosshair)
-        .layout_fn(|_, _, _, _| Size::new(10., 10.))
+        .measure_fn(|_, _, _, _, _, _| 10.)
 }
 
 #[test]
@@ -648,15 +652,11 @@ fn change_hovered_when_widget_changes() {
     let parent_tag = WidgetTag::named("parent");
 
     let child = NewWidget::new_with_tag(
-        ModularWidget::new(BOX_SIZE).layout_fn(|size, _, _, _| Size::new(size.get(), size.get())),
+        ModularWidget::new(BOX_SIZE).measure_fn(|size, _, _, _, _, _| size.get()),
         child_tag,
     );
     let parent = NewWidget::new_with_tag(
-        ModularWidget::new_parent(child).layout_fn(move |child, ctx, _props, bc| {
-            let _ = ctx.run_layout(child, bc);
-            ctx.place_child(child, Point::ZERO);
-            Size::new(BOX_SIZE.get(), BOX_SIZE.get())
-        }),
+        ModularWidget::new_parent(child).measure_fn(|_, _, _, _, _, _| BOX_SIZE.get()),
         parent_tag,
     );
 
@@ -702,11 +702,7 @@ fn make_reporter_parent(
                 ctx.set_handled();
             }
         })
-        .layout_fn(move |child, ctx, _props, bc| {
-            let _ = ctx.run_layout(child, bc);
-            ctx.place_child(child, Point::ZERO);
-            Size::new(100., 100.)
-        })
+        .measure_fn(|_, _, _, _, _, _| 100.)
         .update_fn(move |_, _, _, event| {
             sender.send((event.short_name().to_string(), n)).unwrap();
         })

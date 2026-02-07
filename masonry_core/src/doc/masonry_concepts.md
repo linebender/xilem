@@ -156,23 +156,61 @@ All widgets have associated data of arbitrary types called "properties".
 These properties are mostly used for styling and event handling.
 
 
-## Bounding rect
+## Box model
 
-A widget's bounding rect is a window-space axis-aligned rectangle inside of which pointer events might affect either the widget or its descendants.
+The box model refers to the following box hierarchy:
 
-In general, the bounding rect is a union or a widget's layout rect and the bounding rects of all its descendants.
+* Content-box - Contains only the widget's content.
+* Border-box - Contains the widget's borders, padding, and its content-box.
+* Paint-box - Contains the widget's painting, i.e. its border-box and any overflowing painting.
+* Bounding-box - Contains the widget's and all of its descendants' clipped paint-boxes.
 
-The bounding rects of the widget tree form a kind of "bounding volume hierarchy": when looking to find which widget a pointer is on, Masonry will automatically exclude any widget if the pointer is outside its bounding rect.
+### Box lifecycle
+
+The box lifecycle terms describe what stage a box is in during its journey from idea to painting.
+
+1. **Preferred** - The size that a widget wishes to be and is the result of `LayoutCtx::compute_size`.
+2. **Chosen** - The size that the parent of a widget ends up choosing for it and is given to `LayoutCtx::run_layout`.
+3. **Layout** - The result of the chosen size being potentially adjusted to meet min/max constraints.
+   For example, if the parent gave a size too small to even contain the child's borders and padding.
+4. **Aligned** - Once a parent places its child to a specific position, that position will be aligned to the pixel grid.
+   This alignment is done in the parent's border-box coordinate space using the child's layout border-box size.
+5. **Effective** - The actual visual box that gets painted on the screen.
+   This is the result when all of the transforms of the widget's tree branch are applied to its aligned box.
+
+### Presence of descendants
+
+Only the bounding-box is guaranteed to contain the widget's descendants.
+The paint-box, border-box, and content-box may contain them only by chance.
+As the descendants may be overflowing these bounds or a transformation may move them out completely.
+
+### Bounding-box
+
+We only calculate the effective variant of the bounding-box, i.e. where all transforms have been applied.
+The effective bounding-box is a union of the widget's effective paint-box and the bounding-boxes of all of its descendants.
+Additionally, these are clipped according to the per-widget clip rules.
+
+This effective bounding-box in the window's coordinate space is used to determine which pointer events might affect either the widget or its descendants.
+
+The bounding-boxes of the widget tree form a kind of "bounding volume hierarchy": when looking to find which widget a pointer is on, Masonry will automatically exclude any widget if the pointer is outside its bounding-box.
 
 <!-- TODO - Include illustration. -->
 
-<!-- TODO - Add section about clip paths and pointer detection. -->
 
-### Layout rect
+## Coordinate spaces
 
-Previous versions of Masonry had a concept of a widget's "layout rect", composed of its self-declared size and the position attributed by its parent.
+All `Widget` method implementations operate in that widget's content-box coordinate space.
+Which means that `(0, 0)` refers to the top-left point where padding ends and content begins.
+This is easy to reason in for the widget specific operations.
+The widget box can be assumed to be a simple rectangle and Masonry hides all the complicated transforms.
 
-However, given that widgets can have arbitrary transforms, the concept of an axis-aligned layout rect doesn't really make sense anymore.
+Internally Masonry also operates in the widget's border-box coordinate space, but this is generally hidden from widgets.
+The difference compared to the content-box coordinate space is a simple border and padding based translation.
+
+Finally there is the window's coordinate space.
+Here all widgets have their transforms already applied so widget specific operations are complicated.
+Generally you'll want to convert any window coordinate space geometry into the widget's content-box coordinate space.
+Then easily operate on that geometry and finally convert the results back to the window's coordinate space.
 
 
 ## Layers
@@ -186,6 +224,20 @@ It's the one in which almost all content (buttons, texts, images) will be drawn.
 
 Other layers can represent tooltips, menus, dialogs, etc.
 They are created with a pre-set position and are drawn on top of the base layer.
+
+### Adding a layer
+
+<!-- TODO - Flesh this out -->
+
+Most context methods have a `create_layer(layer_type, fallback_widget, pos)` method.
+
+`layer_type` and `fallback_widget` are two redundant representations of the same layer:
+
+- `layer_type` represents the layer's "semantic" content, as an enum with variants for common layer types.
+- `fallback_widget` represents the layer's "visual" content, as a widget which should be drawn at the root of the new layer.
+
+These two values are sent to the Masonry driver running the app; if the driver has built-in behavior for the given `layer_type`, this behavior will be used.
+Otherwise, the driver will add a new layer to the current [`RenderRoot`] with `fallback_widget` as its root.
 
 
 ## Safety rails

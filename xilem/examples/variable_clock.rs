@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::{AsUnit, Dim};
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
@@ -14,8 +14,8 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, flex_col, flex_row, inline_prose, label, portal, prose, sized_box, task,
-    text_button, variable_label,
+    FlexExt, FlexSpacer, MainAxisAlignment, flex_col, flex_row, inline_prose, label, portal, prose,
+    task, text_button, variable_label,
 };
 use xilem::{
     Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,
@@ -46,10 +46,13 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
         FlexSpacer::Fixed(40.px()),
         local_time(data),
         controls(),
-        portal(flex_col(
-            // TODO: When we get responsive layouts, move this into a two-column view on desktop.
-            TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
-        ))
+        portal(
+            flex_col(
+                // TODO: When we get responsive layouts, move this into a two-column view on desktop.
+                TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
+            )
+            .width(Dim::Stretch),
+        )
         .flex(1.),
     ))
     .padding(10.0);
@@ -113,13 +116,14 @@ fn controls() -> impl WidgetView<Edit<Clocks>> {
             data.weight = 1000.;
         }),
     ))
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
-        sized_box(flex_col((
+        flex_col((
             flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
@@ -131,9 +135,7 @@ impl TimeZone {
                         masonry::theme::TEXT_COLOR
                     },
                 ),
-            ))
-            .must_fill_major_axis(true)
-            .flex(1.),
+            )),
             flex_row((
                 variable_label(
                     date_time_in_self
@@ -153,10 +155,10 @@ impl TimeZone {
                             .unwrap(),
                     )
                 }),
-            )),
-        )))
-        .expand_width()
-        .height(72.px())
+            ))
+            .height(30.px()),
+        ))
+        .dims((Dim::Stretch, 80.px()))
     }
 }
 

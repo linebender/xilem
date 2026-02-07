@@ -4,12 +4,13 @@
 //! A widget gallery for xilem/masonry
 
 use masonry::dpi::LogicalSize;
-use masonry::properties::types::{AsUnit, Length};
+use masonry::layout::{AsUnit, Length};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box, text_button,
+    FlexSpacer, MainAxisAlignment, checkbox, flex_col, flex_row, indexed_stack, progress_bar,
+    sized_box, text_button,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::{Edit, lens};
@@ -63,13 +64,12 @@ fn checkbox_view(data: bool) -> impl WidgetView<Edit<bool>> {
 fn border_box<State: 'static, Action: 'static>(
     inner: impl WidgetView<Edit<State>, Action>,
 ) -> impl WidgetView<Edit<State>, Action> {
-    sized_box(flex_row((
+    flex_row((
         FlexSpacer::Flex(1.),
         flex_col((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
         FlexSpacer::Flex(1.),
-    )))
-    .width(450.px())
-    .height(200.px())
+    ))
+    .dims((450.px(), 200.px()))
     .border(Color::WHITE, 2.)
 }
 
@@ -87,7 +87,8 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<Edit<WidgetGallery>> +
                     data.tab = GalleryTab::Checkbox;
                 })
                 .disabled(data.tab == GalleryTab::Checkbox),
-            )),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Center),
             indexed_stack((
                 lens(
                     |progress: &mut Option<f64>| border_box(progress_bar_view(*progress)),

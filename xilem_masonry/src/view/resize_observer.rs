@@ -5,6 +5,7 @@ use std::any::type_name;
 use std::marker::PhantomData;
 
 use masonry::kurbo::Size;
+use masonry::properties::Dimensions;
 use masonry::widgets::{self, LayoutChanged};
 
 use crate::core::{
@@ -21,9 +22,6 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// to use fewer columns when there is not space to fit multiple columns.
 /// This can be safely used to dynamically access the size of a window
 /// or tab in a [`split`](crate::view::split::split).
-/// You must make sure that the child takes up all the available space.
-/// This can be most easily achieved by making the child be
-/// an [expanded](crate::view::SizedBox::expand) `sized_box`.
 ///
 /// See the documentation on the underlying [`ResizeObserver`](widgets::ResizeObserver) for more information.
 ///
@@ -33,7 +31,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex, sized_box}, masonry::kurbo::{Size, Axis}};
+/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex}, masonry::kurbo::{Size, Axis}};
 ///
 /// struct State {
 ///     available_size: Size,
@@ -42,7 +40,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// # fn my_component(state: &mut State) -> impl WidgetView<Edit<State>> {
 /// resize_observer(
 ///     |state: &mut State, size: Size| state.available_size = size,
-///     sized_box(flex(
+///     flex(
 ///         // Horizontal on wide screens,
 ///         if state.available_size.width > 1000. {
 ///             Axis::Horizontal
@@ -52,8 +50,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///         (
 ///             // ...
 ///         ),
-///     ))
-///     .expand()
+///     )
 /// )
 /// # }
 /// ```
@@ -109,8 +106,9 @@ where
             self.inner.build(ctx, app_state)
         });
         (
-            ctx.with_action_widget(|ctx| {
-                ctx.create_pod(widgets::ResizeObserver::new(child.new_widget))
+            ctx.with_action_widget(|_| {
+                let widget = widgets::ResizeObserver::new(child.new_widget);
+                Pod::new_with_props(widget, Dimensions::MAX)
             }),
             child_state,
         )
@@ -168,7 +166,10 @@ where
                 State::reborrow_mut(&mut app_state),
             ),
             None => match message.take_message::<LayoutChanged>() {
-                Some(_) => MessageResult::Action((self.on_resize)(app_state, element.ctx.size())),
+                Some(_) => MessageResult::Action((self.on_resize)(
+                    app_state,
+                    element.ctx.content_box_size(),
+                )),
                 None => {
                     // TODO: Panic?
                     tracing::error!(

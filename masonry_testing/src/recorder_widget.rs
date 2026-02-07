@@ -15,12 +15,12 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions,
-    WidgetRef,
+    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
+    MeasureCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
-use masonry_core::kurbo::{Point, Size};
+use masonry_core::kurbo::{Axis, Point, Size};
+use masonry_core::layout::LenReq;
 use masonry_core::vello::Scene;
 
 // TODO - Re-enable doc test.
@@ -77,10 +77,14 @@ pub enum Record {
     Update(Update),
     /// Property change.
     PropertyChange(TypeId),
-    /// Layout. Records the size returned by the layout method.
+    /// Measure. Records the length returned by the measure method.
+    Measure(f64),
+    /// Layout. Records the size given to the layout method.
     Layout(Size),
     /// Compose.
     Compose,
+    /// Background paint.
+    PrePaint,
     /// Paint.
     Paint,
     /// Paint after children.
@@ -206,20 +210,32 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.property_changed(ctx, property_type);
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = self.child.layout(ctx, props, bc);
+        ctx: &mut MeasureCtx<'_>,
+        props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        let length = self.child.measure(ctx, props, axis, len_req, cross_length);
+        self.recording.push(Record::Measure(length));
+        length
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
         self.recording.push(Record::Layout(size));
-        size
+        self.child.layout(ctx, props, size);
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         self.recording.push(Record::Compose);
         self.child.compose(ctx);
+    }
+
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        self.recording.push(Record::PrePaint);
+        self.child.pre_paint(ctx, props, scene);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -248,6 +264,10 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn children_ids(&self) -> ChildrenIds {
         self.child.children_ids()
+    }
+
+    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+        None
     }
 
     fn accepts_pointer_interaction(&self) -> bool {
@@ -297,17 +317,10 @@ impl<W: Widget> Widget for Recorder<W> {
         NewWidget::new(self)
     }
 
-    fn with_id(self, id: WidgetId) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
     where
         Self: Sized,
     {
-        NewWidget::new_with_id(self, id)
-    }
-
-    fn with_props(self, props: Properties) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+        NewWidget::new_with_props(self, props)
     }
 }

@@ -1,0 +1,16 @@
+[package]
+name = "open_and_save_file"
+version = "0.1.0"
+publish = false
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = "1.0.100"
+console_error_panic_hook = "0.1.7"
+console_log = "1.0.0"
+gloo-file = { version = "0.3.0", features = ["futures"] }
+log = "0.4.29"
+web-sys = { version = "0.3.85", features = ["Blob", "File", "Url"] }
+xilem_web = { path = "../.." }

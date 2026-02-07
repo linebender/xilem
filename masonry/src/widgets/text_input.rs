@@ -4,23 +4,21 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Point, Rect, Size};
 
 use crate::TextAlign;
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
+    PaintCtx, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
+use crate::kurbo::{Axis, Point, Size};
+use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
-    DisabledBackground, FocusedBorderColor, Padding, PlaceholderColor, SelectionColor,
+    CaretColor, ContentColor, FocusedBorderColor, LineBreaking, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
 };
-use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -37,6 +35,9 @@ use crate::widgets::{Label, TextArea};
 /// This is because `TextInput` largely serves as a wrapper around a [`TextArea`].
 pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
+
+    // TODO: We want placeholder to match wordwrap property of main text.
+    // TODO: We want placeholder to clip even when wordwrap is enabled.
     placeholder: WidgetPod<Label>,
     placeholder_text: ArcStr,
 
@@ -60,7 +61,7 @@ impl TextInput {
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
-            placeholder: NewWidget::new_with_props(Label::new(""), Properties::new()).to_pod(),
+            placeholder: Label::new("").with_props(LineBreaking::Clip).to_pod(),
             placeholder_text: "".into(),
             text_alignment: TextAlign::default(),
             clip: false,
@@ -79,7 +80,7 @@ impl TextInput {
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
-        self.placeholder = NewWidget::new_with_props(label, Properties::new()).to_pod();
+        self.placeholder = label.with_props(LineBreaking::Clip).to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -146,15 +147,7 @@ impl TextInput {
     }
 }
 
-impl HasProperty<Background> for TextInput {}
 impl HasProperty<CaretColor> for TextInput {}
-impl HasProperty<DisabledBackground> for TextInput {}
-impl HasProperty<BorderColor> for TextInput {}
-impl HasProperty<FocusedBorderColor> for TextInput {}
-impl HasProperty<BorderWidth> for TextInput {}
-impl HasProperty<BoxShadow> for TextInput {}
-impl HasProperty<CornerRadius> for TextInput {}
-impl HasProperty<Padding> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
 impl HasProperty<UnfocusedSelectionColor> for TextInput {}
@@ -169,16 +162,6 @@ impl Widget for TextInput {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
-        // TODO: Draw shadows in post_paint.
-        BoxShadow::prop_changed(ctx, property_type);
-
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -243,91 +226,79 @@ impl Widget for TextInput {
             // We check for `ChildFocusChanged` instead of `FocusChanged`
             // because the actual widget that receives focus is the child `TextArea`
             Update::ChildFocusChanged(_) => {
-                ctx.request_paint_only();
+                ctx.request_pre_paint();
             }
             _ => {}
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        match len_req {
+            LenReq::MaxContent | LenReq::MinContent => {
+                let auto_length = len_req.into();
+                let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-        let bc = *bc;
-        let bc = border.layout_down(bc);
-        let bc = padding.layout_down(bc);
+                ctx.compute_length(
+                    &mut self.text,
+                    auto_length,
+                    context_size,
+                    axis,
+                    cross_length,
+                )
+            }
+            // We always want to use all the offered space,
+            // even on the block axis as we have multi-line display.
+            LenReq::FitContent(space) => space,
+        }
+    }
 
-        // TODO: Set minimum to deal with alignment
-        let size = ctx.run_layout(&mut self.text, &bc);
-        let baseline = ctx.child_baseline_offset(&self.text);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        ctx.run_layout(&mut self.text, size);
 
-        let (size, baseline) = padding.layout_up(size, baseline);
-        let (size, baseline) = border.layout_up(size, baseline);
+        let child_origin = Point::ORIGIN;
+        ctx.place_child(&mut self.text, child_origin);
 
-        let pos = Point::ORIGIN;
-        let pos = border.place_down(pos);
-        let pos = padding.place_down(pos);
-        ctx.place_child(&mut self.text, pos);
+        let child_baseline = ctx.child_baseline_offset(&self.text);
+        ctx.set_baseline_offset(child_baseline);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
-
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
         if text_is_empty {
-            let _ = ctx.run_layout(&mut self.placeholder, &bc);
-            ctx.place_child(&mut self.placeholder, pos);
-        }
-
-        if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
+            ctx.run_layout(&mut self.placeholder, size);
+            ctx.place_child(&mut self.placeholder, child_origin);
         }
 
         if self.clip {
-            // TODO: Ideally, this clip would be the "inside edge" of our border path
-            // In the current implementation, that would currently clip our own border
-            // and so isn't viable.
-            // The BorderColor (etc.) properties don't currently support the border
-            // being drawn in post_post, which I think would be ideal for this use case.
-            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
+            ctx.set_clip_path(size.to_rect());
+        } else {
+            ctx.clear_clip_path();
+        }
+    }
+
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let bbox = ctx.border_box();
+        let mut p = PrePaintProps::fetch(ctx, props);
+
+        // We want to show a focus border if our child TextArea is focused
+        if ctx.has_focus_target()
+            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            p.border_color = &fb.0;
         }
 
-        ctx.set_baseline_offset(baseline);
-        size
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
-
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
-
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if ctx.has_focus_target() {
-            &props.get::<FocusedBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        shadow.paint(scene, Affine::IDENTITY, bg_rect);
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -359,12 +330,11 @@ impl Widget for TextInput {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::TextEvent;
     use masonry_testing::TestHarnessParams;
-    use vello::kurbo::Size;
 
     use super::*;
-    use crate::core::StyleProperty;
+    use crate::core::{StyleProperty, TextEvent};
+    use crate::kurbo::Size;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::TextArea;

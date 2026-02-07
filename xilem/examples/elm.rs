@@ -32,6 +32,7 @@ fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<Edit<T>, CountMessage>
         text_button("+", |_| CountMessage::Increment),
         text_button("-", |_| CountMessage::Decrement),
     ))
+    .main_axis_alignment(MainAxisAlignment::Center)
 }
 
 /// A View Action type recording how the counter changed in [`map_message_counter`].
@@ -55,13 +56,15 @@ fn map_message_counter(count: i32) -> impl WidgetView<Edit<i32>, CounterChanged>
                 *count -= 1;
                 CounterChanged::Changed
             }),
-        )),
+        ))
+        .main_axis_alignment(MainAxisAlignment::Center),
         flex_col((
             text_button("reset all", |_| CounterChanged::Reset),
             text_button("do nothing (and don't rebuild the view tree)", |_| {
                 CounterChanged::Nop
             }),
-        )),
+        ))
+        .main_axis_alignment(MainAxisAlignment::Center),
     ))
 }
 

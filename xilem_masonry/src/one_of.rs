@@ -5,12 +5,14 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx, MeasureCtx, NoAction,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
+use masonry::layout::LenReq;
 use vello::Scene;
+use vello::kurbo::Axis;
 
 use crate::core::Mut;
 use crate::core::one_of::OneOf;
@@ -249,57 +251,64 @@ impl<
         }
     }
 
-    fn layout(
+    fn measure(
         &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
+        ctx: &mut MeasureCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        axis: Axis,
+        _len_req: LenReq,
+        cross_length: Option<f64>,
+    ) -> f64 {
+        match self {
+            Self::A(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::B(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::C(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::D(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::E(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::F(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::G(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::H(w) => ctx.redirect_measurement(w, axis, cross_length),
+            Self::I(w) => ctx.redirect_measurement(w, axis, cross_length),
+        }
+    }
+
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         match self {
             Self::A(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::B(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::C(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::D(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::E(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::F(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::G(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::H(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
             Self::I(w) => {
-                let size = ctx.run_layout(w, bc);
+                ctx.run_layout(w, size);
                 ctx.place_child(w, Point::ORIGIN);
-                size
             }
         }
     }

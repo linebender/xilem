@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
+use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use oxipng::{Options, optimize_from_memory};
@@ -100,7 +101,6 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// use masonry::core::PointerButton;
 /// use masonry::core::Action;
 /// use masonry::testing::assert_render_snapshot;
-/// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;
 /// use masonry::testing::TestWidgetExt;
 /// use masonry::theme::default_property_set;
@@ -109,10 +109,10 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// #[test]
 /// # */
 /// fn simple_button() {
-///     let [button_id] = widget_ids();
-///     let widget = Button::new("Hello").with_id(button_id);
+///     let widget = Button::new("Hello");
 ///
 ///     let mut harness = TestHarness::create(default_property_set(), widget);
+///     let button_id = harness.root_id();
 ///
 ///     # if false {
 ///     assert_render_snapshot!(harness, "hello");
@@ -464,7 +464,9 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::Exit => (),
                 RenderRootSignal::ShowWindowMenu(_) => (),
                 RenderRootSignal::WidgetSelectedInInspector(_) => (),
-                RenderRootSignal::NewLayer(root, pos) => self.render_root.add_layer(root, pos),
+                RenderRootSignal::NewLayer(_type, root, pos) => {
+                    self.render_root.add_layer(root, pos);
+                }
                 RenderRootSignal::RemoveLayer(root_id) => self.render_root.remove_layer(root_id),
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
                     self.render_root.reposition_layer(root_id, new_pos);
@@ -713,7 +715,7 @@ impl<W: Widget> TestHarness<W> {
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
-        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         if !widget.ctx().accepts_pointer_interaction() {
@@ -750,7 +752,7 @@ impl<W: Widget> TestHarness<W> {
     #[track_caller]
     pub fn mouse_move_to_unchecked(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
-        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         if widget.ctx().is_stashed() {
@@ -772,6 +774,28 @@ impl<W: Widget> TestHarness<W> {
     pub fn scroll_into_view(&mut self, id: WidgetId) {
         self.render_root.handle_access_event(ActionRequest {
             action: Action::ScrollIntoView,
+            target: id.to_raw().into(),
+            data: None,
+        });
+    }
+
+    /// Clicks the given widget.
+    ///
+    /// This will send an accesskit [`Click`] action to the widget,
+    /// which may have different behavior compared to a normal mouse click.
+    ///
+    /// Unlike [`Self::mouse_click_on`], the event will be routed to the target widget
+    /// even if it's not visible, or hidden behind other widgets.
+    ///
+    /// # Panics
+    ///
+    /// - If the widget is not found in the tree.
+    ///
+    /// [`Click`]: masonry_core::accesskit::Action::Click
+    #[track_caller]
+    pub fn accessibility_click_on(&mut self, id: WidgetId) {
+        self.render_root.handle_access_event(ActionRequest {
+            action: Action::Click,
             target: id.to_raw().into(),
             data: None,
         });
@@ -1040,7 +1064,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Returns the rectangle of the IME session.
     ///
-    /// This is usually the layout rectangle of the focused widget.
+    /// This is usually the effective border-box rectangle of the focused widget.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
         self.ime_rect
     }
@@ -1063,6 +1087,24 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: SNAPSHOT
+
+    /// Renders the current widget tree to a pixmap, and writes it to a temporary PNG file.
+    pub fn save_render_snapshot(&mut self) {
+        let image = self.render();
+
+        let mut buffer = Cursor::new(Vec::new());
+        image.write_to(&mut buffer, ImageFormat::Png).unwrap();
+        let image_data = buffer.into_inner();
+
+        let id = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-screenshot.png"));
+
+        std::fs::write(&tmp_path, image_data).unwrap();
+        debug!("Screenshot saved to {}", tmp_path.display());
+    }
 
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///

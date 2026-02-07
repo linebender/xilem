@@ -7,7 +7,8 @@ use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
+use masonry::layout::AsUnit;
+use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
@@ -111,7 +112,8 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
         flex_col((
             FlexSpacer::Fixed(5.px()),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
-            flex_row((lap_reset_button(data), start_stop_button(data))),
+            flex_row((lap_reset_button(data), start_stop_button(data)))
+                .main_axis_alignment(MainAxisAlignment::Center),
             FlexSpacer::Fixed(1.px()),
             laps_section(data),
             label(data.displayed_error.as_ref()),
@@ -170,7 +172,6 @@ fn single_lap(
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Start)
-    .must_fill_major_axis(true)
 }
 
 fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {

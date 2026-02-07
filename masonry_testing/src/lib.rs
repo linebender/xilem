@@ -4,6 +4,10 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_testing
 
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/linebender/xilem/main/docs/assets/masonry-logo.svg"
+)]
+
 //! Headless runner for testing [Masonry](https://docs.rs/masonry/latest/) applications.
 //!
 //! The primary type from this crate is [`TestHarness`][], which creates a host for any [Widget][].
@@ -67,7 +71,7 @@ pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use masonry_core::core::{Widget, WidgetId};
+use masonry_core::core::Widget;
 
 /// External trait implemented for all widgets.
 ///
@@ -81,10 +85,3 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
 }
 
 impl<W: Widget + 'static> TestWidgetExt for W {}
-
-// TODO - We eventually want to remove the ability to reserve widget ids.
-// See https://github.com/linebender/xilem/issues/1255
-/// Convenience function to return an array of unique widget ids.
-pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
-    std::array::from_fn(|_| WidgetId::next())
-}

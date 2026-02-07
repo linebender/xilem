@@ -57,7 +57,11 @@ impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
 /// The options a new widget will be created with.
 #[derive(Default, Debug)]
 pub struct WidgetOptions {
-    /// The transform the widget will be created with.
+    /// Local transform used during the mapping of this widget's border-box coordinate space
+    /// to the parent's border-box coordinate space.
+    ///
+    /// When calculating the effective border-box of this widget, first this transform
+    /// will be applied and then `scroll_translation` and `origin` applied on top.
     pub transform: Affine,
     /// The disabled state the widget will be created with.
     pub disabled: bool,
@@ -78,61 +82,53 @@ impl<W: Widget> NewWidget<W> {
     /// Creates a new widget.
     ///
     /// You can also get the same result with [`Widget::with_auto_id()`].
+    #[inline(always)]
     pub fn new(inner: W) -> Self {
-        Self::new_with_id(inner, WidgetId::next())
+        Self::new_with(inner, None, WidgetOptions::default(), Properties::default())
     }
 
-    /// Creates a new widget with pre-determined id.
-    pub fn new_with_id(inner: W, id: WidgetId) -> Self {
+    /// Creates a new widget with a potential [`WidgetTag`],
+    /// custom [`WidgetOptions`] and custom [`Properties`].
+    pub fn new_with(
+        inner: W,
+        tag: Option<WidgetTag<W>>,
+        options: WidgetOptions,
+        props: impl Into<Properties>,
+    ) -> Self {
         Self {
             widget: Box::new(inner),
-            id,
+            id: WidgetId::next(),
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
-            options: WidgetOptions::default(),
-            properties: Properties::default(),
-            tag: None,
+            options,
+            properties: props.into(),
+            tag: tag.map(|tag| tag.inner),
         }
     }
 
     /// Creates a new widget with a [`WidgetTag`].
+    #[inline(always)]
     pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
-        Self {
-            tag: Some(tag.inner),
-            ..Self::new(inner)
-        }
+        Self::new_with(
+            inner,
+            Some(tag),
+            WidgetOptions::default(),
+            Properties::default(),
+        )
     }
 
-    // TODO - Replace with builder methods?
+    // TODO - Replace with builder methods? More allocations then though?
     /// Creates a new widget with custom [`Properties`].
-    pub fn new_with_props(inner: W, props: Properties) -> Self {
-        Self {
-            properties: props,
-            ..Self::new(inner)
-        }
+    #[inline(always)]
+    pub fn new_with_props(inner: W, props: impl Into<Properties>) -> Self {
+        Self::new_with(inner, None, WidgetOptions::default(), props)
     }
 
     /// Creates a new widget with custom [`WidgetOptions`].
+    #[inline(always)]
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
-        Self {
-            options,
-            ..Self::new(inner)
-        }
-    }
-
-    /// Creates a new widget with custom [`WidgetOptions`] and custom [`Properties`].
-    pub fn new_with(inner: W, id: WidgetId, options: WidgetOptions, props: Properties) -> Self {
-        Self {
-            widget: Box::new(inner),
-            id,
-            action_type: TypeId::of::<W::Action>(),
-            #[cfg(debug_assertions)]
-            action_type_name: std::any::type_name::<W::Action>(),
-            options,
-            properties: props,
-            tag: None,
-        }
+        Self::new_with(inner, None, options, Properties::default())
     }
 }
 

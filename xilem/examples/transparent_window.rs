@@ -3,7 +3,7 @@
 
 //! Showcase a trasnsparent window.
 
-use masonry::properties::types::AsUnit;
+use masonry::layout::AsUnit;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::*;
@@ -36,6 +36,7 @@ fn app_logic(state: &mut AppState) -> impl Iterator<Item = WindowView<AppState>>
                 state.alpha = (state.alpha + 0.25).min(1.);
             }),
         ))
+        .main_axis_alignment(MainAxisAlignment::Center)
         .gap(10.px()),
         FlexSpacer::Flex(1.),
     ))

@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use tracing::{debug, info_span, trace};
+use tracing::{info_span, trace};
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
@@ -143,20 +143,10 @@ fn run_event_pass<E>(
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
-    if is_very_frequent(event) {
-        // We still want to record that this pass occurred in the debug file log.
-        // However, we choose not to record any other tracing for this event,
-        // as that would create a lot of noise.
-        trace!(
-            "Running ON_POINTER_EVENT pass with {}",
-            pointer_event_short_name(event)
-        );
-    } else {
-        debug!(
-            "Running ON_POINTER_EVENT pass with {}",
-            pointer_event_short_name(event)
-        );
-    }
+    trace!(
+        "Running ON_POINTER_EVENT pass with {}",
+        pointer_event_short_name(event)
+    );
 
     let event_pos = try_event_position(event).map(|p| p.to_logical(root.global_state.scale_factor));
 
@@ -189,12 +179,35 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         return Handled::Yes;
     }
 
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
+    let layer_ids = root_node.item.widget.children_ids();
+    for layer_id in layer_ids {
+        let mut layer_root = root.widget_arena.get_node_mut(layer_id);
+        if let Some(layer) = layer_root.item.widget.as_layer() {
+            let mut ctx = EventCtx {
+                global_state: &mut root.global_state,
+                widget_state: &mut layer_root.item.state,
+                children: layer_root.children.reborrow_mut(),
+                default_properties: &root.default_properties,
+                target: layer_id,
+                allow_pointer_capture: false,
+                is_handled: false,
+            };
+            let mut props = PropertiesMut {
+                map: &mut layer_root.item.properties,
+                default_map: root.default_properties.for_widget(layer.type_id()),
+            };
+
+            layer.capture_pointer_event(&mut ctx, &mut props, event);
+        }
+    }
+
     let target_widget_id = get_pointer_target(root, event_pos);
 
     if matches!(event, PointerEvent::Down { .. })
         && let Some(target_widget_id) = target_widget_id
     {
-        // The next tab event assign focus around this widget.
+        // The next tab event will assign focus around this widget.
         root.global_state.focus_anchor = Some(target_widget_id);
 
         // If we click outside of the focused widget, we clear the focus.
@@ -232,7 +245,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     }
 
     if !is_very_frequent(event) {
-        debug!(
+        trace!(
             focused_widget = root.global_state.focused_widget.map(|id| id.0),
             handled = handled.is_handled(),
             "ON_POINTER_EVENT finished",
@@ -258,7 +271,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     let _span = info_span!("dispatch_text_event").entered();
 
-    debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+    trace!("Running ON_TEXT_EVENT pass with {}", event.short_name());
 
     if let TextEvent::WindowFocusChange(focused) = event {
         root.global_state.window_focused = *focused;
@@ -320,7 +333,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
     }
 
-    debug!(
+    trace!(
         focused_widget = root.global_state.focused_widget.map(|id| id.0),
         handled = handled.is_handled(),
         "ON_TEXT_EVENT finished",
@@ -337,7 +350,7 @@ pub(crate) fn run_on_access_event_pass(
     target: WidgetId,
 ) -> Handled {
     let _span = info_span!("access_event").entered();
-    debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
+    trace!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
     let skip_if_disabled = true;
     let mut handled = run_event_pass(
@@ -368,7 +381,7 @@ pub(crate) fn run_on_access_event_pass(
         }
         accesskit::Action::ScrollIntoView if !handled.is_handled() => {
             let widget_state = root.widget_arena.get_state(target);
-            let rect = widget_state.layout_rect();
+            let rect = widget_state.border_box_size().to_rect();
             root.global_state
                 .scroll_request_targets
                 .push((target, rect));
@@ -377,7 +390,7 @@ pub(crate) fn run_on_access_event_pass(
         _ => {}
     }
 
-    debug!(
+    trace!(
         focused_widget = root.global_state.focused_widget.map(|id| id.0),
         handled = handled.is_handled(),
         "ON_ACCESS_EVENT finished",

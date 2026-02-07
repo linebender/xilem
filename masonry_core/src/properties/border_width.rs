@@ -1,0 +1,139 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+use crate::core::{HasProperty, Property, Widget};
+use crate::kurbo::{Axis, Insets, Point, Rect, RoundedRect, Size, Vec2};
+use crate::layout::Length;
+use crate::properties::CornerRadius;
+
+// Every widget has a border width.
+impl<W: Widget> HasProperty<BorderWidth> for W {}
+
+/// The width of a widget's border, in logical pixels.
+#[expect(missing_docs, reason = "field names are self-descriptive")]
+#[derive(Default, Clone, Copy, Debug, PartialEq)]
+pub struct BorderWidth {
+    pub width: f64,
+}
+
+// TODO - To match CSS, we should use a non-zero default width
+// and a "border style" of "None".
+
+impl Property for BorderWidth {
+    fn static_default() -> &'static Self {
+        static DEFAULT: BorderWidth = BorderWidth { width: 0. };
+        &DEFAULT
+    }
+}
+
+impl BorderWidth {
+    /// Creates new `BorderWidth` with given value.
+    pub const fn all(width: f64) -> Self {
+        Self { width }
+    }
+
+    /// Returns the total [`Length`] of this border on the given `axis`.
+    ///
+    /// For [`Axis::Horizontal`] it will return the sum of the left and right border width.
+    /// For [`Axis::Vertical`] it will return the sum of the top and bottom border height.
+    pub fn length(&self, _axis: Axis) -> Length {
+        Length::px(self.width * 2.)
+    }
+
+    /// Expands the `size` by the border width.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn size_up(&self, size: Size, scale: f64) -> Size {
+        let width = size.width + Length::px(self.width).dp(scale) * 2.;
+        let height = size.height + Length::px(self.width).dp(scale) * 2.;
+        Size::new(width, height)
+    }
+
+    /// Shrinks the `size` by the border width.
+    ///
+    /// The returned [`Size`] will be non-negative and in device pixels.
+    ///
+    /// The provided `size` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn size_down(&self, size: Size, scale: f64) -> Size {
+        let width = (size.width - Length::px(self.width).dp(scale) * 2.).max(0.);
+        let height = (size.height - Length::px(self.width).dp(scale) * 2.).max(0.);
+        Size::new(width, height)
+    }
+
+    /// Returns the [`Insets`] for deriving an area with this border.
+    ///
+    /// The returned [`Insets`] will be in device pixels.
+    ///
+    /// The provided `insets` must be in device pixels.
+    pub fn insets_up(&self, insets: Insets, scale: f64) -> Insets {
+        let width = Length::px(self.width).dp(scale);
+        Insets {
+            x0: insets.x0 + width,
+            y0: insets.y0 + width,
+            x1: insets.x1 + width,
+            y1: insets.y1 + width,
+        }
+    }
+
+    /// Raises the `baseline` by the border width.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
+        baseline + Length::px(self.width).dp(scale)
+    }
+
+    /// Lowers the `baseline` by the border width.
+    ///
+    /// The returned baseline will be in device pixels.
+    ///
+    /// The provided `baseline` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
+        baseline - Length::px(self.width).dp(scale)
+    }
+
+    /// Lowers the position by the border width.
+    ///
+    /// The returned [`Point`] will be in device pixels.
+    ///
+    /// The provided `origin` must be in device pixels.
+    ///
+    /// Helper function to be called in [`Widget::layout`].
+    pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
+        let width = Length::px(self.width).dp(scale);
+        origin + Vec2::new(width, width)
+    }
+
+    /// Creates a rounded rectangle that is inset by the border width.
+    ///
+    /// Use to display a box's background.
+    ///
+    /// Helper function to be called in [`Widget::paint`].
+    pub fn bg_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        border_box
+            .inset(-self.width)
+            .to_rounded_rect((border_radius.radius - self.width).max(0.))
+    }
+
+    /// Creates a rounded rectangle that is inset by half the border width.
+    ///
+    /// Use to display a box's border.
+    ///
+    /// Helper function to be called in [`Widget::paint`].
+    pub fn border_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        border_box
+            .inset(-self.width / 2.0)
+            .to_rounded_rect(border_radius.radius)
+    }
+}

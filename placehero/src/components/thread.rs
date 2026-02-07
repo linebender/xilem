@@ -4,7 +4,7 @@
 use megalodon::entities::{Context, Status};
 use xilem::WidgetView;
 use xilem::core::Edit;
-use xilem::masonry::properties::types::AsUnit;
+use xilem::masonry::layout::AsUnit;
 use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
@@ -73,16 +73,12 @@ pub(crate) fn thread(
 /// These are rendered without a containing box, and with an adjoining "reply indicator"
 /// (which is currently known to be terrible!).
 fn thread_ancestor(status: &Status) -> impl WidgetView<Edit<Placehero>, Navigation> + use<> {
-    sized_box(
-        flex_row((
-            // An awful left-side border.
-            sized_box(flex_col(()))
-                .width(3.px())
-                .height(50.px())
-                .background_color(css::WHITE)
-                .flex(CrossAxisAlignment::Start),
-            flex_col(base_status(status)).flex(1.0),
-        ))
-        .must_fill_major_axis(true),
-    )
+    sized_box(flex_row((
+        // An awful left-side border.
+        flex_col(())
+            .dims((3.px(), 50.px()))
+            .background_color(css::WHITE)
+            .flex(CrossAxisAlignment::Start),
+        flex_col(base_status(status)).flex(1.0),
+    )))
 }
