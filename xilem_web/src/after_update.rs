@@ -44,7 +44,7 @@ where
     State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
-    F: Fn(&E::DomNode) + 'static,
+    F: Fn(Arg<'_, State>, &E::DomNode) + 'static,
 {
     AfterBuild {
         element,
@@ -70,7 +70,7 @@ where
     State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
-    F: Fn(&E::DomNode) + 'static,
+    F: Fn(Arg<'_, State>, &E::DomNode) + 'static,
 {
     AfterRebuild {
         element,
@@ -109,7 +109,7 @@ impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterBuild<State, Act
 where
     State: ViewArgument,
     Action: 'static,
-    F: Fn(&V::DomNode) + 'static,
+    F: Fn(Arg<'_, State>, &V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
 {
     type Element = V::Element;
@@ -119,11 +119,11 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        mut app_state: Arg<'_, State>,
     ) -> (Self::Element, Self::ViewState) {
-        let (mut el, view_state) = self.element.build(ctx, app_state);
+        let (mut el, view_state) = self.element.build(ctx, State::reborrow_mut(&mut app_state));
         el.node.apply_props(&mut el.props, &mut el.flags);
-        (self.callback)(&el.node);
+        (self.callback)(app_state, &el.node);
         (el, view_state)
     }
 
@@ -164,7 +164,7 @@ impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterRebuild<State, A
 where
     State: ViewArgument,
     Action: 'static,
-    F: Fn(&V::DomNode) + 'static,
+    F: Fn(Arg<'_, State>, &V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
 {
     type Element = V::Element;
@@ -185,17 +185,17 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        mut app_state: Arg<'_, State>,
     ) {
         self.element.rebuild(
             &prev.element,
             view_state,
             ctx,
             element.reborrow_mut(),
-            app_state,
+            State::reborrow_mut(&mut app_state),
         );
         element.node.apply_props(element.props, element.flags);
-        (self.callback)(element.node);
+        (self.callback)(app_state, element.node);
     }
 
     fn teardown(
