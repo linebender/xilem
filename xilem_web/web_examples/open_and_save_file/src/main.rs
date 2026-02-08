@@ -116,6 +116,7 @@ fn hidden_save_link() -> impl Element<Edit<AppState>> + use<> {
             if !state.start_saving {
                 return;
             }
+            state.start_saving = false;
             let blob = Blob::new(&*state.text);
             let url = ObjectUrl::from(blob);
             el.set_href(&url);
