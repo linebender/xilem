@@ -17,7 +17,7 @@ use crate::util::AnyMap;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + Send + Sync + 'static {
+pub trait Property: Default + Clone + Send + Sync + 'static {
     /// A static reference to a default value.
     ///
     /// Should be the same as [`Default::default()`].
@@ -41,7 +41,7 @@ pub trait Property: Default + Send + Sync + 'static {
 
 // TODO - Implement Debug.
 /// A collection of [properties](Property) that a widget can be created with.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
 }
