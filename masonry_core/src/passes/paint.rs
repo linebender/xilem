@@ -92,7 +92,7 @@ fn paint_widget(
         complete_scene.append(pre_scene, Some(transform));
 
         if clips_contents {
-            let clip_shape = state.border_box_size().to_rect();
+            let clip_shape = state.clip_shape();
             // The clip shape is in border-box space, so need just window transform.
             complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip_shape);
         }
