@@ -430,12 +430,8 @@ impl Widget for Label {
         let baseline = 0.; // TODO: Use actual baseline, at least for single line text
         ctx.set_baseline_offset(baseline);
 
-        if *line_break_mode == LineBreaking::Clip {
-            let border_box = size.to_rect() + ctx.border_box_insets();
-            ctx.set_clip_path(border_box);
-        } else {
-            ctx.clear_clip_path();
-        }
+        let needs_clip = *line_break_mode == LineBreaking::Clip;
+        ctx.set_clips_contents(needs_clip);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
