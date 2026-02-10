@@ -436,15 +436,12 @@ impl WidgetState {
     /// A widget's clip shape will have two effects:
     /// - It serves as a mask for painting operations of this widget and its children.
     ///   Note that while all painting done by children will be clipped by this path,
-    ///   only the painting done in [`paint`] by this widget itself will be clipped.
-    ///   The remaining painting done in [`pre_paint`] and [`post_paint`] will not be clipped.
+    ///   only the painting done in `Widget::paint` by this widget itself will be clipped.
+    ///   The remaining painting done in `Widget::pre_paint` and `Widget::post_paint` will not be clipped.
     /// - Pointer events must be inside that shape to reach the widget's children.
     ///
     /// This currently returns the border-box rect if `clips_contents` is true and `None` otherwise, but in the future we may want to support more complex clip shapes, in which case this method would need to be updated.
     ///
-    /// [`paint`]: Widget::paint
-    /// [`pre_paint`]: Widget::pre_paint
-    /// [`post_paint`]: Widget::post_paint
     /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
     pub(crate) fn clip_shape(&self) -> Rect {
         self.border_box_size().to_rect() - self.border_box_translation()
