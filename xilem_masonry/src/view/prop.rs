@@ -23,7 +23,7 @@ pub struct Prop<P, V, State, Action> {
 impl<P, V, State: ViewArgument, Action> ViewMarker for Prop<P, V, State, Action> {}
 impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, State, Action>
 where
-    P: Property + PartialEq + Clone,
+    P: Property + PartialEq,
     Child: WidgetView<State, Action>,
     Child::Widget: HasProperty<P>,
     State: ViewArgument,
