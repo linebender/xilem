@@ -106,7 +106,8 @@ pub trait AppDriver {
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         action: ErasedAction,
-    );
+    ) {
+    }
 
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
     ///
