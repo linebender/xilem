@@ -4,16 +4,15 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{PointerButton, PointerButtonEvent};
 use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, paint_background, paint_border,
-    paint_box_shadow,
+    NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps,
+    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
