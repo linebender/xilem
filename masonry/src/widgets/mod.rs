@@ -4,6 +4,8 @@
 //! Common widgets.
 
 mod align;
+mod badge;
+mod badged;
 mod button;
 mod canvas;
 mod checkbox;
@@ -36,6 +38,8 @@ mod zstack;
 // (e.g. actions, param types)
 
 pub use self::align::*;
+pub use self::badge::*;
+pub use self::badged::*;
 pub use self::button::*;
 pub use self::canvas::*;
 pub use self::checkbox::*;
