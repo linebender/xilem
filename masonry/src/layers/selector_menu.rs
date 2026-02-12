@@ -13,8 +13,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
-use crate::properties::{Background, CornerRadius, Gap};
-use crate::util::fill;
+use crate::properties::Gap;
 use crate::widgets::{SelectionChanged, Selector};
 
 /// A [`Layer`] representing a list of options for a [`Selector`] widget.
@@ -137,10 +136,6 @@ impl CollectionWidget<()> for SelectorMenu {
     }
 }
 
-// TODO - Add Border, Shadow and Padding properties
-
-impl HasProperty<Background> for SelectorMenu {}
-impl HasProperty<CornerRadius> for SelectorMenu {}
 impl HasProperty<Gap> for SelectorMenu {}
 
 impl Widget for SelectorMenu {
@@ -298,15 +293,7 @@ impl Widget for SelectorMenu {
 
     fn compose(&mut self, _ctx: &mut ComposeCtx<'_>) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_radius = props.get::<CornerRadius>();
-        let bg = props.get::<Background>();
-
-        let bg_rect = ctx.size().to_rect().to_rounded_rect(border_radius.radius);
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -351,7 +338,7 @@ impl Layer for SelectorMenu {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 let local_pos = ctx.local_position(state.position);
 
-                !ctx.size().to_rect().contains(local_pos)
+                !ctx.border_box_size().to_rect().contains(local_pos)
             }
             PointerEvent::Cancel(..) => true,
             _ => false,

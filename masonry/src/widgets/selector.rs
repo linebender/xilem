@@ -3,29 +3,23 @@
 
 //! A selector widget.
 
-use std::any::TypeId;
-
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Vec2;
 
+use crate::core::MeasureCtx;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayerType, LayoutCtx, NewWidget, PaintCtx,
     PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::core::{HasProperty, MeasureCtx};
-use crate::kurbo::{Affine, Axis, Size};
+use crate::kurbo::{Axis, Size};
 use crate::layers::SelectorMenu;
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
-};
 use crate::theme;
-use crate::util::{debug_panic, fill, stroke};
+use crate::util::debug_panic;
 use crate::widgets::Label;
 use crate::widgets::selector_item::SelectorItem;
 
@@ -111,16 +105,6 @@ impl Selector {
     }
 }
 
-impl HasProperty<DisabledBackground> for Selector {}
-impl HasProperty<ActiveBackground> for Selector {}
-impl HasProperty<Background> for Selector {}
-impl HasProperty<FocusedBorderColor> for Selector {}
-impl HasProperty<HoveredBorderColor> for Selector {}
-impl HasProperty<BorderColor> for Selector {}
-impl HasProperty<BorderWidth> for Selector {}
-impl HasProperty<CornerRadius> for Selector {}
-impl HasProperty<Padding> for Selector {}
-
 /// A [`Selector`]'s option was picked.
 #[derive(PartialEq, Debug)]
 pub struct SelectionChanged {
@@ -159,7 +143,7 @@ impl Selector {
         ctx.create_layer(
             layer_type,
             layer_widget,
-            ctx.window_origin() + Vec2::new(0., ctx.size().height),
+            ctx.window_origin() + Vec2::new(0., ctx.border_box_size().height),
         );
     }
 }
@@ -240,22 +224,10 @@ impl Widget for Selector {
         ctx.register_child(&mut self.child);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
-    }
-
     fn measure(
         &mut self,
         ctx: &mut MeasureCtx<'_>,
-        props: &PropertiesRef<'_>,
+        _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
         cross_length: Option<f64>,
@@ -264,31 +236,18 @@ impl Widget for Selector {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-
-        let border_length = border.length(axis).dp(scale);
-        let padding_length = padding.length(axis).dp(scale);
-
-        let cross = axis.cross();
-        let cross_space = cross_length.map(|cross_length| {
-            let cross_border_length = border.length(cross).dp(scale);
-            let cross_padding_length = padding.length(cross).dp(scale);
-            (cross_length - cross_border_length - cross_padding_length).max(0.)
-        });
-
-        let auto_length = len_req.reduce(border_length + padding_length).into();
-        let context_size = LayoutSize::maybe(cross, cross_space);
+        let auto_length = len_req.into();
+        let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
         let child_length = ctx.compute_length(
             &mut self.child,
             auto_length,
             context_size,
             axis,
-            cross_space,
+            cross_length,
         );
 
-        let length = child_length + border_length + padding_length;
+        let length = child_length;
 
         // TODO - Add MinimumSize property.
         // HACK: to make sure we look okay at default sizes when beside a text input,
@@ -300,76 +259,20 @@ impl Widget for Selector {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
-        let shadow = props.get::<BoxShadow>();
-
-        let space = border.size_down(size, scale);
-        let space = padding.size_down(space, scale);
-
-        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(space), space.into());
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+        let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
 
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.child, child_origin);
 
-        let baseline = ctx.child_baseline_offset(&self.child);
-        let baseline = border.baseline_up(baseline, scale);
-        let baseline = padding.baseline_up(baseline, scale);
-        ctx.set_baseline_offset(baseline);
-
-        if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
-        }
+        let child_baseline = ctx.child_baseline_offset(&self.child);
+        let child_bottom = child_origin.y + child_size.height;
+        let bottom_gap = size.height - child_bottom;
+        ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
-        let is_hovered = ctx.is_hovered();
-        let size = ctx.size();
-
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
-
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
-        let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
-
-        let shadow_rect = shadow.shadow_rect(size, border_radius);
-
-        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::ComboBox
