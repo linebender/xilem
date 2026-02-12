@@ -1,8 +1,6 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A button widget.
-
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
@@ -10,19 +8,15 @@ use masonry_core::core::NoAction;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
+use crate::core::MeasureCtx;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::core::{HasProperty, MeasureCtx};
-use crate::kurbo::{Affine, Axis, Size};
+use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor, Padding,
-};
-use crate::util::{fill, stroke};
+use crate::properties::{BorderWidth, BoxShadow, Padding};
 use crate::widgets::Label;
 
 /// An option in a [`SelectorMenu`](crate::layers::SelectorMenu).
@@ -47,16 +41,6 @@ impl SelectorItem {
         this.ctx.get_mut(&mut this.widget.child)
     }
 }
-
-impl HasProperty<DisabledBackground> for SelectorItem {}
-impl HasProperty<ActiveBackground> for SelectorItem {}
-impl HasProperty<Background> for SelectorItem {}
-impl HasProperty<FocusedBorderColor> for SelectorItem {}
-impl HasProperty<HoveredBorderColor> for SelectorItem {}
-impl HasProperty<BorderColor> for SelectorItem {}
-impl HasProperty<BorderWidth> for SelectorItem {}
-impl HasProperty<CornerRadius> for SelectorItem {}
-impl HasProperty<Padding> for SelectorItem {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for SelectorItem {
@@ -102,17 +86,7 @@ impl Widget for SelectorItem {
         ctx.register_child(&mut self.child);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        DisabledBackground::prop_changed(ctx, property_type);
-        ActiveBackground::prop_changed(ctx, property_type);
-        Background::prop_changed(ctx, property_type);
-        FocusedBorderColor::prop_changed(ctx, property_type);
-        HoveredBorderColor::prop_changed(ctx, property_type);
-        BorderColor::prop_changed(ctx, property_type);
-        BorderWidth::prop_changed(ctx, property_type);
-        CornerRadius::prop_changed(ctx, property_type);
-        Padding::prop_changed(ctx, property_type);
-    }
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx<'_>, _property_type: TypeId) {}
 
     fn measure(
         &mut self,
@@ -181,48 +155,7 @@ impl Widget for SelectorItem {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
-        let is_hovered = ctx.is_hovered();
-        let size = ctx.size();
-
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
-
-        let bg = if ctx.is_disabled() {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else {
-            props.get::<Background>()
-        };
-
-        let bg_rect = border_width.bg_rect(size, border_radius);
-        let border_rect = border_width.border_rect(size, border_radius);
-
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
-        } else {
-            props.get::<BorderColor>()
-        };
-
-        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
-        fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
-    }
-
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let size = ctx.size();
-        let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
-
-        let shadow_rect = shadow.shadow_rect(size, border_radius);
-
-        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::MenuItem

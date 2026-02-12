@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry_core::core::{PointerButton, PointerButtonEvent, WidgetId};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, HasProperty,
-    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut,
-    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PointerButton, PointerButtonEvent,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
 use crate::properties::Gap;
@@ -153,12 +153,19 @@ impl Widget for SelectorMenu {
                 ..
             }) => {
                 let self_id = ctx.widget_id();
+
+                // Note: this only works because all children are expected to be
+                // SelectorItem, whose only possible child is a Label.
+                // We might want to find a more robust system.
                 let clicked_id = ctx.target();
                 let index = self
                     .children
                     .iter()
                     .position(|child| child.id() == clicked_id)
                     .unwrap();
+
+                // FIXME - This might be subject to TOCTOU.
+                // Fix this once associated layers are implemented.
                 ctx.mutate_later(self.creator, move |mut selector| {
                     let mut selector = selector.downcast::<Selector>();
                     let selected_content = selector.widget.options[index].clone();
@@ -212,7 +219,8 @@ impl Widget for SelectorMenu {
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        // FIXME - This might be subject to TOCTOU. Find better system.
+        // FIXME - This might be subject to TOCTOU.
+        // Fix this once associated layers are implemented.
         if let Update::WidgetAdded = event {
             let id = ctx.widget_id();
             ctx.mutate_later(self.creator, move |mut selector| {
@@ -345,6 +353,8 @@ impl Layer for SelectorMenu {
         };
 
         if remove_this {
+            // FIXME - This might be subject to TOCTOU.
+            // Fix this once associated layers are implemented.
             ctx.remove_layer(ctx.widget_id());
             ctx.mutate_later(self.creator, move |mut selector| {
                 let selector = selector.downcast::<Selector>();

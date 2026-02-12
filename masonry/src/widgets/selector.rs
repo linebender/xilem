@@ -1,8 +1,6 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A selector widget.
-
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -58,7 +56,11 @@ impl Selector {
     }
 
     /// Builder method to pre-set the widget's initial option.
-    pub fn with_selected_option(mut self, selected_option: usize) -> Self {
+    pub fn with_selected_option(mut self, mut selected_option: usize) -> Self {
+        if selected_option >= self.options.len() {
+            debug_panic!("invalid selector option index");
+            selected_option = 0;
+        }
         self.selected_option = selected_option;
         self
     }
@@ -140,6 +142,7 @@ impl Selector {
 
         let layer_widget = NewWidget::new(menu);
 
+        // TODO: We should ideally create a layer with the same transform as this widget.
         ctx.create_layer(
             layer_type,
             layer_widget,
@@ -190,6 +193,7 @@ impl Widget for Selector {
             }
             // TODO - Handle text selection
             // (e.g. if options are A, B and C, typing "C" should set selected_option to 2)
+            // https://devblogs.microsoft.com/oldnewthing/20240408-00/?p=109627
             _ => (),
         }
     }
