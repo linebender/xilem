@@ -108,3 +108,15 @@ impl Default for DisabledBackground {
         Self::static_default().clone()
     }
 }
+
+impl From<AlphaColor<Srgb>> for Background {
+    fn from(color: AlphaColor<Srgb>) -> Self {
+        Self::Color(color)
+    }
+}
+
+impl From<Gradient> for Background {
+    fn from(gradient: Gradient) -> Self {
+        Self::Gradient(gradient)
+    }
+}
