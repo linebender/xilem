@@ -21,6 +21,7 @@ mod progress;
 mod slider;
 mod spinner;
 mod split;
+mod step_input;
 mod switch;
 mod text_input;
 mod tooltip;
@@ -34,7 +35,7 @@ use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
     Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal, SizedBox,
-    SwitchToggled,
+    Step, SwitchToggled,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -189,6 +190,26 @@ impl AppDriver for Driver {
             Err(action) => action,
         };
 
+        // Steps.
+        let action = match action.downcast::<Step<isize>>() {
+            Ok(step) => {
+                let value = step.value;
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_step(render_root, widget_id, value))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
         // Switch toggles.
         let action = match action.downcast::<SwitchToggled>() {
             Ok(toggled) => {
@@ -238,6 +259,7 @@ fn build_demos() -> Vec<Box<dyn DemoPage>> {
         Box::new(slider::SliderDemo::new(new_demo_shell_tags())),
         Box::new(spinner::SpinnerDemo::new(new_demo_shell_tags())),
         Box::new(split::SplitDemo::new(new_demo_shell_tags())),
+        Box::new(step_input::StepInputDemo::new(new_demo_shell_tags())),
         Box::new(SwitchDemo::new(new_demo_shell_tags())),
         Box::new(text_input::TextInputDemo::new(new_demo_shell_tags())),
         Box::new(tooltip::TooltipDemo::new(new_demo_shell_tags())),

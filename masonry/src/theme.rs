@@ -20,7 +20,7 @@ use crate::properties::{
 };
 use crate::widgets::{
     Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner,
-    Switch, TextArea, TextInput,
+    StepInput, Steppable, Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -196,6 +196,20 @@ pub fn default_property_set() -> DefaultProperties {
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
 
+    // StepInput
+    default_step_input_style::<u8>(&mut properties);
+    default_step_input_style::<i8>(&mut properties);
+    default_step_input_style::<u16>(&mut properties);
+    default_step_input_style::<i16>(&mut properties);
+    default_step_input_style::<u32>(&mut properties);
+    default_step_input_style::<i32>(&mut properties);
+    default_step_input_style::<u64>(&mut properties);
+    default_step_input_style::<i64>(&mut properties);
+    default_step_input_style::<usize>(&mut properties);
+    default_step_input_style::<isize>(&mut properties);
+    default_step_input_style::<f32>(&mut properties);
+    default_step_input_style::<f64>(&mut properties);
+
     properties
 }
 
@@ -203,6 +217,23 @@ pub fn default_property_set() -> DefaultProperties {
 pub fn default_text_styles(styles: &mut StyleSet) {
     styles.insert(StyleProperty::LineHeight(LineHeight::FontSizeRelative(1.2)));
     styles.insert(GenericFamily::SystemUi.into());
+}
+
+fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
+    properties.insert::<StepInput<T>, _>(Padding::from_vh(6., 0.));
+    properties.insert::<StepInput<T>, _>(CornerRadius { radius: 6. });
+    properties.insert::<StepInput<T>, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<StepInput<T>, _>(ContentColor::new(TEXT_COLOR));
+    properties
+        .insert::<StepInput<T>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<StepInput<T>, _>(Background::Color(ZYNC_800));
+    properties.insert::<StepInput<T>, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<StepInput<T>, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<StepInput<T>, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<StepInput<T>, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
 }
 
 /// Set of default properties used in unit tests.
