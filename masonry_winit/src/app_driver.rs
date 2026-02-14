@@ -98,7 +98,7 @@ pub trait AppDriver {
 
     /// A hook which will be executed for async actions sent outside the widget tree.
     ///
-    /// This is called when the winit event loops gets a [`MasonryUserEvent::AsyncAction`] event.
+    /// This is called when the winit event loop gets a [`MasonryUserEvent::AsyncAction`] event.
     ///
     /// [`MasonryUserEvent::AsyncAction`]: crate::app::MasonryUserEvent::AsyncAction
     fn on_async_action(
