@@ -59,7 +59,8 @@ impl Image {
         }
     }
 
-    /// Specifies whether the image is decorative, meaning it doesn't have meaningful content and is only for visual presentation.
+    /// Specifies whether the image is decorative, meaning it doesn't have meaningful content
+    /// and is only for visual presentation.
     ///
     /// If `is_decorative` is `true`, the image will be ignored by screen readers.
     pub fn decorative(mut self, is_decorative: bool) -> Self {
@@ -90,7 +91,8 @@ impl Image {
         this.ctx.request_layout();
     }
 
-    /// Sets whether the image is decorative, meaning it doesn't have meaningful content and is only for visual presentation.
+    /// Sets whether the image is decorative, meaning it doesn't have meaningful content
+    /// and is only for visual presentation.
     ///
     /// See [`Image::decorative`] for details.
     pub fn set_decorative(this: &mut WidgetMut<'_, Self>, is_decorative: bool) {
