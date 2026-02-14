@@ -480,7 +480,7 @@ impl VirtualScroll {
 
     /// A wrapper to use [`post_scroll`](Self::post_scroll) in event methods.
     fn event_post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
-        match self.post_scroll(ctx.size()) {
+        match self.post_scroll(ctx.content_box_size()) {
             PostScrollResult::Layout => {
                 ctx.request_layout();
             }
@@ -491,7 +491,7 @@ impl VirtualScroll {
 
     /// A wrapper to use [`post_scroll`](Self::post_scroll) in update methods.
     fn update_post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
-        match self.post_scroll(ctx.size()) {
+        match self.post_scroll(ctx.content_box_size()) {
             PostScrollResult::Layout => {
                 ctx.request_layout();
             }
@@ -536,6 +536,7 @@ impl Widget for VirtualScroll {
     ) {
         match event {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
+                let size = ctx.content_box_size();
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let scale_factor = ctx.get_scale_factor();
@@ -544,8 +545,8 @@ impl Widget for VirtualScroll {
                     y: 120.0 * scale_factor,
                 };
                 let page_px = PhysicalPosition {
-                    x: ctx.size().width * scale_factor,
-                    y: ctx.size().height * scale_factor,
+                    x: size.width * scale_factor,
+                    y: size.height * scale_factor,
                 };
 
                 let delta_px = delta.to_pixel_delta(line_px, page_px);
@@ -614,7 +615,7 @@ impl Widget for VirtualScroll {
             };
             let amount = match unit {
                 accesskit::ScrollUnit::Item => self.anchor_height,
-                accesskit::ScrollUnit::Page => ctx.size().height,
+                accesskit::ScrollUnit::Page => ctx.content_box_size().height,
             };
             if event.action == accesskit::Action::ScrollUp {
                 self.scroll_offset_from_anchor -= amount;
@@ -637,7 +638,7 @@ impl Widget for VirtualScroll {
         match event {
             Update::RequestPanToChild(target) => {
                 let new_pos_y = super::portal::compute_pan_range(
-                    0.0..ctx.size().height,
+                    0.0..ctx.content_box_size().height,
                     target.min_y()..target.max_y(),
                 )
                 .start;
@@ -1007,7 +1008,7 @@ impl Widget for VirtualScroll {
             node.add_action(accesskit::Action::ScrollUp);
         }
         let at_end = self.anchor_index + 1 == self.valid_range.end && {
-            let max_scroll = (self.anchor_height - ctx.size().height / 2.).max(0.0);
+            let max_scroll = (self.anchor_height - ctx.content_box_size().height / 2.).max(0.0);
             self.scroll_offset_from_anchor >= max_scroll
         };
         if !at_end {

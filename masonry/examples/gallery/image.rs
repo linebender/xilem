@@ -10,7 +10,7 @@ use masonry::widgets::{Flex, Image, Label, SizedBox};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
-fn make_image_data() -> ImageData {
+pub(crate) fn make_image_data() -> ImageData {
     let image_bytes = include_bytes!("../assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();

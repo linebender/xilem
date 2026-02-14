@@ -12,7 +12,7 @@ use masonry::kurbo::Axis;
 use masonry::layout::{AsUnit, Dim};
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::properties::{Background, BarColor, ThumbColor, ThumbRadius};
+use masonry::properties::{BarColor, ThumbColor, ThumbRadius};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
@@ -155,7 +155,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
             label(""),
         )
         .dims(Dim::Stretch)
-        .background(Background::Color(final_color))
+        .background(final_color)
         .corner_radius(8.0)
         .flex(1.0),
     ))

@@ -105,7 +105,10 @@ pub use self::app::App;
 pub use self::attribute_value::{AttributeValue, IntoAttributeValue};
 pub use self::context::{MessageThunk, ViewCtx};
 pub use self::core::DynMessage;
-pub use self::dom_helpers::{document, document_body, get_element_by_id, input_event_target_value};
+pub use self::dom_helpers::{
+    document, document_body, get_element_by_id, input_event_target_value,
+    textarea_event_target_value,
+};
 pub use self::optional_action::{Action, OptionalAction};
 pub use self::pod::{AnyPod, Pod, PodFlags, PodMut};
 pub use self::pointer::{Pointer, PointerDetails, PointerMsg};
@@ -168,7 +171,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     where
         Action: 'static,
         Self: Sized,
-        F: Fn(&Self::DomNode) + 'static,
+        F: Fn(Arg<'_, State>, &Self::DomNode) + 'static,
     {
         after_build(self, callback)
     }
@@ -178,7 +181,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     where
         Action: 'static,
         Self: Sized,
-        F: Fn(&Self::DomNode) + 'static,
+        F: Fn(Arg<'_, State>, &Self::DomNode) + 'static,
     {
         after_rebuild(self, callback)
     }

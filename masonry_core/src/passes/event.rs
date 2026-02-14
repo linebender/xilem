@@ -88,20 +88,18 @@ fn run_event_pass<E>(
         return Handled::No;
     }
 
-    if let Some(id) = target {
-        let state = root.widget_arena.get_state(id);
-
-        if state.is_disabled && skip_if_disabled {
-            return Handled::No;
-        }
-    }
-
     let original_target = target;
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
         let mut node = root.widget_arena.get_node_mut(widget_id);
+
+        if skip_if_disabled && node.item.state.is_disabled {
+            // If the widget is disabled, we skip it and bubble to its parent.
+            target_widget_id = parent_id;
+            continue;
+        }
 
         if !is_handled {
             let _span = enter_span(&node.item.state);
@@ -381,7 +379,7 @@ pub(crate) fn run_on_access_event_pass(
         }
         accesskit::Action::ScrollIntoView if !handled.is_handled() => {
             let widget_state = root.widget_arena.get_state(target);
-            let rect = widget_state.size().to_rect();
+            let rect = widget_state.border_box_size().to_rect();
             root.global_state
                 .scroll_request_targets
                 .push((target, rect));

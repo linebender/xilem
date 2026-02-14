@@ -14,7 +14,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::kurbo::{Axis, Circle, Point, Size};
+use crate::kurbo::{Axis, Circle, Point, Rect, Size};
 use crate::layout::LenReq;
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
@@ -76,7 +76,11 @@ impl Switch {
     /// Calculates the track dimensions based on properties.
     ///
     /// Returns `(track_width, track_height)`.
-    fn track_dimensions(props: PropertiesRef<'_>, scale: f64) -> (f64, f64) {
+    #[expect(
+        clippy::trivially_copy_pass_by_ref,
+        reason = "PropertiesRef is given to Widget as a ref"
+    )]
+    fn track_dimensions(props: &PropertiesRef<'_>, scale: f64) -> (f64, f64) {
         let track_thickness = props.get::<TrackThickness>().0 * scale;
         let thumb_radius = props.get::<ThumbRadius>().0 * scale;
 
@@ -196,12 +200,11 @@ impl Widget for Switch {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let (track_width, track_height) = Self::track_dimensions(*props, scale);
-        let border_width = props.get::<BorderWidth>().width * scale;
+        let (track_width, track_height) = Self::track_dimensions(props, scale);
 
         match axis {
-            Axis::Horizontal => track_width + border_width * 2.0,
-            Axis::Vertical => track_height + border_width * 2.0,
+            Axis::Horizontal => track_width,
+            Axis::Vertical => track_height,
         }
     }
 
@@ -226,9 +229,9 @@ impl Widget for Switch {
         let is_hovered = ctx.is_hovered();
         let is_disabled = ctx.is_disabled();
 
-        let size = ctx.size();
+        let size = ctx.border_box_size();
 
-        let (track_width, track_height) = Self::track_dimensions(*props, scale);
+        let (track_width, track_height) = Self::track_dimensions(props, scale);
         let thumb_radius = props.get::<ThumbRadius>().0 * scale;
         let border_width = props.get::<BorderWidth>().width * scale;
         let corner_radius = props.get::<CornerRadius>().radius * scale;
@@ -237,20 +240,22 @@ impl Widget for Switch {
         // Center the track within the available space
         let track_x = (size.width - track_width) / 2.0;
         let track_y = (size.height - track_height) / 2.0;
-        let track_rect = crate::kurbo::Rect::new(
+        let track_rect = Rect::new(
             track_x,
             track_y,
             track_x + track_width,
             track_y + track_height,
-        );
+        ) - ctx.border_box_translation();
 
         // Determine track background color
-        let track_bg = if is_disabled {
-            &props.get::<DisabledBackground>().0
-        } else if is_pressed {
-            &props.get::<ActiveBackground>().0
-        } else if self.on {
-            &props.get::<ToggledBackground>().0
+        let track_bg = if is_disabled && let Some(db) = props.get_defined::<DisabledBackground>() {
+            &db.0
+        } else if is_pressed && let Some(ab) = props.get_defined::<ActiveBackground>() {
+            &ab.0
+        } else if self.on
+            && let Some(tb) = props.get_defined::<ToggledBackground>()
+        {
+            &tb.0
         } else {
             props.get::<Background>()
         };
@@ -262,10 +267,11 @@ impl Widget for Switch {
         fill(scene, &track_rounded, &brush);
 
         // Determine border color
-        let border_color = if is_focused {
-            &props.get::<FocusedBorderColor>().0
-        } else if is_hovered {
-            &props.get::<HoveredBorderColor>().0
+        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
+        {
+            &fb.0
+        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
+            &hb.0
         } else {
             props.get::<BorderColor>()
         };
@@ -276,7 +282,7 @@ impl Widget for Switch {
         }
 
         // Calculate thumb position (centered vertically, left/right based on state)
-        let thumb_y = size.height / 2.0;
+        let thumb_y = size.height / 2.0 - ctx.border_box_translation().y;
         let thumb_x = if self.on {
             // Thumb on the right
             track_rect.x1 - thumb_radius - border_width / 2.0
@@ -340,7 +346,7 @@ mod tests {
     use crate::theme::test_property_set;
     use crate::widgets::Flex;
 
-    // --- MARK: NON-RENDERING BEHAVIOR TESTS ---
+    // --- MARK: NON-RENDERING BEHAVIOR TESTS
 
     #[test]
     fn click_emits_action_and_focuses() {
@@ -425,7 +431,10 @@ mod tests {
         let harness =
             TestHarness::create_with_size(test_property_set(), flex.with_auto_id(), window_size);
 
-        let size = harness.get_widget_with_id(switch_id).ctx().size();
+        let size = harness
+            .get_widget_with_id(switch_id)
+            .ctx()
+            .border_box_size();
 
         // Switch should maintain its intrinsic size, not fill available space
         assert_eq!(
@@ -438,7 +447,7 @@ mod tests {
         );
     }
 
-    // --- MARK: SNAPSHOT TESTS ---
+    // --- MARK: SNAPSHOT TESTS
 
     #[test]
     fn simple_switch() {

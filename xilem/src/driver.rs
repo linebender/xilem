@@ -30,7 +30,6 @@ pub struct MasonryDriver<State: 'static, Logic> {
     runtime: Arc<tokio::runtime::Runtime>,
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
-    scratch_id_path: Vec<ViewId>,
 }
 
 struct Window<State: 'static> {
@@ -61,7 +60,6 @@ where
             proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
             runtime,
             fonts,
-            scratch_id_path: Vec::new(),
         };
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
             .map(|view| driver.build_window(view))
@@ -236,7 +234,7 @@ where
             return;
         };
 
-        let mut id_path = std::mem::take(&mut self.scratch_id_path);
+        let mut id_path = Vec::with_capacity(64);
         id_path.clear();
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
             // If this is not an action from a real widget, dispatch it using the path it contains.
@@ -253,10 +251,9 @@ where
                 masonry_ctx.window(window_id),
                 &mut self.state,
             );
-            let (env, id_path, _message) = message_context.finish();
+            // TODO: Handle `_message` somehow?
+            let (env, _id_path, _message) = message_context.finish();
             *window.view_ctx.environment() = env;
-            self.scratch_id_path = id_path;
-            // TODO: Handle `message` somehow?
             res
         } else if let Some(path) = window.view_ctx.get_id_path(widget_id) {
             id_path.extend_from_slice(path);
@@ -271,10 +268,9 @@ where
                 masonry_ctx.window(window_id),
                 &mut self.state,
             );
-            let (env, id_path, _message) = message_context.finish();
+            // TODO: Handle `_message` somehow?
+            let (env, _id_path, _message) = message_context.finish();
             *window.view_ctx.environment() = env;
-            self.scratch_id_path = id_path;
-            // TODO: Handle `message` somehow?
             res
         } else {
             tracing::error!(

@@ -10,9 +10,6 @@
 //! after a callback has been performed in
 //! `after_build`, `after_rebuild` or `before_teardown`.
 
-use std::cell::Cell;
-use std::rc::Rc;
-
 use xilem_web::core::Edit;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
@@ -21,34 +18,33 @@ use xilem_web::{App, DomView, document_body};
 
 #[derive(Default)]
 struct AppState {
-    focus: Rc<Cell<bool>>,
+    focus: bool,
     show_input: bool,
 }
 
 fn app_logic(app_state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     html::div(if app_state.show_input {
-        let focus = Rc::clone(&app_state.focus);
         Either::A(html::div((
             html::button("remove input").on_click(|app_state: &mut AppState, _| {
                 app_state.show_input = false;
             }),
             html::input(())
-                .after_build(|_| {
+                .after_build(|_, _| {
                     log::debug!("element was build");
                 })
-                .after_rebuild(move |el| {
+                .after_rebuild(move |app_state: &mut AppState, el| {
                     log::debug!("element was re-build");
-                    if focus.get() {
+                    if app_state.focus {
                         let _ = el.focus();
                         // Reset `focus` to avoid calling `el.focus` on every rebuild.
-                        focus.set(false); // NOTE: this does NOT trigger a rebuild.
+                        app_state.focus = false; // NOTE: this does NOT trigger a rebuild.
                     }
                 })
                 .before_teardown(|_| {
                     log::debug!("element will be removed");
                 }),
             html::button("Focus the input").on_click(|app_state: &mut AppState, _| {
-                app_state.focus.set(true);
+                app_state.focus = true;
             }),
         )))
     } else {

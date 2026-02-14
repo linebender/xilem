@@ -3,8 +3,6 @@
 
 //! Miscellaneous utility functions.
 
-use std::any::Any;
-
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, Fill};
@@ -109,7 +107,7 @@ impl Sanitize for Option<f64> {
 
 // ---
 
-pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
+pub(crate) type AnyMap = anymap3::Map<dyn anymap3::CloneAny + Send + Sync>;
 pub(crate) type TypeSet = std::collections::HashSet<
     std::any::TypeId,
     std::hash::BuildHasherDefault<anymap3::TypeIdHasher>,

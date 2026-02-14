@@ -17,7 +17,7 @@ use crate::util::AnyMap;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + Send + Sync + 'static {
+pub trait Property: Default + Clone + Send + Sync + 'static {
     /// A static reference to a default value.
     ///
     /// Should be the same as [`Default::default()`].
@@ -41,7 +41,7 @@ pub trait Property: Default + Send + Sync + 'static {
 
 // TODO - Implement Debug.
 /// A collection of [properties](Property) that a widget can be created with.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
 }
@@ -181,6 +181,14 @@ impl PropertiesRef<'_> {
             P::static_default()
         }
     }
+
+    /// Returns the defined value of property `P`.
+    ///
+    /// If the widget has an explicit entry, or the default property map has an explicit entry,
+    /// then this will return a value. Otherwise it will return `None`.
+    pub fn get_defined<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
+    }
 }
 
 impl PropertiesMut<'_> {
@@ -204,6 +212,14 @@ impl PropertiesMut<'_> {
         } else {
             P::static_default()
         }
+    }
+
+    /// Returns the defined value of property `P`.
+    ///
+    /// If the widget has an explicit entry, or the default property map has an explicit entry,
+    /// then this will return a value. Otherwise it will return `None`.
+    pub fn get_defined<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
     }
 
     /// Sets local property `P` to given value. Returns the previous value if `P` was already set.

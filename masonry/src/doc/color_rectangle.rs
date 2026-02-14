@@ -195,7 +195,7 @@ impl Widget for ColorRectangle {
     // We use these methods in the trait, so that hovering is detected in our unit tests.
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let rect = ctx.size().to_rect();
+        let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
             Color::WHITE
         } else {
@@ -228,7 +228,7 @@ impl Widget for ColorRectangle {
 impl ColorRectangle {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let background = props.get::<Background>();
-        let rect = ctx.size().to_rect();
+        let rect = ctx.content_box();
         scene.fill(
             Fill::NonZero,
             Affine::IDENTITY,

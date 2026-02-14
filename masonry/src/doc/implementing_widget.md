@@ -226,7 +226,7 @@ impl Widget for ColorRectangle {
     // ...
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let rect = ctx.size().to_rect();
+        let rect = ctx.content_box();
         scene.fill(
             Fill::NonZero,
             Affine::IDENTITY,
@@ -255,7 +255,7 @@ impl Widget for ColorRectangle {
 
 In our `paint` method, we're given a [`vello::Scene`] and paint a rectangle into it.
 
-The rectangle's origin is zero (because coordinates in our scene are local to our widget), and its size is `ctx.size()`, which is the value given to `layout()`.
+We use `ctx.content_box()` to get a rectangle that precisely covers the content area of our widget.
 
 Next we define our accessibility role.
 Returning [`Role::Button`] means that screen readers will report our widget as a button, which roughly makes sense since it is clickable.
@@ -326,7 +326,7 @@ Don't worry about what they mean for now.
 ## Context arguments
 
 The methods of the [`Widget`] trait take `***Ctx` context arguments, which you can use to get information about the current widget.
-For instance, our `paint()` method used [`PaintCtx::size()`] to get the widget's size.
+For instance, our `paint()` method used [`PaintCtx::content_box()`] to get the widget's content rectangle.
 The information accessible from the context argument depends on the method.
 
 ### Status flags
@@ -369,7 +369,7 @@ impl Widget for ColorRectangle {
     // ...
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let rect = ctx.size().to_rect();
+        let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
             Color::WHITE
         } else {
@@ -482,7 +482,7 @@ The next one is about creating a container widgets, and the complications it add
 
 [`Widget`]: crate::core::Widget
 [`WidgetMut`]: crate::core::WidgetMut
-[`PaintCtx::size()`]: crate::core::PaintCtx::size
+[`PaintCtx::content_box()`]: crate::core::PaintCtx::content_box
 [`vello::Scene`]: vello::Scene
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_base_layer()`]: crate::app::RenderRoot::edit_base_layer

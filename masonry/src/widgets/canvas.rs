@@ -23,6 +23,7 @@ const DEFAULT_LENGTH: Length = Length::const_px(100.);
 #[derive(Default)]
 pub struct Canvas {
     alt_text: Option<ArcStr>,
+    /// The drawable area size, which matches the widget's content-box.
     size: Size,
     scene: Scene,
 }
@@ -45,7 +46,7 @@ impl Canvas {
 
 // --- MARK: METHODS
 impl Canvas {
-    /// Returns the current size of the canvas
+    /// Returns the current size of the canvas, which matches its content-box size.
     pub fn size(&self) -> Size {
         self.size
     }

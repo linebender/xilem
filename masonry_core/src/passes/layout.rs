@@ -10,19 +10,68 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Axis, Insets, Point, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
     ChildrenIds, DefaultProperties, LayoutCtx, MeasureCtx, PropertiesRef, Widget, WidgetArenaNode,
     WidgetState,
 };
+use crate::kurbo::{Axis, Insets, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, MeasurementInputs, SizeDef};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::properties::{BoxShadow, Dimensions};
+use crate::properties::{BorderWidth, BoxShadow, Dimensions, Padding};
 use crate::util::Sanitize;
 
 // --- MARK: COMPUTE SIZE
+
+/// Measures the preferred border-box length of `widget` on the given `axis`.
+///
+/// The returned length will be in device pixels.
+/// Given that it will be the result of measuring,
+/// it must be [sanitized] before passing it back to a widget.
+///
+/// `len_req` must be [sanitized] before being passed to this function.
+///
+/// `cross_length`, if present, must be [sanitized] and in device pixels.
+///
+/// [sanitized]: Sanitize
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "Widget::measure takes props by ref"
+)]
+fn measure_border_box(
+    widget: &mut dyn Widget,
+    ctx: &mut MeasureCtx<'_>,
+    props: &PropertiesRef<'_>,
+    axis: Axis,
+    len_req: LenReq,
+    cross_length: Option<f64>,
+) -> f64 {
+    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+    //       https://github.com/linebender/xilem/issues/1264
+    let scale = 1.0;
+
+    let border = props.get::<BorderWidth>();
+    let padding = props.get::<Padding>();
+
+    let border_length = border.length(axis).dp(scale);
+    let padding_length = padding.length(axis).dp(scale);
+
+    // Reduce the border-box length by the border and padding length to get the content-box length.
+    let len_req = len_req.reduce(border_length + padding_length);
+    let cross_length = cross_length.map(|cross_length| {
+        let cross = axis.cross();
+        let cross_border_length = border.length(cross).dp(scale);
+        let cross_padding_length = padding.length(cross).dp(scale);
+        (cross_length - cross_border_length - cross_padding_length).max(0.)
+    });
+
+    // Measure the content-box length.
+    let content_length = widget.measure(ctx, props, axis, len_req, cross_length);
+
+    // Add border and padding to the content-box length to return the border-box length.
+    content_length + border_length + padding_length
+}
 
 /// Resolves the [`LenDef`] of the provided `axis`.
 ///
@@ -38,7 +87,7 @@ use crate::util::Sanitize;
 ///
 /// [sanitized]: Sanitize
 /// [`measure`]: Widget::measure
-#[allow(
+#[expect(
     clippy::trivially_copy_pass_by_ref,
     reason = "Widget::measure takes props by ref"
 )]
@@ -63,7 +112,7 @@ fn resolve_len_def(
     #[cfg(debug_assertions)]
     let result = {
         // With debug assertions enabled, we will always measure regardless of cache.
-        let result = widget.measure(ctx, props, axis, len_req, cross_length);
+        let result = measure_border_box(widget, ctx, props, axis, len_req, cross_length);
         // If the cache did have the result, we verify that it matches.
         if let Some(cached_result) = cached_result {
             if cached_result != result {
@@ -85,7 +134,7 @@ fn resolve_len_def(
         if let Some(cached_result) = cached_result {
             return cached_result;
         }
-        widget.measure(ctx, props, axis, len_req, cross_length)
+        measure_border_box(widget, ctx, props, axis, len_req, cross_length)
     };
 
     if ctx.cache_result {
@@ -95,7 +144,7 @@ fn resolve_len_def(
     result
 }
 
-/// Resolves the widget's desired length on the given `axis`.
+/// Resolves the widget's preferred border-box length on the given `axis`.
 ///
 /// The returned length will be finite, non-negative, and in device pixels.
 ///
@@ -184,7 +233,7 @@ pub(crate) fn resolve_length(
     length.sanitize("measured length")
 }
 
-/// Resolves the widget's desired size.
+/// Resolves the widget's preferred border-box size.
 ///
 /// The returned size will be finite, non-negative, and in device pixels.
 ///
@@ -292,6 +341,11 @@ pub(crate) fn resolve_size(
 /// Run [`Widget::layout`] method on the given widget.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
 ///
+/// The provided `size` will be the given widget's chosen border-box size.
+///
+/// If the chosen border-box `size` is smaller than what is required to fit the widget's
+/// borders and padding, then the `size` will be expanded to meet those constraints.
+///
 /// The provided `size` must be finite, non-negative, and in device pixels.
 /// Non-finite or negative length will fall back to zero with a logged warning.
 ///
@@ -304,12 +358,12 @@ pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     node: ArenaMut<'_, WidgetArenaNode>,
-    size: Size,
+    chosen_size: Size,
 ) {
-    // Ensure the given size is valid.
-    let size = Size::new(
-        size.width.sanitize("layout size width"),
-        size.height.sanitize("layout size height"),
+    // Ensure the chosen size is sanitized.
+    let chosen_size = Size::new(
+        chosen_size.width.sanitize("chosen border-box size width"),
+        chosen_size.height.sanitize("chosen border-box size height"),
     );
 
     let mut children = node.children;
@@ -334,16 +388,34 @@ pub(crate) fn run_layout_on(
         );
         state.origin = Point::ZERO;
         state.end_point = Point::ZERO;
-        state.layout_size = Size::ZERO;
+        state.layout_border_box_size = Size::ZERO;
         return;
     }
 
-    if !state.needs_layout() && state.layout_size == size {
+    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
+    //       https://github.com/linebender/xilem/issues/1264
+    let scale = 1.0;
+
+    let props = PropertiesRef {
+        map: properties,
+        default_map: default_properties.for_widget(widget.type_id()),
+    };
+
+    let border_width = props.get::<BorderWidth>();
+    let padding = props.get::<Padding>();
+
+    // Force the border-box size to be large enough to actually contain the border and padding.
+    let minimum_size = Size::ZERO;
+    let minimum_size = border_width.size_up(minimum_size, scale);
+    let minimum_size = padding.size_up(minimum_size, scale);
+    let border_box_size = minimum_size.max(chosen_size);
+
+    if !state.needs_layout() && state.layout_border_box_size == border_box_size {
         // We reset this to false to mark that the current widget has been visited.
         state.request_layout = false;
         return;
     }
-    state.layout_size = size;
+    state.layout_border_box_size = border_box_size;
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
     state.needs_paint = true;
@@ -356,7 +428,10 @@ pub(crate) fn run_layout_on(
     state.request_accessibility = true;
 
     if trace {
-        trace!("Computing layout with size {:?}", size);
+        trace!(
+            "Computing layout with border-box size {:?}",
+            border_box_size
+        );
     }
 
     // Again, these two blocks read `is_explicitly_stashed` instead of `is_stashed`
@@ -386,17 +461,24 @@ pub(crate) fn run_layout_on(
 
     state.paint_insets = Insets::ZERO;
 
+    // Compute the insets for deriving the content-box from the border-box
+    let border_box_insets = border_width.insets_up(Insets::ZERO, scale);
+    let border_box_insets = padding.insets_up(border_box_insets, scale);
+    state.border_box_insets = border_box_insets;
+
+    // Compute the content-box size
+    let content_box_size = border_width.size_down(border_box_size, scale);
+    let content_box_size = padding.size_down(content_box_size, scale);
+
     let mut ctx = LayoutCtx {
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
         default_properties,
     };
-    let props = PropertiesRef {
-        map: properties,
-        default_map: default_properties.for_widget(widget.type_id()),
-    };
-    widget.layout(&mut ctx, &props, size);
+
+    // Run the widget's layout
+    widget.layout(&mut ctx, &props, content_box_size);
 
     // Make sure the paint insets cover the shadow insets
     let shadow = props.get::<BoxShadow>();
@@ -412,8 +494,8 @@ pub(crate) fn run_layout_on(
 
     if trace {
         trace!(
-            "Computed layout: size={}, baseline={}, insets={:?}",
-            size, state.baseline_offset, state.paint_insets,
+            "Computed layout: border-box={}, baseline={}, insets={:?}",
+            border_box_size, state.layout_baseline_offset, state.paint_insets,
         );
     }
 
@@ -481,9 +563,10 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 }
 
 // --- MARK: PLACE WIDGET
+/// Places the child at `origin` in its parent's border-box coordinate space.
 pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
-    let end_point = origin + child_state.layout_size.to_vec2();
-    let baseline_y = end_point.y - child_state.baseline_offset;
+    let end_point = origin + child_state.layout_border_box_size.to_vec2();
+    let baseline_y = end_point.y - child_state.layout_baseline_offset;
     // TODO - Account for display scale in pixel snapping
     // See https://github.com/linebender/xilem/issues/1264
     let origin = origin.round();
@@ -541,7 +624,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     root.global_state.fonts_changed = false;
 
     if let WindowSizePolicy::Content = root.size_policy {
-        let size = root_node.item.state.layout_size;
+        // We use the aligned border-box size, which means that transforms won't affect window size.
+        let size = root_node.item.state.border_box_size();
         // TODO: Remove HACK: Until scale factor rework happens, we still need to scale here.
         //       https://github.com/linebender/xilem/issues/1264
         let new_size =

@@ -77,9 +77,11 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
+    let transform = state
+        .window_transform
+        .pre_translate(state.border_box_translation());
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
-        let transform = state.window_transform;
         let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
@@ -90,7 +92,8 @@ fn paint_widget(
         complete_scene.append(pre_scene, Some(transform));
 
         if let Some(clip) = state.clip_path {
-            complete_scene.push_clip_layer(Fill::NonZero, transform, &clip);
+            // The clip path is stored in border-box space, so need just window transform.
+            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));
@@ -114,14 +117,13 @@ fn paint_widget(
     });
 
     if !is_stashed {
-        let transform = state.window_transform;
-        let bounding_rect = state.bounding_rect;
+        let bounding_box = state.bounding_box;
 
         // draw the global axis aligned bounding rect of the widget
         if global_state.debug_paint {
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
-            let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
+            let rect = bounding_box.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
         }
 
@@ -168,7 +170,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
-        let rect = Rect::from_origin_size(state.window_origin(), state.size());
+        let rect =
+            Rect::from_origin_size(state.border_box_window_origin(), state.border_box_size());
 
         complete_scene.fill(
             Fill::NonZero,

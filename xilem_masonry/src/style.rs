@@ -77,11 +77,11 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
     }
 
     /// Sets the element's background to a color/gradient.
-    fn background(self, background: Background) -> Prop<Background, Self, State, Action>
+    fn background(self, background: impl Into<Background>) -> Prop<Background, Self, State, Action>
     where
         Self::Widget: HasProperty<Background>,
     {
-        self.prop(background)
+        self.prop(background.into())
     }
 
     /// Sets the element's background to a color.
@@ -103,12 +103,12 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
     /// Sets the element's background when pressed to a color/gradient.
     fn active_background(
         self,
-        background: Background,
+        background: impl Into<Background>,
     ) -> Prop<ActiveBackground, Self, State, Action>
     where
         Self::Widget: HasProperty<ActiveBackground>,
     {
-        self.prop(ActiveBackground(background))
+        self.prop(ActiveBackground(background.into()))
     }
 
     /// Sets the element's background when pressed to a color.
@@ -133,12 +133,12 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
     /// Sets the element's background when disabled to a color/gradient.
     fn disabled_background(
         self,
-        background: Background,
+        background: impl Into<Background>,
     ) -> Prop<DisabledBackground, Self, State, Action>
     where
         Self::Widget: HasProperty<DisabledBackground>,
     {
-        self.prop(DisabledBackground(background))
+        self.prop(DisabledBackground(background.into()))
     }
 
     /// Sets the element's background when disabled to a color.
