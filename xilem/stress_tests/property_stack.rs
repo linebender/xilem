@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Stress test for the build speed a Xilem component with lots of styles applied.
+//! Stress test for the build speed of a Xilem component with lots of styles applied.
 
 use std::hint::black_box;
 
