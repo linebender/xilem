@@ -26,6 +26,7 @@ pub use masonry::properties::ObjectFit;
 pub fn image(image: impl Into<ImageBrush>) -> Image {
     Image {
         image: image.into(),
+        decorative: false,
         alt_text: None,
     }
 }
@@ -36,6 +37,7 @@ pub fn image(image: impl Into<ImageBrush>) -> Image {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
     image: ImageBrush,
+    decorative: bool,
     alt_text: Option<ArcStr>,
 }
 
@@ -47,6 +49,14 @@ impl Image {
         fill: ObjectFit,
     ) -> Prop<ObjectFit, Self, State, Action> {
         self.prop(fill)
+    }
+
+    /// Specifies whether the image is decorative, meaning it doesn't have meaningful content and is only for visual presentation.
+    ///
+    /// If `is_decorative` is `true`, the image will be ignored by screen readers.
+    pub fn decorative(mut self, is_decorative: bool) -> Self {
+        self.decorative = is_decorative;
+        self
     }
 
     /// Set the text that will describe the image to screen readers.
@@ -68,7 +78,11 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
-        (ctx.create_pod(widgets::Image::new(self.image.clone())), ())
+        let mut image = widgets::Image::new(self.image.clone()).decorative(self.decorative);
+        if let Some(alt_text) = &self.alt_text {
+            image = image.with_alt_text(alt_text.clone());
+        }
+        (ctx.create_pod(image), ())
     }
 
     fn rebuild(
@@ -81,6 +95,9 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
     ) {
         if prev.image != self.image {
             widgets::Image::set_image_data(&mut element, self.image.clone());
+        }
+        if self.decorative != prev.decorative {
+            widgets::Image::set_decorative(&mut element, self.decorative);
         }
         if self.alt_text != prev.alt_text {
             widgets::Image::set_alt_text(&mut element, self.alt_text.clone());
