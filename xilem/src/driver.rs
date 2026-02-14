@@ -68,9 +68,6 @@ where
     }
 }
 
-/// The `WidgetId` which async events should be sent to.
-pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
-
 /// The action which should be used for async events.
 pub fn async_action(path: Arc<[ViewId]>, message: SendMessage) -> ErasedAction {
     Box::<MessagePackage>::new((path, message))
@@ -86,14 +83,11 @@ impl MasonryProxy {
         path: Arc<[ViewId]>,
         message: SendMessage,
     ) -> Result<(), ProxyError> {
-        match (self.0)(MasonryUserEvent::Action(
-            window_id,
-            async_action(path, message),
-            ASYNC_MARKER_WIDGET,
-        )) {
+        let user_event = MasonryUserEvent::AsyncAction(window_id, async_action(path, message));
+        match (self.0)(user_event) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(_, res, _) = err else {
+                let MasonryUserEvent::AsyncAction(_, res) = err else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
                     )
@@ -213,71 +207,51 @@ where
     }
 }
 
-impl<State, Logic, WindowIter> AppDriver for MasonryDriver<State, Logic>
+impl<State, Logic, WindowIter> MasonryDriver<State, Logic>
 where
     State: AppState + 'static,
     Logic: FnMut(&mut State) -> WindowIter,
     WindowIter: Iterator<Item = WindowView<State>>,
 {
-    fn on_action(
+    fn dispatch_message(
         &mut self,
         window_id: WindowId,
         masonry_ctx: &mut DriverCtx<'_, '_>,
-        widget_id: WidgetId,
-        action: ErasedAction,
-    ) {
+        id_path: Vec<ViewId>,
+        message: DynMessage,
+    ) -> MessageResult<()> {
         let Some(window) = self.windows.get_mut(&window_id) else {
-            tracing::warn!(
-                window_id = window_id.trace(),
-                "call on_action call for unknown window"
-            );
-            return;
+            unreachable!("Already checked");
         };
 
-        let mut id_path = Vec::with_capacity(64);
-        id_path.clear();
-        let message_result = if widget_id == ASYNC_MARKER_WIDGET {
-            // If this is not an action from a real widget, dispatch it using the path it contains.
-            let (path, message) = *action.downcast::<MessagePackage>().unwrap();
-            id_path.extend_from_slice(&path);
-            let mut message_context = MessageCtx::new(
-                std::mem::take(window.view_ctx.environment()),
-                id_path,
-                message.into(),
-            );
-            let res = window.view.message(
-                &mut window.view_state,
-                &mut message_context,
-                masonry_ctx.window(window_id),
-                &mut self.state,
-            );
-            // TODO: Handle `_message` somehow?
-            let (env, _id_path, _message) = message_context.finish();
-            *window.view_ctx.environment() = env;
-            res
-        } else if let Some(path) = window.view_ctx.get_id_path(widget_id) {
-            id_path.extend_from_slice(path);
-            let mut message_context = MessageCtx::new(
-                std::mem::take(window.view_ctx.environment()),
-                id_path,
-                DynMessage(action),
-            );
-            let res = window.view.message(
-                &mut window.view_state,
-                &mut message_context,
-                masonry_ctx.window(window_id),
-                &mut self.state,
-            );
-            // TODO: Handle `_message` somehow?
-            let (env, _id_path, _message) = message_context.finish();
-            *window.view_ctx.environment() = env;
-            res
-        } else {
-            tracing::error!(
-                "Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?"
-            );
-            return;
+        let mut message_context = MessageCtx::new(
+            std::mem::take(window.view_ctx.environment()),
+            id_path,
+            message,
+        );
+        let res = window.view.message(
+            &mut window.view_state,
+            &mut message_context,
+            masonry_ctx.window(window_id),
+            &mut self.state,
+        );
+        // TODO: Handle `_message` somehow?
+        let (env, _id_path, _message) = message_context.finish();
+        *window.view_ctx.environment() = env;
+
+        res
+    }
+
+    fn handle_message_result(
+        &mut self,
+        window_id: WindowId,
+        masonry_ctx: &mut DriverCtx<'_, '_>,
+        message_result: MessageResult<()>,
+    ) {
+        let Some(window) = self.windows.get_mut(&window_id) else {
+            unreachable!("Already checked");
         };
+
         match message_result {
             // The semantics here haven't exactly been worked out.
             // This version of the implementation is based on the assumptions that:
@@ -301,6 +275,65 @@ where
                 tracing::info!("Discarding message");
             }
         };
+    }
+}
+
+impl<State, Logic, WindowIter> AppDriver for MasonryDriver<State, Logic>
+where
+    State: AppState + 'static,
+    Logic: FnMut(&mut State) -> WindowIter,
+    WindowIter: Iterator<Item = WindowView<State>>,
+{
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        masonry_ctx: &mut DriverCtx<'_, '_>,
+        widget_id: WidgetId,
+        action: ErasedAction,
+    ) {
+        let Some(window) = self.windows.get_mut(&window_id) else {
+            tracing::warn!(
+                window_id = window_id.trace(),
+                "called on_action for unknown window"
+            );
+            return;
+        };
+
+        let Some(widget_path) = window.view_ctx.get_id_path(widget_id) else {
+            tracing::error!(
+                "Got action {action:?} for unknown widget. Did you forget to use `with_action_widget`?"
+            );
+            return;
+        };
+
+        let id_path = widget_path.clone();
+        let message = DynMessage(action);
+
+        let message_result = self.dispatch_message(window_id, masonry_ctx, id_path, message);
+        self.handle_message_result(window_id, masonry_ctx, message_result);
+    }
+
+    fn on_async_action(
+        &mut self,
+        window_id: WindowId,
+        masonry_ctx: &mut DriverCtx<'_, '_>,
+        action: ErasedAction,
+    ) {
+        if self.windows.get_mut(&window_id).is_none() {
+            tracing::warn!(
+                window_id = window_id.trace(),
+                "called on_async_action for unknown window"
+            );
+            return;
+        };
+
+        // Dispatch this message using the path it contains.
+        let (id_path, message) = *action.downcast::<MessagePackage>().unwrap();
+        let id_path = Vec::from(&*id_path);
+        let message = message.into();
+
+        let message_result = self.dispatch_message(window_id, masonry_ctx, id_path, message);
+        self.handle_message_result(window_id, masonry_ctx, message_result);
     }
 
     fn on_start(&mut self, state: &mut MasonryState<'_>) {
