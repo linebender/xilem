@@ -201,6 +201,8 @@ pub trait Steppable: Debug + Copy + Clone + PartialEq + PartialOrd + Send + Sync
     fn display(&self, step: Self, min: Self, max: Self) -> String;
 }
 
+// --- MARK: IMPL STEPPABLE
+
 /// Allows calling `saturating_add_unsigned` even on unsigned types.
 ///
 /// For example `saturating_add_unsigned!(5u8, 1u8, u) == 6`.
@@ -359,6 +361,7 @@ macro_rules! impl_steppable_float {
 
 impl_steppable_float!(f32, f64);
 
+// --- MARK: BUILDERS
 impl<T: Steppable> StepInput<T> {
     /// Creates a new [`StepInput`].
     ///
@@ -593,6 +596,7 @@ impl<T: Steppable> StepInput<T> {
     }
 }
 
+// --- MARK: METHODS
 impl<T: Steppable> StepInput<T> {
     /// Returns the string representation of the given `value`.
     fn display_value(&self, value: T) -> String {
@@ -960,6 +964,7 @@ pub struct Step<T> {
     pub value: T,
 }
 
+// --- MARK: IMPL WIDGET
 impl<T: Steppable> Widget for StepInput<T> {
     type Action = Step<T>;
 
@@ -1484,6 +1489,7 @@ impl<T: Steppable> Widget for StepInput<T> {
     }
 }
 
+// --- MARK: PAINT STYLES
 impl<T: Steppable> StepInput<T> {
     /// Returns `(length, edge_pad)` of a basic button given the `vertical_space`.
     ///
