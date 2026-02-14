@@ -40,6 +40,7 @@ const IMAGE_SCALE: f64 = 1.0;
 /// You can change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
     image_data: ImageBrush,
+    decorative: bool,
     alt_text: Option<ArcStr>,
 }
 
@@ -53,8 +54,18 @@ impl Image {
     pub fn new(image_data: impl Into<ImageBrush>) -> Self {
         Self {
             image_data: image_data.into(),
+            decorative: false,
             alt_text: None,
         }
+    }
+
+    /// Specifies whether the image is decorative, meaning it doesn't have meaningful content
+    /// and is only for visual presentation.
+    ///
+    /// If `is_decorative` is `true`, the image will be ignored by screen readers.
+    pub fn decorative(mut self, is_decorative: bool) -> Self {
+        self.decorative = is_decorative;
+        self
     }
 
     /// Sets the text that will describe the image to screen readers.
@@ -78,6 +89,15 @@ impl Image {
     pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: impl Into<ImageBrush>) {
         this.widget.image_data = image_data.into();
         this.ctx.request_layout();
+    }
+
+    /// Sets whether the image is decorative, meaning it doesn't have meaningful content
+    /// and is only for visual presentation.
+    ///
+    /// See [`Image::decorative`] for details.
+    pub fn set_decorative(this: &mut WidgetMut<'_, Self>, is_decorative: bool) {
+        this.widget.decorative = is_decorative;
+        this.ctx.request_accessibility_update();
     }
 
     /// Sets the text that will describe the image to screen readers.
@@ -230,6 +250,9 @@ impl Widget for Image {
     ) {
         if let Some(alt_text) = &self.alt_text {
             node.set_description(&**alt_text);
+        }
+        if self.decorative {
+            node.set_hidden();
         }
     }
 
