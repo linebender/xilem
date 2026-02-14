@@ -54,9 +54,10 @@ fn app_logic(state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
             state.card_collapsed,
             html::div((
                 "Some content ...",
-                html::button("click").on_click(|s: &mut AppState, _| {
-                    s.clicks += 1;
-                }),
+                html::button("click"),
+                // .on_click(|s: &mut AppState, _| {
+                //     s.clicks += 1;
+                // })
             )),
         ),
         |state: &mut AppState, msg: CardAction<()>| match msg {
