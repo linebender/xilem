@@ -33,7 +33,7 @@ pub(crate) fn enter_span(state: &WidgetState) -> EnteredSpan {
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,
-    widget: &mut dyn Widget,
+    widget: &dyn Widget,
     mut children: ArenaMutList<'_, WidgetArenaNode>,
     mut callback: impl FnMut(ArenaMut<'_, WidgetArenaNode>),
 ) {
