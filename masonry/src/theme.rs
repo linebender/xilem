@@ -31,7 +31,7 @@ pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x1D, 0x1D, 0x1D);
 
 pub const BORDER_WIDTH: f64 = 1.;
 
-// Zync color variations from https://tailwindcoYDIM_GRAY/docs/colors
+// Zync color variations from https://tailwindcss.com/docs/colors
 pub const ZYNC_900: Color = Color::from_rgb8(0x18, 0x18, 0x1b);
 pub const ZYNC_800: Color = Color::from_rgb8(0x27, 0x27, 0x2a);
 pub const ZYNC_700: Color = Color::from_rgb8(0x3f, 0x3f, 0x46);
