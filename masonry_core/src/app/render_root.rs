@@ -32,8 +32,8 @@ use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
-    run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
-    run_update_widget_tree_pass,
+    run_update_fonts_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_stashed_pass, run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
 use crate::properties::Dimensions;
@@ -126,13 +126,6 @@ pub(crate) struct RenderRootState {
     /// Cache for Parley font data.
     // TODO: move font context out of RenderRootState so that we only have it once per app
     pub(crate) font_context: FontContext,
-
-    /// Whether the loaded fonts have changed since the last layout pass.
-    ///
-    /// This is present so that child widgets can cache a Parley Layout, whilst
-    /// still updating text properly if fonts have changed.
-    // TODO: Should this be an `update` instead?
-    pub(crate) fonts_changed: bool,
 
     /// Cache for Parley text layout data.
     pub(crate) text_layout_context: LayoutContext<BrushIndex>,
@@ -356,7 +349,6 @@ impl RenderRoot {
                     }),
                     source_cache: SourceCache::default(),
                 },
-                fonts_changed: false,
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
@@ -532,8 +524,7 @@ impl RenderRoot {
             .font_context
             .collection
             .register_fonts(data, None);
-        self.global_state.fonts_changed = true;
-        self.request_layout_all();
+        run_update_fonts_pass(self);
         ret
     }
 
@@ -856,35 +847,6 @@ impl RenderRoot {
         request_render_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
-    }
-
-    /// Requires that each widget gets relayouted.
-    ///
-    /// This is used if something ambient changes and we expect that
-    /// many widgets will depend on in it their layout.
-    ///
-    /// This also runs the rewrite passes (i.e. it actions the relayout as well)
-    /// Currently only used for font loading.
-    pub(crate) fn request_layout_all(&mut self) {
-        fn request_layout_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
-            let children = node.children;
-            let widget = &mut *node.item.widget;
-            let state = &mut node.item.state;
-
-            state.set_needs_layout(true);
-            state.request_layout = true;
-
-            let id = state.id;
-            recurse_on_children(id, widget, children, |node| {
-                request_layout_all_in(node);
-            });
-        }
-
-        let root_node = self.widget_arena.get_node_mut(self.root_id());
-        request_layout_all_in(root_node);
-        // We need to perform a relayout before the next pointer/keyboard input event.
-        // So we do it now, rather than deferring it until a redraw.
-        self.run_rewrite_passes();
     }
 
     /// Checks whether the given id points to a widget that is "interactive".
