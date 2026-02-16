@@ -18,7 +18,8 @@ use crate::properties::{
     UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
+    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Selector, SelectorItem, Spinner,
+    Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -57,6 +58,7 @@ pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
 pub const DEFAULT_GAP: Length = Length::const_px(10.0);
 pub const DEFAULT_SPACER_LEN: Length = Length::const_px(10.0);
 pub const WIDGET_CONTROL_COMPONENT_PADDING: Length = Length::const_px(4.0);
+pub const SELECTOR_MIN_WIDTH: f64 = 100.0;
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
@@ -113,6 +115,26 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Switch, _>(ThumbColor(Color::WHITE));
     properties.insert::<Switch, _>(ThumbRadius(8.0));
     properties.insert::<Switch, _>(TrackThickness(20.0));
+
+    // Selector
+    properties.insert::<Selector, _>(Padding::from_vh(6., 16.));
+    properties.insert::<Selector, _>(CornerRadius { radius: 2. });
+    properties.insert::<Selector, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<Selector, _>(Background::Color(ZYNC_800));
+    properties.insert::<Selector, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<Selector, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<Selector, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Selector, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Selector, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+
+    // SelectorItem
+    properties.insert::<SelectorItem, _>(Padding::from_vh(6., 16.));
+    properties.insert::<SelectorItem, _>(Background::Color(ZYNC_900));
+    properties.insert::<SelectorItem, _>(ActiveBackground(Background::Color(ZYNC_800)));
+    properties.insert::<SelectorItem, _>(DisabledBackground(Background::Color(Color::BLACK)));
 
     // Flex
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));

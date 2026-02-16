@@ -1592,13 +1592,28 @@ impl_context_method!(
         /// Queues a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
+        pub fn mutate_child_later<W: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
         ) {
             let callback = MutateCallback {
                 id: child.id(),
+                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Queues a callback that will be called with a [`WidgetMut`] for the widget with the given id.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_later(
+            &mut self,
+            target: WidgetId,
+            f: impl FnOnce(WidgetMut<'_, dyn Widget>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: target,
                 callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
             };
             self.global_state.mutate_callbacks.push(callback);

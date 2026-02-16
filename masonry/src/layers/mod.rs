@@ -3,6 +3,8 @@
 
 //! A list of widgets implementing the [`Layer`](crate::core::Layer) trait.
 
+mod selector_menu;
 mod tooltip;
 
+pub use selector_menu::*;
 pub use tooltip::*;
