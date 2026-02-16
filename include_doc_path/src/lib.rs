@@ -38,9 +38,18 @@
 //! If they aren't set (e.g. because you're using a different build system), the macro will just return the input string without modification.
 
 use proc_macro::TokenStream;
-use syn::{LitStr, parse_macro_input};
+use proc_macro2::{Literal, Span};
+use quote::quote;
+
+fn compile_error(msg: &str, span: Span) -> TokenStream {
+    // TODO: impl Literal::new to directly set span, and remove mutability. when this feature is stable in Rust
+    let mut lit = Literal::string(msg);
+    lit.set_span(span);
+    quote!(compile_error!(#lit)).into()
+}
 
 mod logic;
+mod parsing;
 
 /// Takes a path to a local resource and always returns a valid URL to it.
 ///
@@ -55,10 +64,12 @@ mod logic;
 /// ```
 #[proc_macro]
 pub fn include_doc_path(input: TokenStream) -> TokenStream {
-    let lit = parse_macro_input!(input as LitStr);
-    let relative_path = lit.value();
-
-    logic::include_doc_path_impl(relative_path, lit.span(), false, false).into()
+    match parsing::parse_string_literal(input) {
+        Ok((relative_path, span)) => {
+            logic::include_doc_path_impl(relative_path, span, false, false).into()
+        }
+        Err(error) => error,
+    }
 }
 
 /// Helper macro which always returns the same string as if the path was found.
@@ -66,10 +77,12 @@ pub fn include_doc_path(input: TokenStream) -> TokenStream {
 /// Useful for debugging.
 #[proc_macro]
 pub fn helper_include_local_path(input: TokenStream) -> TokenStream {
-    let lit = parse_macro_input!(input as LitStr);
-    let relative_path = lit.value();
-
-    logic::include_doc_path_impl(relative_path, lit.span(), true, false).into()
+    match parsing::parse_string_literal(input) {
+        Ok((relative_path, span)) => {
+            logic::include_doc_path_impl(relative_path, span, true, false).into()
+        }
+        Err(error) => error,
+    }
 }
 
 /// Helper macro which always returns the same string as if the path was not found.
@@ -77,8 +90,10 @@ pub fn helper_include_local_path(input: TokenStream) -> TokenStream {
 /// Useful for debugging.
 #[proc_macro]
 pub fn helper_include_github_url(input: TokenStream) -> TokenStream {
-    let lit = parse_macro_input!(input as LitStr);
-    let relative_path = lit.value();
-
-    logic::include_doc_path_impl(relative_path, lit.span(), false, true).into()
+    match parsing::parse_string_literal(input) {
+        Ok((relative_path, span)) => {
+            logic::include_doc_path_impl(relative_path, span, false, true).into()
+        }
+        Err(error) => error,
+    }
 }
