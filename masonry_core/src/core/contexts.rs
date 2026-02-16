@@ -1328,16 +1328,29 @@ impl_context_method!(
         }
 
         /// Whether this widget gets pointer events and hovered status.
+        ///
+        /// See [`Widget::accepts_pointer_interaction()`] for details.
         pub fn accepts_pointer_interaction(&self) -> bool {
             self.widget_state.accepts_pointer_interaction
         }
 
+        /// Whether children of this widget get pointer events and hovered status.
+        ///
+        /// See [`Widget::contains_pointer_interactions()`] for details.
+        pub fn contains_pointer_interactions(&self) -> bool {
+            self.widget_state.contains_pointer_interactions
+        }
+
         /// Whether this widget gets text focus.
+        ///
+        /// See [`Widget::accepts_focus()`] for details.
         pub fn accepts_focus(&self) -> bool {
             self.widget_state.accepts_focus
         }
 
         /// Whether this widget gets IME events.
+        ///
+        /// See [`Widget::accepts_text_input()`] for details.
         pub fn accepts_text_input(&self) -> bool {
             self.widget_state.accepts_text_input
         }

@@ -211,10 +211,6 @@ impl SizedBox {
 impl Widget for SizedBox {
     type Action = NoAction;
 
-    fn accepts_pointer_interaction(&self) -> bool {
-        false
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         if let Some(ref mut child) = self.child {
             ctx.register_child(child);

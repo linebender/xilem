@@ -43,6 +43,7 @@ pub struct ModularWidget<S> {
     pub state: S,
     icon: CursorIcon,
     accepts_pointer_interaction: bool,
+    contains_pointer_interactions: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
@@ -73,6 +74,7 @@ impl<S> ModularWidget<S> {
             state,
             icon: CursorIcon::Default,
             accepts_pointer_interaction: true,
+            contains_pointer_interactions: false,
             accepts_focus: false,
             accepts_text_input: false,
             on_pointer_event: None,
@@ -170,6 +172,12 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
+        self
+    }
+
+    /// See [`Widget::contains_pointer_interactions`]
+    pub fn contains_pointer_interactions(mut self, flag: bool) -> Self {
+        self.contains_pointer_interactions = flag;
         self
     }
 
@@ -473,6 +481,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn accepts_pointer_interaction(&self) -> bool {
         self.accepts_pointer_interaction
+    }
+
+    fn contains_pointer_interactions(&self) -> bool {
+        self.contains_pointer_interactions
     }
 
     fn accepts_focus(&self) -> bool {

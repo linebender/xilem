@@ -718,6 +718,7 @@ impl<W: Widget> TestHarness<W> {
         let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
+        // TODO - Add reachable_by_pointer() method.
         if !widget.ctx().accepts_pointer_interaction() {
             panic!("Widget {id} doesn't accept pointer events");
         }

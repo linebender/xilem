@@ -238,6 +238,10 @@ impl Widget for Button {
         ChildrenIds::from_slice(&[self.child.id()])
     }
 
+    fn contains_pointer_interactions(&self) -> bool {
+        true
+    }
+
     fn accepts_focus(&self) -> bool {
         // Buttons can be tab-focused...
         true

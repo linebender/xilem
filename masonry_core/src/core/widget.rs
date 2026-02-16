@@ -438,6 +438,18 @@ pub trait Widget: AsDynWidget + Any {
         true
     }
 
+    /// Whether this widget stops pointer events and [hovered] from reaching its children. False by default.
+    ///
+    /// If true, the widget's children will not get pointer events, affect the cursor icon,
+    /// will never be considered hovered, and will not be returned by `find_widget_under_pointer`.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    ///
+    /// [hovered]: crate::doc::masonry_concepts#hovered
+    fn contains_pointer_interactions(&self) -> bool {
+        false
+    }
+
     /// Whether this widget gets [text focus]. False by default.
     ///
     /// If true, pressing Tab can focus this widget.
@@ -553,6 +565,7 @@ pub fn find_widget_under_pointer<'c>(
     ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
+    // TEST EARLY-EXITS
     if !ctx.bounding_box().contains(pos) {
         return None;
     }
@@ -568,24 +581,29 @@ pub fn find_widget_under_pointer<'c>(
         return None;
     }
 
-    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-    // of overlapping children.
-    for child_id in widget.children_ids().iter().rev() {
-        let child_ref = ctx.get(*child_id);
-        if let Some(child) = child_ref
-            .widget
-            .find_widget_under_pointer(child_ref.ctx, pos)
-        {
-            return Some(child);
+    // TEST CHILDREN
+    if !ctx.contains_pointer_interactions() {
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in widget.children_ids().iter().rev() {
+            let child_ref = ctx.get(*child_id);
+            if let Some(child) = child_ref
+                .widget
+                .find_widget_under_pointer(child_ref.ctx, pos)
+            {
+                return Some(child);
+            }
         }
     }
 
-    // If no child is under pointer, test the current widget.
-    if ctx.accepts_pointer_interaction() && ctx.border_box().contains(local_pos) {
-        Some(WidgetRef { widget, ctx })
-    } else {
-        None
+    // TEST THE CURRENT WIDGET
+    if !ctx.accepts_pointer_interaction() {
+        return None;
     }
+    if !ctx.border_box().contains(local_pos) {
+        return None;
+    }
+    Some(WidgetRef { widget, ctx })
 }
 
 /// Marker trait for widgets whose parents can get a raw mutable reference to them.
