@@ -286,7 +286,7 @@ pub fn include_doc_path(input: TokenStream) -> TokenStream {
         Ok((relative_path, span)) => {
             logic::include_doc_path_impl(relative_path, span, false, false).into()
         }
-        Err(err) => return err,
+        Err(error) => error,
     }
 }
 
