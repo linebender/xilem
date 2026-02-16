@@ -9,6 +9,7 @@ use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::layout::Length;
+use crate::palette::css::DIM_GRAY;
 use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
@@ -18,7 +19,8 @@ use crate::properties::{
     UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
+    Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch,
+    TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -29,7 +31,7 @@ pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x1D, 0x1D, 0x1D);
 
 pub const BORDER_WIDTH: f64 = 1.;
 
-// Zync color variations from https://tailwindcss.com/docs/colors
+// Zync color variations from https://tailwindcoYDIM_GRAY/docs/colors
 pub const ZYNC_900: Color = Color::from_rgb8(0x18, 0x18, 0x1b);
 pub const ZYNC_800: Color = Color::from_rgb8(0x27, 0x27, 0x2a);
 pub const ZYNC_700: Color = Color::from_rgb8(0x3f, 0x3f, 0x46);
@@ -93,6 +95,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // DisclosureButton
+    properties.insert::<DisclosureButton, _>(ContentColor::new(DIM_GRAY));
 
     // Divider
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
