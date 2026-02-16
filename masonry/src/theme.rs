@@ -13,10 +13,10 @@ use crate::palette::css::DIM_GRAY;
 use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
-    CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
-    SelectionColor, ThumbColor, ThumbRadius, ToggledBackground, TrackThickness,
-    UnfocusedSelectionColor,
+    CheckmarkStrokeWidth, ContentColor, CornerRadius, Dimensions, DisabledBackground,
+    DisabledCheckmarkColor, DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor,
+    Padding, PlaceholderColor, SelectionColor, ThumbColor, ThumbRadius, ToggledBackground,
+    TrackThickness, UnfocusedSelectionColor,
 };
 use crate::widgets::{
     Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch,
@@ -98,6 +98,11 @@ pub fn default_property_set() -> DefaultProperties {
 
     // DisclosureButton
     properties.insert::<DisclosureButton, _>(ContentColor::new(DIM_GRAY));
+    properties.insert::<DisclosureButton, _>(Dimensions::fixed(
+        Length::const_px(16.),
+        Length::const_px(16.),
+    ));
+    properties.insert::<DisclosureButton, _>(Padding::all(4.));
 
     // Divider
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));

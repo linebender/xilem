@@ -77,7 +77,6 @@ impl Widget for DisclosureButton {
                     ctx.capture_pointer();
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
-                    // trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::Up { .. } => {
@@ -86,8 +85,6 @@ impl Widget for DisclosureButton {
                     ctx.request_layout();
 
                     // TODO: Submit actions?
-                    // ctx.submit_action(Action::CheckboxToggled(self.collapse));
-                    // trace!("Checkbox {:?} released", ctx.widget_id());
                 }
             }
             _ => (),
@@ -109,7 +106,6 @@ impl Widget for DisclosureButton {
                     ctx.request_layout();
 
                     // TODO: Submit actions?
-                    // ctx.submit_action(Action::ButtonPressed(None));
                 }
             }
             _ => (),
@@ -130,7 +126,6 @@ impl Widget for DisclosureButton {
             self.switch_disclosed_state();
             ctx.request_layout();
             // TODO: Submit actions?
-            // ctx.submit_action(Action::ButtonPressed(None));
         }
     }
 

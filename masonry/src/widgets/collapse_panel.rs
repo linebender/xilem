@@ -17,8 +17,6 @@ use crate::{accesskit, theme};
 
 /// Square disclosure button length.
 const BUTTON_LENGTH: Length = Length::const_px(16.);
-/// Disclosure button padding.
-const BUTTON_PADDING: Padding = Padding::from_vh(4., 4.);
 /// Padding around the separator line.
 const SEPARATOR_PAD: Padding = Padding {
     top: 4.,
@@ -61,10 +59,10 @@ impl<W: Widget + ?Sized> CollapsePanel<W> {
 
     fn disclosure_button(collapse: bool) -> WidgetPod<DisclosureButton> {
         DisclosureButton::new(!collapse)
-            .with_props((
+            .with_props(
+                // TODO - Move to DefaultProperties
                 Dimensions::fixed(BUTTON_LENGTH, BUTTON_LENGTH),
-                BUTTON_PADDING,
-            ))
+            )
             .to_pod()
     }
 }
