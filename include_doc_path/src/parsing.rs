@@ -1,3 +1,6 @@
+// Copyright 2026 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // ---------------------------------------------------------------------------
 // String literal parsing helpers, adapted and modified from the syn crate (v2.0.115).
 // Original source: https://docs.rs/syn/2.0.115/src/syn/lit.rs.html
@@ -138,7 +141,6 @@ fn parse_lit_str_cooked(mut s: &str) -> Option<(Box<str>, Box<str>)> {
 /// Parse a raw string literal (`r"..."`, `r#"..."#`, etc.).
 ///
 /// `s` must be the full token text including the `r`, optional `#` marks, and surrounding quotes.
-
 fn parse_lit_str_raw(mut s: &str) -> Option<(Box<str>, Box<str>)> {
     if byte(s, 0) != b'r' {
         return None;
