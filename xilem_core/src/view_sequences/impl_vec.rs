@@ -81,7 +81,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         let generations = alloc::vec![0; self.len()];
@@ -92,8 +92,7 @@ where
             .map(|((index, seq), generation)| {
                 let id = create_generational_view_id(index, *generation);
                 let this_skip = elements.index() - start_idx;
-                let inner_state =
-                    ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, &mut app_state));
+                let inner_state = ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
                 (this_skip, inner_state)
             })
             .collect();
@@ -110,7 +109,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         let start_idx = elements.index();
         for (i, (((child, child_prev), (child_skip, child_state)), child_generation)) in self
@@ -124,7 +123,7 @@ where
             // Rebuild the items which are common to both vectors
             let id = create_generational_view_id(i, *child_generation);
             ctx.with_id(id, |ctx| {
-                child.seq_rebuild(child_prev, child_state, ctx, elements, &mut app_state);
+                child.seq_rebuild(child_prev, child_state, ctx, elements, app_state);
             });
         }
         let n = self.len();
@@ -181,7 +180,7 @@ where
                             let id = create_generational_view_id(index + prev_n, *generation);
                             let this_skip = elements.index() + outer_idx - start_idx;
                             let inner_state =
-                                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, &mut app_state));
+                                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
                             (this_skip, inner_state)
                         }),
                 );

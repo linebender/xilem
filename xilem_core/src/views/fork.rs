@@ -45,17 +45,12 @@ where
 
     type ViewState = (Active::ViewState, Alongside::SeqState);
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        mut app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
-        let (element, active_state) = ctx.with_id(ViewId::new(0), |ctx| {
-            self.active_view.build(ctx, &mut app_state)
-        });
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (element, active_state) =
+            ctx.with_id(ViewId::new(0), |ctx| self.active_view.build(ctx, app_state));
         let alongside_state = ctx.with_id(ViewId::new(1), |ctx| {
             self.alongside_view
-                .seq_build(ctx, &mut AppendVec::default(), &mut app_state)
+                .seq_build(ctx, &mut AppendVec::default(), app_state)
         });
         (element, (active_state, alongside_state))
     }
@@ -66,16 +61,11 @@ where
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
-            self.active_view.rebuild(
-                &prev.active_view,
-                active_state,
-                ctx,
-                element,
-                &mut app_state,
-            );
+            self.active_view
+                .rebuild(&prev.active_view, active_state, ctx, element, app_state);
         });
         ctx.with_id(ViewId::new(1), |ctx| {
             self.alongside_view.seq_rebuild(
@@ -83,7 +73,7 @@ where
                 alongside_state,
                 ctx,
                 &mut NoElements,
-                &mut app_state,
+                app_state,
             );
         });
     }

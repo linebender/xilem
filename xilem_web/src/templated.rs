@@ -23,11 +23,7 @@ where
 
     type ViewState = <Rc<V> as View<State, Action, ViewCtx>>::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        mut app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let type_id = TypeId::of::<Self>();
         let (element, view_state) = if let Some((template_node, view)) = ctx.templates.get(&type_id)
         {
@@ -35,7 +31,7 @@ where
             let prev = prev.downcast_ref::<Rc<V>>().unwrap_throw();
             let node = template_node.clone_node_with_deep(true).unwrap_throw();
             let (mut el, mut state) =
-                ctx.with_hydration_node(node, |ctx| prev.build(ctx, &mut app_state));
+                ctx.with_hydration_node(node, |ctx| prev.build(ctx, app_state));
             el.apply_changes();
             let pod_mut = PodMut::new(&mut el.node, &mut el.props, &mut el.flags, None, false);
             self.0.rebuild(prev, &mut state, ctx, pod_mut, app_state);

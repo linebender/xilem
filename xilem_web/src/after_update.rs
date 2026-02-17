@@ -116,12 +116,8 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        mut app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
-        let (mut el, view_state) = self.element.build(ctx, &mut app_state);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (mut el, view_state) = self.element.build(ctx, app_state);
         el.node.apply_props(&mut el.props, &mut el.flags);
         (self.callback)(app_state, &el.node);
         (el, view_state)
@@ -181,14 +177,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         self.element.rebuild(
             &prev.element,
             view_state,
             ctx,
             element.reborrow_mut(),
-            &mut app_state,
+            app_state,
         );
         element.node.apply_props(element.props, element.flags);
         (self.callback)(app_state, element.node);

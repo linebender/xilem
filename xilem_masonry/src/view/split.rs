@@ -195,15 +195,11 @@ where
 
     type ViewState = (ChildA::ViewState, ChildB::ViewState);
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        mut app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child1, child1_state) =
-            ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx, &mut app_state));
+            ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx, app_state));
         let (child2, child2_state) =
-            ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx, &mut app_state));
+            ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx, app_state));
 
         let widget_pod = ctx.create_pod(
             widgets::Split::new(child1.new_widget, child2.new_widget)
@@ -225,7 +221,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         if prev.split_axis != self.split_axis {
             widgets::Split::set_split_axis(&mut element, self.split_axis);
@@ -262,7 +258,7 @@ where
                 &mut view_state.0,
                 ctx,
                 child1_element,
-                &mut app_state,
+                app_state,
             );
         });
 
@@ -273,7 +269,7 @@ where
                 &mut view_state.1,
                 ctx,
                 child2_element,
-                &mut app_state,
+                app_state,
             );
         });
     }

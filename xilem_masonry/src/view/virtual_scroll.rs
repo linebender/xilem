@@ -153,7 +153,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         let valid_range_changed = self.valid_range != prev.valid_range;
         if valid_range_changed {
@@ -195,7 +195,7 @@ where
                         pending_action.old_active.contains(&idx),
                         "{idx} was asked to be removed in {pending_action:?}, but wasn't already present."
                     );
-                    let next_child = (self.func)(&mut app_state, idx);
+                    let next_child = (self.func)(app_state, idx);
                     // Rebuild this existing item
                     ctx.with_id(view_id_for_index(idx), |ctx| {
                         next_child.rebuild(
@@ -203,15 +203,15 @@ where
                             &mut child.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                            &mut app_state,
+                            app_state,
                         );
                         child.view = next_child;
                     });
                 } else {
-                    let new_child = (self.func)(&mut app_state, idx);
+                    let new_child = (self.func)(app_state, idx);
                     // Build the new item
                     ctx.with_id(view_id_for_index(idx), |ctx| {
-                        let (new_element, child_state) = new_child.build(ctx, &mut app_state);
+                        let (new_element, child_state) = new_child.build(ctx, app_state);
                         widgets::VirtualScroll::add_child(
                             &mut element,
                             idx,
@@ -230,14 +230,14 @@ where
         } else {
             // Rebuild all existing items
             for (&idx, child) in &mut view_state.children {
-                let next_child = (self.func)(&mut app_state, idx);
+                let next_child = (self.func)(app_state, idx);
                 ctx.with_id(view_id_for_index(idx), |ctx| {
                     next_child.rebuild(
                         &child.view,
                         &mut child.state,
                         ctx,
                         widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                        &mut app_state,
+                        app_state,
                     );
                     child.view = next_child;
                 });

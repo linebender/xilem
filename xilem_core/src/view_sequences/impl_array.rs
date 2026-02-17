@@ -26,7 +26,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         // there's no enumerate directly on an array
@@ -34,7 +34,7 @@ where
         self.each_ref().map(|vs| {
             let this_skip = elements.index() - start_idx;
             let state = ctx.with_id(ViewId::new(idx), |ctx| {
-                vs.seq_build(ctx, elements, &mut app_state)
+                vs.seq_build(ctx, elements, app_state)
             });
             idx += 1;
             (this_skip, state)
@@ -48,7 +48,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         let start_idx = elements.index();
         for (idx, ((seq, prev_seq), (this_skip, state))) in
@@ -60,7 +60,7 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_rebuild(prev_seq, state, ctx, elements, &mut app_state);
+                    seq.seq_rebuild(prev_seq, state, ctx, elements, app_state);
                 },
             );
         }

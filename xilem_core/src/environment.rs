@@ -213,9 +213,9 @@ where
 
     type ViewState = ProvidesState<ChildView::ViewState>;
 
-    fn build(&self, ctx: &mut Ctx, mut app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Ctx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         // Prepare the initial state value
-        let value = (self.initial_context)(&mut app_state);
+        let value = (self.initial_context)(app_state);
         let environment_item = EnvironmentItem {
             change_listeners: Vec::new(),
             value: Box::new(value),
@@ -238,7 +238,7 @@ where
                 old_value.value
             );
         }
-        let (child_element, child_state) = self.child.build(ctx, &mut app_state);
+        let (child_element, child_state) = self.child.build(ctx, app_state);
 
         // Restore the prior value into the environment
         let env = ctx.environment();
@@ -434,7 +434,7 @@ where
 
     type ViewState = WithContextState<ChildView::ViewState, ChildView>;
 
-    fn build(&self, ctx: &mut Ctx, mut app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Ctx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
         ctx.with_id(WITH_CONTEXT_CHILD, |ctx| {
             let env = ctx.environment();
@@ -500,8 +500,8 @@ where
                 None
             };
 
-            let child_view = (self.child)(context, &mut app_state);
-            let (child_element, child_state) = child_view.build(ctx, &mut app_state);
+            let child_view = (self.child)(context, app_state);
+            let (child_element, child_state) = child_view.build(ctx, app_state);
 
             let state = WithContextState {
                 prev: child_view,
@@ -519,7 +519,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
         element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) {
         ctx.with_id(WITH_CONTEXT_CHILD, |ctx| {
             // Use our value in the child rebuild.
@@ -536,14 +536,14 @@ where
                 .value
                 .downcast_mut::<Context>()
                 .expect("Environment's slots should have the correct types.");
-            let child_view = (self.child)(context, &mut app_state);
+            let child_view = (self.child)(context, app_state);
 
             child_view.rebuild(
                 &view_state.prev,
                 &mut view_state.child_state,
                 ctx,
                 element,
-                &mut app_state,
+                app_state,
             );
             view_state.prev = child_view;
         });
@@ -714,14 +714,11 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
-        let prev_res = self.child.message(
-            &mut view_state.child_state,
-            message,
-            element,
-            &mut app_state,
-        );
+        let prev_res = self
+            .child
+            .message(&mut view_state.child_state, message, element, app_state);
         // Use our value in the child rebuild.
 
         let env = &mut message.environment;
@@ -738,6 +735,6 @@ where
             .downcast_mut::<Res>()
             .expect("Environment's slots should have the correct types.");
 
-        prev_res.map(|child_action| (self.on_action)(&mut app_state, resource, child_action))
+        prev_res.map(|child_action| (self.on_action)(app_state, resource, child_action))
     }
 }

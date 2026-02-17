@@ -133,6 +133,6 @@ where
         app_state: &mut ParentState,
     ) -> MessageResult<Action> {
         self.child
-            .message(view_state, message, element, (&self.map_state)(app_state))
+            .message(view_state, message, element, (self.map_state)(app_state))
     }
 }

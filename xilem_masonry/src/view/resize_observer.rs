@@ -150,14 +150,14 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: &mut State,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         match message.take_first() {
             Some(RESIZE_OBSERVER_CONTENT_VIEW_ID) => self.inner.message(
                 view_state,
                 message,
                 widgets::ResizeObserver::child_mut(&mut element).downcast(),
-                &mut app_state,
+                app_state,
             ),
             None => match message.take_message::<LayoutChanged>() {
                 Some(_) => MessageResult::Action((self.on_resize)(
