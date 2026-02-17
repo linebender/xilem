@@ -3,7 +3,7 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::hash_map::Entry;
 
 use accesskit::{NodeId, TreeUpdate};
@@ -1501,6 +1501,12 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
             }
 
             global_state.scene_cache.remove(&state.id);
+
+            if let Some(layers) = global_state.attached_layers.remove(&state.id) {
+                for (_, layer_id) in layers {
+                    global_state.emit_signal(RenderRootSignal::RemoveLayer(layer_id));
+                }
+            }
         }
 
         let id = child.id();
@@ -1804,11 +1810,81 @@ impl_context_method!(
             ));
         }
 
+        /// Creates a new [layer] at a specified `position`, and ties it to the current widget.
+        ///
+        /// The layer will be removed when the current widget is removed from the tree.
+        /// A widget can only have one layer of any given type `W` at a time: if a widget creates two layers of the same type, the old layer will be removed.
+        ///
+        /// The given `position` must be in the window's coordinate space.
+        ///
+        /// # Panics
+        ///
+        /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
+        ///
+        /// [layer]: crate::doc::masonry_concepts#layers
+        pub fn create_attached_layer<W: Widget + ?Sized>(
+            &mut self,
+            layer_type: LayerType,
+            mut fallback_widget: NewWidget<W>,
+            position: Point,
+        ) {
+            trace!("create_attached_layer");
+
+            if fallback_widget.widget.as_layer().is_none() {
+                debug_panic!(
+                    "cannot create layer of type {} - `Widget::as_layer()` returned None",
+                    fallback_widget.widget.short_type_name()
+                );
+                return;
+            }
+
+            // FIXME - Add LayerId type and use that instead.
+            let layer_id = fallback_widget.id;
+
+            let layers = self
+                .global_state
+                .attached_layers
+                .entry(self.widget_id())
+                .or_default();
+            if let Some(prev) = layers.insert(TypeId::of::<W>(), layer_id) {
+                self.global_state
+                    .emit_signal(RenderRootSignal::RemoveLayer(prev));
+            }
+            self.global_state.emit_signal(RenderRootSignal::NewLayer(
+                layer_type,
+                fallback_widget.erased(),
+                position,
+            ));
+        }
+
+        /// Returns the attached layer created by this widget with the given type `W`.
+        ///
+        /// See [`Self::create_attached_layer`] for more details.
+        pub fn get_attached_layer<W: Widget + ?Sized>(&self) -> Option<WidgetId> {
+            self.global_state
+                .attached_layers
+                .get(&self.widget_id())?
+                .get(&TypeId::of::<W>())
+                .copied()
+        }
+
         /// Removes the layer with the specified widget as root.
         pub fn remove_layer(&mut self, root_widget_id: WidgetId) {
             trace!("remove_layer");
             self.global_state
                 .emit_signal(RenderRootSignal::RemoveLayer(root_widget_id));
+
+            let Some(layers) = self.global_state.attached_layers.get_mut(&self.widget_id()) else {
+                return;
+            };
+
+            let layer_type_id = layers
+                .iter()
+                .find(|(_, id)| **id == root_widget_id)
+                .map(|(type_id, _)| *type_id);
+            if let Some(type_id) = layer_type_id {
+                layers.remove(&type_id);
+            }
         }
 
         /// Repositions the layer with the specified widget as root.

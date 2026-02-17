@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -143,6 +143,9 @@ pub(crate) struct RenderRootState {
     pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
+
+    /// Map of layers attached to widgets, keyed by the attached widget id, then the type of the layer root.
+    pub(crate) attached_layers: HashMap<WidgetId, HashMap<TypeId, WidgetId>>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -355,6 +358,7 @@ impl RenderRoot {
                 last_sent_ime_area: INVALID_IME_AREA,
                 scene_cache: HashMap::new(),
                 widget_tags: HashMap::new(),
+                attached_layers: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
