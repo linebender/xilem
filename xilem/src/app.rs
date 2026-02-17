@@ -11,7 +11,7 @@ use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId
 use tokio::runtime::Runtime as TokioRuntime;
 use winit::error::EventLoopError;
 
-use crate::core::{Edit, map_state};
+use crate::core::map_state;
 use crate::window_options::WindowCallbacks;
 use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 
@@ -57,7 +57,7 @@ impl<State>
         window_options: WindowOptions<State>,
     ) -> Self
     where
-        View: WidgetView<Edit<State>>,
+        View: WidgetView<State>,
     {
         Self::new_simple_with_tokio(
             state,
@@ -75,7 +75,7 @@ impl<State>
         tokio_rt: Arc<TokioRuntime>,
     ) -> Self
     where
-        View: WidgetView<Edit<State>>,
+        View: WidgetView<State>,
     {
         let window_id = WindowId::next();
         let callbacks = Arc::new(window_options.callbacks);
@@ -96,10 +96,9 @@ impl<State>
                     crate::window(
                         window_id,
                         String::new(),
-                        map_state::<Edit<ExitOnClose<_>>, _, _, _, _, _>(
-                            logic(state),
-                            |wrapper: &mut ExitOnClose<_>, ()| &mut wrapper.state,
-                        ),
+                        map_state(logic(state), |wrapper: &mut ExitOnClose<_>| {
+                            &mut wrapper.state
+                        }),
                     )
                     .with_options(|_| WindowOptions {
                         reactive: window_options.reactive.clone(),
