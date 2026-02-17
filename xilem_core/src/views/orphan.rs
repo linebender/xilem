@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+    MessageCtx, MessageResult, Mut, View, ViewElement, ViewMarker,
     ViewPathTracker,
 };
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
 ///
 /// Every type that can be supported with this trait, needs a concrete `View` implementation in `xilem_core`, possibly feature-gated.
-pub trait OrphanView<V, State: ViewArgument, Action>: ViewPathTracker + Sized {
+pub trait OrphanView<V, State: 'static, Action>: ViewPathTracker + Sized {
     /// See [`View::Element`]
     type OrphanElement: ViewElement;
     /// See [`View::ViewState`]
@@ -19,7 +19,7 @@ pub trait OrphanView<V, State: ViewArgument, Action>: ViewPathTracker + Sized {
     fn orphan_build(
         view: &V,
         ctx: &mut Self,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState);
 
     /// See [`View::rebuild`]
@@ -29,7 +29,7 @@ pub trait OrphanView<V, State: ViewArgument, Action>: ViewPathTracker + Sized {
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     );
 
     /// See [`View::teardown`]
@@ -46,7 +46,7 @@ pub trait OrphanView<V, State: ViewArgument, Action>: ViewPathTracker + Sized {
         view_state: &mut Self::OrphanViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::OrphanElement>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action>;
 }
 
@@ -56,7 +56,7 @@ macro_rules! impl_orphan_view_for {
 
         impl<State, Action, Context> View<State, Action, Context> for $ty
         where
-            State: ViewArgument,
+            State: 'static,
             Context: OrphanView<$ty, State, Action>,
         {
             type Element = Context::OrphanElement;
@@ -66,7 +66,7 @@ macro_rules! impl_orphan_view_for {
             fn build(
                 &self,
                 ctx: &mut Context,
-                app_state: Arg<'_, State>,
+                app_state: &mut State,
             ) -> (Self::Element, Self::ViewState) {
                 Context::orphan_build(self, ctx, app_state)
             }
@@ -77,7 +77,7 @@ macro_rules! impl_orphan_view_for {
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
                 element: Mut<'_, Self::Element>,
-                app_state: Arg<'_, State>,
+                app_state: &mut State,
             ) {
                 Context::orphan_rebuild(self, prev, view_state, ctx, element, app_state);
             }
@@ -96,7 +96,7 @@ macro_rules! impl_orphan_view_for {
                 view_state: &mut Self::ViewState,
                 message: &mut MessageCtx,
                 element: Mut<'_, Self::Element>,
-                app_state: Arg<'_, State>,
+                app_state: &mut State,
             ) -> MessageResult<Action> {
                 Context::orphan_message(self, view_state, message, element, app_state)
             }
@@ -128,7 +128,7 @@ impl_orphan_view_for!(usize);
 /// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
-    use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+    use crate::{MessageCtx, MessageResult, Mut, View, ViewMarker};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

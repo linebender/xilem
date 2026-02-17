@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Count, ElementSplice, MessageCtx, MessageResult, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
@@ -31,7 +31,7 @@ pub struct OptionSeqState<InnerState> {
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for Option<Seq>
 where
-    State: ViewArgument,
+    State: 'static,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -58,7 +58,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> Self::SeqState {
         let generation = 0;
         match self {
@@ -85,7 +85,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
@@ -157,7 +157,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()

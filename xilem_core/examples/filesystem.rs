@@ -7,8 +7,8 @@ use std::io::stdin;
 use std::path::PathBuf;
 
 use xilem_core::{
-    AnyElement, AnyView, Arg, Edit, Environment, MessageCtx, Mut, SuperElement, View, ViewArgument,
-    ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    AnyElement, AnyView, Environment, MessageCtx, Mut, SuperElement, View, ViewElement, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 #[derive(Debug)]
@@ -18,15 +18,15 @@ enum State {
     Complex(String),
 }
 
-fn complex_state(value: &str) -> impl FileView<Edit<State>> + use<> {
+fn complex_state(value: &str) -> impl FileView<State> + use<> {
     File {
         name: value.to_string(),
         contents: value.to_string(),
     }
 }
 
-fn app_logic(state: &mut State) -> impl FileView<Edit<State>> + use<> {
-    let res: DynFileView<Edit<State>> = match state {
+fn app_logic(state: &mut State) -> impl FileView<State> + use<> {
+    let res: DynFileView<State> = match state {
         State::Setup => Box::new(File {
             name: "file1.txt".into(),
             contents: "Test file contents".into(),
@@ -100,12 +100,12 @@ fn main() {
     }
 }
 
-trait FileView<State: ViewArgument, Action = ()>:
+trait FileView<State: 'static, Action = ()>:
     View<State, Action, ViewCtx, Element = FsPath>
 {
 }
 
-impl<V, State: ViewArgument, Action> FileView<State, Action> for V where
+impl<V, State: 'static, Action> FileView<State, Action> for V where
     V: View<State, Action, ViewCtx, Element = FsPath>
 {
 }
@@ -160,14 +160,14 @@ impl ViewElement for FsPath {
 }
 
 impl ViewMarker for File {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for File {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();
 
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let path = ctx.current_folder_path.join(&*self.name);
 
@@ -182,7 +182,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -208,7 +208,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
         unreachable!()
     }

@@ -4,7 +4,7 @@
 //! The primary view trait and associated trivial implementations.
 
 use crate::message::MessageResult;
-use crate::{Arg, MessageCtx, Mut, ViewArgument, ViewElement, ViewPathTracker};
+use crate::{MessageCtx, Mut, ViewElement, ViewPathTracker};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -50,9 +50,7 @@ pub trait ViewMarker {}
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
-pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
-    ViewMarker + 'static
-{
+pub trait View<State: 'static, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -71,7 +69,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
@@ -81,7 +79,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     );
 
     /// Handle `element` being removed from the tree.
@@ -104,7 +102,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action>;
 
     /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].
@@ -116,11 +114,11 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         f: F,
     ) -> crate::MapState<Self, F, ParentState, State, Action, Context>
     where
-        ParentState: ViewArgument,
+        ParentState: 'static,
         Action: 'static,
         Context: 'static,
         Self: Sized,
-        F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, State> + 'static,
+        F: Fn(&mut ParentState) -> &mut State + 'static,
     {
         crate::map_state(self, f)
     }
@@ -136,7 +134,7 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         ParentAction: 'static,
         Action: 'static,
         Self: Sized,
-        F: Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+        F: Fn(&mut State, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
     {
         crate::map_message_result(self, f)
     }
@@ -153,13 +151,13 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         ParentAction,
         Action,
         Context,
-        impl Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+        impl Fn(&mut State, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
     >
     where
         ParentAction: 'static,
         Action: 'static,
         Self: Sized,
-        F: Fn(Arg<'_, State>, Action) -> ParentAction + 'static,
+        F: Fn(&mut State, Action) -> ParentAction + 'static,
     {
         crate::map_action(self, f)
     }

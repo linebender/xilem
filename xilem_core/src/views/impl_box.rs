@@ -5,12 +5,12 @@ use alloc::boxed::Box;
 use core::ops::Deref;
 
 use crate::message::MessageResult;
-use crate::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageCtx, Mut, View, ViewMarker, ViewPathTracker};
 
 impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, V> View<State, Action, Context> for Box<V>
 where
-    State: ViewArgument,
+    State: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
@@ -20,7 +20,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         self.deref().build(ctx, app_state)
     }
@@ -31,7 +31,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         self.deref()
             .rebuild(prev, view_state, ctx, element, app_state);
@@ -51,7 +51,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.deref()
             .message(view_state, message, element, app_state)

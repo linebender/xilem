@@ -5,7 +5,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageCtx, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -21,7 +21,7 @@ pub struct Memoize<Data, InitView, State, Action, Context> {
 impl<Data, InitView, State, Action, Context> Debug
     for Memoize<Data, InitView, State, Action, Context>
 where
-    State: ViewArgument,
+    State: 'static,
     Data: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -58,9 +58,9 @@ pub fn memoize<State, Action, Context, Data, V, InitView>(
     init_view: InitView,
 ) -> Memoize<Data, InitView, State, Action, Context>
 where
-    State: ViewArgument,
+    State: 'static,
     Data: PartialEq + 'static,
-    // TODO(DJMcNab): Also accept `Arg<'_, State>` in this argument closure
+    // TODO(DJMcNab): Also accept `&mut State` in this argument closure
     InitView: Fn(&Data) -> V + 'static,
     V: View<State, Action, Context>,
     Context: ViewPathTracker,
@@ -93,7 +93,7 @@ impl<Data, ViewFn, State, Action, Context> ViewMarker
 impl<State, Action, Context, Data, V, ViewFn> View<State, Action, Context>
     for Memoize<Data, ViewFn, State, Action, Context>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
     Data: PartialEq + 'static,
@@ -107,7 +107,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)(&self.data);
         let (element, view_state) = view.build(ctx, app_state);
@@ -125,7 +125,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
@@ -145,7 +145,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
@@ -197,7 +197,7 @@ pub fn frozen<State, Action, Context, V, InitView>(
     init_view: InitView,
 ) -> Frozen<InitView, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,
@@ -216,7 +216,7 @@ impl<InitView, State, Action> ViewMarker for Frozen<InitView, State, Action> {}
 impl<State, Action, Context, V, InitView> View<State, Action, Context>
     for Frozen<InitView, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,
@@ -229,7 +229,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)();
         let (element, view_state) = view.build(ctx, app_state);
@@ -247,7 +247,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
@@ -278,7 +278,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state

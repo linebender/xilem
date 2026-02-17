@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Count, ElementSplice, MessageCtx, MessageResult, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 impl<State, Action, Context, Element, Seq, const N: usize>
     ViewSequence<State, Action, Context, Element> for [Seq; N]
 where
-    State: ViewArgument,
+    State: 'static,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -26,7 +26,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        mut app_state: Arg<'_, State>,
+        mut app_state: &mut State,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         // there's no enumerate directly on an array
@@ -34,7 +34,7 @@ where
         self.each_ref().map(|vs| {
             let this_skip = elements.index() - start_idx;
             let state = ctx.with_id(ViewId::new(idx), |ctx| {
-                vs.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
+                vs.seq_build(ctx, elements, &mut app_state)
             });
             idx += 1;
             (this_skip, state)
@@ -48,7 +48,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        mut app_state: Arg<'_, State>,
+        mut app_state: &mut State,
     ) {
         let start_idx = elements.index();
         for (idx, ((seq, prev_seq), (this_skip, state))) in
@@ -60,13 +60,7 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_rebuild(
-                        prev_seq,
-                        state,
-                        ctx,
-                        elements,
-                        State::reborrow_mut(&mut app_state),
-                    );
+                    seq.seq_rebuild(prev_seq, state, ctx, elements, &mut app_state);
                 },
             );
         }
@@ -78,7 +72,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()

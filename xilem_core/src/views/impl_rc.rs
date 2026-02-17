@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 use core::ops::Deref;
 
 use crate::message::MessageResult;
-use crate::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageCtx, Mut, View, ViewMarker, ViewPathTracker};
 
 #[expect(
     unnameable_types,
@@ -26,7 +26,7 @@ impl<V: ?Sized> ViewMarker for Rc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, V> View<State, Action, Context> for Rc<V>
 where
-    State: ViewArgument,
+    State: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
@@ -36,7 +36,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
@@ -54,7 +54,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         #![expect(clippy::use_self, reason = "`Rc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
@@ -78,7 +78,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
@@ -94,7 +94,7 @@ impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, V> View<State, Action, Context> for Arc<V>
 where
-    State: ViewArgument,
+    State: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
@@ -104,7 +104,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
@@ -122,7 +122,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         #![expect(clippy::use_self, reason = "`Arc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
@@ -146,7 +146,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()

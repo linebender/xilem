@@ -6,7 +6,7 @@
 use hidden::OneOfState;
 
 use crate::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId, ViewMarker,
+    MessageCtx, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -215,7 +215,7 @@ impl<A, B, C, D, E, F, G, H, I> ViewMarker for OneOf<A, B, C, D, E, F, G, H, I> 
 impl<State, Action, Context, A, B, C, D, E, F, G, H, I> View<State, Action, Context>
     for OneOf<A, B, C, D, E, F, G, H, I>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Context: ViewPathTracker
         + OneOfCtx<
@@ -259,7 +259,7 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| match self {
@@ -316,7 +316,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         let id = ViewId::new(view_state.generation);
         // If both elements are of the same type, do a simple rebuild
@@ -559,7 +559,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()
@@ -605,7 +605,7 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+    use crate::{MessageCtx, Mut, View, ViewMarker};
 
     #[expect(
         unnameable_types,
@@ -617,13 +617,13 @@ mod hidden {
     impl ViewMarker for Never {}
     impl<State, Action, Context: PhantomElementCtx> View<State, Action, Context> for Never
     where
-        State: ViewArgument,
+        State: 'static,
     {
         type Element = Context::PhantomElement;
 
         type ViewState = Self;
 
-        fn build(&self, _: &mut Context, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+        fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
             match *self {}
         }
 
@@ -633,7 +633,7 @@ mod hidden {
             _: &mut Self::ViewState,
             _: &mut Context,
             _: Mut<'_, Self::Element>,
-            _: Arg<'_, State>,
+            _: &mut State,
         ) {
             match *self {}
         }
@@ -647,7 +647,7 @@ mod hidden {
             _: &mut Self::ViewState,
             _: &mut MessageCtx,
             _: Mut<'_, Self::Element>,
-            _: Arg<'_, State>,
+            _: &mut State,
         ) -> crate::MessageResult<Action> {
             match *self {}
         }
