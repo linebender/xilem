@@ -149,6 +149,9 @@ impl TextLayout {
     ///
     /// That is if they have the same number of line breaks with the same reason at the same places.
     fn equals(&self, other: &Self) -> bool {
+        if self.layout.len() != other.layout.len() {
+            return false;
+        }
         let mut a = self.layout.lines();
         let mut b = other.layout.lines();
         loop {
