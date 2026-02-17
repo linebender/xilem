@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use peniko::{Brush, kurbo};
 
 use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+    MessageCtx, MessageResult, Mut, View, ViewElement, ViewMarker,
 };
 use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
 use crate::{DomView, ViewCtx};
@@ -99,7 +99,7 @@ fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier
 impl<V, State, Action> ViewMarker for Fill<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for Fill<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -110,7 +110,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx, app_state));
@@ -129,7 +129,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         Attributes::rebuild(element, 2, |mut element| {
             self.child.rebuild(
@@ -173,7 +173,7 @@ where
         child_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.child.message(child_state, message, element, app_state)
     }
@@ -246,7 +246,7 @@ fn update_stroke_modifiers(
 impl<V, State, Action> ViewMarker for Stroke<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -257,7 +257,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx, app_state));
@@ -271,7 +271,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         Attributes::rebuild(element, 5, |mut element| {
             self.child.rebuild(
@@ -305,7 +305,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.child.message(view_state, message, element, app_state)
     }

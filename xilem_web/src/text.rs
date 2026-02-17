@@ -3,13 +3,13 @@
 
 use wasm_bindgen::JsCast;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, OrphanView, ViewArgument};
+use crate::core::{MessageCtx, MessageResult, Mut, OrphanView};
 use crate::{Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
     ($ty:ty) => {
-        impl<State: ViewArgument, Action> OrphanView<$ty, State, Action> for ViewCtx {
+        impl<State: 'static, Action> OrphanView<$ty, State, Action> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
@@ -17,7 +17,7 @@ macro_rules! impl_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
-                _: Arg<'_, State>,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -33,7 +33,7 @@ macro_rules! impl_string_view {
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 element: Mut<'_, Self::OrphanElement>,
-                _: Arg<'_, State>,
+                _: &mut State,
             ) {
                 if prev != new {
                     element.node.set_data(new);
@@ -53,7 +53,7 @@ macro_rules! impl_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _message: &mut MessageCtx,
                 _element: Mut<'_, Self::OrphanElement>,
-                _app_state: Arg<'_, State>,
+                _app_state: &mut State,
             ) -> MessageResult<Action> {
                 // TODO: Panic?
                 MessageResult::Stale
@@ -68,7 +68,7 @@ impl_string_view!(std::borrow::Cow<'static, str>);
 
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
-        impl<State: ViewArgument, Action> OrphanView<$ty, State, Action> for ViewCtx {
+        impl<State: 'static, Action> OrphanView<$ty, State, Action> for ViewCtx {
             type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
@@ -76,7 +76,7 @@ macro_rules! impl_to_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
-                _: Arg<'_, State>,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -92,7 +92,7 @@ macro_rules! impl_to_string_view {
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 element: Mut<'_, Self::OrphanElement>,
-                _: Arg<'_, State>,
+                _: &mut State,
             ) {
                 if prev != new {
                     element.node.set_data(&new.to_string());
@@ -112,7 +112,7 @@ macro_rules! impl_to_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _message: &mut MessageCtx,
                 _element: Mut<'_, Self::OrphanElement>,
-                _app_state: Arg<'_, State>,
+                _app_state: &mut State,
             ) -> MessageResult<Action> {
                 MessageResult::Stale
             }

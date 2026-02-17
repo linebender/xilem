@@ -5,8 +5,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::Edit;
-
 use crate::core::{AppendVec, MessageCtx, MessageResult, ViewId};
 use crate::elements::DomChildrenSplice;
 use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
@@ -17,11 +15,11 @@ pub(crate) struct AppMessage {
 }
 
 /// The type responsible for running your app.
-pub struct App<State: 'static, Fragment: DomFragment<Edit<State>>, InitFragment>(
+pub struct App<State: 'static, Fragment: DomFragment<State>, InitFragment>(
     Rc<RefCell<AppInner<State, Fragment, InitFragment>>>,
 );
 
-struct AppInner<State: 'static, Fragment: DomFragment<Edit<State>>, InitFragment> {
+struct AppInner<State: 'static, Fragment: DomFragment<State>, InitFragment> {
     data: State,
     root: web_sys::Node,
     app_logic: InitFragment,
@@ -39,7 +37,7 @@ pub(crate) trait AppRunner {
     fn clone_box(&self) -> Box<dyn AppRunner>;
 }
 
-impl<State, Fragment: DomFragment<Edit<State>>, InitFragment> Clone
+impl<State, Fragment: DomFragment<State>, InitFragment> Clone
     for App<State, Fragment, InitFragment>
 {
     fn clone(&self) -> Self {
@@ -50,7 +48,7 @@ impl<State, Fragment: DomFragment<Edit<State>>, InitFragment> Clone
 impl<State, Fragment, InitFragment> App<State, Fragment, InitFragment>
 where
     State: 'static,
-    Fragment: DomFragment<Edit<State>> + 'static,
+    Fragment: DomFragment<State> + 'static,
     InitFragment: FnMut(&mut State) -> Fragment + 'static,
 {
     /// Create an instance of your app with the given logic and initial state.
@@ -72,7 +70,7 @@ where
     }
 }
 
-impl<State, Fragment: DomFragment<Edit<State>>, InitFragment: FnMut(&mut State) -> Fragment>
+impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fragment>
     AppInner<State, Fragment, InitFragment>
 {
     fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
@@ -115,7 +113,7 @@ impl<State, Fragment: DomFragment<Edit<State>>, InitFragment: FnMut(&mut State) 
 impl<State, Fragment, InitFragment> AppRunner for App<State, Fragment, InitFragment>
 where
     State: 'static,
-    Fragment: DomFragment<Edit<State>> + 'static,
+    Fragment: DomFragment<State> + 'static,
     InitFragment: FnMut(&mut State) -> Fragment + 'static,
 {
     // For now we handle the message synchronously, but it would also
