@@ -851,6 +851,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::FontsChanged => {
+                // HACK: We force the editor to relayout by pretending to edit the styles.
+                //       We know that the lifecycle of dirty tracking in Parley's
+                //       editor will need to change eventually anyway...
+                let _ = self.editor.edit_styles();
+                ctx.request_layout();
+            }
             Update::FocusChanged(_) => {
                 ctx.request_render();
             }
@@ -920,14 +927,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         //       but that's potentially wasted work for measure.
         //       Should probably split up that PlainEditor method.
 
-        // TODO: Don't trigger style change multiple times per layout pass for font changes,
-        //       by storing some marker that states we've already dealt with it this pass.
-        if ctx.fonts_changed() {
-            // HACK: We force the editor to relayout by pretending to edit the styles.
-            // We know that the lifecycle of dirty tracking in Parley's
-            // editor will need to change eventually anyway...
-            let _ = self.editor.edit_styles();
-        }
         let (fctx, lctx) = ctx.text_contexts();
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
@@ -969,14 +968,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.rendered_generation = new_generation;
         }
 
-        // TODO: Don't trigger style change multiple times per layout pass for font changes,
-        //       by storing some marker that states we've already dealt with it this pass.
-        if ctx.fonts_changed() {
-            // HACK: We force the editor to relayout by pretending to edit the styles.
-            // We know that the lifecycle of dirty tracking in Parley's
-            // editor will need to change eventually anyway...
-            let _ = self.editor.edit_styles();
-        }
         let (fctx, lctx) = ctx.text_contexts();
         self.editor.layout(fctx, lctx);
 

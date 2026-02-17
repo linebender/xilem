@@ -12,7 +12,7 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
-    DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WidgetId, WindowEvent,
+    DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WindowEvent,
 };
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
@@ -46,11 +46,10 @@ pub enum MasonryUserEvent {
     ///
     /// This is how [`accesskit_winit`] routes its events to us.
     AccessKit(HandleId, accesskit_winit::WindowEvent),
-    // TODO: A more considered design here
-    /// An action was emitted by something other than the [`RenderRoot`].
+    /// An action was emitted by something other than the widget tree.
     ///
-    /// Higher-level GUI frameworks may send these to winit from background threads so that they get reported as if they had come from inside a [`RenderRoot`].
-    Action(WindowId, ErasedAction, WidgetId),
+    /// Higher-level GUI frameworks may send these to winit from background threads to wake up the event loop.
+    AsyncAction(WindowId, ErasedAction),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
@@ -961,7 +960,7 @@ impl MasonryState<'_> {
         event: MasonryUserEvent,
         app_driver: &mut dyn AppDriver,
     ) {
-        let state = match &event {
+        let window = match &event {
             MasonryUserEvent::AccessKit(handle_id, ..) => {
                 let Some(state) = self.windows.get_mut(handle_id) else {
                     tracing::warn!(handle = ?handle_id, "Got accesskit user event for unknown window");
@@ -969,7 +968,7 @@ impl MasonryState<'_> {
                 };
                 state
             }
-            MasonryUserEvent::Action(window_id, ..) => {
+            MasonryUserEvent::AsyncAction(window_id, ..) => {
                 let Some(window_id) = self.window_id_to_handle_id.get(window_id) else {
                     tracing::warn!(id = ?window_id, "Got action user event for unknown window");
                     return;
@@ -983,24 +982,27 @@ impl MasonryState<'_> {
                     // Note that this event can be called at any time, even multiple times if
                     // the user restarts their screen reader.
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
-                        state
+                        window
                             .render_root
                             .handle_window_event(WindowEvent::EnableAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                        state.render_root.handle_access_event(action_request);
+                        window.render_root.handle_access_event(action_request);
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {
-                        state
+                        window
                             .render_root
                             .handle_window_event(WindowEvent::DisableAccessTree);
                     }
                 }
             }
-            // TODO - Not sure what the use-case for this is.
-            MasonryUserEvent::Action(_, action, widget) => state
-                .render_root
-                .emit_signal(RenderRootSignal::Action(action, widget)),
+            MasonryUserEvent::AsyncAction(_, action) => {
+                app_driver.on_async_action(
+                    window.id,
+                    &mut DriverCtx::new(self, event_loop),
+                    action,
+                );
+            }
         }
 
         self.handle_signals(event_loop, app_driver);

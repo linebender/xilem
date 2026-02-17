@@ -46,6 +46,8 @@ pub struct Label {
     ///
     /// If they have, the layout needs to be recreated.
     styles_changed: bool,
+    /// Whether available fonts have changed since text layout was computed.
+    fonts_changed: bool,
 
     text_alignment: TextAlign,
 
@@ -97,6 +99,7 @@ impl Label {
             text: text.into(),
             styles,
             styles_changed: true,
+            fonts_changed: true,
             text_alignment: TextAlign::Start,
             last_inline_space: 0.,
             hint: true,
@@ -259,7 +262,6 @@ impl Label {
         &mut self,
         font_ctx: &mut FontContext,
         layout_ctx: &mut LayoutContext<BrushIndex>,
-        fonts_changed: bool,
         max_advance: Option<f32>,
         commit: bool,
     ) {
@@ -269,7 +271,7 @@ impl Label {
 
         // TODO: Don't trigger style change multiple times per layout pass for font changes,
         //       by storing some marker that states we've already dealt with it this pass.
-        let styles_changed = self.styles_changed || fonts_changed;
+        let styles_changed = self.styles_changed || self.fonts_changed;
         if styles_changed {
             {
                 // TODO: Should we use a different scale?
@@ -289,6 +291,7 @@ impl Label {
                 }
                 builder.build_into(&mut self.text_layout.layout, &self.text);
                 self.styles_changed = false;
+                self.fonts_changed = false;
             }
         }
 
@@ -329,6 +332,10 @@ impl Widget for Label {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::FontsChanged => {
+                self.fonts_changed = true;
+                ctx.request_layout();
+            }
             Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
             }
@@ -382,9 +389,8 @@ impl Widget for Label {
         }
         .map(|v| v as f32);
 
-        let fonts_changed = ctx.fonts_changed();
         let (font_ctx, layout_ctx) = ctx.text_contexts();
-        self.build_and_break(font_ctx, layout_ctx, fonts_changed, max_advance, false);
+        self.build_and_break(font_ctx, layout_ctx, max_advance, false);
 
         let length = if axis == inline {
             self.measure_text_layout.layout.width() // Inline length
@@ -414,9 +420,8 @@ impl Widget for Label {
             LineBreaking::Clip | LineBreaking::Overflow => None,
         };
 
-        let fonts_changed = ctx.fonts_changed();
         let (font_ctx, layout_ctx) = ctx.text_contexts();
-        self.build_and_break(font_ctx, layout_ctx, fonts_changed, max_advance, true);
+        self.build_and_break(font_ctx, layout_ctx, max_advance, true);
 
         if self.text_layout.needs_text_alignment {
             self.text_layout.layout.align(

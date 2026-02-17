@@ -620,18 +620,6 @@ impl WidgetId {
         Self(id.try_into().unwrap())
     }
 
-    // TODO - Remove
-    // Currently used in Xilem for event routing.
-    #[doc(hidden)]
-    pub const fn reserved(raw: u16) -> Self {
-        let id = u64::MAX - raw as u64;
-        match NonZeroU64::new(id) {
-            Some(id) => Self(id),
-            // panic safety: u64::MAX - any u16 can never be zero
-            None => unreachable!(),
-        }
-    }
-
     /// Returns the integer value of the `WidgetId`.
     pub fn to_raw(self) -> u64 {
         self.0.into()
