@@ -44,10 +44,9 @@ use xilem_web::{
     elements::html::{button, div, p},
     interfaces::{Element as _, HtmlDivElement},
     App,
-    core::Edit,
 };
 
-fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
+fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
     div((
         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
