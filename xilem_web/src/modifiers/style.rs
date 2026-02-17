@@ -470,11 +470,7 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let style_iter = self.styles.style_modifiers_iter();
         let (mut e, s) = ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)
@@ -561,11 +557,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
@@ -690,11 +682,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();

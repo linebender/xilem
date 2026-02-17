@@ -32,11 +32,7 @@ where
     type Element = Pod<Child::Widget>;
     type ViewState = Child::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx, app_state);
         child_pod
             .new_widget

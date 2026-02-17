@@ -21,9 +21,8 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// use xilem::masonry::parley::style::FontWeight;
 /// use xilem::masonry::parley::fontique;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
-/// # fn view() -> impl WidgetView<Edit<()>> {
+/// # fn view() -> impl WidgetView<()> {
 /// label("Text example.")
 ///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)

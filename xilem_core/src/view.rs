@@ -66,11 +66,7 @@ pub trait View<State: 'static, Action, Context: ViewPathTracker>: ViewMarker + '
     type ViewState;
 
     /// Create the corresponding Element value.
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState);
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
     fn rebuild(

@@ -18,9 +18,9 @@ use crate::{Pod, ViewCtx};
 /// ```
 /// # use xilem_masonry as xilem;
 /// use xilem::{view::canvas, masonry::{palette, kurbo::{Rect, Size, Affine}, peniko::Fill, vello::Scene}};
-/// # use xilem::{WidgetView, core::Edit};
+/// # use xilem::WidgetView;
 ///
-/// # fn fill_canvas<State: 'static>() -> impl WidgetView<Edit<State>> {
+/// # fn fill_canvas<State: 'static>() -> impl WidgetView<State> {
 /// let my_canvas = canvas(|_state: &mut State, _ctx, scene: &mut Scene, size: Size| {
 ///     // Drawing a simple rectangle that fills the canvas.
 ///     scene.fill(

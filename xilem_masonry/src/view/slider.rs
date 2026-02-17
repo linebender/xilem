@@ -20,11 +20,7 @@ pub struct Slider<State, Action, F> {
 }
 
 /// Creates a slider widget for selecting a value from a range.
-pub fn slider<
-    State: 'static,
-    Action,
-    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
->(
+pub fn slider<State: 'static, Action, F: Fn(&mut State, f64) -> Action + Send + Sync + 'static>(
     min: f64,
     max: f64,
     value: f64,

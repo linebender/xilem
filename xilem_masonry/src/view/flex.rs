@@ -49,19 +49,17 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// use xilem::view::{button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::style::Style;
 /// use xilem::WidgetView;
-/// use xilem::core::Edit;
 ///
 /// /// A component to make a bigger than usual button.
 /// fn big_button<F: Fn(&mut i32) + Send + Sync + 'static>(
 ///     label: impl Into<Label>,
 ///     callback: F,
-/// ) -> impl WidgetView<Edit<i32>> {
-///     // This being fully specified is "a known limitation of the trait solver"
-///     button::<Edit<i32>, _, _, F>(label.into(), callback)
+/// ) -> impl WidgetView<i32> {
+///     button(label.into(), callback)
 ///         .dims(40.px())
 /// }
 ///
-/// fn app_logic(data: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
+/// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 ///     flex(Axis::Horizontal, (
 ///         FlexSpacer::Fixed(30.px()),
 ///         big_button("-", |data| {
@@ -204,11 +202,7 @@ where
 
     type ViewState = FlexState<Seq::SeqState>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
             .cross_axis_alignment(self.cross_axis_alignment)
@@ -571,11 +565,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
         (FlexElement::Child(pod.erased(), self.params), state)
     }
@@ -749,11 +739,7 @@ where
 
     type ViewState = AnyFlexChildState<State, Action>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, view_state) = match self {
             Self::Item(flex_item) => {

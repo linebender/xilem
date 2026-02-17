@@ -15,13 +15,12 @@ use crate::{Pod, ViewCtx};
 /// # use xilem_masonry as xilem;
 /// use xilem::view::switch;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     value: bool,
 /// }
 ///
-/// # fn view(app_state: &mut State) -> impl WidgetView<Edit<State>> {
+/// # fn view(app_state: &mut State) -> impl WidgetView<State> {
 /// switch(app_state.value, |app_state: &mut State, new_state: bool| {
 ///     app_state.value = new_state;
 /// })

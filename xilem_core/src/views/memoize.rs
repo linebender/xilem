@@ -46,7 +46,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn memoized_button(count: u32) -> impl WidgetView<Edit<i32>> {
+/// fn memoized_button(count: u32) -> impl WidgetView<i32> {
 ///     memoize(
 ///         count, // if this changes, the closure below is reevaluated
 ///         |count| button(format!("clicked {count} times"), |count| { count += 1; }),
@@ -104,11 +104,7 @@ where
 
     type Element = V::Element;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)(&self.data);
         let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
@@ -189,7 +185,7 @@ impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn frozen_button() -> impl WidgetView<Edit<i32>> {
+/// fn frozen_button() -> impl WidgetView<i32> {
 ///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
 /// }
 /// ```
@@ -226,11 +222,7 @@ where
 
     type ViewState = MemoizeState<V, V::ViewState>;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)();
         let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {

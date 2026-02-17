@@ -17,11 +17,7 @@ where
     type Element = V::Element;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         self.deref().build(ctx, app_state)
     }
 

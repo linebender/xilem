@@ -8,9 +8,7 @@
 
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::{
-    MessageCtx, MessageResult, Mut, OrphanView, View, ViewPathTracker,
-};
+use xilem_core::{MessageCtx, MessageResult, Mut, OrphanView, View, ViewPathTracker};
 
 mod common;
 use common::*;
@@ -88,7 +86,14 @@ fn str_as_orphan_view() {
 
     let view2 = "This string is now an updated view";
     assert_eq!(element.operations[0], Operation::Build(0));
-    View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element, &mut ());
+    View::<(), (), TestCtx>::rebuild(
+        &view1,
+        &view2,
+        &mut generation,
+        &mut ctx,
+        &mut element,
+        &mut (),
+    );
     assert_eq!(element.operations[1], Operation::Rebuild { from: 0, to: 1 });
     View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element);
     assert_eq!(element.operations[2], Operation::Teardown(1));

@@ -29,13 +29,13 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex}, masonry::kurbo::{Size, Axis}};
+/// # use xilem::{WidgetView, view::{resize_observer, flex}, masonry::kurbo::{Size, Axis}};
 ///
 /// struct State {
 ///     available_size: Size,
 /// }
 ///
-/// # fn my_component(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// # fn my_component(state: &mut State) -> impl WidgetView<State> {
 /// resize_observer(
 ///     |state: &mut State, size: Size| state.available_size = size,
 ///     flex(

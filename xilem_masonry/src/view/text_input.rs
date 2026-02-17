@@ -19,8 +19,7 @@ use crate::{InsertNewline, Pod, TextAlign, ViewCtx, WidgetView as _};
 // is that if the user forgets to hook up the modify the state's contents in the callback,
 // the text_input will always be reset to the initial state. This will be very annoying for the user.
 
-type Callback<State, Action> =
-    Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
+type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
 /// A view which displays editable text.
 ///
@@ -47,13 +46,12 @@ type Callback<State, Action> =
 /// # use xilem_masonry as xilem;
 /// # use xilem::view::text_input;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     content: String,
 /// }
 ///
-/// fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// fn view(state: &mut State) -> impl WidgetView<State> {
 ///     text_input(state.content.clone(), |state: &mut State, input: String| {
 ///         state.content = input;
 ///     })
@@ -67,13 +65,12 @@ type Callback<State, Action> =
 /// use xilem::view::text_input;
 /// use xilem::masonry::widgets::InsertNewline;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
 /// # struct State {
 /// #    content: String,
 /// # }
 ///
-/// # fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// # fn view(state: &mut State) -> impl WidgetView<State> {
 /// text_input(state.content.clone(), |state: &mut State, input: String| {
 ///     state.content = input;
 /// })
@@ -248,9 +245,7 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
 }
 
 impl<State: 'static, Action> ViewMarker for TextInput<State, Action> {}
-impl<State: 'static, Action: 'static> View<State, Action, ViewCtx>
-    for TextInput<State, Action>
-{
+impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
     type Element = Pod<widgets::TextInput>;
     type ViewState = ();
 

@@ -30,8 +30,8 @@ impl<CF, V, F, ParentState, ChildState, Action, Context> Debug
 
 /// An adapter which allows using a component which only uses one field of the current state.
 ///
-/// In Xilem, many components are functions of the form `fn my_component(&mut SomeState) -> impl WidgetView<Edit<SomeState>>`.
-/// For example, a date picker might be of the form `fn date_picker(&mut Date) -> impl WidgetView<Edit<Date>>`.
+/// In Xilem, many components are functions of the form `fn my_component(&mut SomeState) -> impl WidgetView<SomeState>`.
+/// For example, a date picker might be of the form `fn date_picker(&mut Date) -> impl WidgetView<Date>`.
 ///
 /// The `lens` View allows using these components in a higher-level component, where the higher level state has
 /// a field of the inner component's state type.

@@ -9,8 +9,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 
 use crate::core::{
-    MessageCtx, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
-    ViewPathTracker,
+    MessageCtx, MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::{OptionalAction, ViewCtx};
 

@@ -12,8 +12,8 @@ use xilem::view::{
     text_button, text_input,
 };
 
-fn widgets<State: 'static + Send + Sync, const N: usize>()
--> impl WidgetView<State> + use<State, N> {
+fn widgets<State: 'static + Send + Sync, const N: usize>() -> impl WidgetView<State> + use<State, N>
+{
     map_message_result(
         flex_row((
             text_button("button", |_| unimplemented!()),

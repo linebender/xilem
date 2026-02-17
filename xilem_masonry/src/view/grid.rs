@@ -103,11 +103,7 @@ where
 
     type ViewState = GridState<Seq::SeqState>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Grid::with_dimensions(self.col_count, self.row_count);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
@@ -307,9 +303,9 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::view::{text_button, prose, grid, GridExt};
-    /// # use xilem::{WidgetView, core::Edit};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
     ///     text_button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
     ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
@@ -334,9 +330,9 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
     /// use xilem::{view::{text_button, prose, grid, GridExt}};
-    /// # use xilem::{WidgetView, core::Edit};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
     ///     text_button("click me", |_| ()).grid_pos(0, 0),
     ///     prose("a prose").grid_pos(1, 1),
@@ -421,11 +417,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
         (
             GridElement {

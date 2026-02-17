@@ -10,9 +10,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
-use crate::core::{
-    MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::interfaces::Element;
 use crate::{DomView, ViewCtx};
 
@@ -147,11 +145,7 @@ where
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             let (element, child_state) = self.child.build(ctx, app_state);
             let el = element.node.as_ref();

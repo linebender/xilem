@@ -7,8 +7,8 @@ use alloc::boxed::Box;
 use core::any::Any;
 
 use crate::{
-    AnyElement, MessageCtx, MessageResult, Mut, View, ViewElement, ViewId,
-    ViewMarker, ViewPathTracker,
+    AnyElement, MessageCtx, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 /// A view which can have any view type where the [`View::Element`] is compatible with
@@ -201,11 +201,7 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -259,11 +255,7 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -315,11 +307,7 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -371,11 +359,7 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 

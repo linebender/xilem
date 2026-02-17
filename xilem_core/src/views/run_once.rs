@@ -3,9 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{
-    MessageCtx, MessageResult, Mut, NoElement, View, ViewMarker, ViewPathTracker,
-};
+use crate::{MessageCtx, MessageResult, Mut, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///

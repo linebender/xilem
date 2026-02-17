@@ -6,9 +6,7 @@ use masonry::parley::style::{FontStack, FontWeight};
 use masonry::properties::Dimensions;
 use masonry::widgets;
 
-use crate::core::{
-    MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::view::{Label, label};
 use crate::{Pod, TextAlign, ViewCtx};
 
@@ -83,11 +81,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for VariableLabel {
     type Element = Pod<widgets::VariableLabel>;
     type ViewState = ();
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::build(&self.label, ctx, app_state)
         });

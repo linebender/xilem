@@ -9,9 +9,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::{AddEventListenerOptions, js_sys};
 
 use crate::core::anymore::AnyDebug;
-use crate::core::{
-    MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{DomView, OptionalAction, ViewCtx};
 
 // Use a distinctive number here, to be able to catch bugs.
@@ -263,11 +261,7 @@ where
 
     type Element = V::Element;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         build_event_listener::<_, _, _, Event>(
             &self.dom_view,
             &self.event,
@@ -587,11 +581,7 @@ where
 
     type ViewState = OnResizeState<V::ViewState>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             let thunk = ctx.message_thunk();
             let callback = Closure::new(move |entries: js_sys::Array| {

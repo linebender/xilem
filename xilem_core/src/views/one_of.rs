@@ -6,8 +6,7 @@
 use hidden::OneOfState;
 
 use crate::{
-    MessageCtx, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker,
+    MessageCtx, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
@@ -256,11 +255,7 @@ where
     >;
 
     #[doc(hidden)]
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| match self {
             Self::A(v) => {

@@ -44,7 +44,7 @@ where
 ///     other: i32,
 /// }
 ///
-/// fn count_view(count: i32) -> impl WidgetView<Edit<i32>> {
+/// fn count_view(count: i32) -> impl WidgetView<i32> {
 ///     flex((
 ///         label(format!("count: {}", count)),
 ///         button("+", |count| *count += 1),
@@ -52,7 +52,7 @@ where
 ///     ))
 /// }
 ///
-/// fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> {
+/// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
 ///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
 /// }
 /// ```

@@ -345,11 +345,7 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let add_class_iter = self.classes.add_class_iter();
         let (mut e, s) = ctx.with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)

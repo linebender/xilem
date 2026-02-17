@@ -8,9 +8,7 @@ use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
-use crate::core::{
-    MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::view::{Label, label};
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -38,13 +36,12 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::masonry::parley::style::FontWeight;
 /// use xilem::view::{button, label};
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     count: i32,
 /// }
 ///
-/// # fn view() -> impl WidgetView<Edit<State>> {
+/// # fn view() -> impl WidgetView<State> {
 /// let label = label("Increase").weight(FontWeight::BOLD);
 ///
 /// button(label, |state: &mut State| {
@@ -61,9 +58,8 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::view::{button, label, flex_row, FlexExt};
 /// # use xilem::WidgetView;
 /// # type State = u32;
-/// # use xilem::core::Edit;
 ///
-/// # fn view() -> impl WidgetView<Edit<State>> {
+/// # fn view() -> impl WidgetView<State> {
 /// let children = flex_row((
 ///     label("👍").flex(1.0),
 ///     label("Like").weight(FontWeight::BOLD),
@@ -108,10 +104,7 @@ pub fn text_button<State: 'static, Action>(
 ) -> Button<
     State,
     Action,
-    impl Fn(&mut State, Option<PointerButton>) -> MessageResult<Action>
-    + Send
-    + Sync
-    + 'static,
+    impl Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
     Label,
 > {
     button(label(text), callback)
@@ -133,17 +126,12 @@ pub fn button_any_pointer<State: 'static, Action, V: WidgetView<State, Action>>(
 ) -> Button<
     State,
     Action,
-    impl Fn(&mut State, Option<PointerButton>) -> MessageResult<Action>
-    + Send
-    + Sync
-    + 'static,
+    impl Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
     V,
 > {
     Button {
         child,
-        callback: move |state: &mut State, button| {
-            MessageResult::Action(callback(state, button))
-        },
+        callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
         disabled: false,
         phantom: PhantomData,
     }
@@ -184,11 +172,7 @@ where
     type Element = Pod<widgets::Button>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::build(&self.child, ctx, app_state)
         });

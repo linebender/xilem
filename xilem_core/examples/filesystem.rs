@@ -100,10 +100,7 @@ fn main() {
     }
 }
 
-trait FileView<State: 'static, Action = ()>:
-    View<State, Action, ViewCtx, Element = FsPath>
-{
-}
+trait FileView<State: 'static, Action = ()>: View<State, Action, ViewCtx, Element = FsPath> {}
 
 impl<V, State: 'static, Action> FileView<State, Action> for V where
     V: View<State, Action, ViewCtx, Element = FsPath>
@@ -164,11 +161,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        _app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path = ctx.current_folder_path.join(&*self.name);
 
         // TODO: How to handle errors here?

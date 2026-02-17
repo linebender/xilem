@@ -33,11 +33,7 @@ where
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
             element,
@@ -101,11 +97,7 @@ where
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
 
-    fn build(
-        &self,
-        ctx: &mut Context,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
             element,

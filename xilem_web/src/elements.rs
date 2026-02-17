@@ -10,9 +10,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{
-    AppendVec, ElementSplice, MessageCtx, MessageResult, Mut, View, ViewMarker,
-};
+use crate::core::{AppendVec, ElementSplice, MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::modifiers::Children;
 use crate::vec_splice::VecSplice;
 use crate::{AnyPod, DomFragment, DomNode, FromWithContext, HTML_NS, Pod, ViewCtx, document};
@@ -394,11 +392,7 @@ where
 
     type ViewState = ElementState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         build_element(&*self.children, &self.name, HTML_NS, ctx, app_state)
     }
 

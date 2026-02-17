@@ -79,11 +79,7 @@ where
     type Element = Pod<widgets::SizedBox>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx, app_state);
         let widget = widgets::SizedBox::new(child.new_widget)
             .raw_width(self.width)

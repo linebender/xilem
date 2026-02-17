@@ -1,10 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    MessageCtx, MessageResult, Mut, View, ViewElement, ViewMarker,
-    ViewPathTracker,
-};
+use crate::{MessageCtx, MessageResult, Mut, View, ViewElement, ViewMarker, ViewPathTracker};
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
 ///

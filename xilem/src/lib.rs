@@ -32,11 +32,10 @@
 //! use winit::error::EventLoopError;
 //! use xilem::view::{text_button, flex_col, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
-//! use xilem::core::Edit;
 //!
 //! struct Counter(i32);
 //!
-//! fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
+//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 //!     flex_col((
 //!         label(format!("{}", data.0)),
 //!         text_button("increment", |data: &mut Counter| data.0 += 1),
@@ -98,8 +97,8 @@
 //!
 //! ```rust,no_run
 //! # struct EmojiPagination;
-//! # use xilem::{WidgetView, core::Edit};
-//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
+//! # use xilem::WidgetView;
+//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
 //!    // ...
 //!    # xilem::view::label("Not meaningful!")
 //! }

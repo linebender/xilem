@@ -23,7 +23,7 @@
 //! /// ```
 //! /// # use xilem_core::docs::{DocsView as WidgetView, State};
 //! /// use xilem_core::interesting_primitive;
-//! /// fn user_component() -> WidgetView<Edit<State>> {
+//! /// fn user_component() -> WidgetView<State> {
 //! ///     interesting_primitive()
 //! /// }
 //! ///

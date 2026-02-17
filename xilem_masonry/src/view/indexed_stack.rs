@@ -27,7 +27,6 @@ use crate::{Pod, ViewCtx};
 /// use xilem::view::{
 ///     text_button, flex_col, indexed_stack, label
 /// };
-/// use xilem::core::Edit;
 ///
 /// #[derive(Default)]
 /// struct State {
@@ -36,7 +35,7 @@ use crate::{Pod, ViewCtx};
 ///
 /// let mut state = State::default();
 ///
-/// indexed_stack::<Edit<State>, _, _>(
+/// indexed_stack::<State, _, _>(
 ///     (   
 ///         flex_col((
 ///             label("Tab A"),
@@ -114,11 +113,7 @@ where
 
     type ViewState = IndexedStackState<Seq::SeqState>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::IndexedStack::new();
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);

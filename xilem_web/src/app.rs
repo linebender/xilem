@@ -4,10 +4,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use wasm_bindgen::UnwrapThrowExt;
 use crate::core::{AppendVec, MessageCtx, MessageResult, ViewId};
 use crate::elements::DomChildrenSplice;
 use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
+use wasm_bindgen::UnwrapThrowExt;
 
 pub(crate) struct AppMessage {
     pub id_path: Rc<[ViewId]>,

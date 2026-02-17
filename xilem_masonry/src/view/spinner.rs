@@ -19,13 +19,12 @@ use crate::{Pod, ViewCtx};
 /// # use xilem_masonry as xilem;
 /// # use xilem::{view::{spinner, flex_col}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
-/// # use xilem::core::Edit;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {
-/// #     fn request_result(&mut self) -> impl WidgetView<Edit<ApiClient>> { flex_col(()) }
+/// #     fn request_result(&mut self) -> impl WidgetView<ApiClient> { flex_col(()) }
 /// # }
 /// #
-/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<Edit<ApiClient>>  {
+/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<ApiClient>  {
 ///     if data.pending {
 ///         Either::A(spinner())
 ///     } else {

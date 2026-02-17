@@ -17,18 +17,16 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use xilem::style::Style;
 use xilem::view::{Label, button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
 
 /// A component to make a bigger than usual button.
 fn big_button<F: Fn(&mut i32) + Send + Sync + 'static>(
     label: impl Into<Label>,
     callback: F,
-) -> impl WidgetView<Edit<i32>> {
-    // This being fully specified is "a known limitation of the trait solver"
-    sized_box(button::<Edit<i32>, _, _, F>(label.into(), callback)).dims(40.px())
+) -> impl WidgetView<i32> {
+    sized_box(button(label.into(), callback)).dims(40.px())
 }
 
-fn app_logic(data: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex_row((
         big_button("-", |data| {
             *data -= 1;

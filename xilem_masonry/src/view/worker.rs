@@ -61,9 +61,7 @@ where
     };
     Worker {
         init_future,
-        store_sender: move |state: &mut State,
-                            _dummy: &mut Dummy,
-                            sender: UnboundedSender<V>| {
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
             store_sender(state, sender);
         },
         on_response,
@@ -143,9 +141,7 @@ where
     Worker {
         init_future,
         on_response,
-        store_sender: move |state: &mut State,
-                            _dummy: &mut Dummy,
-                            sender: UnboundedSender<V>| {
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
             store_sender(state, sender);
         },
         message: PhantomData,
@@ -179,11 +175,7 @@ where
 
     type ViewState = JoinHandle<()>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: &mut State,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();

@@ -50,7 +50,7 @@ where
 ///     Decrement,
 /// }
 ///
-/// fn count_view<T>(count: i32) -> impl WidgetView<Edit<T>, CountMessage> {
+/// fn count_view<T>(count: i32) -> impl WidgetView<T, CountMessage> {
 ///     flex((
 ///         label(format!("count: {}", count)),
 ///         button("+", |_| CountMessage::Increment),
@@ -58,7 +58,7 @@ where
 ///     ))
 /// }
 ///
-/// fn app_logic(count: &mut i32) -> impl WidgetView<Edit<i32>> {
+/// fn app_logic(count: &mut i32) -> impl WidgetView<i32> {
 ///     map_action(count_view(*count), |count, message| match message {
 ///         CountMessage::Increment => *count += 1,
 ///         CountMessage::Decrement => *count -= 1,
