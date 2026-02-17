@@ -685,7 +685,7 @@ impl Widget for VirtualScroll {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        ctx.set_clip_path(size.to_rect());
+        ctx.set_clips_contents(true);
         // The number of loaded items before the anchor
         let mut height_before_anchor = 0.;
         let mut total_height = 0.;

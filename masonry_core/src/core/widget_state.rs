@@ -119,14 +119,17 @@ pub(crate) struct WidgetState {
     /// The pixel-snapped position of the baseline in the parent's border-box coordinate space.
     pub(crate) baseline_y: f64,
 
-    // TODO - Use general Shape
-    // Currently Kurbo doesn't really provide a type that lets us
-    // efficiently hold an arbitrary shape.
-    /// The widget's clip path in the widget's border-box coordinate space.
-    ///
-    /// This clips the painting of `Widget::paint` and all the painting of children.
-    /// It does not clip this widget's `Widget::pre_paint` nor `Widget::post_paint`.
-    pub(crate) clip_path: Option<Rect>,
+    // TODO - Add clip_shape
+    // TODO - Use more efficient type and avoid allocating by default.
+    // /// The widget's clip path in the widget's border-box coordinate space.
+    // ///
+    // /// This clips the painting of `Widget::paint` and all the painting of children.
+    // /// It does not clip this widget's `Widget::pre_paint` nor `Widget::post_paint`.
+    // pub(crate) clip_path: Option<Rect>,
+    //
+    /// Whether the widget and its children's scenes are clipped by the
+    /// [clip shape](crate::doc::masonry_concepts#clip-shape).
+    pub(crate) clips_contents: bool,
 
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
@@ -275,7 +278,7 @@ impl WidgetState {
             bounding_box: Rect::ZERO,
             layout_baseline_offset: 0.0,
             baseline_y: 0.0,
-            clip_path: Option::default(),
+            clips_contents: false,
             transform: options.transform,
             window_transform: Affine::IDENTITY,
             scroll_translation: Vec2::ZERO,
@@ -405,22 +408,43 @@ impl WidgetState {
         )
     }
 
-    /// Returns the result of intersecting the widget's clip path (if any) with the given rect.
+    /// Returns the portion of the given rect, if any, that is within the widget's "clip space".
+    ///
+    /// If the widget doesn't clip its children, returns the input rect.
+    /// If the clip path is a non-rectangle, uses the clip paths' bounding box.
+    /// If the given rect doesn't intersect with the clipping box, returns `None`.
     ///
     /// Both the argument and the result are in window coordinates.
-    ///
-    /// Returns `None` if the given rect is clipped out.
-    pub(crate) fn clip_child(&self, child_rect: Rect) -> Option<Rect> {
-        if let Some(clip_path) = self.clip_path {
-            let clip_path_global = self.window_transform.transform_rect_bbox(clip_path);
-            if clip_path_global.overlaps(child_rect) {
-                Some(clip_path_global.intersect(child_rect))
-            } else {
-                None
-            }
-        } else {
-            Some(child_rect)
+    pub(crate) fn clipped_child_box(&self, child_box: Rect) -> Option<Rect> {
+        if !self.clips_contents {
+            return Some(child_box);
         }
+
+        let clip_rect = self.border_box_size().to_rect();
+
+        let bounding_box_global = self.window_transform.transform_rect_bbox(clip_rect);
+
+        if bounding_box_global.overlaps(child_box) {
+            Some(bounding_box_global.intersect(child_box))
+        } else {
+            None
+        }
+    }
+
+    /// The [clip shape] in border-box space.
+    ///
+    /// A widget's clip shape will have two effects:
+    /// - It serves as a mask for painting operations of this widget and its children.
+    ///   Note that while all painting done by children will be clipped by this path,
+    ///   only the painting done in `Widget::paint` by this widget itself will be clipped.
+    ///   The remaining painting done in `Widget::pre_paint` and `Widget::post_paint` will not be clipped.
+    /// - Pointer events must be inside that shape to reach the widget's children.
+    ///
+    /// This currently returns the border-box rect if `clips_contents` is true and `None` otherwise, but in the future we may want to support more complex clip shapes, in which case this method would need to be updated.
+    ///
+    /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
+    pub(crate) fn clip_shape(&self) -> Rect {
+        self.border_box_size().to_rect() - self.border_box_translation()
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {

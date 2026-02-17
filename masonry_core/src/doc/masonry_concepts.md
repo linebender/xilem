@@ -213,6 +213,21 @@ Generally you'll want to convert any window coordinate space geometry into the w
 Then easily operate on that geometry and finally convert the results back to the window's coordinate space.
 
 
+## Clip shape
+
+Widgets have a shape, usually one that matches their visual appearance, which has two purposes:
+
+- Pointer events outside of that shape will not affect the pointer.
+- If the widget is set to clip its contents, pointer events outside the clip shape won't affect the children either.
+- If the widget is set to clip its contents, its scene and the children's scenes will be painted inside of the clip shape.
+
+Currently, the clip shape is hardcoded to be a rect with the widget's size and position.
+
+<!-- TODO: Rename to "widget shape" instead? -->
+<!-- Need a better name. -->
+<!-- TODO: Better integrate with box model documentation. -->
+
+
 ## Layers
 
 A Masonry application is composed of layers.

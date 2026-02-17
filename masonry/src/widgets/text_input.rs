@@ -295,11 +295,7 @@ impl Widget for TextInput {
             ctx.place_child(&mut self.placeholder, child_origin);
         }
 
-        if self.clip {
-            ctx.set_clip_path(size.to_rect());
-        } else {
-            ctx.clear_clip_path();
-        }
+        ctx.set_clips_contents(self.clip);
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

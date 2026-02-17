@@ -367,8 +367,9 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This is where box shadow, background, and borders are painted.
     ///
-    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
-    /// and can paint things outside the clip.
+    /// This method is not restricted by the [clip shape].
+    ///
+    /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         pre_paint(ctx, props, scene);
     }
@@ -381,8 +382,9 @@ pub trait Widget: AsDynWidget + Any {
 
     /// Final paint method, which paints on top of the widget's children.
     ///
-    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
-    /// and can paint things outside the clip.
+    /// This method is not restricted by the [clip shape].
+    ///
+    /// [clip shape]: crate::doc::masonry_concepts#clip-shape.
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     }
 
@@ -562,9 +564,9 @@ pub fn find_widget_under_pointer<'c>(
 
     let local_pos = ctx.window_transform().inverse() * pos;
 
-    if let Some(clip) = ctx.clip_path()
-        && !clip.contains(local_pos)
-    {
+    let is_inside_clip_shape = ctx.content_box().contains(local_pos);
+
+    if ctx.clips_contents() && !is_inside_clip_shape {
         return None;
     }
 
@@ -580,6 +582,7 @@ pub fn find_widget_under_pointer<'c>(
         }
     }
 
+    // TODO - Use some variant of clip shape instead.
     // If no child is under pointer, test the current widget.
     if ctx.accepts_pointer_interaction() && ctx.border_box().contains(local_pos) {
         Some(WidgetRef { widget, ctx })

@@ -124,8 +124,8 @@ fn paint_clipping() {
     let parent = NewWidget::new(
         ModularWidget::new(())
             .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE)
-            .layout_fn(|_, ctx, _, size| {
-                ctx.set_clip_path(size.to_rect());
+            .layout_fn(|_, ctx, _, _size| {
+                ctx.set_clips_contents(true);
             })
             .paint_fn(move |_, ctx, _, scene| {
                 fill(scene, &ctx.content_box(), Color::WHITE);
