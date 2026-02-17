@@ -63,7 +63,6 @@ fn backslash_u(s: &str) -> Option<(char, &str)> {
 /// Returns `(content, suffix)` on success, where `suffix` is any trailing
 /// literal suffix (always empty for valid Rust string literals).
 fn parse_lit_str_cooked(mut s: &str) -> Option<(Box<str>, Box<str>)> {
-    println!("{}", s);
     if byte(s, 0) != b'"' {
         return None;
     }
