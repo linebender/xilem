@@ -11,8 +11,8 @@ pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
-    ViewArgument, ViewElement, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
+    AppendVec, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
@@ -82,7 +82,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// [`FlexBasis::Auto`]: masonry::widgets::FlexBasis::Auto
 /// [`FlexBasis::Zero`]: masonry::widgets::FlexBasis::Zero
-pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex<State: 'static, Action, Seq: FlexSequence<State, Action>>(
     axis: Axis,
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
@@ -101,7 +101,7 @@ pub fn flex<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
 /// [`direction`](Flex::direction).
 /// We recommend reading that type's documentation for a detailed
 /// explanation of this component's layout model.
-pub fn flex_row<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_row<State: 'static, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Horizontal, sequence)
@@ -113,7 +113,7 @@ pub fn flex_row<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
 /// [`direction`](Flex::direction).
 /// We recommend reading that type's documentation for a detailed
 /// explanation of this component's layout model.
-pub fn flex_col<State: ViewArgument, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_col<State: 'static, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Vertical, sequence)
@@ -153,7 +153,7 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
 
 mod hidden {
     use super::FlexItem;
-    use crate::core::{AppendVec, View, ViewArgument};
+    use crate::core::{AppendVec, View};
     use crate::view::FlexElement;
     use crate::{AnyWidgetView, ViewCtx};
 
@@ -172,7 +172,7 @@ mod hidden {
         unnameable_types,
         reason = "Implementation detail, public because of trait visibility rules"
     )]
-    pub struct AnyFlexChildState<State: ViewArgument, Action: 'static> {
+    pub struct AnyFlexChildState<State: 'static, Action: 'static> {
         /// Just the optional view state of the flex item view
         #[allow(
             clippy::type_complexity,
@@ -196,7 +196,7 @@ use hidden::{AnyFlexChildState, FlexState};
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Seq: FlexSequence<State, Action>,
 {
@@ -207,7 +207,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
@@ -236,7 +236,7 @@ where
         FlexState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         if prev.axis != self.axis {
             widgets::Flex::set_direction(&mut element, self.axis);
@@ -269,7 +269,7 @@ where
         FlexState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut splice = FlexSplice::new(element, scratch);
         let result = self
@@ -431,27 +431,26 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
 /// ```
 /// # use xilem_masonry as xilem;
 /// use xilem::view::{label, FlexSequence, FlexExt as _};
-/// use xilem::core::ViewArgument;
 ///
-/// fn label_sequence<State: ViewArgument>(
+/// fn label_sequence<State: 'static>(
 ///     labels: impl Iterator<Item = &'static str>,
 ///     flex: f64,
 /// ) -> impl FlexSequence<State> {
 ///     labels.map(|l| label(l).flex(flex)).collect::<Vec<_>>()
 /// }
 /// ```
-pub trait FlexSequence<State: ViewArgument, Action = ()>:
+pub trait FlexSequence<State: 'static, Action = ()>:
     ViewSequence<State, Action, ViewCtx, FlexElement>
 {
 }
 
-impl<Seq, State: ViewArgument, Action> FlexSequence<State, Action> for Seq where
+impl<Seq, State: 'static, Action> FlexSequence<State, Action> for Seq where
     Seq: ViewSequence<State, Action, ViewCtx, FlexElement>
 {
 }
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer.
-pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
+pub trait FlexExt<State: 'static, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
     ///
     /// # Examples
@@ -460,9 +459,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt};
-    /// # use xilem::{WidgetView, core::ViewArgument};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, (
     ///     text_button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
@@ -489,9 +488,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild};
-    /// # use xilem::{WidgetView, core::ViewArgument};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, [label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.px()))])
     /// # }
     ///
@@ -505,7 +504,7 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State: ViewArgument, Action, V: WidgetView<State, Action>> FlexExt<State, Action> for V {}
+impl<State: 'static, Action, V: WidgetView<State, Action>> FlexExt<State, Action> for V {}
 
 /// A `WidgetView` that can be used within a [`Flex`] [`View`].
 pub struct FlexItem<V, State, Action> {
@@ -522,9 +521,9 @@ pub struct FlexItem<V, State, Action> {
 /// use xilem::masonry::kurbo::Axis;
 /// use xilem::masonry::layout::AsUnit;
 /// use xilem::view::{text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
-/// # use xilem::{WidgetView, core::ViewArgument};
+/// # use xilem::WidgetView;
 ///
-/// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
+/// # fn view<State: 'static>() -> impl WidgetView<State> {
 /// flex(Axis::Vertical, (
 ///     flex_item(text_button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
@@ -539,7 +538,7 @@ pub fn flex_item<V, State, Action>(
     params: impl Into<FlexParams>,
 ) -> FlexItem<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -552,9 +551,9 @@ where
 
 impl<State, Action, V> From<FlexItem<V, State, Action>> for AnyFlexChild<State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    V: WidgetView<State, Action, ViewState: ViewArgument>,
+    V: WidgetView<State, Action, ViewState: 'static>,
 {
     fn from(value: FlexItem<V, State, Action>) -> Self {
         Self::Item(flex_item(value.view.boxed(), value.params))
@@ -564,7 +563,7 @@ where
 impl<V, State, Action> ViewMarker for FlexItem<V, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for FlexItem<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -575,7 +574,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
         (FlexElement::Child(pod.erased(), self.params), state)
@@ -587,7 +586,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         {
             if self.params != prev.params {
@@ -614,7 +613,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut child = widgets::Flex::get_mut(&mut element.parent, element.idx);
         self.view
@@ -639,12 +638,12 @@ impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
 impl ViewMarker for FlexSpacer {}
 // This impl doesn't require a view id, as it neither receives, nor sends any messages
 // If this should ever change, it's necessary to adjust the `AnyFlexChild` `View` impl
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for FlexSpacer {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for FlexSpacer {
     type Element = FlexElement;
 
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let el = match self {
             Self::Fixed(len) => FlexElement::FixedSpacer(*len),
             Self::Flex(flex) => FlexElement::FlexSpacer(*flex),
@@ -658,7 +657,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for FlexSpacer {
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if self != prev {
             match self {
@@ -679,7 +678,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for FlexSpacer {
         _: &mut Self::ViewState,
         message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> MessageResult<Action> {
         unreachable!("FlexSpacer doesn't handle messages but got {message:?}.")
     }
@@ -703,9 +702,9 @@ impl FlexSpacer {
     /// use xilem::masonry::kurbo::Axis;
     /// use xilem::masonry::layout::AsUnit;
     /// use xilem::view::{flex, FlexSpacer};
-    /// # use xilem::{WidgetView, core::ViewArgument};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, FlexSpacer::Fixed(2.px()).into_any_flex())
     /// # }
     ///
@@ -717,7 +716,7 @@ impl FlexSpacer {
 
 impl<State, Action, V> FlexItem<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -728,9 +727,9 @@ where
     /// # use xilem_masonry as xilem;
     /// use xilem::masonry::kurbo::Axis;
     /// use xilem::view::{flex, flex_item, label};
-    /// # use xilem::{WidgetView, core::ViewArgument};
+    /// # use xilem::WidgetView;
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, flex_item(label("Industry"), 4.0).into_any_flex())
     /// # }
     ///
@@ -743,7 +742,7 @@ where
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
 {
     type Element = FlexElement;
@@ -753,7 +752,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, view_state) = match self {
@@ -766,7 +765,7 @@ where
             Self::Spacer(spacer) => {
                 // We know that the spacer doesn't need any id, as it doesn't receive or sends any messages
                 // (Similar to `None` as a ViewSequence)
-                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx, ());
+                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx, &mut ());
                 (element, None)
             }
         };
@@ -785,7 +784,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         match (prev, self) {
             (Self::Item(prev), Self::Item(this)) => {
@@ -800,7 +799,7 @@ where
                 });
             }
             (Self::Spacer(prev), Self::Spacer(this)) => {
-                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element, ());
+                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element, &mut ());
             }
             (Self::Item(prev_flex_item), Self::Spacer(new_spacer)) => {
                 // Run teardown with the old path
@@ -825,7 +824,7 @@ where
                 // If would overflow, wrap to zero. Would need async message sent
                 // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
                 view_state.generation = view_state.generation.wrapping_add(1);
-                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx, ());
+                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx, &mut ());
                 match spacer_element {
                     FlexElement::FixedSpacer(len) => {
                         widgets::Flex::insert_fixed_spacer(&mut element.parent, element.idx, len);
@@ -888,7 +887,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()

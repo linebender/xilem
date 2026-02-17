@@ -7,9 +7,7 @@ use masonry::kurbo::Axis;
 use masonry::layout::{AsUnit, Length};
 use masonry::widgets;
 
-use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
@@ -49,7 +47,7 @@ pub fn split<State, Action, ChildA, ChildB>(
 where
     ChildA: WidgetView<State, Action>,
     ChildB: WidgetView<State, Action>,
-    State: ViewArgument,
+    State: 'static,
 {
     Split {
         split_axis: Axis::Horizontal,
@@ -188,7 +186,7 @@ impl<ChildA, ChildB, State, Action> ViewMarker for Split<ChildA, ChildB, State, 
 impl<ChildA, ChildB, State, Action> View<State, Action, ViewCtx>
     for Split<ChildA, ChildB, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     ChildA: WidgetView<State, Action>,
     ChildB: WidgetView<State, Action>,
@@ -200,14 +198,12 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        mut app_state: Arg<'_, State>,
+        mut app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
-        let (child1, child1_state) = ctx.with_id(CHILD1_VIEW_ID, |ctx| {
-            self.child1.build(ctx, State::reborrow_mut(&mut app_state))
-        });
-        let (child2, child2_state) = ctx.with_id(CHILD2_VIEW_ID, |ctx| {
-            self.child2.build(ctx, State::reborrow_mut(&mut app_state))
-        });
+        let (child1, child1_state) =
+            ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx, &mut app_state));
+        let (child2, child2_state) =
+            ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx, &mut app_state));
 
         let widget_pod = ctx.create_pod(
             widgets::Split::new(child1.new_widget, child2.new_widget)
@@ -229,7 +225,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: Arg<'_, State>,
+        mut app_state: &mut State,
     ) {
         if prev.split_axis != self.split_axis {
             widgets::Split::set_split_axis(&mut element, self.split_axis);
@@ -266,7 +262,7 @@ where
                 &mut view_state.0,
                 ctx,
                 child1_element,
-                State::reborrow_mut(&mut app_state),
+                &mut app_state,
             );
         });
 
@@ -277,7 +273,7 @@ where
                 &mut view_state.1,
                 ctx,
                 child2_element,
-                State::reborrow_mut(&mut app_state),
+                &mut app_state,
             );
         });
     }
@@ -300,7 +296,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         match message.take_first() {
             Some(CHILD1_VIEW_ID) => {

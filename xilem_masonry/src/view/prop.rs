@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use masonry::core::{HasProperty, Property};
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that adds a property `P` or overrides a previously defined property `P`
@@ -20,13 +20,13 @@ pub struct Prop<P, V, State, Action> {
     pub(crate) phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl<P, V, State: ViewArgument, Action> ViewMarker for Prop<P, V, State, Action> {}
+impl<P, V, State: 'static, Action> ViewMarker for Prop<P, V, State, Action> {}
 impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, State, Action>
 where
     P: Property + PartialEq,
     Child: WidgetView<State, Action>,
     Child::Widget: HasProperty<P>,
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
 {
     type Element = Pod<Child::Widget>;
@@ -35,7 +35,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx, app_state);
         child_pod
@@ -51,7 +51,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         self.child.rebuild(
             &prev.child,
@@ -80,7 +80,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
         self.child.message(view_state, message, element, app_state)
     }

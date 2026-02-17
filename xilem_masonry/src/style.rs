@@ -16,13 +16,12 @@ use masonry::properties::{
 use vello::peniko::Color;
 
 use crate::WidgetView;
-use crate::core::ViewArgument;
 use crate::view::Prop;
 
 /// Trait implemented by most widget views that lets you style their properties.
 ///
 /// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
-pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action> + Sized {
+pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Sized {
     /// Sets the element's dimensions.
     ///
     /// If you only want to set one dimension, then you can use [`width`] or [`height`].
@@ -253,7 +252,7 @@ pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action>
 
 impl<State, Action, V> Style<State, Action> for V
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action> + Sized,
 {

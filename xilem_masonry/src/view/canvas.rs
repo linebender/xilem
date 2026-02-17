@@ -8,7 +8,7 @@ use masonry::widgets::{self, CanvasSizeChanged};
 use vello::Scene;
 use vello::kurbo::Size;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 /// Access a raw vello [`Scene`] within a canvas that fills its parent
@@ -36,8 +36,8 @@ use crate::{Pod, ViewCtx};
 /// ```
 pub fn canvas<State, F>(draw: F) -> Canvas<State, F>
 where
-    State: ViewArgument,
-    F: Fn(Arg<'_, State>, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
+    State: 'static,
+    F: Fn(&mut State, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
 {
     Canvas {
         draw,
@@ -69,13 +69,13 @@ impl<State, F> ViewMarker for Canvas<State, F> {}
 
 impl<State, Action, F> View<State, Action, ViewCtx> for Canvas<State, F>
 where
-    State: ViewArgument,
-    F: Fn(Arg<'_, State>, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
+    State: 'static,
+    F: Fn(&mut State, &mut MutateCtx<'_>, &mut Scene, Size) + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (
             ctx.with_action_widget(|ctx| {
                 let widget = match &self.alt_text {
@@ -94,7 +94,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        state: Arg<'_, State>,
+        state: &mut State,
     ) {
         widgets::Canvas::update_scene(&mut element, |ctx, scene, size| {
             (self.draw)(state, ctx, scene, size);
@@ -111,7 +111,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

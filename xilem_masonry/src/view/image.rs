@@ -7,7 +7,7 @@ use masonry::core::ArcStr;
 use masonry::widgets;
 use vello::peniko::ImageBrush;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::view::Prop;
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -42,7 +42,7 @@ pub struct Image {
 impl Image {
     // Because this method is image-specific, we don't add it to the Style trait.
     /// Specify the object fit.
-    pub fn fit<State: ViewArgument, Action: 'static>(
+    pub fn fit<State: 'static, Action: 'static>(
         self,
         fill: ObjectFit,
     ) -> Prop<ObjectFit, Self, State, Action> {
@@ -63,11 +63,11 @@ impl Image {
     }
 }
 impl ViewMarker for Image {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for Image {
     type Element = Pod<widgets::Image>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (ctx.create_pod(widgets::Image::new(self.image.clone())), ())
     }
 
@@ -77,7 +77,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.image != self.image {
             widgets::Image::set_image_data(&mut element, self.image.clone());
@@ -94,7 +94,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Image {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

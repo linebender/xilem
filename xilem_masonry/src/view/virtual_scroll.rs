@@ -10,9 +10,7 @@ use masonry::util::debug_panic;
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
 
-use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// The view type for [`virtual_scroll`].
@@ -56,8 +54,8 @@ pub fn virtual_scroll<State, Action, ChildrenViews, F>(
 ) -> VirtualScroll<State, Action, ChildrenViews, F>
 where
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, i64) -> ChildrenViews + 'static,
-    State: ViewArgument,
+    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    State: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,
@@ -78,8 +76,8 @@ pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F>(
 ) -> VirtualScroll<State, Action, ChildrenViews, F>
 where
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, i64) -> ChildrenViews + 'static,
-    State: ViewArgument,
+    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    State: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,
@@ -125,16 +123,16 @@ impl<State, Action, ChildrenViews, F> ViewMarker
 impl<State, Action, ChildrenViews, F> View<State, Action, ViewCtx>
     for VirtualScroll<State, Action, ChildrenViews, F>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, i64) -> ChildrenViews + 'static,
+    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
 {
     type Element = Pod<widgets::VirtualScroll>;
 
     type ViewState = VirtualScrollState<ChildrenViews, ChildrenViews::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: How does the anchor interact with Xilem?
         // Setting that seems like an imperative action?
         let pod =
@@ -155,7 +153,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: Arg<'_, State>,
+        mut app_state: &mut State,
     ) {
         let valid_range_changed = self.valid_range != prev.valid_range;
         if valid_range_changed {
@@ -197,7 +195,7 @@ where
                         pending_action.old_active.contains(&idx),
                         "{idx} was asked to be removed in {pending_action:?}, but wasn't already present."
                     );
-                    let next_child = (self.func)(State::reborrow_mut(&mut app_state), idx);
+                    let next_child = (self.func)(&mut app_state, idx);
                     // Rebuild this existing item
                     ctx.with_id(view_id_for_index(idx), |ctx| {
                         next_child.rebuild(
@@ -205,16 +203,15 @@ where
                             &mut child.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                            State::reborrow_mut(&mut app_state),
+                            &mut app_state,
                         );
                         child.view = next_child;
                     });
                 } else {
-                    let new_child = (self.func)(State::reborrow_mut(&mut app_state), idx);
+                    let new_child = (self.func)(&mut app_state, idx);
                     // Build the new item
                     ctx.with_id(view_id_for_index(idx), |ctx| {
-                        let (new_element, child_state) =
-                            new_child.build(ctx, State::reborrow_mut(&mut app_state));
+                        let (new_element, child_state) = new_child.build(ctx, &mut app_state);
                         widgets::VirtualScroll::add_child(
                             &mut element,
                             idx,
@@ -233,14 +230,14 @@ where
         } else {
             // Rebuild all existing items
             for (&idx, child) in &mut view_state.children {
-                let next_child = (self.func)(State::reborrow_mut(&mut app_state), idx);
+                let next_child = (self.func)(&mut app_state, idx);
                 ctx.with_id(view_id_for_index(idx), |ctx| {
                     next_child.rebuild(
                         &child.view,
                         &mut child.state,
                         ctx,
                         widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                        State::reborrow_mut(&mut app_state),
+                        &mut app_state,
                     );
                     child.view = next_child;
                 });
@@ -276,7 +273,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         if let Some(first) = message.take_first() {
             let child_idx = index_for_view_id(first);

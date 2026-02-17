@@ -7,7 +7,7 @@ use masonry::properties::Dimensions;
 use masonry::widgets;
 
 use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
+    MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::view::{Label, label};
 use crate::{Pod, TextAlign, ViewCtx};
@@ -79,14 +79,14 @@ impl VariableLabel {
 }
 
 impl ViewMarker for VariableLabel {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for VariableLabel {
     type Element = Pod<widgets::VariableLabel>;
     type ViewState = ();
 
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::build(&self.label, ctx, app_state)
@@ -103,7 +103,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::rebuild(
@@ -146,7 +146,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         if let Some(first) = message.take_first() {
             assert_eq!(first.routing_id(), 0);
@@ -156,7 +156,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel
                 &mut (),
                 message,
                 widgets::VariableLabel::label_mut(&mut element),
-                (),
+                &mut (),
             )
         } else {
             tracing::error!(

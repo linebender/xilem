@@ -7,8 +7,8 @@ use masonry::core::{CollectionWidget, FromDynWidget, Widget, WidgetMut};
 use masonry::widgets;
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
-    ViewArgument, ViewElement, ViewMarker, ViewSequence,
+    AppendVec, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx};
 
@@ -50,7 +50,7 @@ use crate::{Pod, ViewCtx};
 /// )
 /// .active(state.tab);
 /// ```
-pub fn indexed_stack<State: ViewArgument, Action, Seq: IndexedStackSequence<State, Action>>(
+pub fn indexed_stack<State: 'static, Action, Seq: IndexedStackSequence<State, Action>>(
     sequence: Seq,
 ) -> IndexedStack<Seq, State, Action> {
     IndexedStack {
@@ -106,7 +106,7 @@ impl<Seq, State, Action> ViewMarker for IndexedStack<Seq, State, Action> {}
 
 impl<State, Action, Seq> View<State, Action, ViewCtx> for IndexedStack<Seq, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Seq: IndexedStackSequence<State, Action>,
 {
@@ -117,7 +117,7 @@ where
     fn build(
         &self,
         ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::IndexedStack::new();
@@ -142,7 +142,7 @@ where
         IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         {
             let mut splice = IndexedStackSplice::new(element.reborrow_mut(), scratch);
@@ -174,7 +174,7 @@ where
         IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut splice = IndexedStackSplice::new(element, scratch);
         let result = self
@@ -286,7 +286,7 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
 }
 
 /// `IndexedStackSequence` is what allows an input to the indexed stack that contains all the stack elements.
-pub trait IndexedStackSequence<State: ViewArgument, Action = ()>:
+pub trait IndexedStackSequence<State: 'static, Action = ()>:
     ViewSequence<State, Action, ViewCtx, IndexedStackElement>
 {
 }
@@ -294,7 +294,7 @@ pub trait IndexedStackSequence<State: ViewArgument, Action = ()>:
 impl<Seq, State, Action> IndexedStackSequence<State, Action> for Seq
 where
     Seq: ViewSequence<State, Action, ViewCtx, IndexedStackElement>,
-    State: ViewArgument,
+    State: 'static,
 {
 }
 /// A child widget within a [`IndexedStack`] view.

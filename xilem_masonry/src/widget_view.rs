@@ -4,7 +4,7 @@
 use masonry::core::{FromDynWidget, HasProperty, Property, Widget};
 use masonry::kurbo::Affine;
 
-use crate::core::{View, ViewArgument, ViewSequence};
+use crate::core::{View, ViewSequence};
 use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 
@@ -13,7 +13,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx};
 /// This is essentially a "trait wrapper" for `View<S, A, ViewCtx, Element = Pod<impl Widget>> + Send + Sync`.
 ///
 /// Includes helper methods for common operations on widget views.
-pub trait WidgetView<State: ViewArgument, Action = ()>:
+pub trait WidgetView<State: 'static, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
     /// The widget this view represents.
@@ -26,7 +26,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     /// # use xilem_masonry as xilem;
     /// use xilem::{view::label, WidgetView};
     ///
-    /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
     /// label("a label").boxed()
     /// # }
     ///
@@ -62,7 +62,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     /// # use xilem_masonry as xilem;
     /// use xilem::{masonry::properties::CornerRadius, view::{text_button, label}, WidgetView};
     ///
-    /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
     /// text_button("click me", |_| {})
     ///     .prop(CornerRadius { radius: 20.0 })
     ///     .prop(CornerRadius { radius: 5.0 })
@@ -72,7 +72,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     /// ```
     fn prop<P>(self, property: P) -> Prop<P, Self, State, Action>
     where
-        State: ViewArgument,
+        State: 'static,
         Action: 'static,
         Self: Sized,
         Self::Widget: HasProperty<P>,
@@ -90,7 +90,7 @@ impl<V, State, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
     W: Widget + FromDynWidget + ?Sized,
-    State: ViewArgument,
+    State: 'static,
 {
     type Widget = W;
 }
@@ -102,15 +102,15 @@ where
 ///
 /// ```
 /// # use xilem_masonry as xilem;
-/// use xilem::{view::prose, WidgetViewSequence, core::ViewArgument};
+/// use xilem::{view::prose, WidgetViewSequence};
 ///
-/// fn prose_sequence<State: ViewArgument>(
+/// fn prose_sequence<State: 'static>(
 ///     texts: impl Iterator<Item = &'static str>,
 /// ) -> impl WidgetViewSequence<State> {
 ///     texts.map(prose).collect::<Vec<_>>()
 /// }
 /// ```
-pub trait WidgetViewSequence<State: ViewArgument, Action = ()>:
+pub trait WidgetViewSequence<State: 'static, Action = ()>:
     ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
 {
 }
@@ -118,6 +118,6 @@ pub trait WidgetViewSequence<State: ViewArgument, Action = ()>:
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq
 where
     Seq: ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>,
-    State: ViewArgument,
+    State: 'static,
 {
 }

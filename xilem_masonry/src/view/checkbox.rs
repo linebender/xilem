@@ -8,7 +8,7 @@ use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets::{self, CheckboxToggled};
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 /// An element which can be in checked and unchecked state.
@@ -36,8 +36,8 @@ pub fn checkbox<F, State, Action>(
     callback: F,
 ) -> Checkbox<State, Action, F>
 where
-    F: Fn(Arg<'_, State>, bool) -> Action + Send + 'static,
-    State: ViewArgument,
+    F: Fn(&mut State, bool) -> Action + Send + 'static,
+    State: 'static,
 {
     Checkbox {
         label: label.into(),
@@ -99,14 +99,14 @@ impl<State, Action, F> Checkbox<State, Action, F> {
 impl<State, Action, F> ViewMarker for Checkbox<State, Action, F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<State, Action, F>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let label = widgets::Label::new(self.label.clone())
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
@@ -129,7 +129,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -167,7 +167,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),
