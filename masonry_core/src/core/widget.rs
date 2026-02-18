@@ -15,7 +15,7 @@ use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
 };
 use crate::layout::LenReq;
@@ -551,7 +551,7 @@ pub trait Widget: AsDynWidget + Any {
     }
 
     /// Convenience method to wrap this in a [`NewWidget`] with the given [`Properties`].
-    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,
     {

@@ -9,7 +9,7 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerEvent, PointerUpdate, Properties, PropertiesMut, PropertiesRef,
+    NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet,
     RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::kurbo::{Axis, Point, Size, Vec2};
@@ -170,9 +170,9 @@ fn main() {
         let tooltip = NewWidget::new_with_props(
             Tooltip::new(NewWidget::new_with_props(
                 Label::new("Tooltip!!!"),
-                Properties::one(ContentColor::new(Color::BLACK)),
+                PropertySet::one(ContentColor::new(Color::BLACK)),
             )),
-            Properties::from((
+            PropertySet::from((
                 BorderWidth::all(1.),
                 BorderColor::new(Color::BLACK),
                 Background::Color(Color::WHITE),

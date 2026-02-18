@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{Properties, Widget, WidgetId, WidgetTag, WidgetTagInner};
+use crate::core::{PropertySet, Widget, WidgetId, WidgetTag, WidgetTagInner};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -37,7 +37,7 @@ pub struct NewWidget<W: ?Sized> {
     /// The options the widget will be created with.
     pub options: WidgetOptions,
     /// The properties the widget will be created with.
-    pub properties: Properties,
+    pub properties: PropertySet,
 
     pub(crate) tag: Option<WidgetTagInner>,
 }
@@ -84,7 +84,12 @@ impl<W: Widget> NewWidget<W> {
     /// You can also get the same result with [`Widget::with_auto_id()`].
     #[inline(always)]
     pub fn new(inner: W) -> Self {
-        Self::new_with(inner, None, WidgetOptions::default(), Properties::default())
+        Self::new_with(
+            inner,
+            None,
+            WidgetOptions::default(),
+            PropertySet::default(),
+        )
     }
 
     /// Creates a new widget with a potential [`WidgetTag`],
@@ -93,7 +98,7 @@ impl<W: Widget> NewWidget<W> {
         inner: W,
         tag: Option<WidgetTag<W>>,
         options: WidgetOptions,
-        props: impl Into<Properties>,
+        props: impl Into<PropertySet>,
     ) -> Self {
         Self {
             widget: Box::new(inner),
@@ -114,21 +119,21 @@ impl<W: Widget> NewWidget<W> {
             inner,
             Some(tag),
             WidgetOptions::default(),
-            Properties::default(),
+            PropertySet::default(),
         )
     }
 
     // TODO - Replace with builder methods? More allocations then though?
     /// Creates a new widget with custom [`Properties`].
     #[inline(always)]
-    pub fn new_with_props(inner: W, props: impl Into<Properties>) -> Self {
+    pub fn new_with_props(inner: W, props: impl Into<PropertySet>) -> Self {
         Self::new_with(inner, None, WidgetOptions::default(), props)
     }
 
     /// Creates a new widget with custom [`WidgetOptions`].
     #[inline(always)]
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
-        Self::new_with(inner, None, options, Properties::default())
+        Self::new_with(inner, None, options, PropertySet::default())
     }
 }
 

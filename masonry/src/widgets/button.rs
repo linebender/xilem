@@ -263,7 +263,7 @@ mod tests {
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
+    use crate::core::{CollectionWidget, PointerButton, PropertySet, StyleProperty};
     use crate::layout::AsUnit;
     use crate::properties::{
         BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, Gap, Padding,
@@ -331,7 +331,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
+                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
             );
 
             let button = NewWidget::new(Button::new(label));
@@ -409,7 +409,7 @@ mod tests {
             );
         let root_widget = NewWidget::new_with_props(
             grid,
-            Properties::new()
+            PropertySet::new()
                 .with(Padding::all(20.0))
                 .with(Gap::new(40.px())),
         );
