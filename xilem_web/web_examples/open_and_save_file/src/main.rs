@@ -9,7 +9,7 @@ use web_sys::wasm_bindgen::JsCast;
 use xilem_web::{
     App, DomView,
     concurrent::memoized_await,
-    core::{Edit, fork},
+    core::fork,
     document_body,
     elements::html,
     interfaces::{Element, HtmlInputElement},
@@ -35,7 +35,7 @@ impl Default for AppState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
     let open_action = state
         .start_opening
         .then(|| {
@@ -85,7 +85,7 @@ fn handle_open_result(state: &mut AppState, result: Result<String, FileReadError
     }
 }
 
-fn open_file_input() -> impl Element<Edit<AppState>> + use<> {
+fn open_file_input() -> impl Element<AppState> + use<> {
     html::input(())
         .type_("file")
         .attr("accept", "text/plain")
@@ -108,7 +108,7 @@ fn open_file_input() -> impl Element<Edit<AppState>> + use<> {
         })
 }
 
-fn hidden_save_link() -> impl Element<Edit<AppState>> + use<> {
+fn hidden_save_link() -> impl Element<AppState> + use<> {
     html::a("Save example text")
         .style(style("display", "none"))
         .attr("download", "example.txt")

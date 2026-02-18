@@ -23,7 +23,7 @@
 //! /// ```
 //! /// # use xilem_core::docs::{DocsView as WidgetView, State};
 //! /// use xilem_core::interesting_primitive;
-//! /// fn user_component() -> WidgetView<Edit<State>> {
+//! /// fn user_component() -> WidgetView<State> {
 //! ///     interesting_primitive()
 //! /// }
 //! ///
@@ -35,7 +35,7 @@
 //! # struct InterestingPrimitive;
 //! ```
 
-use crate::{Edit, NoElement, View, ViewArgument, ViewPathTracker, ViewSequence, run_once};
+use crate::{NoElement, View, ViewPathTracker, ViewSequence, run_once};
 
 /// A type used for documentation
 #[derive(Debug)]
@@ -63,11 +63,11 @@ impl ViewPathTracker for Fake {
 ///
 /// In most cases, that name will be `WidgetView`, as Xilem Core's documentation is
 /// primarily targeted at users of [Xilem](https://crates.io/crates/xilem/).
-pub trait DocsView<State: ViewArgument, Action = ()>: View<State, Action, Fake> {}
+pub trait DocsView<State: 'static, Action = ()>: View<State, Action, Fake> {}
 impl<V, State, Action> DocsView<State, Action> for V
 where
     V: View<State, Action, Fake>,
-    State: ViewArgument,
+    State: 'static,
 {
 }
 
@@ -77,12 +77,12 @@ where
 ///
 /// In most cases, that name will be `WidgetViewSequence`, as Xilem Core's documentation is
 /// primarily targeted at users of [Xilem](https://crates.io/crates/xilem/).
-pub trait DocsViewSequence<State: ViewArgument, Action = ()>:
+pub trait DocsViewSequence<State: 'static, Action = ()>:
     ViewSequence<State, Action, Fake, NoElement>
 {
 }
 
-impl<Seq, State: ViewArgument, Action> DocsViewSequence<State, Action> for Seq where
+impl<Seq, State: 'static, Action> DocsViewSequence<State, Action> for Seq where
     Seq: ViewSequence<State, Action, Fake, NoElement>
 {
 }
@@ -95,7 +95,7 @@ pub struct State;
 // TODO: Does this need to have the state argument?
 pub fn some_component<Action>(
     _: &mut State,
-) -> impl DocsView<Edit<State>, Action, Element = NoElement> + use<Action> {
+) -> impl DocsView<State, Action, Element = NoElement> + use<Action> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }
@@ -103,7 +103,7 @@ pub fn some_component<Action>(
 /// A minimal component with generic State.
 pub fn some_component_generic<State: 'static, Action>(
     _: &mut State,
-) -> impl DocsView<Edit<State>, Action, Element = NoElement> + use<State, Action> {
+) -> impl DocsView<State, Action, Element = NoElement> + use<State, Action> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }

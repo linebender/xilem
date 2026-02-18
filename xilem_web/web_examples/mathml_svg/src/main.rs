@@ -6,7 +6,6 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::core::Edit;
 use xilem_web::elements::{html, mathml as ml, svg};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
@@ -32,7 +31,7 @@ fn label(
     y: u32,
     dy: &'static str,
     anchor: &'static str,
-) -> impl SvgTextElement<Edit<Triangle>> {
+) -> impl SvgTextElement<Triangle> {
     svg::text(l.to_string())
         .attr("x", x)
         .attr("y", y)
@@ -44,7 +43,7 @@ fn slider(
     max: u32,
     value: u32,
     cb: fn(&mut Triangle, web_sys::Event),
-) -> impl HtmlInputElement<Edit<Triangle>> {
+) -> impl HtmlInputElement<Triangle> {
     html::input(())
         .type_("range")
         .attr("min", 1)

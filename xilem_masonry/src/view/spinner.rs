@@ -3,7 +3,7 @@
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 /// An indefinite spinner.
@@ -19,13 +19,12 @@ use crate::{Pod, ViewCtx};
 /// # use xilem_masonry as xilem;
 /// # use xilem::{view::{spinner, flex_col}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
-/// # use xilem::core::Edit;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {
-/// #     fn request_result(&mut self) -> impl WidgetView<Edit<ApiClient>> { flex_col(()) }
+/// #     fn request_result(&mut self) -> impl WidgetView<ApiClient> { flex_col(()) }
 /// # }
 /// #
-/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<Edit<ApiClient>>  {
+/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<ApiClient>  {
 ///     if data.pending {
 ///         Either::A(spinner())
 ///     } else {
@@ -44,11 +43,11 @@ pub fn spinner() -> Spinner {
 pub struct Spinner;
 
 impl ViewMarker for Spinner {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Spinner {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for Spinner {
     type Element = Pod<widgets::Spinner>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (ctx.create_pod(widgets::Spinner::new()), ())
     }
 
@@ -58,7 +57,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Spinner {
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
     }
 
@@ -69,7 +68,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Spinner {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

@@ -6,13 +6,13 @@ use std::marker::PhantomData;
 use masonry::core::ArcStr;
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A non-interactive badge (pill) widget that hosts a single child.
 pub fn badge<State, Action, V>(child: V) -> Badge<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -57,18 +57,14 @@ pub struct Badge<V, State, Action = ()> {
 impl<V, State, Action> ViewMarker for Badge<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for Badge<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
     type Element = Pod<widgets::Badge>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.child.build(ctx, app_state);
         (
             ctx.create_pod(widgets::Badge::new(child.new_widget)),
@@ -82,7 +78,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::Badge::child_mut(&mut element);
         self.child
@@ -104,7 +100,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut child = widgets::Badge::child_mut(&mut element);
         self.child
@@ -119,11 +115,11 @@ pub struct BadgeText {
 }
 
 impl ViewMarker for BadgeText {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeText {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for BadgeText {
     type Element = Pod<widgets::Badge>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (
             ctx.create_pod(widgets::Badge::with_text(self.text.clone())),
             (),
@@ -136,7 +132,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeText {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.text != self.text {
             let mut child = widgets::Badge::child_mut(&mut element);
@@ -158,7 +154,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeText {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,
@@ -201,11 +197,11 @@ fn format_count(count: u32, overflow: widgets::BadgeCountOverflow) -> ArcStr {
 }
 
 impl ViewMarker for BadgeCount {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeCount {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for BadgeCount {
     type Element = Pod<widgets::Badge>;
     type ViewState = ArcStr;
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text = format_count(self.count, self.overflow);
         (
             ctx.create_pod(widgets::Badge::with_text(text.clone())),
@@ -219,7 +215,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeCount {
         text: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.count == self.count && prev.overflow == self.overflow {
             return;
@@ -244,7 +240,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for BadgeCount {
         _text: &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

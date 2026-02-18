@@ -21,10 +21,9 @@
 //!     elements::html::{button, div, p},
 //!     interfaces::{Element as _, HtmlDivElement},
 //!     App,
-//!     core::Edit,
 //! };
 //!
-//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
+//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
 //!     div((
 //!         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
 //!         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
@@ -117,7 +116,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{AnyView, Arg, View, ViewArgument, ViewSequence};
+use core::{AnyView, View, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -143,7 +142,7 @@ pub trait DomNode: AnyNode {
 pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
-pub trait DomView<State: ViewArgument, Action = ()>:
+pub trait DomView<State: 'static, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
 {
     type DomNode: DomNode;
@@ -152,9 +151,9 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     ///
     /// # Examples
     /// ```
-    /// use xilem_web::{elements::html::div, DomView, core::ViewArgument};
+    /// use xilem_web::{elements::html::div, DomView};
     ///
-    /// # fn view<State: ViewArgument>() -> impl DomView<State> {
+    /// # fn view<State: 'static>() -> impl DomView<State> {
     /// div("a label").boxed()
     /// # }
     /// ```
@@ -171,7 +170,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     where
         Action: 'static,
         Self: Sized,
-        F: Fn(Arg<'_, State>, &Self::DomNode) + 'static,
+        F: Fn(&mut State, &Self::DomNode) + 'static,
     {
         after_build(self, callback)
     }
@@ -181,7 +180,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     where
         Action: 'static,
         Self: Sized,
-        F: Fn(Arg<'_, State>, &Self::DomNode) + 'static,
+        F: Fn(&mut State, &Self::DomNode) + 'static,
     {
         after_rebuild(self, callback)
     }
@@ -197,7 +196,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     }
 }
 
-impl<V, State: ViewArgument, Action, N> DomView<State, Action> for V
+impl<V, State: 'static, Action, N> DomView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<N>>,
     N: DomNode,
@@ -211,17 +210,16 @@ where
 /// # Examples
 ///
 /// ```
-/// # use xilem_web::core::Edit;
-/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<Edit<i32>> {
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
-pub trait DomFragment<State: ViewArgument, Action = ()>:
+pub trait DomFragment<State: 'static, Action = ()>:
     ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }
 
-impl<V, State: ViewArgument, Action> DomFragment<State, Action> for V where
+impl<V, State: 'static, Action> DomFragment<State, Action> for V where
     V: ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }

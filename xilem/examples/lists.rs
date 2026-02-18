@@ -6,14 +6,13 @@
 use winit::error::EventLoopError;
 use xilem::view::{MainAxisAlignment, flex_col, prose, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
 
 #[derive(Default)]
 struct AppState {
     count: usize,
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     // A vector (Vec) of views can be used as part of a `flex`'s children, allowing collections of dynamic length to be displayed.
     let list = (0..state.count)
         .map(|n| prose(format!("item #{n}")))

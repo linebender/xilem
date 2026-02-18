@@ -3,7 +3,6 @@
 
 //! A to-do-list app, loosely inspired by todomvc.
 
-use xilem::core::Edit;
 use xilem::masonry::layout::Length;
 use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
@@ -44,7 +43,7 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<> {
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
     let header_text = label("todos").text_size(80.);
     let input_box = text_input(
         task_list.next_task.clone(),
@@ -102,7 +101,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
 
     let filter_tasks = |label, filter| {
         // TODO: replace with combo-buttons
-        checkbox::<_, Edit<TaskList>, _>(
+        checkbox(
             label,
             task_list.filter == filter,
             move |state: &mut TaskList, _| state.filter = filter,

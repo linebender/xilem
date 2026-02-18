@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that displays a [`Slider`] widget.
@@ -20,11 +20,7 @@ pub struct Slider<State, Action, F> {
 }
 
 /// Creates a slider widget for selecting a value from a range.
-pub fn slider<
-    State: ViewArgument,
-    Action,
-    F: Fn(Arg<'_, State>, f64) -> Action + Send + Sync + 'static,
->(
+pub fn slider<State: 'static, Action, F: Fn(&mut State, f64) -> Action + Send + Sync + 'static>(
     min: f64,
     max: f64,
     value: f64,
@@ -62,14 +58,14 @@ impl<State, Action, F> Slider<State, Action, F> {
 impl<State, Action, F> ViewMarker for Slider<State, Action, F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Slider<State, Action, F>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    F: Fn(Arg<'_, State>, f64) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Slider>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (
             ctx.with_action_widget(|ctx| {
                 let mut widget = widgets::Slider::new(self.min, self.max, self.value);
@@ -90,7 +86,7 @@ where
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -120,7 +116,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         if message.take_first().is_some() {
             tracing::warn!("Got unexpected id path in Slider::message");

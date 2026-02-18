@@ -6,7 +6,7 @@ use masonry::parley::style::{FontStack, FontWeight};
 use masonry::parley::{FontFamily, GenericFamily};
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, TextAlign, ViewCtx};
 
 /// A non-interactive text element.
@@ -21,9 +21,8 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// use xilem::masonry::parley::style::FontWeight;
 /// use xilem::masonry::parley::fontique;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
-/// # fn view() -> impl WidgetView<Edit<()>> {
+/// # fn view() -> impl WidgetView<()> {
 /// label("Text example.")
 ///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)
@@ -95,11 +94,11 @@ where
 }
 
 impl ViewMarker for Label {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_text_alignment(self.text_alignment)
@@ -116,7 +115,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
@@ -142,7 +141,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

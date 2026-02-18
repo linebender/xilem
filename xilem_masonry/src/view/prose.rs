@@ -8,7 +8,7 @@ use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Color, Pod, TextAlign, ViewCtx};
 
 /// A view which displays selectable text.
@@ -99,11 +99,11 @@ fn line_break_clips(linebreaking: LineBreaking) -> bool {
 }
 
 impl<State, Action> ViewMarker for Prose<State, Action> {}
-impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx> for Prose<State, Action> {
+impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Prose<State, Action> {
     type Element = Pod<widgets::Prose>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
             .with_text_alignment(self.text_alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
@@ -134,7 +134,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx> for Pros
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         let mut text_area = widgets::Prose::text_mut(&mut element);
 
@@ -186,7 +186,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx> for Pros
         _view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

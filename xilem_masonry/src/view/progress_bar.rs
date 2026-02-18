@@ -3,7 +3,7 @@
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 /// A view which displays a progress bar.
@@ -20,11 +20,11 @@ pub struct ProgressBar {
 }
 
 impl ViewMarker for ProgressBar {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for ProgressBar {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for ProgressBar {
     type Element = Pod<widgets::ProgressBar>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         (
             ctx.with_action_widget(|ctx| ctx.create_pod(widgets::ProgressBar::new(self.progress))),
             (),
@@ -37,7 +37,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.progress != self.progress {
             widgets::ProgressBar::set_progress(&mut element, self.progress);
@@ -58,7 +58,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

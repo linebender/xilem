@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use xilem::core::one_of::Either;
 use xilem::core::{
-    MessageProxy, MessageResult, NoElement, Resource, View, ViewArgument, fork, map_message_result,
+    MessageProxy, MessageResult, NoElement, Resource, View, fork, map_message_result,
     on_action_with_context, provides, with_context,
 };
 use xilem::masonry::layout::AsUnit;
@@ -45,7 +45,7 @@ impl Avatars {
     ///
     /// Requires that this View is within a [`Self::provide`] call.
     // TODO: ArcStr for URL?
-    pub(crate) fn avatar<State: ViewArgument, Action: 'static>(
+    pub(crate) fn avatar<State: 'static, Action: 'static>(
         url: String,
     ) -> impl WidgetView<State, Action> + use<State, Action> {
         with_context(move |this: &mut Self, _| {
@@ -84,7 +84,7 @@ impl Avatars {
     ) -> impl WidgetView<State, Action, Element = Child::Element>
     where
         Child: WidgetView<State, Action>,
-        State: ViewArgument,
+        State: 'static,
         Action: 'static,
     {
         provides(
@@ -99,7 +99,7 @@ impl Avatars {
     fn worker<State, Action>()
     -> impl View<State, Action, ViewCtx, Element = NoElement> + use<State, Action>
     where
-        State: ViewArgument,
+        State: 'static,
         Action: 'static,
     {
         map_message_result(

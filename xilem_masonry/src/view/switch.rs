@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widgets::{self, SwitchToggled};
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 /// A switch switch element which can be in on and off state.
@@ -15,13 +15,12 @@ use crate::{Pod, ViewCtx};
 /// # use xilem_masonry as xilem;
 /// use xilem::view::switch;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     value: bool,
 /// }
 ///
-/// # fn view(app_state: &mut State) -> impl WidgetView<Edit<State>> {
+/// # fn view(app_state: &mut State) -> impl WidgetView<State> {
 /// switch(app_state.value, |app_state: &mut State, new_state: bool| {
 ///     app_state.value = new_state;
 /// })
@@ -29,8 +28,8 @@ use crate::{Pod, ViewCtx};
 /// ```
 pub fn switch<F, State, Action>(on: bool, callback: F) -> Switch<State, Action, F>
 where
-    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
-    State: ViewArgument,
+    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
+    State: 'static,
 {
     Switch {
         on,
@@ -62,14 +61,14 @@ impl<State, Action, F> Switch<State, Action, F> {
 impl<State, Action, F> ViewMarker for Switch<State, Action, F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Switch<State, Action, F>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Switch>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let element = ctx.with_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Switch::new(self.on));
             pod.new_widget.options.disabled = self.disabled;
@@ -84,7 +83,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -108,7 +107,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

@@ -5,7 +5,6 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use xilem::core::Edit;
 use xilem::vello::Scene;
 use xilem::vello::kurbo::{Affine, Circle, Size};
 use xilem::vello::peniko::{Color, Fill};
@@ -39,7 +38,7 @@ impl Circles {
         let color = Color::new([rand_f32(), rand_f32(), rand_f32(), 1.0]);
         self.circles.push((Circle::new(position, radius), color));
     }
-    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         zstack((
             canvas(|state: &mut Self, _ctx, scene: &mut Scene, size: Size| {
                 for (circle, color) in &state.circles {
