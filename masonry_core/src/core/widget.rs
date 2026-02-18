@@ -438,16 +438,16 @@ pub trait Widget: AsDynWidget + Any {
         true
     }
 
-    /// Whether this widget stops pointer events and [hovered] from reaching its children. False by default.
+    /// Whether this widget lets pointer events and [hovered] status reach its children. True by default.
     ///
-    /// If true, the widget's children will not get pointer events, affect the cursor icon,
+    /// If false, the widget's children will not get pointer events, affect the cursor icon,
     /// will never be considered hovered, and will not be returned by `find_widget_under_pointer`.
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     ///
     /// [hovered]: crate::doc::masonry_concepts#hovered
-    fn contains_pointer_interactions(&self) -> bool {
-        false
+    fn propagates_pointer_interaction(&self) -> bool {
+        true
     }
 
     /// Whether this widget gets [text focus]. False by default.
@@ -582,7 +582,7 @@ pub fn find_widget_under_pointer<'c>(
     }
 
     // TEST CHILDREN
-    if !ctx.contains_pointer_interactions() {
+    if ctx.propagates_pointer_interaction() {
         // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
         // of overlapping children.
         for child_id in widget.children_ids().iter().rev() {

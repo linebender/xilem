@@ -138,8 +138,8 @@ impl Widget for Checkbox {
         }
     }
 
-    fn contains_pointer_interactions(&self) -> bool {
-        true
+    fn propagates_pointer_interaction(&self) -> bool {
+        false
     }
 
     fn accepts_focus(&self) -> bool {

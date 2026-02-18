@@ -274,8 +274,8 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accepts_pointer_interaction()
     }
 
-    fn contains_pointer_interactions(&self) -> bool {
-        self.child.contains_pointer_interactions()
+    fn propagates_pointer_interaction(&self) -> bool {
+        self.child.propagates_pointer_interaction()
     }
 
     fn accepts_focus(&self) -> bool {

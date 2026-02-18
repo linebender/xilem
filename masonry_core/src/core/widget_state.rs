@@ -157,7 +157,7 @@ pub(crate) struct WidgetState {
     pub(crate) accepts_pointer_interaction: bool,
     /// Tracks whether children of this widget get pointer events.
     /// Should be immutable after `WidgetAdded` event.
-    pub(crate) contains_pointer_interactions: bool,
+    pub(crate) propagates_pointer_interaction: bool,
     /// Tracks whether widget gets text focus.
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) accepts_focus: bool,
@@ -286,7 +286,7 @@ impl WidgetState {
 
             action_type,
             accepts_pointer_interaction: true,
-            contains_pointer_interactions: false,
+            propagates_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,

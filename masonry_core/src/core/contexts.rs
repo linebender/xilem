@@ -1336,9 +1336,9 @@ impl_context_method!(
 
         /// Whether children of this widget get pointer events and hovered status.
         ///
-        /// See [`Widget::contains_pointer_interactions()`] for details.
-        pub fn contains_pointer_interactions(&self) -> bool {
-            self.widget_state.contains_pointer_interactions
+        /// See [`Widget::propagates_pointer_interaction()`] for details.
+        pub fn propagates_pointer_interaction(&self) -> bool {
+            self.widget_state.propagates_pointer_interaction
         }
 
         /// Whether this widget gets text focus.

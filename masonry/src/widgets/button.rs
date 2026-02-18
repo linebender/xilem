@@ -238,8 +238,8 @@ impl Widget for Button {
         ChildrenIds::from_slice(&[self.child.id()])
     }
 
-    fn contains_pointer_interactions(&self) -> bool {
-        true
+    fn propagates_pointer_interaction(&self) -> bool {
+        false
     }
 
     fn accepts_focus(&self) -> bool {
