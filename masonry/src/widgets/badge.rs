@@ -9,8 +9,8 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, Properties,
-    PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, PropertySet, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Size};
@@ -96,7 +96,7 @@ impl Badge {
             .with_style(StyleProperty::FontSize(12.0))
             .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
             .with_props(
-                Properties::new()
+                PropertySet::new()
                     .with(ContentColor::new(TEXT_COLOR))
                     .with(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR))),
             );
