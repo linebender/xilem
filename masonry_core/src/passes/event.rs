@@ -122,7 +122,7 @@ fn run_event_pass<E>(
             }
 
             let mut props = PropertiesMut {
-                map: &mut node.item.properties,
+                set: &mut node.item.properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             };
             pass_fn(widget, &mut ctx, &mut props, event);
@@ -192,7 +192,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
                 is_handled: false,
             };
             let mut props = PropertiesMut {
-                map: &mut layer_root.item.properties,
+                set: &mut layer_root.item.properties,
                 default_map: root.default_properties.for_widget(layer.type_id()),
             };
 
