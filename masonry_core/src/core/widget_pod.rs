@@ -93,7 +93,7 @@ impl<W: Widget> NewWidget<W> {
     }
 
     /// Creates a new widget with a potential [`WidgetTag`],
-    /// custom [`WidgetOptions`] and custom [`Properties`].
+    /// custom [`WidgetOptions`] and custom [`PropertySet`].
     pub fn new_with(
         inner: W,
         tag: Option<WidgetTag<W>>,
@@ -124,7 +124,7 @@ impl<W: Widget> NewWidget<W> {
     }
 
     // TODO - Replace with builder methods? More allocations then though?
-    /// Creates a new widget with custom [`Properties`].
+    /// Creates a new widget with custom [`PropertySet`].
     #[inline(always)]
     pub fn new_with_props(inner: W, props: impl Into<PropertySet>) -> Self {
         Self::new_with(inner, None, WidgetOptions::default(), props)

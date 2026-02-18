@@ -550,7 +550,7 @@ pub trait Widget: AsDynWidget + Any {
         NewWidget::new(self)
     }
 
-    /// Convenience method to wrap this in a [`NewWidget`] with the given [`Properties`].
+    /// Convenience method to wrap this in a [`NewWidget`] with the given [`PropertySet`].
     fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,

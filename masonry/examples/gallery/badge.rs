@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, Properties, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::layout::Length;
 use masonry::parley::style::FontWeight;
 use masonry::peniko::Color;
@@ -85,12 +85,12 @@ impl DemoPage for BadgeDemo {
 
         let beta_badge = NewWidget::new_with_props(
             Badge::with_text("Beta"),
-            Properties::new().with(Background::Color(Color::from_rgb8(0xd9, 0x77, 0x06))),
+            PropertySet::new().with(Background::Color(Color::from_rgb8(0xd9, 0x77, 0x06))),
         );
 
         let outline_badge = NewWidget::new_with_props(
             Badge::with_text("99+"),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::TRANSPARENT))
                 .with(BorderWidth { width: 1.0 })
                 .with(BorderColor {
@@ -150,7 +150,7 @@ impl DemoPage for BadgeDemo {
                 .with_auto_id(),
             )
             .size(Length::const_px(72.0), Length::const_px(72.0)),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x3f, 0x3f, 0x46)))
                 .with(CornerRadius { radius: 999.0 })
                 .with(Padding::all(0.0)),
@@ -162,7 +162,7 @@ impl DemoPage for BadgeDemo {
                     .size(Length::const_px(10.0), Length::const_px(10.0))
                     .with_auto_id(),
             ),
-            Properties::new()
+            PropertySet::new()
                 .with(Padding::all(0.0))
                 .with(CornerRadius { radius: 999.0 })
                 .with(BorderWidth { width: 0.0 })
