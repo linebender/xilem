@@ -3,7 +3,7 @@
 
 //! Shows creating components.
 
-use xilem_web::core::{Edit, ViewArgument, map_action};
+use xilem_web::core::map_action;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
 use xilem_web::{Action, App, DomFragment, document_body};
@@ -28,7 +28,7 @@ fn card<State, Child, ChildAction>(
 ) -> impl Element<State, CardAction<ChildAction>>
 where
     Child: DomFragment<State, ChildAction>,
-    State: ViewArgument + 'static,
+    State: 'static,
     ChildAction: 'static,
 {
     let content = map_action(
@@ -47,17 +47,17 @@ where
     .class("card")
 }
 
-fn app_logic(state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
     let card = map_action(
         card(
             "Card Example",
             state.card_collapsed,
             html::div((
                 "Some content ...",
-                html::button("click"),
-                // .on_click(|s: &mut AppState, _| {
-                //     s.clicks += 1;
-                // })
+                state.clicks,
+                html::button("click").on_click(|s: &mut AppState, _| {
+                    s.clicks += 1;
+                }),
             )),
         ),
         |state: &mut AppState, msg: CardAction<()>| match msg {
