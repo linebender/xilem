@@ -6,7 +6,7 @@ use crate::util::AnyMap;
 
 /// Mutable reference to a collection of [properties](Property) that a widget has access to.
 ///
-/// Used by the [`Widget`] trait during most passes.
+/// Used by the [`Widget`](crate::core::Widget) trait during most passes.
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
     pub(crate) default_map: &'a AnyMap,

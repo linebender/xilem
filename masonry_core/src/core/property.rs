@@ -26,6 +26,8 @@ pub trait Property: Default + Clone + Send + Sync + 'static {
     /// We do that is by creating a static inside each impl, and returning a reference to that static.
     ///
     /// Ideally, when const generics are stable, we'll want to use `const Default` directly in the default impl.
+    ///
+    /// [`PropertiesRef::get()`]: crate::core::PropertiesRef::get
     fn static_default() -> &'static Self;
 
     /// Returns `true` if the given `property_type` matches this property.
