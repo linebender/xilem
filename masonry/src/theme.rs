@@ -19,8 +19,8 @@ use crate::properties::{
     TrackThickness, UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch,
-    TextArea, TextInput,
+    Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner,
+    Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -62,6 +62,14 @@ pub const WIDGET_CONTROL_COMPONENT_PADDING: Length = Length::const_px(4.0);
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
+
+    // Badge
+    properties.insert::<Badge, _>(Padding::from_vh(3., 5.));
+    properties.insert::<Badge, _>(CornerRadius { radius: 999. });
+    properties.insert::<Badge, _>(BorderWidth { width: 0. });
+    properties.insert::<Badge, _>(Background::Color(ACCENT_COLOR));
+    properties.insert::<Badge, _>(DisabledBackground(Background::Color(ZYNC_800)));
+    properties.insert::<Badge, _>(BorderColor { color: ZYNC_700 });
 
     // Button
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
