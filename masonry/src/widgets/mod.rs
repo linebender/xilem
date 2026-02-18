@@ -4,9 +4,13 @@
 //! Common widgets.
 
 mod align;
+mod badge;
+mod badged;
 mod button;
 mod canvas;
 mod checkbox;
+mod collapse_panel;
+mod disclosure_button;
 mod divider;
 mod flex;
 mod grid;
@@ -34,9 +38,13 @@ mod zstack;
 // (e.g. actions, param types)
 
 pub use self::align::*;
+pub use self::badge::*;
+pub use self::badged::*;
 pub use self::button::*;
 pub use self::canvas::*;
 pub use self::checkbox::*;
+pub use self::collapse_panel::*;
+pub use self::disclosure_button::*;
 pub use self::divider::*;
 pub use self::flex::*;
 pub use self::grid::*;

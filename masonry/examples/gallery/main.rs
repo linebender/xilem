@@ -10,6 +10,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+mod badge;
 mod basics;
 mod checkbox;
 mod demo;
@@ -228,6 +229,7 @@ impl AppDriver for Driver {
 fn build_demos() -> Vec<Box<dyn DemoPage>> {
     let mut demos: Vec<Box<dyn DemoPage>> = vec![
         Box::new(basics::BasicsDemo::new(new_demo_shell_tags())),
+        Box::new(badge::BadgeDemo::new(new_demo_shell_tags())),
         Box::new(checkbox::CheckboxDemo::new(new_demo_shell_tags())),
         Box::new(divider::DividerDemo::new(new_demo_shell_tags())),
         Box::new(image::ImageDemo::new(new_demo_shell_tags())),

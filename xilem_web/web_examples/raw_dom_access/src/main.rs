@@ -10,7 +10,6 @@
 //! after a callback has been performed in
 //! `after_build`, `after_rebuild` or `before_teardown`.
 
-use xilem_web::core::Edit;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
@@ -22,7 +21,7 @@ struct AppState {
     show_input: bool,
 }
 
-fn app_logic(app_state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
+fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
     html::div(if app_state.show_input {
         Either::A(html::div((
             html::button("remove input").on_click(|app_state: &mut AppState, _| {

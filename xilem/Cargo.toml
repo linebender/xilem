@@ -143,3 +143,7 @@ name = "canvas"
 [[test]]
 name = "long_elem_seq"
 path = "stress_tests/long_elem_seq.rs"
+
+[[test]]
+name = "property_stack"
+path = "stress_tests/property_stack.rs"

@@ -6,7 +6,6 @@
 use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_web::core::{Edit, ViewArgument};
 use xilem_web::elements::html::{div, input, label, span};
 use xilem_web::elements::svg::{g, svg};
 use xilem_web::interfaces::{
@@ -46,7 +45,7 @@ impl SplineLine {
         }
     }
 
-    fn view<State: ViewArgument>(&self) -> impl SvgPathElement<State> + use<State> {
+    fn view<State: 'static>(&self) -> impl SvgPathElement<State> + use<State> {
         QuadSpline::new(self.points.clone())
             .to_quads()
             .fold(BezPath::new(), |mut b, q| {
@@ -65,7 +64,7 @@ struct Draw {
     cursor_position: Point,
     canvas_position: Point,
     draw_position: Point,
-    memoized_line_views: Vec<Rc<AnyDomView<Edit<Self>>>>,
+    memoized_line_views: Vec<Rc<AnyDomView<Self>>>,
     new_line_width: f64,
     is_panning: bool,
     zoom: f64,
@@ -113,7 +112,7 @@ impl Draw {
         let color = RAINBOW_COLORS[self.selected_color];
         let line = SplineLine::new(self.draw_position, color, self.new_line_width);
         self.memoized_line_views
-            .push(Rc::new(line.view()) as Rc<AnyDomView<Edit<Self>>>);
+            .push(Rc::new(line.view()) as Rc<AnyDomView<Self>>);
         self.active_line = Some(line);
     }
 
@@ -121,7 +120,7 @@ impl Draw {
         if let Some(cur_line) = &mut self.active_line {
             cur_line.points.push(self.draw_position);
             *self.memoized_line_views.last_mut().unwrap() =
-                Rc::new(cur_line.view()) as Rc<AnyDomView<Edit<Self>>>;
+                Rc::new(cur_line.view()) as Rc<AnyDomView<Self>>;
         }
     }
 
@@ -136,7 +135,7 @@ impl Draw {
         }
     }
 
-    fn view(&mut self) -> impl DomFragment<Edit<Self>> + use<> {
+    fn view(&mut self) -> impl DomFragment<Self> + use<> {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;

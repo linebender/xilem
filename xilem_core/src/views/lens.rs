@@ -5,7 +5,7 @@ use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageCtx, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// The View for [`lens`].
 ///
@@ -30,8 +30,8 @@ impl<CF, V, F, ParentState, ChildState, Action, Context> Debug
 
 /// An adapter which allows using a component which only uses one field of the current state.
 ///
-/// In Xilem, many components are functions of the form `fn my_component(&mut SomeState) -> impl WidgetView<Edit<SomeState>>`.
-/// For example, a date picker might be of the form `fn date_picker(&mut Date) -> impl WidgetView<Edit<Date>>`.
+/// In Xilem, many components are functions of the form `fn my_component(&mut SomeState) -> impl WidgetView<SomeState>`.
+/// For example, a date picker might be of the form `fn date_picker(&mut Date) -> impl WidgetView<Date>`.
 ///
 /// The `lens` View allows using these components in a higher-level component, where the higher level state has
 /// a field of the inner component's state type.
@@ -51,15 +51,15 @@ impl<CF, V, F, ParentState, ChildState, Action, Context> Debug
 ///
 /// ```
 /// # use xilem_core::docs::{DocsView as WidgetView, State as Date, State as Flight, some_component};
-/// use xilem_core::{lens, Edit};
+/// use xilem_core::lens;
 ///
-/// fn date_picker(date: &mut Date) -> impl WidgetView<Edit<Date>> + use<> {
+/// fn date_picker(date: &mut Date) -> impl WidgetView<Date> + use<> {
 /// # some_component(date)
 /// // ...
 /// }
 ///
-/// fn app_logic(state: &mut FlightPlanner) -> impl WidgetView<Edit<FlightPlanner>> {
-///     lens(date_picker, |state: &mut FlightPlanner, ()| &mut state.date)
+/// fn app_logic(state: &mut FlightPlanner) -> impl WidgetView<FlightPlanner> {
+///     lens(date_picker, |state: &mut FlightPlanner| &mut state.date)
 /// }
 ///
 /// struct FlightPlanner {
@@ -74,15 +74,10 @@ pub fn lens<ParentState, Action, Context, ChildState, StateF, InnerView, Compone
     access_state: StateF,
 ) -> Lens<Component, InnerView, StateF, ParentState, ChildState, Action, Context>
 where
-    ChildState: ViewArgument,
-    ParentState: ViewArgument,
-    Component: Fn(Arg<'_, ChildState>) -> InnerView + 'static,
-    StateF: (for<'a> Fn(
-            Arg<'a, ParentState>,
-            // :(, see https://doc.rust-lang.org/error_codes/E0582.html
-            &'a (),
-        ) -> Arg<'a, ChildState>)
-        + 'static,
+    ChildState: 'static,
+    ParentState: 'static,
+    Component: Fn(&mut ChildState) -> InnerView + 'static,
+    StateF: (for<'a> Fn(&'a mut ParentState) -> &'a mut ChildState) + 'static,
     InnerView: View<ChildState, Action, Context>,
     Context: ViewPathTracker,
     Lens<Component, InnerView, StateF, ParentState, ChildState, Action, Context>:
@@ -103,16 +98,11 @@ impl<Component, ParentState, ChildState, Action, Context, InnerView, StateF>
     View<ParentState, Action, Context>
     for Lens<Component, InnerView, StateF, ParentState, ChildState, Action, Context>
 where
-    ParentState: ViewArgument,
-    ChildState: ViewArgument,
+    ParentState: 'static,
+    ChildState: 'static,
     InnerView: View<ChildState, Action, Context>,
-    Component: Fn(Arg<'_, ChildState>) -> InnerView + 'static,
-    StateF: (for<'a> Fn(
-            Arg<'a, ParentState>,
-            // :(, see https://doc.rust-lang.org/error_codes/E0582.html
-            &'a (),
-        ) -> Arg<'a, ChildState>)
-        + 'static,
+    Component: Fn(&mut ChildState) -> InnerView + 'static,
+    StateF: (for<'a> Fn(&'a mut ParentState) -> &'a mut ChildState) + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
 {
@@ -122,15 +112,12 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        mut app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) -> (Self::Element, Self::ViewState) {
-        let child_state = (self.access_state)(ParentState::reborrow_mut(&mut app_state), &());
+        let child_state = (self.access_state)(app_state);
         let child = (self.child_component)(child_state);
-        let (element, child_state) = child.build(
-            ctx,
-            (self.access_state)(ParentState::reborrow_mut(&mut app_state), &()),
-        );
-        (element, (child, child_state))
+        let (element, child_view_state) = child.build(ctx, (self.access_state)(app_state));
+        (element, (child, child_view_state))
     }
 
     fn rebuild(
@@ -139,10 +126,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) {
-        let mut child_state = (self.access_state)(app_state, &());
-        let child = (self.child_component)(ChildState::reborrow_mut(&mut child_state));
+        let child_state = (self.access_state)(app_state);
+        let child = (self.child_component)(&mut *child_state);
         child.rebuild(&view_state.0, &mut view_state.1, ctx, element, child_state);
         view_state.0 = child;
     }
@@ -161,13 +148,13 @@ where
         (child, child_view_state): &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) -> MessageResult<Action> {
         child.message(
             child_view_state,
             message,
             element,
-            (self.access_state)(app_state, &()),
+            (self.access_state)(app_state),
         )
     }
 }

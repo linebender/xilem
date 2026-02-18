@@ -1019,3 +1019,46 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     root.global_state.hovered_path = next_hovered_path;
     root.global_state.active_path = next_active_path;
 }
+
+// --- MARK: FONTS
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
+fn update_fonts_for_widget(
+    global_state: &mut RenderRootState,
+    default_properties: &DefaultProperties,
+    node: ArenaMut<'_, WidgetArenaNode>,
+) {
+    let mut children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let properties = &mut node.item.properties;
+    let id = state.id;
+
+    let _span = enter_span(state);
+
+    let mut ctx = UpdateCtx {
+        global_state,
+        widget_state: state,
+        children: children.reborrow_mut(),
+        default_properties,
+    };
+    let mut props = PropertiesMut {
+        map: properties,
+        default_map: default_properties.for_widget(widget.type_id()),
+    };
+    widget.update(&mut ctx, &mut props, &Update::FontsChanged);
+
+    let parent_state = state;
+    recurse_on_children(id, widget, children, |mut node| {
+        update_fonts_for_widget(global_state, default_properties, node.reborrow_mut());
+        parent_state.merge_up(&mut node.item.state);
+    });
+}
+
+pub(crate) fn run_update_fonts_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_fonts").entered();
+
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
+    update_fonts_for_widget(&mut root.global_state, &root.default_properties, root_node);
+}
+
+// ----------------

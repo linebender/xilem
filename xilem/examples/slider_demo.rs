@@ -21,7 +21,6 @@ use xilem::view::{
     slider, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
 
 // --- Application State ---
 /// Represents the state of our color picker application.
@@ -65,13 +64,13 @@ fn control_slider<F>(
     value: f64,
     u_value: u8,
     on_change: F,
-) -> impl WidgetView<Edit<AppState>>
+) -> impl WidgetView<AppState>
 where
     F: Fn(&mut AppState, f64) + Send + Sync + 'static,
 {
     flex_row((
         label(label_text).width(40.px()),
-        slider::<Edit<AppState>, _, _>(0.0, 100.0, value, on_change).width(200.px()),
+        slider(0.0, 100.0, value, on_change).width(200.px()),
         label(format!("{:.0}% [{}]", value, u_value)).width(60.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -87,7 +86,7 @@ fn perc_to_u8(value: f64) -> u8 {
 // --- Main UI Logic ---
 
 /// The main logic for building the user interface.
-fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let color_red = perc_to_u8(state.red);
     let color_green = perc_to_u8(state.green);
     let color_blue = perc_to_u8(state.blue);

@@ -9,16 +9,18 @@ use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::layout::Length;
+use crate::palette::css::DIM_GRAY;
 use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
-    CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
-    SelectionColor, ThumbColor, ThumbRadius, ToggledBackground, TrackThickness,
-    UnfocusedSelectionColor,
+    CheckmarkStrokeWidth, ContentColor, CornerRadius, Dimensions, DisabledBackground,
+    DisabledCheckmarkColor, DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor,
+    Padding, PlaceholderColor, SelectionColor, ThumbColor, ThumbRadius, ToggledBackground,
+    TrackThickness, UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
+    Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner,
+    Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -61,6 +63,14 @@ pub const WIDGET_CONTROL_COMPONENT_PADDING: Length = Length::const_px(4.0);
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
+    // Badge
+    properties.insert::<Badge, _>(Padding::from_vh(3., 5.));
+    properties.insert::<Badge, _>(CornerRadius { radius: 999. });
+    properties.insert::<Badge, _>(BorderWidth { width: 0. });
+    properties.insert::<Badge, _>(Background::Color(ACCENT_COLOR));
+    properties.insert::<Badge, _>(DisabledBackground(Background::Color(ZYNC_800)));
+    properties.insert::<Badge, _>(BorderColor { color: ZYNC_700 });
+
     // Button
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
     properties.insert::<Button, _>(CornerRadius { radius: 6. });
@@ -93,6 +103,14 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    // DisclosureButton
+    properties.insert::<DisclosureButton, _>(ContentColor::new(DIM_GRAY));
+    properties.insert::<DisclosureButton, _>(Dimensions::fixed(
+        Length::const_px(16.),
+        Length::const_px(16.),
+    ));
+    properties.insert::<DisclosureButton, _>(Padding::all(4.));
 
     // Divider
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));

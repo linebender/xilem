@@ -4,8 +4,8 @@
 //! Support for sequences of views with a shared element type.
 
 use crate::{
-    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, SuperElement, View, ViewArgument,
-    ViewElement, ViewMarker, ViewPathTracker,
+    AppendVec, ElementSplice, MessageCtx, MessageResult, SuperElement, View, ViewElement,
+    ViewMarker, ViewPathTracker,
 };
 
 /// Classes that a [`ViewSequence`] can be a member of, grouped based on the number
@@ -86,7 +86,6 @@ impl Count {
 ///    These can be nested if an ad-hoc sequence of more than 15 sequences is needed.
 pub trait ViewSequence<State, Action, Context, Element>: 'static
 where
-    State: ViewArgument,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -113,7 +112,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> Self::SeqState;
 
     /// Update the associated widgets.
@@ -123,7 +122,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     );
 
     /// Update the associated widgets.
@@ -160,7 +159,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action>;
 }
 
@@ -168,7 +167,7 @@ where
 
 impl<State, Action, Context, V, Element> ViewSequence<State, Action, Context, Element> for V
 where
-    State: ViewArgument,
+    State: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ViewMarker,
     Element: SuperElement<V::Element, Context>,
@@ -182,7 +181,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> Self::SeqState {
         let (element, view_state) = self.build(ctx, app_state);
         elements.push(Element::upcast(ctx, element));
@@ -194,7 +193,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         // Mutate the item we added in `seq_build`
         elements.mutate(|this_element| {
@@ -221,7 +220,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         elements.mutate(|this_element| {
             Element::with_downcast_val(this_element, |element| {

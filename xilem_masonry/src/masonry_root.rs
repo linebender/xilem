@@ -3,15 +3,14 @@
 
 use masonry::app::RenderRoot;
 use masonry::widgets::Passthrough;
-use xilem_core::Edit;
 
-use crate::core::{Arg, MessageCtx, Mut, View, ViewElement, ViewMarker};
+use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 /// A view representing a Masonry [`RenderRoot`].
 pub struct MasonryRoot<State: 'static> {
     /// The view generating the `RenderRoot`'s contents.
-    pub(crate) root_widget_view: Box<AnyWidgetView<Edit<State>, ()>>,
+    pub(crate) root_widget_view: Box<AnyWidgetView<State, ()>>,
 }
 
 pub(crate) type MasonryRootState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
@@ -25,7 +24,7 @@ impl ViewElement for InitialRootWidget {
 
 impl<State: 'static> MasonryRoot<State> {
     /// Create the view from the [`WidgetView`] representing its root widget.
-    pub fn new(root_view: impl WidgetView<Edit<State>>) -> Self {
+    pub fn new(root_view: impl WidgetView<State>) -> Self {
         Self {
             root_widget_view: root_view.boxed(),
         }
@@ -33,16 +32,12 @@ impl<State: 'static> MasonryRoot<State> {
 }
 
 impl<State> ViewMarker for MasonryRoot<State> where State: 'static {}
-impl<State> View<Edit<State>, (), ViewCtx> for MasonryRoot<State> {
+impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
     type Element = InitialRootWidget;
 
     type ViewState = MasonryRootState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, Edit<State>>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         (InitialRootWidget(root_widget), view_state)
     }
@@ -53,7 +48,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for MasonryRoot<State> {
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         render_root: Mut<'_, Self::Element>,
-        app_state: Arg<'_, Edit<State>>,
+        app_state: &mut State,
     ) {
         let mut root_id = None;
         render_root.edit_base_layer(|mut root| {
@@ -90,7 +85,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for MasonryRoot<State> {
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         render_root: Mut<'_, Self::Element>,
-        app_state: Arg<'_, Edit<State>>,
+        app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
         render_root.edit_base_layer(|mut root| {
             self.root_widget_view

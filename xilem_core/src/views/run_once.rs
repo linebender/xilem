@@ -3,9 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{
-    Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker, ViewPathTracker,
-};
+use crate::{MessageCtx, MessageResult, Mut, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -18,9 +16,9 @@ use crate::{
 /// This can be useful for logging a value:
 ///
 /// ```
-/// # use xilem_core::{run_once, View, Edit, docs::{Fake as ViewCtx, DocsView as WidgetView}};
+/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx, DocsView as WidgetView}};
 /// # struct AppData;
-/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
+/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<AppData, ()> {
 ///     run_once(|| eprintln!("View constructed"))
 /// }
 /// ```
@@ -34,11 +32,11 @@ use crate::{
 /// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
-/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}, Edit};
+/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}};
 /// # struct AppData {
 /// #    data: u32
 /// # }
-/// fn log_data(app: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
+/// fn log_data(app: &mut AppData) -> impl WidgetView<AppData, ()> {
 ///     let val = app.data;
 ///     run_once(move || println!("{}", val))
 /// }
@@ -88,7 +86,7 @@ impl<F> Debug for RunOnce<F> {
 impl<F> ViewMarker for RunOnce<F> {}
 impl<F, State, Action, Context> View<State, Action, Context> for RunOnce<F>
 where
-    State: ViewArgument,
+    State: 'static,
     Context: ViewPathTracker,
     F: Fn() + 'static,
 {
@@ -96,7 +94,7 @@ where
 
     type ViewState = ();
 
-    fn build(&self, _: &mut Context, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
         (self.once)();
         (NoElement, ())
     }
@@ -107,7 +105,7 @@ where
         (): &mut Self::ViewState,
         _: &mut Context,
         (): Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         // Nothing to do
     }
@@ -121,7 +119,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> MessageResult<Action> {
         panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }

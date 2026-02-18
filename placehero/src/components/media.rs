@@ -9,10 +9,7 @@ use std::{
 use megalodon::entities::{Attachment, attachment::AttachmentType};
 use xilem::{
     Blob, ImageFormat, WidgetView,
-    core::{
-        ViewArgument,
-        one_of::{OneOf, OneOf4},
-    },
+    core::one_of::{OneOf, OneOf4},
     masonry::peniko::{ImageAlphaType, ImageData},
     view::{ObjectFit, flex_col, image, prose},
 };
@@ -22,7 +19,7 @@ use crate::actions::Navigation;
 /// Render a single media attachment for use in a status.
 ///
 /// This currently doesn't perform any caching.
-pub(crate) fn attachment<State: ViewArgument>(
+pub(crate) fn attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     match attachment.r#type {
@@ -41,7 +38,7 @@ pub(crate) fn attachment<State: ViewArgument>(
 /// This view currently does not cache the blurhash, or take any other steps to
 /// avoid recalculating the image.
 /// We haven't ran into this being a performance issue.
-fn maybe_blurhash<State: ViewArgument>(
+fn maybe_blurhash<State: 'static>(
     attachment: &Attachment,
 ) -> Option<impl WidgetView<State, Navigation> + use<State>> {
     let start = Instant::now();
@@ -90,7 +87,7 @@ fn maybe_blurhash<State: ViewArgument>(
 }
 
 /// Show some useful info for audio attachments.
-fn audio_attachment<State: ViewArgument>(
+fn audio_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((
@@ -106,7 +103,7 @@ fn audio_attachment<State: ViewArgument>(
 }
 
 /// Show some useful info for audio attachments.
-fn video_attachment<State: ViewArgument>(
+fn video_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((
@@ -122,7 +119,7 @@ fn video_attachment<State: ViewArgument>(
 }
 
 /// Show some useful info for audio attachments.
-fn image_attachment<State: ViewArgument>(
+fn image_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((

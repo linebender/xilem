@@ -621,8 +621,6 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     );
     place_widget(&mut root_node.item.state, Point::ORIGIN);
 
-    root.global_state.fonts_changed = false;
-
     if let WindowSizePolicy::Content = root.size_policy {
         // We use the aligned border-box size, which means that transforms won't affect window size.
         let size = root_node.item.state.border_box_size();

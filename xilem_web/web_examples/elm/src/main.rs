@@ -6,7 +6,7 @@
 //! Though usually it's more idiomatic to modularize state with
 //! [`map_state`](xilem_web::core::map_state) or [`lens`](xilem_web::core::lens).
 
-use xilem_web::core::{Edit, map_action};
+use xilem_web::core::map_action;
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlDivElement};
 use xilem_web::{Action, App, document_body};
@@ -33,12 +33,12 @@ fn update(model: &mut Model, message: Message) {
     log::debug!("Model updated: {model:?}");
 }
 
-fn app_logic(model: &mut Model) -> impl HtmlDivElement<Edit<Model>> + use<> {
+fn app_logic(model: &mut Model) -> impl HtmlDivElement<Model> + use<> {
     log::debug!("Render view");
     el::div((map_action(counter_view(model.count), update),))
 }
 
-fn counter_view<T: 'static>(count: i32) -> impl HtmlDivElement<Edit<T>, Message> {
+fn counter_view<T: 'static>(count: i32) -> impl HtmlDivElement<T, Message> {
     el::div((
         el::label(format!("count: {count}")),
         el::button("+").on_click(|_, _| Message::Increment),

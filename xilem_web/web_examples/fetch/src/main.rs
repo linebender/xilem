@@ -7,8 +7,8 @@ use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::concurrent::memoized_await;
+use xilem_web::core::fork;
 use xilem_web::core::one_of::Either;
-use xilem_web::core::{Edit, fork};
 use xilem_web::elements::html::*;
 use xilem_web::interfaces::{
     Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
@@ -101,7 +101,7 @@ where
         .unchecked_into::<web_sys::HtmlInputElement>()
 }
 
-fn app_logic(state: &mut AppState) -> impl HtmlDivElement<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> + use<> {
     div((
         cat_fetch_controls(state),
         fork(
@@ -137,9 +137,7 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<Edit<AppState>> + use<
     ))
 }
 
-fn cat_images_and_fetching_indicator(
-    state: &AppState,
-) -> impl HtmlDivElement<Edit<AppState>> + use<> {
+fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> + use<> {
     let cat_images = state
         .cats
         .iter()
@@ -165,7 +163,7 @@ fn cat_images_and_fetching_indicator(
     div((error_message, fetch_state, cat_images))
 }
 
-fn cat_fetch_controls(state: &AppState) -> impl Element<Edit<AppState>> + use<> {
+fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> + use<> {
     fieldset((
         legend("Cat fetch controls"),
         table((

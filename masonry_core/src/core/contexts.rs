@@ -355,20 +355,14 @@ impl_context_method!(
         /// as a child for non-interactive text.
         /// These contexts could however be useful for custom text editing, such as for rich text editing.
         ///
-        /// Any cached text layouts should be invalidated in the layout pass when [`Self::fonts_changed`]
-        /// returns `true`.
+        /// Any cached text layouts should be invalidated when receiving [`Update::FontsChanged`].
+        ///
+        /// [`Update::FontsChanged`]: crate::core::Update::FontsChanged
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
             (
                 &mut self.global_state.font_context,
                 &mut self.global_state.text_layout_context,
             )
-        }
-
-        /// Whether the set of loaded fonts has changed since layout was most recently called.
-        ///
-        /// Any cached text layouts should be invalidated in the layout pass when this is `true`.
-        pub fn fonts_changed(&mut self) -> bool {
-            self.global_state.fonts_changed
         }
     }
 );

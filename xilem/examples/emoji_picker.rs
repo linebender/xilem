@@ -14,9 +14,8 @@ use xilem::view::{
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
-use xilem_core::Edit;
 
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex_col((
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
         flex_row((
@@ -37,7 +36,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination
                 (data.size * data.size) as usize,
                 data.emoji.len(),
             ),
-            |state: &mut EmojiPagination, ()| &mut state.start_index,
+            |state: &mut EmojiPagination| &mut state.start_index,
         ),
         data.last_selected
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
@@ -45,7 +44,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination
     ))
 }
 
-fn picker(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
+fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     let mut grid_items = vec![];
     'outer: for y in 0..data.size as usize {
         let row_idx = data.start_index + y * data.size as usize;
@@ -95,7 +94,7 @@ fn paginate(
     current_start: usize,
     count_per_page: usize,
     max_count: usize,
-) -> impl WidgetView<Edit<usize>> {
+) -> impl WidgetView<usize> {
     let current_end = (current_start + count_per_page).min(max_count);
     let percentage_start = (current_start * 100) / max_count;
     let percentage_end = (current_end * 100) / max_count;
