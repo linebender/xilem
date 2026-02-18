@@ -6,9 +6,7 @@ use std::marker::PhantomData;
 use masonry::kurbo::Vec2;
 use masonry::widgets::{self, BadgePlacement};
 
-use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// Decorate `content` by overlaying a badge widget on top of it.
@@ -17,7 +15,7 @@ pub fn badged<State, Action, Content, BadgeV>(
     badge: BadgeV,
 ) -> Badged<Content, BadgeV, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Content: WidgetView<State, Action>,
     BadgeV: WidgetView<State, Action>,
@@ -37,7 +35,7 @@ pub fn badged_optional<State, Action, Content, BadgeV>(
     badge: Option<BadgeV>,
 ) -> Badged<Content, BadgeV, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Content: WidgetView<State, Action>,
     BadgeV: WidgetView<State, Action>,
@@ -96,7 +94,7 @@ impl<Content, BadgeV, State, Action> ViewMarker for Badged<Content, BadgeV, Stat
 impl<Content, BadgeV, State, Action> View<State, Action, ViewCtx>
     for Badged<Content, BadgeV, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     Content: WidgetView<State, Action>,
     BadgeV: WidgetView<State, Action>,
@@ -104,24 +102,14 @@ where
     type Element = Pod<widgets::Badged>;
     type ViewState = BadgedState<Content::ViewState, BadgeV::ViewState>;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
-        let mut app_state = app_state;
-
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (content_el, content_state) = ctx.with_id(BADGED_CONTENT_VIEW_ID, |ctx| {
-            View::<State, Action, _>::build(&self.content, ctx, State::reborrow_mut(&mut app_state))
+            View::<State, Action, _>::build(&self.content, ctx, app_state)
         });
         let (badge_new, badge_state) = match &self.badge {
             Some(badge_view) => {
                 let (badge_el, badge_state) = ctx.with_id(BADGED_BADGE_VIEW_ID, |ctx| {
-                    View::<State, Action, _>::build(
-                        badge_view,
-                        ctx,
-                        State::reborrow_mut(&mut app_state),
-                    )
+                    View::<State, Action, _>::build(badge_view, ctx, app_state)
                 });
                 (Some(badge_el.new_widget.erased()), Some(badge_state))
             }
@@ -146,7 +134,7 @@ where
         BadgedState { content, badge }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         if prev.placement != self.placement {
             widgets::Badged::set_badge_placement(&mut element, self.placement);
@@ -155,8 +143,6 @@ where
             widgets::Badged::set_badge_offset(&mut element, self.offset);
         }
 
-        let mut app_state = app_state;
-
         ctx.with_id(BADGED_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
                 &self.content,
@@ -164,7 +150,7 @@ where
                 content,
                 ctx,
                 widgets::Badged::content_mut(&mut element).downcast(),
-                State::reborrow_mut(&mut app_state),
+                app_state,
             );
         });
 
@@ -185,17 +171,13 @@ where
                         badge_state,
                         ctx,
                         badge_el.downcast(),
-                        State::reborrow_mut(&mut app_state),
+                        app_state,
                     );
                 });
             }
             (Some(badge_view), None) => {
                 let (new_badge_el, new_badge_state) = ctx.with_id(BADGED_BADGE_VIEW_ID, |ctx| {
-                    View::<State, Action, _>::build(
-                        badge_view,
-                        ctx,
-                        State::reborrow_mut(&mut app_state),
-                    )
+                    View::<State, Action, _>::build(badge_view, ctx, app_state)
                 });
                 widgets::Badged::set_badge(&mut element, new_badge_el.new_widget);
                 *badge = Some(new_badge_state);
@@ -255,15 +237,14 @@ where
         BadgedState { content, badge }: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
-        let mut app_state = app_state;
         match message.take_first() {
             Some(BADGED_CONTENT_VIEW_ID) => self.content.message(
                 content,
                 message,
                 widgets::Badged::content_mut(&mut element).downcast(),
-                State::reborrow_mut(&mut app_state),
+                app_state,
             ),
             Some(BADGED_BADGE_VIEW_ID) => {
                 let Some(badge_view) = &self.badge else {
@@ -287,12 +268,7 @@ where
                     );
                     return MessageResult::Stale;
                 };
-                badge_view.message(
-                    badge_state,
-                    message,
-                    badge_el.downcast(),
-                    State::reborrow_mut(&mut app_state),
-                )
+                badge_view.message(badge_state, message, badge_el.downcast(), app_state)
             }
             None => {
                 tracing::error!(
