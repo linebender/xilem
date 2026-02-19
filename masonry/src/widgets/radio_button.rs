@@ -490,10 +490,11 @@ mod tests {
 
         let radio = NewWidget::new(RadioButton::new(true, "Focus test"));
         let radio_id = radio.id();
+        let group = NewWidget::new(RadioGroup::new(radio));
 
         let root = NewWidget::new(
             Flex::row()
-                .with_fixed(radio)
+                .with_fixed(group)
                 .main_axis_alignment(MainAxisAlignment::Center),
         );
         let mut harness =
@@ -513,20 +514,24 @@ mod tests {
                 Properties::new().with(ContentColor::new(ACCENT_COLOR)),
             );
             let radio = NewWidget::new(RadioButton::from_label(true, label));
+            let group = NewWidget::new(RadioGroup::new(radio));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), radio, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(default_property_set(), group, Size::new(50.0, 50.0));
 
             harness.render()
         };
 
         let image_2 = {
             let radio = NewWidget::new(RadioButton::new(false, "Hello world"));
+            let group = NewWidget::new(RadioGroup::new(radio));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), radio, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(default_property_set(), group, Size::new(50.0, 50.0));
 
-            harness.edit_root_widget(|mut radio| {
+            harness.edit_root_widget(|mut group| {
+                let mut radio = RadioGroup::child_mut(&mut group);
+                let mut radio = radio.downcast();
                 RadioButton::set_checked(&mut radio, true);
                 RadioButton::set_text(
                     &mut radio,
