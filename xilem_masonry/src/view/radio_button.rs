@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
 use masonry::core::ArcStr;
@@ -76,14 +76,14 @@ impl<F> RadioButton<F> {
 impl<F> ViewMarker for RadioButton<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for RadioButton<F>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    F: Fn(Arg<'_, State>) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::RadioButton>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let element = ctx.with_action_widget(|ctx| {
             let mut pod =
                 ctx.create_pod(widgets::RadioButton::new(self.checked, self.label.clone()));
@@ -99,7 +99,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -126,7 +126,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),
