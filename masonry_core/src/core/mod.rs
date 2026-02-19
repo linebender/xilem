@@ -7,6 +7,7 @@ mod contexts;
 mod events;
 mod layer;
 mod properties;
+mod pseudo_class;
 mod text;
 mod widget;
 mod widget_arena;
@@ -28,6 +29,8 @@ pub use widget_paint::*;
 pub use widget_pod::*;
 pub use widget_ref::*;
 pub use widget_tag::*;
+
+pub use pseudo_class::*;
 
 pub use cursor_icon::CursorIcon;
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};

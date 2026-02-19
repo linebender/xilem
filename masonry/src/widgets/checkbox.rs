@@ -8,6 +8,7 @@ use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
+use crate::PSEUDO_TOGGLED;
 use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
@@ -70,8 +71,8 @@ impl Checkbox {
     /// Checks or unchecks the box.
     pub fn set_checked(this: &mut WidgetMut<'_, Self>, checked: bool) {
         this.widget.checked = checked;
-        // Checked state impacts appearance and accessibility node
-        this.ctx.request_render();
+        this.ctx.set_pseudo(PSEUDO_TOGGLED, checked);
+        this.ctx.request_accessibility_update();
     }
 
     /// Sets the text.
@@ -157,13 +158,14 @@ impl Widget for Checkbox {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+        // Interaction state changes (hover, focus, disabled) now automatically
+        // invalidate paint via pseudo-class tracking in the framework.
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
