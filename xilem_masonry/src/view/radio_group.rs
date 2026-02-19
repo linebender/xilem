@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 use masonry::widgets;
@@ -39,7 +39,7 @@ use masonry::widgets;
 /// ```
 pub fn radio_group<State, Action, V>(child: V) -> RadioGroup<V>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -57,18 +57,14 @@ pub struct RadioGroup<V> {
 impl<V> ViewMarker for RadioGroup<V> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for RadioGroup<V>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
     type Element = Pod<widgets::RadioGroup>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.child.build(ctx, app_state);
         let widget = widgets::RadioGroup::new(child.new_widget);
 
@@ -81,7 +77,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::RadioGroup::child_mut(&mut element)
             .expect("We only create RadioGroup with a child");
@@ -105,7 +101,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut child = widgets::RadioGroup::child_mut(&mut element)
             .expect("We only create RadioGroup with a child");
