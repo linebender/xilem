@@ -23,7 +23,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{TypeSet, get_debug_color};
+use crate::util::{ParentLinkedList, TypeSet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -105,6 +105,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) ancestors: Option<&'a ParentLinkedList<'a>>,
 }
 
 /// A context provided to [`Widget::measure`] methods.
@@ -295,6 +296,7 @@ impl MutateCtx<'_> {
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
+            ancestors: None,
         }
     }
 
@@ -1611,6 +1613,22 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
+        /// Queues a callback that will be called with a [`WidgetMut`] for the widget with the given id.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_widget_later(
+            &mut self,
+            // TODO - Use WidgetTag instead?
+            id: WidgetId,
+            f: impl FnOnce(WidgetMut<'_, dyn Widget>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id,
+                callback: Box::new(f),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
         /// Returns direct reference to the stored child, and a context handle for that child.
         pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
@@ -1834,6 +1852,24 @@ impl_context_method!(
         }
     }
 );
+
+impl UpdateCtx<'_> {
+    /// Returns the nearest ancestor of this widget that is of type `W`, along with its `WidgetId`.
+    ///
+    /// This should only be called during [`WidgetAdded`](crate::core::Update::WidgetAdded).
+    /// Calling it in other contexts will always return `None`.
+    // FIXME: We should move this method out of `UpdateCtx` to avoid having this disclaimer.
+    pub fn nearest_ancestor<W: Widget>(&self) -> Option<(&W, WidgetId)> {
+        let mut list = self.ancestors;
+        while let Some(node) = list {
+            if let Some(widget) = W::from_dyn(node.widget) {
+                return Some((widget, node.id));
+            }
+            list = node.parent;
+        }
+        None
+    }
+}
 
 impl RegisterCtx<'_> {
     /// Registers a child widget.

@@ -15,6 +15,7 @@ use crate::core::{
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
+use crate::util::ParentLinkedList;
 
 // --- MARK: HELPERS
 /// Returns the id path starting from the given widget id and ending at the root.
@@ -73,6 +74,7 @@ fn run_targeted_update_pass(
             widget_state: state,
             children,
             default_properties: &root.default_properties,
+            ancestors: None,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -109,6 +111,7 @@ fn run_single_update_pass(
         widget_state: state,
         children,
         default_properties: &root.default_properties,
+        ancestors: None,
     };
     let mut props = PropertiesMut {
         map: properties,
@@ -128,6 +131,7 @@ fn update_widget_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     node: ArenaMut<'_, WidgetArenaNode>,
+    ancestors: Option<&ParentLinkedList<'_>>,
 ) {
     let mut children = node.children;
     let widget = &mut *node.item.widget;
@@ -150,6 +154,7 @@ fn update_widget_tree(
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
+            ancestors,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -175,7 +180,17 @@ fn update_widget_tree(
     // to the arena above.
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {
-        update_widget_tree(global_state, default_properties, node.reborrow_mut());
+        let ancestors = ParentLinkedList {
+            widget,
+            id,
+            parent: ancestors,
+        };
+        update_widget_tree(
+            global_state,
+            default_properties,
+            node.reborrow_mut(),
+            Some(&ancestors),
+        );
         parent_state.merge_up(&mut node.item.state);
     });
 }
@@ -245,7 +260,12 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     }
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    update_widget_tree(&mut root.global_state, &root.default_properties, root_node);
+    update_widget_tree(
+        &mut root.global_state,
+        &root.default_properties,
+        root_node,
+        None,
+    );
 }
 
 // ----------------
@@ -278,6 +298,7 @@ fn update_disabled_for_widget(
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
+            ancestors: None,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -357,6 +378,7 @@ fn update_stashed_for_widget(
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
+            ancestors: None,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -1041,6 +1063,7 @@ fn update_fonts_for_widget(
         widget_state: state,
         children: children.reborrow_mut(),
         default_properties,
+        ancestors: None,
     };
     let mut props = PropertiesMut {
         map: properties,

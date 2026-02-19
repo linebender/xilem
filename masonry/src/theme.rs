@@ -19,8 +19,8 @@ use crate::properties::{
     TrackThickness, UnfocusedSelectionColor,
 };
 use crate::widgets::{
-    Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Spinner,
-    Switch, TextArea, TextInput,
+    Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar,
+    RadioButton, Spinner, Switch, TextArea, TextInput,
 };
 
 /// Default color for the app background.
@@ -192,6 +192,23 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(Background::Color(ZYNC_900));
     properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
+
+    // RadioButton
+    properties.insert::<RadioButton, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<RadioButton, _>(Background::Color(ZYNC_800));
+    properties.insert::<RadioButton, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<RadioButton, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<RadioButton, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<RadioButton, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<RadioButton, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+
+    properties.insert::<RadioButton, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<RadioButton, _>(DisabledCheckmarkColor(CheckmarkColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
 
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));

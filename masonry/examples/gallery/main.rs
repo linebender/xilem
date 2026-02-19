@@ -18,6 +18,7 @@ mod divider;
 mod image;
 mod kitchen_sink;
 mod progress;
+mod radio_buttons;
 mod slider;
 mod spinner;
 mod split;
@@ -33,8 +34,8 @@ use masonry::properties::Padding;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
-    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal, SizedBox,
-    SwitchToggled,
+    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal,
+    RadioButtonSelected, SizedBox, SwitchToggled,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -189,6 +190,25 @@ impl AppDriver for Driver {
             Err(action) => action,
         };
 
+        // Selected radio button.
+        let action = match action.downcast::<RadioButtonSelected>() {
+            Ok(_) => {
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_radio_button_selected(render_root, widget_id))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
         // Switch toggles.
         let action = match action.downcast::<SwitchToggled>() {
             Ok(toggled) => {
@@ -235,6 +255,7 @@ fn build_demos() -> Vec<Box<dyn DemoPage>> {
         Box::new(image::ImageDemo::new(new_demo_shell_tags())),
         Box::new(kitchen_sink::KitchenSinkDemo::new(new_demo_shell_tags())),
         Box::new(progress::ProgressDemo::new(new_demo_shell_tags())),
+        Box::new(radio_buttons::RadioButtonsDemo::new(new_demo_shell_tags())),
         Box::new(slider::SliderDemo::new(new_demo_shell_tags())),
         Box::new(spinner::SpinnerDemo::new(new_demo_shell_tags())),
         Box::new(split::SplitDemo::new(new_demo_shell_tags())),
