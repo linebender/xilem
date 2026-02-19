@@ -74,7 +74,7 @@ impl<S> ModularWidget<S> {
             state,
             icon: CursorIcon::Default,
             accepts_pointer_interaction: true,
-            propagates_pointer_interaction: false,
+            propagates_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
             on_pointer_event: None,
