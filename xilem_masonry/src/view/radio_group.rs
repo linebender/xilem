@@ -79,8 +79,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        let mut child = widgets::RadioGroup::child_mut(&mut element)
-            .expect("We only create RadioGroup with a child");
+        let mut child = widgets::RadioGroup::child_mut(&mut element);
         self.child
             .rebuild(&prev.child, view_state, ctx, child.downcast(), app_state);
     }
@@ -91,8 +90,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
-        let mut child = widgets::RadioGroup::child_mut(&mut element)
-            .expect("We only create RadioGroup with a child");
+        let mut child = widgets::RadioGroup::child_mut(&mut element);
         self.child.teardown(view_state, ctx, child.downcast());
     }
 
@@ -103,8 +101,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let mut child = widgets::RadioGroup::child_mut(&mut element)
-            .expect("We only create RadioGroup with a child");
+        let mut child = widgets::RadioGroup::child_mut(&mut element);
         self.child
             .message(view_state, message, child.downcast(), app_state)
     }

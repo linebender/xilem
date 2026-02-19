@@ -31,10 +31,10 @@ impl RadioGroup {
 
 // --- MARK: WIDGETMUT
 impl RadioGroup {
-    /// Get mutable reference to the child widget, if any.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
+    /// Get mutable reference to the child widget.
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         let child = &mut this.widget.child;
-        Some(this.ctx.get_mut(child))
+        this.ctx.get_mut(child)
     }
 }
 

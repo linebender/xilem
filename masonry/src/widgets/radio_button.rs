@@ -452,6 +452,7 @@ mod tests {
     #[test]
     fn simple_radio_button() {
         let widget = NewWidget::new(RadioButton::new(false, "Hello"));
+        let widget = NewWidget::new(RadioGroup::new(widget));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
@@ -470,7 +471,10 @@ mod tests {
 
         assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
-        harness.edit_root_widget(|mut radio| RadioButton::set_checked(&mut radio, true));
+        harness.edit_root_widget(|mut group| {
+            let mut radio = RadioGroup::child_mut(&mut group).downcast();
+            RadioButton::set_checked(&mut radio, true)
+        });
 
         assert_render_snapshot!(harness, "radio_button_hello_checked");
 
