@@ -52,6 +52,6 @@ impl PropertiesRef<'_> {
 
     /// Returns a reference to the local properties for direct access.
     pub fn local_properties(&self) -> &PropertySet {
-        &self.set
+        self.set
     }
 }

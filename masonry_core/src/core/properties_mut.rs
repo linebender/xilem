@@ -72,7 +72,7 @@ impl PropertiesMut<'_> {
 
     /// Returns a mutable reference to the local properties for direct access.
     pub fn local_properties(&mut self) -> &mut PropertySet {
-        &mut self.set
+        self.set
     }
 
     /// Returns a `PropertiesMut` for the same underlying properties with a shorter lifetime.
