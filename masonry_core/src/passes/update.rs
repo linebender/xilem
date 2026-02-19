@@ -657,6 +657,9 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_focus_target != has_focused {
                     widget.update(ctx, props, &Update::ChildFocusChanged(has_focused));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_focus_target = has_focused;
                 ctx.widget_state
@@ -841,6 +844,9 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_active != has_active {
                     widget.update(ctx, props, &Update::ChildActiveChanged(has_active));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_active = has_active;
             });
@@ -946,6 +952,9 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_hovered != has_hovered {
                     widget.update(ctx, props, &Update::ChildHoveredChanged(has_hovered));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_hovered = has_hovered;
             });
