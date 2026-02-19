@@ -84,11 +84,6 @@ pub struct CanvasSizeChanged {
 impl Widget for Canvas {
     type Action = CanvasSizeChanged;
 
-    // TODO - Do we want the Canvas to be transparent to pointer events?
-    fn accepts_pointer_interaction(&self) -> bool {
-        true
-    }
-
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn measure(

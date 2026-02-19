@@ -138,8 +138,11 @@ impl Widget for Checkbox {
         }
     }
 
+    fn propagates_pointer_interaction(&self) -> bool {
+        false
+    }
+
     fn accepts_focus(&self) -> bool {
-        // Checkbox can be tab-focused...
         true
     }
 

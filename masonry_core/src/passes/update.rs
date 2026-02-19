@@ -160,6 +160,7 @@ fn update_widget_tree(
             trace!("{} received Update::WidgetAdded", widget.short_type_name());
         }
         state.accepts_pointer_interaction = widget.accepts_pointer_interaction();
+        state.propagates_pointer_interaction = widget.propagates_pointer_interaction();
         state.accepts_focus = widget.accepts_focus();
         state.accepts_text_input = widget.accepts_text_input();
         state.trace_span = widget.make_trace_span(state.id);

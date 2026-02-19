@@ -287,10 +287,6 @@ impl HasProperty<Gap> for Grid {}
 impl Widget for Grid {
     type Action = NoAction;
 
-    fn accepts_pointer_interaction(&self) -> bool {
-        false
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
             ctx.register_child(&mut child.widget);
