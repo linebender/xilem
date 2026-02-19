@@ -443,7 +443,7 @@ impl Widget for RadioButton {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Properties, StyleProperty};
+    use crate::core::{Properties, StyleProperty, WidgetTag};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
@@ -451,17 +451,22 @@ mod tests {
 
     #[test]
     fn simple_radio_button() {
-        let widget = NewWidget::new(RadioButton::new(false, "Hello"));
+        let radio_tag = WidgetTag::unique();
+        let widget = NewWidget::new_with_tag(RadioButton::new(false, "Hello"), radio_tag);
         let widget = NewWidget::new(RadioGroup::new(widget));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
-        let radio_id = harness.root_id();
+        let radio_id = harness.get_widget(radio_tag).id();
 
         assert_render_snapshot!(harness, "radio_button_hello_unchecked");
 
         assert!(harness.pop_action_erased().is_none());
+
+        harness.mouse_move_to(radio_id);
+
+        assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
         harness.mouse_click_on(radio_id);
         assert_eq!(
@@ -469,15 +474,16 @@ mod tests {
             Some((RadioButtonSelected, radio_id))
         );
 
-        assert_render_snapshot!(harness, "radio_button_hello_hovered");
+        assert_render_snapshot!(harness, "radio_button_hello_checked");
 
         harness.edit_root_widget(|mut group| {
             let mut radio = RadioGroup::child_mut(&mut group);
             let mut radio = radio.downcast();
-            RadioButton::set_checked(&mut radio, true);
+            RadioButton::set_checked(&mut radio, false);
         });
 
-        assert_render_snapshot!(harness, "radio_button_hello_checked");
+        // The radio button should be unchecked again, but still hovered
+        assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
         harness.focus_on(None);
         harness.press_tab_key(false);
