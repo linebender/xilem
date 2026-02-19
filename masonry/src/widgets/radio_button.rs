@@ -472,8 +472,9 @@ mod tests {
         assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
         harness.edit_root_widget(|mut group| {
-            let mut radio = RadioGroup::child_mut(&mut group).downcast();
-            RadioButton::set_checked(&mut radio, true)
+            let mut radio = RadioGroup::child_mut(&mut group);
+            let mut radio = radio.downcast();
+            RadioButton::set_checked(&mut radio, true);
         });
 
         assert_render_snapshot!(harness, "radio_button_hello_checked");
