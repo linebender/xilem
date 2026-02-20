@@ -13,7 +13,7 @@ use crate::core::{
     NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::Gap;
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
@@ -934,8 +934,6 @@ impl Widget for Flex {
 
         let mut main_space = size.get_coord(main) - gap_count as f64 * gap_length;
         let mut flex_sum = 0.;
-        let mut max_ascent: f64 = 0.;
-        let mut lowest_baseline: f64 = f64::INFINITY;
 
         // Helper function to calculate child size when main length is decided
         let compute_child_size =
@@ -960,31 +958,6 @@ impl Widget for Flex {
 
                 main.pack_size(child_main_length, child_cross_length)
             };
-
-        // Helper function to lay out children
-        let mut lay_out_child = |ctx: &mut LayoutCtx<'_>,
-                                 child: &mut WidgetPod<dyn Widget + 'static>,
-                                 child_size: Size| {
-            ctx.run_layout(child, child_size);
-
-            let baseline = ctx.child_baseline_offset(child);
-            let ascent = child_size.height - baseline;
-            max_ascent = max_ascent.max(ascent);
-        };
-
-        // Helper function to place children
-        let mut place_child = |ctx: &mut LayoutCtx<'_>,
-                               child: &mut WidgetPod<dyn Widget + 'static>,
-                               child_origin: Point| {
-            ctx.place_child(child, child_origin);
-
-            let child_baseline = ctx.child_baseline_offset(child);
-            let child_size = ctx.child_size(child);
-            let child_bottom = child_origin.y + child_size.height;
-            let bottom_gap = size.height - child_bottom;
-            let baseline = child_baseline + bottom_gap;
-            lowest_baseline = lowest_baseline.min(baseline);
-        };
 
         // Sum flex factors, resolve bases, subtract bases from main space,
         // and lay out inflexible widgets.
@@ -1022,7 +995,7 @@ impl Widget for Flex {
                         let child_size =
                             compute_child_size(ctx, widget, child_main_length, alignment);
 
-                        lay_out_child(ctx, widget, child_size);
+                        ctx.run_layout(widget, child_size);
                     } else {
                         flex_sum += *flex;
                     }
@@ -1069,7 +1042,7 @@ impl Widget for Flex {
                     let child_main_length = *basis_resolved + *flex * flex_fraction;
                     let child_size = compute_child_size(ctx, widget, child_main_length, alignment);
 
-                    lay_out_child(ctx, widget, child_size);
+                    ctx.run_layout(widget, child_size);
 
                     main_space -= child_main_length - *basis_resolved;
                 }
@@ -1096,6 +1069,41 @@ impl Widget for Flex {
         let (space_before, space_between) =
             get_spacing(self.main_alignment, main_space.max(0.), widget_count);
 
+        // Determine the shared cross alignment baselines.
+        // As we currently only support the horizontal-tb writing mode, we do it only for rows.
+        let mut alignment_ascent: Option<f64> = None;
+        let mut alignment_descent: Option<f64> = None;
+        if main == Axis::Horizontal {
+            for child in &self.children {
+                match child {
+                    Child::Widget {
+                        widget, alignment, ..
+                    } => {
+                        let alignment = alignment.unwrap_or(self.cross_alignment);
+                        match alignment {
+                            CrossAxisAlignment::FirstBaseline => {
+                                let (first_baseline, _) = ctx.child_layout_baselines(widget);
+                                alignment_ascent = Some(
+                                    alignment_ascent
+                                        .unwrap_or(first_baseline)
+                                        .max(first_baseline),
+                                );
+                            }
+                            CrossAxisAlignment::LastBaseline => {
+                                let (_, last_baseline) = ctx.child_layout_baselines(widget);
+                                let child_size = ctx.child_size(widget);
+                                let descent = child_size.get_coord(cross) - last_baseline;
+                                alignment_descent =
+                                    Some(alignment_descent.unwrap_or(descent).max(descent));
+                            }
+                            _ => (),
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+
         // Distribute free space and place children
         let mut main_offset = space_before;
         let mut previous_was_widget = false;
@@ -1111,10 +1119,16 @@ impl Widget for Flex {
                     let child_size = ctx.child_size(widget);
                     let alignment = alignment.unwrap_or(self.cross_alignment);
                     let child_origin_cross = match alignment {
-                        CrossAxisAlignment::Baseline if main == Axis::Horizontal => {
-                            let baseline = ctx.child_baseline_offset(widget);
-                            let ascent = child_size.height - baseline;
-                            max_ascent - ascent
+                        CrossAxisAlignment::FirstBaseline if main == Axis::Horizontal => {
+                            let (first_baseline, _) = ctx.child_layout_baselines(widget);
+                            alignment_ascent.unwrap() - first_baseline
+                        }
+                        CrossAxisAlignment::LastBaseline if main == Axis::Horizontal => {
+                            let (_, last_baseline) = ctx.child_layout_baselines(widget);
+                            let descent = child_size.get_coord(cross) - last_baseline;
+                            let end_gap = alignment_descent.unwrap() - descent;
+                            let cross_unused = cross_space - child_size.get_coord(cross);
+                            cross_unused - end_gap
                         }
                         _ => {
                             let cross_unused = cross_space - child_size.get_coord(cross);
@@ -1123,7 +1137,7 @@ impl Widget for Flex {
                     };
 
                     let child_origin = main.pack_point(main_offset, child_origin_cross);
-                    place_child(ctx, widget, child_origin);
+                    ctx.place_child(widget, child_origin);
 
                     main_offset += child_size.get_coord(main);
                     main_offset += gap_length;
@@ -1139,33 +1153,65 @@ impl Widget for Flex {
             }
         }
 
-        // If we have at least one child widget then we can use the lowest child baseline.
-        let baseline = self
-            .children
-            .iter()
-            .any(|child| child.is_widget())
-            .then_some(lowest_baseline);
+        // Derive the container's own baselines.
+        // The logic here aims to fairly closely match the CSS Flexbox spec.
+        match (alignment_ascent, alignment_descent) {
+            // If there is both a first baseline and a last baseline alignment group,
+            // then use the corresponding shared alignment baselines as our own.
+            (Some(ascent), Some(descent)) => {
+                let first_baseline = ascent;
+                let last_baseline = size.get_coord(cross) - descent;
+                ctx.set_baselines(first_baseline, last_baseline);
+            }
+            // If there's only a first baseline alignment group, use it for both our baselines.
+            (Some(ascent), None) => {
+                ctx.set_baselines(ascent, ascent);
+            }
+            // If there's only a last baseline alignment group, use it for both our baselines.
+            (None, Some(descent)) => {
+                let baseline = size.get_coord(cross) - descent;
+                ctx.set_baselines(baseline, baseline);
+            }
+            // If there are no baseline alignment groups then derive it from specific children.
+            (None, None) => {
+                let any_child_widgets = self.children.iter().any(|child| child.is_widget());
+                if any_child_widgets {
+                    // We use the startmost/endmost children. This is easier to implement
+                    // and provides more stable baselines, however it does mean that
+                    // the baselines won't necessarily match visual first/last baselines.
 
-        if let Some(baseline) = baseline {
-            ctx.set_baseline_offset(baseline);
-        } else {
-            ctx.clear_baseline_offset();
+                    let first_child = self
+                        .children
+                        .iter()
+                        .find(|c| c.is_widget())
+                        .unwrap()
+                        .widget()
+                        .unwrap();
+                    let (first_baseline, _) = ctx.child_aligned_baselines(first_child);
+                    let first_child_origin = ctx.child_origin(first_child);
+                    let first_baseline = first_child_origin.y + first_baseline;
+
+                    let last_child = self
+                        .children
+                        .iter()
+                        .rfind(|c| c.is_widget())
+                        .unwrap()
+                        .widget()
+                        .unwrap();
+                    let (_, last_baseline) = ctx.child_aligned_baselines(last_child);
+                    let last_child_origin = ctx.child_origin(last_child);
+                    let last_baseline = last_child_origin.y + last_baseline;
+
+                    ctx.set_baselines(first_baseline, last_baseline);
+                } else {
+                    // No child widgets, so fall back to default baselines.
+                    ctx.clear_baselines();
+                }
+            }
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() {
-            let color = ctx.debug_color();
-            let border_box = ctx.border_box();
-            let content_box = ctx.content_box();
-            let baseline = content_box.height() - ctx.baseline_offset();
-            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
-
-            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
-        }
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -1195,12 +1241,14 @@ impl Widget for Flex {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_testing::assert_debug_panics;
-
     use super::*;
+    use crate::core::{WidgetOptions, WidgetTag};
+    use crate::kurbo::{Affine, Cap, Line, Stroke};
     use crate::layout::AsUnit;
-    use crate::properties::{BorderColor, BorderWidth};
-    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::palette;
+    use crate::peniko::Fill;
+    use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
+    use crate::testing::{ModularWidget, TestHarness, assert_debug_panics, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Label;
 
@@ -1407,9 +1455,14 @@ mod tests {
         assert_render_snapshot!(harness, "flex_row_cross_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Baseline);
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::FirstBaseline);
         });
-        assert_render_snapshot!(harness, "flex_row_cross_axis_baseline");
+        assert_render_snapshot!(harness, "flex_row_cross_axis_first_baseline");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_cross_axis_last_baseline");
 
         // TODO: Stretch with text doesn't make sense, it's not visible,
         //       unless we paint borders or background for the Label widget.
@@ -1500,9 +1553,14 @@ mod tests {
         assert_render_snapshot!(harness, "flex_col_cross_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Baseline);
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::FirstBaseline);
         });
-        assert_render_snapshot!(harness, "flex_col_cross_axis_baseline");
+        assert_render_snapshot!(harness, "flex_col_cross_axis_first_baseline");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_col_cross_axis_last_baseline");
 
         // TODO: Stretch with text doesn't make sense, it's not visible,
         //       unless we paint borders or background for the Label widget.
@@ -1558,6 +1616,189 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_spaceAround");
+    }
+
+    #[test]
+    fn flex_row_baselines() {
+        let props = |top, bottom| {
+            (
+                Padding {
+                    top,
+                    bottom,
+                    left: 0.,
+                    right: 0.,
+                },
+                BorderWidth::all(1.),
+                BorderColor::new(palette::css::CYAN),
+            )
+        };
+
+        let flex_tag = WidgetTag::unique();
+
+        let flex = NewWidget::new_with(
+            Flex::row()
+                .cross_axis_alignment(CrossAxisAlignment::Center)
+                .with_fixed(Label::new("Left").with_props(props(0., 0.)))
+                .with_fixed(Label::new("A\nB").with_props(props(30., 10.)))
+                .with_fixed(Label::new("C\nD\nE").with_props(props(20., 115.)))
+                .with_fixed(Label::new("F\nG\nH\nI").with_props(props(20., 20.)))
+                .with_fixed(Label::new("J\nK\nL\nM\nN").with_props(props(0., 30.)))
+                .with_fixed(Label::new("Right\nToo").with_props(props(50., 50.))),
+            Some(flex_tag),
+            WidgetOptions::default(),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
+        );
+
+        let root = Flex::row()
+            .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)
+            .with_fixed(Label::new("Out").with_props(props(10., 10.)))
+            .with(flex, 1.0)
+            .with_props((Gap::new(0.px()), Padding::all(20.)));
+
+        let window_size = Size::new(240.0, 240.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+
+        assert_render_snapshot!(harness, "flex_row_baselines_four_center_and_first");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_four_center_and_last");
+
+        harness.edit_widget(flex_tag, |mut flex| {
+            Flex::set_params(&mut flex, 1, CrossAxisAlignment::FirstBaseline);
+            Flex::set_params(&mut flex, 2, CrossAxisAlignment::FirstBaseline);
+            Flex::set_params(&mut flex, 3, CrossAxisAlignment::FirstBaseline);
+            Flex::set_params(&mut flex, 4, CrossAxisAlignment::FirstBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_four_first_and_last");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::FirstBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_four_first_and_first");
+
+        harness.edit_widget(flex_tag, |mut flex| {
+            Flex::set_params(&mut flex, 4, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_three_first_one_last_and_first");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_three_first_one_last_and_last");
+
+        harness.edit_widget(flex_tag, |mut flex| {
+            Flex::set_params(&mut flex, 3, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_two_first_two_last_and_last");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::FirstBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_two_first_two_last_and_first");
+
+        harness.edit_widget(flex_tag, |mut flex| {
+            Flex::set_params(&mut flex, 2, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_one_first_three_last_and_first");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_one_first_three_last_and_last");
+
+        harness.edit_widget(flex_tag, |mut flex| {
+            Flex::set_params(&mut flex, 1, CrossAxisAlignment::LastBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_four_last_and_last");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::FirstBaseline);
+        });
+        assert_render_snapshot!(harness, "flex_row_baselines_four_last_and_first");
+    }
+
+    // The green baseline should be a 1px straight line in both first and last baseline cases.
+    // Currently that is not the case and so pixel snapping in relation to baselines needs work.
+    #[test]
+    fn flex_row_baseline_pixel_snapping() {
+        struct Def {
+            ascent: f64,
+            descent: f64,
+        }
+
+        let child = |ascent: f64, descent: f64| {
+            let def = Def { ascent, descent };
+            ModularWidget::new(def)
+                .measure_fn(|s, _, _, axis, _, _| match axis {
+                    Axis::Horizontal => 10.,
+                    Axis::Vertical => s.ascent + s.descent,
+                })
+                .layout_fn(|s, ctx, _, _| {
+                    ctx.set_baselines(s.ascent, s.ascent);
+                })
+                .paint_fn(|s, ctx, _, scene| {
+                    let style = Stroke::new(1.).with_caps(Cap::Butt);
+                    let line_color = palette::css::LIME_GREEN;
+                    let bg_color = palette::css::BLACK;
+                    let border_box = ctx.border_box();
+                    let line = Line::new(
+                        (border_box.x0, s.ascent + 0.5),
+                        (border_box.x1, s.ascent + 0.5),
+                    );
+
+                    scene.fill(Fill::NonZero, Affine::IDENTITY, bg_color, None, &border_box);
+                    scene.stroke(&style, Affine::IDENTITY, line_color, None, &line);
+                })
+                .with_auto_id()
+        };
+
+        let mut first = Flex::row().main_axis_alignment(MainAxisAlignment::Center);
+        for i in 0..21 {
+            first = first.with(
+                child(1. + i as f64 * 0.1, 1.),
+                CrossAxisAlignment::FirstBaseline,
+            );
+        }
+        for i in 0..21 {
+            first = first.with(
+                child(2., 1. + i as f64 * 0.1),
+                CrossAxisAlignment::FirstBaseline,
+            );
+        }
+
+        let mut last = Flex::row().main_axis_alignment(MainAxisAlignment::Center);
+        for i in 0..21 {
+            last = last.with(
+                child(1. + i as f64 * 0.1, 1.),
+                CrossAxisAlignment::LastBaseline,
+            );
+        }
+        for i in 0..21 {
+            last = last.with(
+                child(2., 1. + i as f64 * 0.1),
+                CrossAxisAlignment::LastBaseline,
+            );
+        }
+
+        let props = (
+            Gap::new(0.px()),
+            BorderWidth::all(1.),
+            BorderColor::new(palette::css::DARK_GRAY),
+            Dimensions::height(14.px()),
+        );
+
+        let root = Flex::column()
+            .main_axis_alignment(MainAxisAlignment::SpaceBetween)
+            .with_fixed(first.with_props(props))
+            .with_fixed(last.with_props(props))
+            .with_props((Gap::new(2.px()), Padding::all(10.)));
+
+        let window_size = Size::new(450.0, 50.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+
+        assert_render_snapshot!(harness, "flex_row_baseline_pixel_snapping");
     }
 
     #[test]

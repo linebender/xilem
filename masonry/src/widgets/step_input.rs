@@ -1410,6 +1410,7 @@ impl<T: Steppable> Widget for StepInput<T> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
         let Some(label) = self.label.as_mut() else {
+            ctx.clear_baselines();
             return;
         };
 
@@ -1442,6 +1443,8 @@ impl<T: Steppable> Widget for StepInput<T> {
 
         self.label_x_start = label_origin.x;
         self.label_x_end = label_origin.x + label_size.width;
+
+        ctx.derive_baselines(label);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

@@ -205,7 +205,7 @@ fn pixel_snapping() {
         let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
         ctx.run_layout(child, child_size);
         ctx.place_child(child, pos);
-        ctx.set_baseline_offset(5.1);
+        ctx.set_baselines(2.4, 2.6);
     });
     let parent_tag = WidgetTag::named("parent");
     let parent = NewWidget::new_with_tag(parent, parent_tag);
@@ -214,11 +214,13 @@ fn pixel_snapping() {
 
     let child_pos = harness.get_widget(child_tag).ctx().window_origin();
     let child_size = harness.get_widget(child_tag).ctx().border_box_size();
-    let baseline = harness.get_widget(parent_tag).ctx().baseline_offset();
+    let first_baseline = harness.get_widget(parent_tag).ctx().first_baseline();
+    let last_baseline = harness.get_widget(parent_tag).ctx().last_baseline();
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));
     assert_eq!(child_size, Size::new(10., 11.));
-    assert_eq!(baseline, 5.);
+    assert_eq!(first_baseline, 2.4);
+    assert_eq!(last_baseline, 2.6);
 }
 
 #[test]

@@ -270,16 +270,14 @@ impl Widget for SizedBox {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let Some(child) = self.child.as_mut() else {
-            // No child, so no layout work beyond resetting the baseline
-            ctx.clear_baseline_offset();
+            // No child, so no layout work beyond resetting baselines
+            ctx.clear_baselines();
             return;
         };
 
         ctx.run_layout(child, size);
         ctx.place_child(child, Point::ORIGIN);
-
-        let child_baseline = ctx.child_baseline_offset(child);
-        ctx.set_baseline_offset(child_baseline);
+        ctx.derive_baselines(child);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

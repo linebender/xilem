@@ -177,6 +177,8 @@ impl Widget for ProgressBar {
 
         let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.label, child_origin);
+
+        ctx.derive_baselines(&self.label);
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
