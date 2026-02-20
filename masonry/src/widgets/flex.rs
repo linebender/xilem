@@ -1748,14 +1748,8 @@ mod tests {
                         (border_box.x1, s.ascent + 0.5),
                     );
 
-                    scene.fill(
-                        Fill::NonZero,
-                        Affine::IDENTITY,
-                        &bg_color,
-                        None,
-                        &border_box,
-                    );
-                    scene.stroke(&style, Affine::IDENTITY, &line_color, None, &line);
+                    scene.fill(Fill::NonZero, Affine::IDENTITY, bg_color, None, &border_box);
+                    scene.stroke(&style, Affine::IDENTITY, line_color, None, &line);
                 })
                 .with_auto_id()
         };
