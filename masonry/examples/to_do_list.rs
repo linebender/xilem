@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, NewWidget, PropertySet, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::layout::Length;
 use masonry::peniko::color::AlphaColor;
@@ -77,7 +77,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
     let root = Flex::column()
         .with_fixed(NewWidget::new_with_props(
             Flex::row().with(text_input, 1.0).with_fixed(button),
-            Properties::new().with(Padding::all(WIDGET_SPACING.get())),
+            PropertySet::new().with(Padding::all(WIDGET_SPACING.get())),
         ))
         .with_fixed_spacer(WIDGET_SPACING)
         .with(portal, 1.0);

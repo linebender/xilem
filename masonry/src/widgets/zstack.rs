@@ -295,7 +295,7 @@ impl Widget for ZStack {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Properties;
+    use crate::core::PropertySet;
     use crate::layout::AsUnit;
     use crate::peniko::color::palette;
     use crate::properties::{Background, BorderColor, BorderWidth};
@@ -305,12 +305,12 @@ mod tests {
 
     #[test]
     fn zstack_alignments_parent_aligned() {
-        let mut bg_props = Properties::new();
+        let mut bg_props = PropertySet::new();
         bg_props.insert(Background::Color(palette::css::BLUE));
         bg_props.insert(BorderColor::new(palette::css::TEAL));
         bg_props.insert(BorderWidth::all(2.0));
 
-        let mut fg_props = Properties::new();
+        let mut fg_props = PropertySet::new();
         fg_props.insert(Background::Color(palette::css::RED));
         fg_props.insert(BorderColor::new(palette::css::PINK));
         fg_props.insert(BorderWidth::all(2.0));

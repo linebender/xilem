@@ -6,9 +6,9 @@ use std::any::TypeId;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
-    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
-    PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
+    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    WidgetRef, find_widget_under_pointer, pre_paint,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
@@ -530,7 +530,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         NewWidget::new(self)
     }
 
-    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,
     {

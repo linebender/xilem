@@ -392,7 +392,7 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Properties, StyleProperty};
+    use crate::core::{PropertySet, StyleProperty};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
@@ -459,7 +459,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
+                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
             );
             let checkbox = NewWidget::new(Checkbox::from_label(true, label));
 

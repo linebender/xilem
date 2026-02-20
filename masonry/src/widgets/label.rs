@@ -650,7 +650,7 @@ mod tests {
     use parley::{FontFamily, StyleProperty};
 
     use super::*;
-    use crate::core::{NewWidget, Properties};
+    use crate::core::{NewWidget, PropertySet};
     use crate::layout::{AsUnit, Dim};
     use crate::properties::Dimensions;
     use crate::properties::Gap;
@@ -676,7 +676,7 @@ mod tests {
             .with_style(StyleProperty::FontSize(20.0))
             .with_text_alignment(TextAlign::Center)
             .with_props(
-                Properties::new()
+                PropertySet::new()
                     .with(ContentColor::new(ACCENT_COLOR))
                     .with(LineBreaking::WordWrap),
             );
@@ -691,7 +691,7 @@ mod tests {
     fn underline_label() {
         let label = Label::new("Emphasis")
             .with_style(StyleProperty::Underline(true))
-            .with_props(Properties::new().with(LineBreaking::WordWrap));
+            .with_props(PropertySet::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
@@ -703,7 +703,7 @@ mod tests {
         let label = Label::new("Tpyo")
             .with_style(StyleProperty::Strikethrough(true))
             .with_style(StyleProperty::StrikethroughSize(Some(4.)))
-            .with_props(Properties::new().with(LineBreaking::WordWrap));
+            .with_props(PropertySet::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
@@ -749,7 +749,7 @@ mod tests {
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_props(Properties::new().with(LineBreaking::WordWrap)),
+                        .with_props(PropertySet::new().with(LineBreaking::WordWrap)),
                 )
                 .width(180.px())
                 .with_auto_id(),
@@ -758,7 +758,7 @@ mod tests {
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_props(Properties::new().with(LineBreaking::Clip)),
+                        .with_props(PropertySet::new().with(LineBreaking::Clip)),
                 )
                 .width(180.px())
                 .with_auto_id(),
@@ -767,7 +767,7 @@ mod tests {
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_props(Properties::new().with(LineBreaking::Overflow)),
+                        .with_props(PropertySet::new().with(LineBreaking::Overflow)),
                 )
                 .width(180.px())
                 .with_auto_id(),
@@ -789,7 +789,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_text_alignment(TextAlign::Center)
                 .with_props(
-                    Properties::new()
+                    PropertySet::new()
                         .with(ContentColor::new(ACCENT_COLOR))
                         .with(LineBreaking::WordWrap),
                 );

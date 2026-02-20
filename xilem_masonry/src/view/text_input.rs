@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, NewWidget, Properties};
+use masonry::core::{ArcStr, NewWidget, PropertySet};
 use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::properties::{
@@ -260,7 +260,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
 
         // TODO - Replace this with properties on the TextInput view
         // once we implement property inheritance or something like it.
-        let mut props = Properties::new();
+        let mut props = PropertySet::new();
         if let Some(color) = self.text_color {
             props.insert(ContentColor { color });
         }
