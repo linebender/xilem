@@ -162,8 +162,13 @@ impl Widget for Slider {
             PointerEvent::Down(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 state,
-                ..
-            }) => {
+                pointer:
+                    PointerInfo {
+                        pointer_type: PointerType::Mouse,
+                        ..
+                    },
+            })
+            | PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
