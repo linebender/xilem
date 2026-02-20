@@ -101,9 +101,7 @@ impl Widget for Passthrough {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         ctx.run_layout(&mut self.inner, size);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
-
-        let child_baseline = ctx.child_baseline_offset(&self.inner);
-        ctx.set_baseline_offset(child_baseline);
+        ctx.derive_baselines(&self.inner);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}

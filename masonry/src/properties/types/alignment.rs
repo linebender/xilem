@@ -45,14 +45,22 @@ pub enum CrossAxisAlignment {
     Center,
     /// Widgets are placed at the end edge of the container's cross axis.
     End,
-    /// Widgets are placed in such a way that their baselines align.
+    /// Widgets are placed in such a way that their first baselines align.
     ///
-    /// The widget with the largest distance between its baseline and the cross start edge
+    /// The widget with the largest distance between its first baseline and the cross start edge
     /// will stay flush with the start edge of the container's cross axis, while
-    /// all other widgets will shift towards the end edge just enough to align the baselines.
+    /// all other widgets will shift towards the end edge just enough to align the first baselines.
     ///
     /// This may cause widgets to overflow the end edge.
-    Baseline,
+    FirstBaseline,
+    /// Widgets are placed in such a way that their last baselines align.
+    ///
+    /// The widget with the largest distance between its last baseline and the cross end edge
+    /// will stay flush with the end edge of the container's cross axis, while
+    /// all other widgets will shift towards the start edge just enough to align the last baselines.
+    ///
+    /// This may cause widgets to overflow the start edge.
+    LastBaseline,
     /// Widgets will stretch to fill the whole container on its cross axis.
     ///
     /// Widgets that have [`Dim::Auto`] on the container's cross axis will use [`Dim::Stretch`].
@@ -71,12 +79,14 @@ impl CrossAxisAlignment {
     /// The free `space` is calculated by subtracting the widget's length from the container's space.
     ///
     /// This method supports negative free `space` and will return the correct negative offset.
+    ///
+    /// `FirstBaseline` and `LastBaseline` are fallback implementations,
+    /// equivalent to `Start` and `End` respectively.
     pub fn offset(self, space: f64) -> f64 {
         match self {
-            Self::Start => 0.0,
-            // in vertical layout, baseline is equivalent to center
-            Self::Center | Self::Baseline => space / 2.0,
-            Self::End => space,
+            Self::Start | Self::FirstBaseline => 0.0,
+            Self::Center => space / 2.0,
+            Self::End | Self::LastBaseline => space,
             Self::Stretch => 0.0,
         }
     }

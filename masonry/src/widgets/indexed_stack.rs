@@ -12,7 +12,7 @@ use crate::core::{
     AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
     PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 
 // TODO - Rename "active" widget to "visible" widget?
@@ -270,25 +270,10 @@ impl Widget for IndexedStack {
         let child_origin = Point::ORIGIN;
         ctx.place_child(&mut self.children[self.active_child], child_origin);
 
-        let child_baseline = ctx.child_baseline_offset(&self.children[self.active_child]);
-        let child_bottom = child_origin.y + child_size.height;
-        let bottom_gap = size.height - child_bottom;
-        ctx.set_baseline_offset(child_baseline + bottom_gap);
+        ctx.derive_baselines(&self.children[self.active_child]);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() {
-            let color = ctx.debug_color();
-            let border_box = ctx.border_box();
-            let content_box = ctx.content_box();
-            let baseline = content_box.height() - ctx.baseline_offset();
-            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
-
-            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
-        }
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

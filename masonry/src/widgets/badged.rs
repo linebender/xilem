@@ -202,12 +202,9 @@ impl Widget for Badged {
         let content_size = ctx.compute_size(&mut self.content, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.content, content_size);
         ctx.place_child(&mut self.content, Point::ORIGIN);
+        ctx.derive_baselines(&self.content);
 
         let Some(badge) = &mut self.badge else {
-            let child_baseline = ctx.child_baseline_offset(&self.content);
-            let child_bottom = content_size.height;
-            let bottom_gap = size.height - child_bottom;
-            ctx.set_baseline_offset(child_baseline + bottom_gap);
             return;
         };
 
@@ -219,11 +216,6 @@ impl Widget for Badged {
         let badge_origin = content_anchor + self.offset
             - Vec2::new(badge_size.width * 0.5, badge_size.height * 0.5);
         ctx.place_child(badge, badge_origin);
-
-        let child_baseline = ctx.child_baseline_offset(&self.content);
-        let child_bottom = content_size.height;
-        let bottom_gap = size.height - child_bottom;
-        ctx.set_baseline_offset(child_baseline + bottom_gap);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
