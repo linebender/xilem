@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::parley::{FontFamily, GenericFamily};
+use masonry::parley::{FontFamily, GenericFamily, LineHeight};
 use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -37,6 +37,8 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
+        enable_hinting: true,
+        line_height: LineHeight::default(),
         font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
     }
 }
@@ -50,6 +52,8 @@ pub struct Label {
     text_alignment: TextAlign,
     text_size: f32,
     weight: FontWeight,
+    enable_hinting: bool,
+    line_height: LineHeight,
     font: FontStack<'static>,
     // TODO: add more attributes of `masonry::widgets::Label`
 }
@@ -71,6 +75,18 @@ impl Label {
     /// Sets font weight.
     pub fn weight(mut self, weight: FontWeight) -> Self {
         self.weight = weight;
+        self
+    }
+
+    /// Sets whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
+    pub fn enable_hinting(mut self, enable_hinting: bool) -> Self {
+        self.enable_hinting = enable_hinting;
+        self
+    }
+
+    /// Sets line height.
+    pub fn line_height(mut self, line_height: LineHeight) -> Self {
+        self.line_height = line_height;
         self
     }
 
@@ -104,7 +120,9 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
                 .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
-                .with_style(StyleProperty::FontStack(self.font.clone())),
+                .with_style(StyleProperty::LineHeight(self.line_height))
+                .with_style(StyleProperty::FontStack(self.font.clone()))
+                .with_hint(self.enable_hinting),
         );
         (pod, ())
     }
@@ -129,8 +147,14 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
         if prev.weight != self.weight {
             widgets::Label::insert_style(&mut element, StyleProperty::FontWeight(self.weight));
         }
+        if prev.line_height != self.line_height {
+            widgets::Label::insert_style(&mut element, StyleProperty::LineHeight(self.line_height));
+        }
         if prev.font != self.font {
             widgets::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
+        }
+        if prev.enable_hinting != self.enable_hinting {
+            widgets::Label::set_hint(&mut element, self.enable_hinting);
         }
     }
 
