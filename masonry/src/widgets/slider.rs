@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::keyboard::{Key, NamedKey};
@@ -495,7 +495,7 @@ mod tests {
     use super::*;
     use crate::core::{PointerButton, TextEvent};
     use crate::kurbo::{Point, Size};
-    use crate::testing::{assert_render_snapshot, TestHarness};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
     #[test]
