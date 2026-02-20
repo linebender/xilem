@@ -5,7 +5,6 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
-use masonry_core::core::Property;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
@@ -13,8 +12,8 @@ use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, Property,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Axis, Circle, Point, Rect, Size};
 use crate::layout::LenReq;
@@ -160,7 +159,7 @@ impl Widget for Slider {
         }
         match event {
             PointerEvent::Down(PointerButtonEvent {
-                button: Some(PointerButton::Primary),
+                button: Some(PointerButton::Primary) | None,
                 state,
                 ..
             }) => {
