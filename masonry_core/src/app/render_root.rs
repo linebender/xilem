@@ -569,7 +569,7 @@ impl RenderRoot {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                map: properties,
+                set: properties,
                 default_map: self.default_properties.for_widget(widget.type_id()),
             },
             children,

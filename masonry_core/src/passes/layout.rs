@@ -191,7 +191,7 @@ pub(crate) fn resolve_length(
     // Get the dimensions
     let widget = &mut *node.item.widget;
     let props = PropertiesRef {
-        map: &mut node.item.properties,
+        set: &mut node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
     };
     let dims = props.get::<Dimensions>();
@@ -271,7 +271,7 @@ pub(crate) fn resolve_size(
     // Get the dimensions
     let widget = &mut *node.item.widget;
     let props = PropertiesRef {
-        map: &mut node.item.properties,
+        set: &mut node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
     };
     let dims = props.get::<Dimensions>();
@@ -397,7 +397,7 @@ pub(crate) fn run_layout_on(
     let scale = 1.0;
 
     let props = PropertiesRef {
-        map: properties,
+        set: properties,
         default_map: default_properties.for_widget(widget.type_id()),
     };
 

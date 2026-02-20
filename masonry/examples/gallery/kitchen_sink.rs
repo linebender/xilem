@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, Properties, StyleProperty, Widget};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
 use masonry::layout::{AsUnit as _, UnitPoint};
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
@@ -54,14 +54,14 @@ impl DemoPage for KitchenSinkDemo {
 
         let grid = NewWidget::new_with_props(
             SizedBox::new(grid.with_auto_id()),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x24, 0x24, 0x24)))
                 .with(Padding::all(12.0)),
         );
 
         let bg = NewWidget::new_with_props(
             SizedBox::empty().size(220.0.px(), 120.0.px()),
-            Properties::one(Background::Color(Color::from_rgb8(0x44, 0x22, 0x66))),
+            PropertySet::one(Background::Color(Color::from_rgb8(0x44, 0x22, 0x66))),
         );
 
         let fg = Align::centered(

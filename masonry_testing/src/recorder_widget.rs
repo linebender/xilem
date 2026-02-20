@@ -16,7 +16,7 @@ use std::rc::Rc;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
-    MeasureCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
+    MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet,
     QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
@@ -321,7 +321,7 @@ impl<W: Widget> Widget for Recorder<W> {
         NewWidget::new(self)
     }
 
-    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,
     {

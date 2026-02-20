@@ -7,18 +7,18 @@ use std::f64::consts::PI;
 
 use masonry_testing::WrapperWidget;
 
+use crate::core::{NewWidget, PointerButton, PropertySet, Widget, WidgetOptions};
 use crate::kurbo::{Affine, Vec2};
-use crate::peniko::color::palette;
-use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
-use crate::properties::types::UnitPoint;
 use crate::layout::AsUnit;
+use crate::peniko::color::palette;
+use crate::properties::types::UnitPoint;
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, assert_render_snapshot};
 use crate::theme::default_property_set;
 use crate::widgets::{Button, ChildAlignment, Label, SizedBox, ZStack};
 
 fn blue_box(inner: impl Widget) -> impl Widget {
-    let mut box_props = Properties::new();
+    let mut box_props = PropertySet::new();
     box_props.insert(Background::Color(palette::css::BLUE));
     box_props.insert(BorderColor::new(palette::css::TEAL));
     box_props.insert(BorderWidth::all(2.0));

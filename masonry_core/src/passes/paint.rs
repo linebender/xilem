@@ -50,7 +50,7 @@ fn paint_widget(
             children: children.reborrow_mut(),
         };
         let props = PropertiesRef {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
 
