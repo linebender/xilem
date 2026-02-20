@@ -969,7 +969,18 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         let (fctx, lctx) = ctx.text_contexts();
-        self.editor.layout(fctx, lctx);
+        let layout = self.editor.layout(fctx, lctx);
+
+        let line_count = layout.len();
+        if line_count > 0 {
+            let line_first = layout.get(0).unwrap();
+            let line_last = layout.get(line_count - 1).unwrap();
+            let first_baseline = line_first.metrics().baseline as f64;
+            let last_baseline = line_last.metrics().baseline as f64;
+            ctx.set_baselines(first_baseline, last_baseline);
+        } else {
+            ctx.clear_baselines();
+        }
 
         ctx.set_ime_area(self.ime_area());
     }

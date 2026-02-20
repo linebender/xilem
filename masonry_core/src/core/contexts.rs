@@ -736,6 +736,19 @@ impl LayoutCtx<'_> {
         }
     }
 
+    #[track_caller]
+    fn assert_placed(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
+        if self.get_child_state(child).is_expecting_place_child_call {
+            debug_panic!(
+                "Error in {}: trying to call '{}' with child '{}' {} before placing it",
+                self.widget_id(),
+                method_name,
+                self.get_child_dyn(child).short_type_name(),
+                child.id(),
+            );
+        }
+    }
+
     /// Computes the `child`'s preferred border-box size.
     ///
     /// The returned size will be finite, non-negative, and in device pixels.
@@ -872,25 +885,56 @@ impl LayoutCtx<'_> {
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
-    /// Sets an explicit baseline position for this widget.
+    /// Sets explicit baselines for this widget.
     ///
-    /// The baseline position is used to align widgets that contain text,
+    /// The baseline positions are used to align widgets that contain text,
     /// such as buttons, labels, and other controls. It may also be used
     /// by other widgets that are opinionated about how they are aligned
     /// relative to neighbouring text, such as switches or checkboxes.
     ///
-    /// The provided value must be the distance from the *bottom* of this
-    /// widget's content-box to its baseline.
-    pub fn set_baseline_offset(&mut self, baseline: f64) {
-        self.widget_state.layout_baseline_offset =
-            baseline + self.widget_state.border_box_insets.y1;
+    /// The provided values must be the distance from the top of this
+    /// widget's content-box to its baseline. If there aren't multiple
+    /// baselines then set the same baseline as both `first` and `last`.
+    ///
+    /// Most container widgets can use [`derive_baselines`] instead.
+    /// Multi-child containers should derive their baselines using [`child_aligned_baselines`].
+    ///
+    /// [`derive_baselines`]: Self::derive_baselines
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    pub fn set_baselines(&mut self, first_baseline: f64, last_baseline: f64) {
+        self.widget_state.first_baseline = first_baseline + self.widget_state.border_box_insets.y0;
+        self.widget_state.last_baseline = last_baseline + self.widget_state.border_box_insets.y0;
     }
 
-    /// Clears an explicitly set baseline position for this widget.
+    /// Sets explicit baselines for this widget such that they match the child's aligned baselines.
+    ///
+    /// Most container widgets should use this method to derive their baselines from their child.
+    /// More complex containers can use [`child_aligned_baselines`] in multi-child scenarios.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    ///
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    #[track_caller]
+    pub fn derive_baselines(&mut self, child: &WidgetPod<impl Widget + ?Sized>) {
+        self.assert_layout_done(child, "derive_baselines");
+        self.assert_placed(child, "derive_baselines");
+
+        let child_state = self.get_child_state(child);
+        let first_baseline = child_state.origin.y + child_state.aligned_first_baseline();
+        let last_baseline = child_state.origin.y + child_state.aligned_last_baseline();
+        self.widget_state.first_baseline = first_baseline;
+        self.widget_state.last_baseline = last_baseline;
+    }
+
+    /// Clears explicitly set baseline positions for this widget.
     ///
     /// This results in the effective baseline being the bottom edge of this widget's border-box.
-    pub fn clear_baseline_offset(&mut self) {
-        self.widget_state.layout_baseline_offset = 0.;
+    pub fn clear_baselines(&mut self) {
+        self.widget_state.first_baseline = f64::NAN;
+        self.widget_state.last_baseline = f64::NAN;
     }
 
     /// Returns the insets for converting between content-box and border-box rects.
@@ -911,16 +955,72 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).needs_layout()
     }
 
-    /// The distance from the bottom of the child widget's layout border-box to its baseline.
+    /// Returns the `child` widget's `(first, last)` layout baselines.
+    ///
+    /// The distances are from the top of the child widget's layout border-box to its baseline.
+    ///
+    /// Call this if the child's baseline plays a role in choosing its placement.
+    /// For deriving this widget's baselines call [`child_aligned_baselines`] instead,
+    /// or better yet use [`derive_baselines`] if possible.
     ///
     /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
+    ///
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    /// [`derive_baselines`]: Self::derive_baselines
     #[track_caller]
-    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
-        self.assert_layout_done(child, "child_baseline_offset");
-        self.get_child_state(child).layout_baseline_offset
+    pub fn child_layout_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
+        self.assert_layout_done(child, "child_layout_baselines");
+
+        let child_state = self.get_child_state(child);
+        (
+            child_state.layout_first_baseline(),
+            child_state.layout_last_baseline(),
+        )
+    }
+
+    /// Returns the `child` widget's `(first, last)` aligned baselines.
+    ///
+    /// The distances are from the top of the child widget's aligned border-box to its baseline.
+    ///
+    /// This aligned version should be used for deriving this widget's own baselines based
+    /// on the child's baselines. That is if [`derive_baselines`] can't be used.
+    /// For deciding where to place the child based on its baselines,
+    /// you need to use [`child_layout_baselines`] instead.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    ///
+    /// [`derive_baselines`]: Self::derive_baselines
+    /// [`child_layout_baselines`]: Self::child_layout_baselines
+    #[track_caller]
+    pub fn child_aligned_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
+        self.assert_layout_done(child, "child_aligned_baselines");
+        self.assert_placed(child, "child_aligned_baselines");
+
+        let child_state = self.get_child_state(child);
+        (
+            child_state.aligned_first_baseline(),
+            child_state.aligned_last_baseline(),
+        )
+    }
+
+    /// Returns the given child's aligned border-box origin
+    /// in this widget's content-box coordinate space.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    #[track_caller]
+    pub fn child_origin(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Point {
+        self.assert_layout_done(child, "child_origin");
+        self.assert_placed(child, "child_origin");
+        self.get_child_state(child).origin - self.widget_state.border_box_translation()
     }
 
     /// Returns the given child's layout border-box size.
@@ -1127,10 +1227,16 @@ impl_context_method!(
             self.widget_state.bounding_box
         }
 
-        /// Returns the baseline offset relative to the bottom of the widget's aligned content-box.
-        pub fn baseline_offset(&self) -> f64 {
-            let border_box_baseline = self.widget_state.baseline_offset();
-            border_box_baseline - self.widget_state.border_box_insets.y1
+        /// Returns the first baseline relative to the top of the widget's aligned content-box.
+        pub fn first_baseline(&self) -> f64 {
+            let border_box_baseline = self.widget_state.aligned_first_baseline();
+            border_box_baseline - self.widget_state.border_box_insets.y0
+        }
+
+        /// Returns the last baseline relative to the top of the widget's aligned content-box.
+        pub fn last_baseline(&self) -> f64 {
+            let border_box_baseline = self.widget_state.aligned_last_baseline();
+            border_box_baseline - self.widget_state.border_box_insets.y0
         }
 
         /// The clip path of the widget, if any was set.

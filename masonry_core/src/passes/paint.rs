@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::{Affine, Rect};
+use vello::kurbo::{Affine, Line, Rect, Stroke};
 use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
@@ -117,14 +117,25 @@ fn paint_widget(
     });
 
     if !is_stashed {
-        let bounding_box = state.bounding_box;
-
-        // draw the global axis aligned bounding rect of the widget
         if global_state.debug_paint {
+            // Draw the global axis aligned bounding rect of the widget
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
-            let rect = bounding_box.inset(BORDER_WIDTH / -2.0);
+            let rect = state.bounding_box.inset(BORDER_WIDTH / -2.0);
             stroke(complete_scene, &rect, color, BORDER_WIDTH);
+
+            // Draw the widget's explicit baselines
+            let mut draw_baseline = |baseline| {
+                let line = Line::new((0., baseline), (state.end_point.x, baseline));
+                let baseline_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
+                complete_scene.stroke(&baseline_style, state.window_transform, color, None, &line);
+            };
+            if !state.first_baseline.is_nan() {
+                draw_baseline(state.first_baseline);
+            }
+            if !state.last_baseline.is_nan() && state.last_baseline != state.first_baseline {
+                draw_baseline(state.last_baseline);
+            }
         }
 
         if has_clip {

@@ -574,8 +574,16 @@ impl Widget for Label {
 
         layout.align(self.text_alignment, inline_space);
 
-        let baseline = 0.; // TODO: Use actual baseline, at least for single line text
-        ctx.set_baseline_offset(baseline);
+        let line_count = layout.layout.len();
+        if line_count > 0 {
+            let line_first = layout.layout.get(0).unwrap();
+            let line_last = layout.layout.get(line_count - 1).unwrap();
+            let first_baseline = line_first.metrics().baseline as f64;
+            let last_baseline = line_last.metrics().baseline as f64;
+            ctx.set_baselines(first_baseline, last_baseline);
+        } else {
+            ctx.clear_baselines();
+        }
 
         if *line_break_mode == LineBreaking::Clip {
             let border_box = size.to_rect() + ctx.border_box_insets();

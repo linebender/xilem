@@ -241,6 +241,8 @@ impl Widget for ZStack {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let context_size = size.into();
         let auto_size = SizeDef::fit(size);
+        let mut min_baseline = f64::INFINITY;
+        let mut max_baseline = f64::NEG_INFINITY;
         for child in &mut self.children {
             let child_size = ctx.compute_size(&mut child.widget, auto_size, context_size);
             ctx.run_layout(&mut child.widget, child_size);
@@ -255,6 +257,17 @@ impl Widget for ZStack {
             let child_origin =
                 child_alignment.resolve(Rect::new(0., 0., extra_width, extra_height));
             ctx.place_child(&mut child.widget, child_origin);
+
+            let child_origin = ctx.child_origin(&child.widget);
+
+            let (first_baseline, last_baseline) = ctx.child_aligned_baselines(&child.widget);
+            min_baseline = min_baseline.min(child_origin.y + first_baseline);
+            max_baseline = max_baseline.max(child_origin.y + last_baseline);
+        }
+        if !self.children.is_empty() {
+            ctx.set_baselines(min_baseline, max_baseline);
+        } else {
+            ctx.clear_baselines();
         }
     }
 

@@ -556,10 +556,7 @@ impl Widget for Divider {
             let content_origin = placement.resolve((size - content_size).to_rect());
             ctx.place_child(content, content_origin);
 
-            let content_baseline = ctx.child_baseline_offset(content);
-            let content_bottom = content_origin.y + content_size.height;
-            let bottom_gap = size.height - content_bottom;
-            ctx.set_baseline_offset(content_baseline + bottom_gap);
+            ctx.derive_baselines(content);
 
             let pad = self.pad.dp(scale);
             let mut line_space = size.get_coord(self.axis)
@@ -600,7 +597,7 @@ impl Widget for Divider {
             lay_out_line(self, start, end, cross_pos, dashes, thickness);
         } else {
             // Single line, no content
-            ctx.clear_baseline_offset();
+            ctx.clear_baselines();
 
             let line_space = size.get_coord(self.axis) - self.total_cap_overhang(thickness);
             if line_space < 0. {
