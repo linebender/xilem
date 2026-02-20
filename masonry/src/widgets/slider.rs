@@ -12,9 +12,8 @@ use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButtonEvent, PointerEvent, PointerInfo, PointerType, PointerUpdate, PropertiesMut,
-    PropertiesRef, Property, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, Property,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Axis, Circle, Point, Rect, Size};
 use crate::layout::LenReq;
@@ -160,15 +159,10 @@ impl Widget for Slider {
         }
         match event {
             PointerEvent::Down(PointerButtonEvent {
-                button: Some(PointerButton::Primary),
+                button: Some(PointerButton::Primary) | None,
                 state,
-                pointer:
-                    PointerInfo {
-                        pointer_type: PointerType::Mouse,
-                        ..
-                    },
-            })
-            | PointerEvent::Down(PointerButtonEvent { state, .. }) => {
+                ..
+            }) => {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
