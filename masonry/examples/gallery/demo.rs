@@ -45,6 +45,15 @@ pub(crate) trait DemoPage {
         false
     }
 
+    fn on_step(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _widget_id: WidgetId,
+        _value: isize,
+    ) -> bool {
+        false
+    }
+
     fn on_switch_toggled(
         &mut self,
         _render_root: &mut RenderRoot,
