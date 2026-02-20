@@ -6,7 +6,7 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{WidgetId, WidgetOptions};
+use crate::core::{PseudoSet, WidgetId, WidgetOptions};
 use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
@@ -220,6 +220,9 @@ pub(crate) struct WidgetState {
     pub(crate) children_changed: bool,
 
     // --- STATUS ---
+    /// Bitfield of pseudo-class states (hovered, active, focused, disabled, etc.).
+    pub(crate) pseudos: PseudoSet,
+
     /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
     /// This widget or an ancestor has been disabled.
@@ -312,6 +315,7 @@ impl WidgetState {
             needs_update_focusable: true,
             children_changed: true,
 
+            pseudos: PseudoSet::EMPTY,
             is_explicitly_disabled: options.disabled,
             is_disabled: false,
             is_explicitly_stashed: false,

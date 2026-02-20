@@ -488,9 +488,6 @@ impl Widget for Label {
                 self.clear_cache();
                 ctx.request_layout();
             }
-            Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
             _ => {}
         }
     }

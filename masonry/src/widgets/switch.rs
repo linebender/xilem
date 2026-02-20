@@ -8,6 +8,7 @@ use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
+use crate::PSEUDO_TOGGLED;
 use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
@@ -65,8 +66,8 @@ impl Switch {
     pub fn set_on(this: &mut WidgetMut<'_, Self>, on: bool) {
         if this.widget.on != on {
             this.widget.on = on;
-            // On state impacts appearance and accessibility node
-            this.ctx.request_render();
+            this.ctx.set_pseudo(PSEUDO_TOGGLED, on);
+            this.ctx.request_accessibility_update();
         }
     }
 }
@@ -166,17 +167,14 @@ impl Widget for Switch {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::FocusChanged(_)
-            | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+        // Interaction state changes (hover, active, focus, disabled) now automatically
+        // invalidate paint via pseudo-class tracking in the framework.
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}

@@ -16,8 +16,8 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState,
+    PropertiesMut, PropertiesRef, PseudoId, PseudoSet, ResizeDirection, Widget, WidgetArenaNode,
+    WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -1366,11 +1366,37 @@ impl_context_method!(
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }
+
+        /// Returns the current [`PseudoSet`] for this widget.
+        ///
+        /// The pseudo set is a bitfield that tracks interaction states (hovered, active,
+        /// focused, disabled) and widget-defined states (e.g. toggled).
+        pub fn pseudos(&self) -> PseudoSet {
+            self.widget_state.pseudos
+        }
+
+        /// Returns whether a specific pseudo state is set on this widget.
+        pub fn has_pseudo(&self, id: PseudoId) -> bool {
+            self.widget_state.pseudos.contains(id)
+        }
     }
 );
 
 // --- MARK: UPDATE FLAGS
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
+    /// Sets a pseudo-class state on this widget.
+    ///
+    /// If the value actually changes, this automatically requests
+    /// `pre_paint` and `paint` passes so the widget is re-rendered.
+    pub fn set_pseudo(&mut self, id: PseudoId, value: bool) {
+        if self.widget_state.pseudos.contains(id) != value {
+            self.widget_state.pseudos.set(id, value);
+            self.widget_state.request_pre_paint = true;
+            self.widget_state.request_paint = true;
+            self.widget_state.needs_paint = true;
+        }
+    }
+
     /// Requests a [`paint`](crate::core::Widget::paint) and an
     /// [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {

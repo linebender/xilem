@@ -160,10 +160,12 @@ impl Widget for Badge {
         ctx.register_child(&mut self.child);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        if matches!(event, Update::DisabledChanged(_)) {
-            ctx.request_paint_only();
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
     }
 
     fn measure(
