@@ -5,16 +5,16 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
-use masonry_core::core::Property;
-use tracing::{Span, trace_span};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    PointerButtonEvent, PointerEvent, PointerInfo, PointerType, PointerUpdate, PropertiesMut,
+    PropertiesRef, Property, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut,
 };
 use crate::kurbo::{Axis, Circle, Point, Rect, Size};
 use crate::layout::LenReq;
@@ -495,7 +495,7 @@ mod tests {
     use super::*;
     use crate::core::{PointerButton, TextEvent};
     use crate::kurbo::{Point, Size};
-    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::testing::{assert_render_snapshot, TestHarness};
     use crate::theme::test_property_set;
 
     #[test]
