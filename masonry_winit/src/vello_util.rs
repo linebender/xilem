@@ -233,7 +233,8 @@ impl RenderContext {
         )]
         unsafe {
             if let Some(hal_surface) = surface.surface.as_hal::<::wgpu::hal::api::Metal>() {
-                let raw = std::ptr::from_ref::<::wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
+                let raw =
+                    std::ptr::from_ref::<::wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
                 (*raw).present_with_transaction = resizing;
             }
         }
