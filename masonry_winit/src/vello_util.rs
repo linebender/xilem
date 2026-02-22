@@ -232,8 +232,8 @@ impl RenderContext {
             reason = "We only mutate a backend-specific flag on the Metal HAL surface when the runtime backend matches Metal"
         )]
         unsafe {
-            if let Some(hal_surface) = surface.surface.as_hal::<wgpu::hal::api::Metal>() {
-                let raw = std::ptr::from_ref::<wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
+            if let Some(hal_surface) = surface.surface.as_hal::<::wgpu::hal::api::Metal>() {
+                let raw = std::ptr::from_ref::<::wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
                 (*raw).present_with_transaction = resizing;
             }
         }
