@@ -1,10 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-
-use crate::core::{Property, UpdateCtx};
-use crate::kurbo::{Affine, Size};
+use crate::core::Property;
+use crate::kurbo::{Affine, Axis, Size};
+use crate::layout::LenReq;
 use crate::util::Sanitize;
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
@@ -71,14 +70,6 @@ impl Default for ObjectFit {
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
 
 impl ObjectFit {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_layout();
-    }
-
     /// Calculates an [`Affine`] transform to fit `content` inside `container`.
     ///
     /// See [`ObjectFit`] variant documentation for fitting details.
@@ -128,5 +119,63 @@ impl ObjectFit {
         let origin_y = (container.height - (content.height * scaley)) * 0.5;
 
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
+    }
+
+    /// Calculates the length of `axis`.
+    ///
+    /// `preferred_size` is the natural size that is used for
+    /// both aspect ratio and minimum preferred size.
+    pub fn measure(
+        self,
+        axis: Axis,
+        len_req: LenReq,
+        cross_length: Option<f64>,
+        preferred_size: Size,
+    ) -> f64 {
+        let preferred_length = preferred_size.get_coord(axis);
+
+        let (space, space_or_preferred) = match len_req {
+            LenReq::MinContent => return preferred_length,
+            LenReq::MaxContent => (f64::INFINITY, preferred_length),
+            LenReq::FitContent(space) => (space, space),
+        };
+
+        let mut ar = preferred_size.get_coord(axis) / preferred_size.get_coord(axis.cross());
+        if !ar.is_finite() {
+            ar = 1.;
+        }
+
+        match self {
+            // Use all available space or if cross is known attempt to maintain AR,
+            // but don't exceed available space (will letterbox cross).
+            ObjectFit::Contain => cross_length
+                .map(|cl| (cl * ar).min(space))
+                .unwrap_or(space_or_preferred),
+            // Always use all available space.
+            ObjectFit::Cover | ObjectFit::Stretch => space_or_preferred,
+            // Always use all available vertical space.
+            // Greedily take all horizontal space unless cross is known.
+            ObjectFit::FitHeight => match axis {
+                Axis::Horizontal => cross_length
+                    .map(|cl| (cl * ar).min(space))
+                    .unwrap_or(space_or_preferred),
+                Axis::Vertical => space_or_preferred,
+            },
+            // Always use all available horizontal space.
+            // Greedily take all vertical space unless cross is known.
+            ObjectFit::FitWidth => match axis {
+                Axis::Horizontal => space_or_preferred,
+                Axis::Vertical => cross_length
+                    .map(|cl| (cl * ar).min(space))
+                    .unwrap_or(space_or_preferred),
+            },
+            // None == preferred size
+            ObjectFit::None => preferred_length,
+            // ScaleDown == min(Contain, None)
+            ObjectFit::ScaleDown => cross_length
+                .map(|cl| (cl * ar).min(space))
+                .unwrap_or(space_or_preferred)
+                .min(preferred_length),
+        }
     }
 }
