@@ -250,8 +250,8 @@ impl Widget for ZStack {
                 ChildAlignment::ParentAligned => self.alignment,
             };
 
-            let extra_width = (size.width - child_size.width).max(0.);
-            let extra_height = (size.height - child_size.height).max(0.);
+            let extra_width = size.width - child_size.width;
+            let extra_height = size.height - child_size.height;
             let child_origin =
                 child_alignment.resolve(Rect::new(0., 0., extra_width, extra_height));
             ctx.place_child(&mut child.widget, child_origin);

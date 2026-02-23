@@ -89,6 +89,14 @@ impl Align {
 
 // --- MARK: WIDGETMUT
 impl Align {
+    /// Sets the alignment of the child.
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: UnitPoint) {
+        if this.widget.align != alignment {
+            this.widget.align = alignment;
+            this.ctx.request_layout();
+        }
+    }
+
     /// Replaces the child widget with a new one.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         this.ctx.remove_child(std::mem::replace(
@@ -159,8 +167,8 @@ impl Widget for Align {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
 
-        let extra_width = (size.width - child_size.width).max(0.);
-        let extra_height = (size.height - child_size.height).max(0.);
+        let extra_width = size.width - child_size.width;
+        let extra_height = size.height - child_size.height;
         let child_origin = self
             .align
             .resolve(Rect::new(0., 0., extra_width, extra_height));
@@ -199,11 +207,14 @@ impl Widget for Align {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::{WidgetOptions, WidgetTag};
+    use crate::layout::AsUnit;
+    use crate::palette;
+    use crate::peniko::color::AlphaColor;
+    use crate::properties::{Background, BorderColor, BorderWidth, Dimensions};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
-    use crate::widgets::Label;
-
-    // TODO - Add more unit tests
+    use crate::widgets::{Label, SizedBox};
 
     #[test]
     fn centered() {
@@ -230,5 +241,41 @@ mod tests {
         let mut harness = TestHarness::create(test_property_set(), widget);
 
         assert_render_snapshot!(harness, "align_left");
+    }
+
+    #[test]
+    fn oversized() {
+        let align_tag = WidgetTag::unique();
+
+        let child = SizedBox::empty().with_props((
+            Dimensions::fixed(100.px(), 100.px()),
+            Background::Color(AlphaColor::from_rgba8(127, 0, 0, 127)),
+        ));
+        let align = NewWidget::new_with(
+            Align::new(UnitPoint::CENTER, child),
+            Some(align_tag),
+            WidgetOptions::default(),
+            (
+                Dimensions::fixed(50.px(), 50.px()),
+                BorderWidth::all(2.),
+                BorderColor::new(palette::css::BLACK),
+            ),
+        );
+        let root = Align::centered(align).with_auto_id();
+
+        let window_size = Size::new(200.0, 200.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+
+        assert_render_snapshot!(harness, "align_oversized_center");
+
+        harness.edit_widget(align_tag, |mut align| {
+            Align::set_alignment(&mut align, UnitPoint::TOP_LEFT);
+        });
+        assert_render_snapshot!(harness, "align_oversized_top_left");
+
+        harness.edit_widget(align_tag, |mut align| {
+            Align::set_alignment(&mut align, UnitPoint::BOTTOM_RIGHT);
+        });
+        assert_render_snapshot!(harness, "align_oversized_bottom_right");
     }
 }

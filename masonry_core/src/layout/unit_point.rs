@@ -41,6 +41,11 @@ impl UnitPoint {
     }
 
     /// Given a rectangle, resolves the point within the rectangle.
+    ///
+    /// For aligning oversized items you should give this a reversed rect.
+    /// That is, if you're resolving the origin of a 15x15 child inside a 10x10 container,
+    /// the rect should be `(0, 0, -5, -5)`. Then `TOP_LEFT` will resolve to `(0, 0)`
+    /// while `BOTTOM_RIGHT` will resolve to `(-5, -5)`.
     pub const fn resolve(self, rect: Rect) -> Point {
         Point::new(
             rect.x0 + self.u * (rect.x1 - rect.x0),
