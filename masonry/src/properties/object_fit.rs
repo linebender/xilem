@@ -148,14 +148,14 @@ impl ObjectFit {
         match self {
             // Use all available space or if cross is known attempt to maintain AR,
             // but don't exceed available space (will letterbox cross).
-            ObjectFit::Contain => cross_length
+            Self::Contain => cross_length
                 .map(|cl| (cl * ar).min(space))
                 .unwrap_or(space_or_preferred),
             // Always use all available space.
-            ObjectFit::Cover | ObjectFit::Stretch => space_or_preferred,
+            Self::Cover | Self::Stretch => space_or_preferred,
             // Always use all available vertical space.
             // Greedily take all horizontal space unless cross is known.
-            ObjectFit::FitHeight => match axis {
+            Self::FitHeight => match axis {
                 Axis::Horizontal => cross_length
                     .map(|cl| (cl * ar).min(space))
                     .unwrap_or(space_or_preferred),
@@ -163,16 +163,16 @@ impl ObjectFit {
             },
             // Always use all available horizontal space.
             // Greedily take all vertical space unless cross is known.
-            ObjectFit::FitWidth => match axis {
+            Self::FitWidth => match axis {
                 Axis::Horizontal => space_or_preferred,
                 Axis::Vertical => cross_length
                     .map(|cl| (cl * ar).min(space))
                     .unwrap_or(space_or_preferred),
             },
             // None == preferred size
-            ObjectFit::None => preferred_length,
+            Self::None => preferred_length,
             // ScaleDown == min(Contain, None)
-            ObjectFit::ScaleDown => cross_length
+            Self::ScaleDown => cross_length
                 .map(|cl| (cl * ar).min(space))
                 .unwrap_or(space_or_preferred)
                 .min(preferred_length),
