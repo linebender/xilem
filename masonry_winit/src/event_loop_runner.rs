@@ -127,6 +127,8 @@ pub struct Window {
     id: WindowId,
     pub(crate) handle: Arc<WindowHandle>,
     pub(crate) accesskit_adapter: Adapter,
+    #[cfg(feature = "screen-reader")]
+    pub(crate) screen_reader: masonry_screen_reader::ScreenReader,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
     pub(crate) base_color: Color,
@@ -148,6 +150,8 @@ impl Window {
             id: window_id,
             handle,
             accesskit_adapter,
+            #[cfg(feature = "screen-reader")]
+            screen_reader: masonry_screen_reader::ScreenReader::new(),
             event_reducer: WindowEventReducer::default(),
             render_root: RenderRoot::new(
                 root_widget,
@@ -545,6 +549,12 @@ impl MasonryState<'_> {
             scale_factor,
         );
 
+        // Enable accessibility tree for screen reader adapter
+        #[cfg(feature = "screen-reader")]
+        window
+            .render_root
+            .handle_window_event(WindowEvent::EnableAccessTree);
+
         tracing::debug!(window_id = window.id.trace(), handle=?handle_id, "creating window");
         self.window_id_to_handle_id.insert(window.id, handle_id);
         self.windows.insert(handle_id, window);
@@ -696,6 +706,13 @@ impl MasonryState<'_> {
         );
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
+        #[cfg(feature = "screen-reader")]
+        {
+            let messages = window.screen_reader.update(tree_update.clone());
+            for msg in messages {
+                tracing::info!(target: "masonry_screen_reader", "{}", msg);
+            }
+        }
         if let Some(tree_update) = tree_update {
             window.accesskit_adapter.update_if_active(|| tree_update);
         }
@@ -901,6 +918,18 @@ impl MasonryState<'_> {
                     }
                 }
                 WindowEventTranslation::Pointer(p) => {
+                    #[cfg(feature = "screen-reader")]
+                    {
+                        use masonry_core::core::PointerEvent;
+                        if let PointerEvent::Move(update) = &p {
+                            let messages = window
+                                .screen_reader
+                                .hit_test(update.current.position.x, update.current.position.y);
+                            for msg in messages {
+                                tracing::info!(target: "masonry_screen_reader", "{}", msg);
+                            }
+                        }
+                    }
                     window.render_root.handle_pointer_event(p);
                 }
             }
@@ -931,6 +960,13 @@ impl MasonryState<'_> {
                 window
                     .render_root
                     .handle_text_event(TextEvent::WindowFocusChange(new_focus));
+                #[cfg(feature = "screen-reader")]
+                {
+                    let messages = window.screen_reader.update_window_focus_state(new_focus);
+                    for msg in messages {
+                        tracing::info!(target: "masonry_screen_reader", "{}", msg);
+                    }
+                }
             }
             _ => (),
         }

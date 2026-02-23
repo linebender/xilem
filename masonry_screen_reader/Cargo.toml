@@ -1,0 +1,17 @@
+[package]
+name = "masonry_screen_reader"
+version = "0.1.0"
+description = "Screen reader debug output for Masonry accessibility trees."
+keywords = ["gui", "ui", "accessibility", "screen-reader"]
+categories = ["gui", "accessibility", "development-tools::debugging"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+accesskit.workspace = true
+accesskit_consumer.workspace = true
+
+[lints]
+workspace = true
