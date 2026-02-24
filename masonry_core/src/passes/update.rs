@@ -10,8 +10,8 @@ use ui_events::pointer::PointerType;
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode, WidgetId,
-    WidgetState,
+    PseudoId, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode,
+    WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -285,11 +285,13 @@ fn update_disabled_for_widget(
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
+        state.pseudos.set(PseudoId::DISABLED, disabled);
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
         // DisabledBackground needs pre-paint
         state.request_pre_paint = true;
+        state.request_paint = true;
         state.needs_paint = true;
     }
 
@@ -656,8 +658,14 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_focus_target != has_focused {
                     widget.update(ctx, props, &Update::ChildFocusChanged(has_focused));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_focus_target = has_focused;
+                ctx.widget_state
+                    .pseudos
+                    .set(PseudoId::FOCUS_WITHIN, has_focused);
             });
         }
 
@@ -686,18 +694,22 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // We also request accessibility, because build_access_node() depends on the focus state.
         run_single_update_pass(root, prev_focused, |widget, ctx, props| {
             widget.update(ctx, props, &Update::FocusChanged(false));
+            ctx.widget_state.pseudos.set(PseudoId::FOCUS, false);
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
             // FocusedBorderColor needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx, props| {
             widget.update(ctx, props, &Update::FocusChanged(true));
+            ctx.widget_state.pseudos.set(PseudoId::FOCUS, true);
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
             // FocusedBorderColor needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
         });
 
@@ -833,6 +845,9 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_active != has_active {
                     widget.update(ctx, props, &Update::ChildActiveChanged(has_active));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_active = has_active;
             });
@@ -860,15 +875,19 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_active_widget != next_active_widget {
         run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = false;
+            ctx.widget_state.pseudos.set(PseudoId::ACTIVE, false);
             // ActiveBackground needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
+            ctx.widget_state.pseudos.set(PseudoId::ACTIVE, true);
             // ActiveBackground needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
@@ -934,6 +953,9 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.has_hovered != has_hovered {
                     widget.update(ctx, props, &Update::ChildHoveredChanged(has_hovered));
+                    ctx.widget_state.request_pre_paint = true;
+                    ctx.widget_state.request_paint = true;
+                    ctx.widget_state.needs_paint = true;
                 }
                 ctx.widget_state.has_hovered = has_hovered;
             });
@@ -961,15 +983,19 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if prev_hovered_widget != next_hovered_widget {
         run_single_update_pass(root, prev_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = false;
+            ctx.widget_state.pseudos.set(PseudoId::HOVER, false);
             // HoveredBorderColor needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(false));
         });
         run_single_update_pass(root, next_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = true;
+            ctx.widget_state.pseudos.set(PseudoId::HOVER, true);
             // HoveredBorderColor needs pre-paint
             ctx.widget_state.request_pre_paint = true;
+            ctx.widget_state.request_paint = true;
             ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(true));
         });

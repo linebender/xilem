@@ -243,11 +243,7 @@ impl Widget for TextInput {
                     label.insert_prop(ContentColor::new(color));
                 });
             }
-            // We check for `ChildFocusChanged` instead of `FocusChanged`
-            // because the actual widget that receives focus is the child `TextArea`
-            Update::ChildFocusChanged(_) => {
-                ctx.request_pre_paint();
-            }
+            // ChildFocusChanged paint invalidation is now handled by the framework.
             _ => {}
         }
     }

@@ -223,5 +223,11 @@ pub use vello::{kurbo, peniko};
 pub use {dpi, parley, vello};
 
 pub use masonry_core::{app, core, layout, ui_events, util};
+
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;
+
+/// Pseudo-class for toggled widgets (checkboxes, switches, etc.).
+///
+/// Widget-defined pseudo state at bit 5.
+pub const PSEUDO_TOGGLED: core::PseudoId = core::PseudoId(5);

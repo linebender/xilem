@@ -624,16 +624,14 @@ where
         ctx.register_child(&mut self.child2);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::FocusChanged(_)
-            | Update::HoveredChanged(_)
-            | Update::ActiveChanged(_)
-            | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+        // Interaction state changes (hover, active, focus, disabled) now automatically
+        // invalidate paint via the framework's update passes.
     }
 
     fn measure(
