@@ -12,7 +12,7 @@ use vello::Scene;
 use crate::core::keyboard::{Code, Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, CursorIcon, EventCtx, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButton, PointerEvent, Properties, PropertiesMut, PropertiesRef, Property, QueryCtx,
+    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, Property, PropertySet, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Line, Point, Size, Stroke};
@@ -1308,7 +1308,7 @@ impl<T: Steppable> Widget for StepInput<T> {
                 let color = props.get::<ContentColor>();
                 let color_disabled = props.get_defined::<DisabledContentColor>();
 
-                let mut props = Properties::one(*color);
+                let mut props = PropertySet::one(*color);
                 if let Some(color_disabled) = color_disabled {
                     props = props.with(*color_disabled);
                 }
@@ -1839,7 +1839,7 @@ mod tests {
     use std::fmt::Display;
 
     use super::*;
-    use crate::core::{NewWidget, Properties, WidgetOptions, WidgetTag};
+    use crate::core::{NewWidget, PropertySet, WidgetOptions, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::types::CrossAxisAlignment;
     use crate::properties::{Dimensions, Padding};
@@ -2425,11 +2425,11 @@ mod tests {
 
     #[test]
     fn awkward_layout() {
-        let basic = |base, props: Properties| {
+        let basic = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Basic);
             StepInput::new(base, 1, 0, usize::MAX).with_props(props)
         };
-        let flow = |base, props: Properties| {
+        let flow = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Flow);
             StepInput::new(base, 1, 0, usize::MAX).with_props(props)
         };

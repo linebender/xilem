@@ -11,7 +11,7 @@ use masonry_testing::{
 
 use crate::core::pointer::{PointerButton, PointerEvent};
 use crate::core::{
-    CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
+    CursorIcon, Ime, NewWidget, PropertySet, TextEvent, Update, Widget, WidgetId, WidgetPod,
     WidgetTag,
 };
 use crate::layout::Length;
@@ -261,7 +261,7 @@ fn stash_parent() {
 fn focusable_child(name: &'static str) -> NewWidget<impl Widget> {
     NewWidget::new_with_props(
         ModularWidget::new(()).accepts_focus(true),
-        Properties::one(DebugName(name.to_string())),
+        PropertySet::one(DebugName(name.to_string())),
     )
 }
 
@@ -271,7 +271,7 @@ fn focusable_parent(
 ) -> NewWidget<impl Widget> {
     NewWidget::new_with_props(
         ModularWidget::new_multi_parent(children).accepts_focus(true),
-        Properties::one(DebugName(name.to_string())),
+        PropertySet::one(DebugName(name.to_string())),
     )
 }
 

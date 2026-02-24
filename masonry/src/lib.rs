@@ -40,7 +40,7 @@
 //! The to-do-list example looks like this, using Masonry Winit as the backend:
 //!
 //! ```rust
-//! use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
+//! use masonry::core::{ErasedAction, NewWidget, PropertySet, Widget, WidgetId, WidgetTag};
 //! use masonry::dpi::LogicalSize;
 //! use masonry::layout::Length;
 //! use masonry::peniko::color::AlphaColor;
@@ -105,7 +105,7 @@
 //!             Flex::row()
 //!                 .with(text_input, 1.0)
 //!                 .with_fixed(button),
-//!             Properties::new().with(Padding::all(WIDGET_SPACING.get())),
+//!             PropertySet::new().with(Padding::all(WIDGET_SPACING.get())),
 //!         ))
 //!         .with_fixed_spacer(WIDGET_SPACING);
 //!

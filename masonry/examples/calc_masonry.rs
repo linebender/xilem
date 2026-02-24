@@ -14,7 +14,7 @@
 use std::str::FromStr;
 
 use masonry::core::{
-    CollectionWidget, ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget,
+    CollectionWidget, ErasedAction, NewWidget, Property, PropertySet, StyleProperty, Widget,
     WidgetId,
 };
 use masonry::dpi::LogicalSize;
@@ -198,7 +198,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
 
     NewWidget::new_with_props(
         button,
-        Properties::new()
+        PropertySet::new()
             .with(Background::Color(BLUE))
             .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
@@ -224,7 +224,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
 
     NewWidget::new_with_props(
         button,
-        Properties::new()
+        PropertySet::new()
             .with(Background::Color(GRAY))
             .with(ActiveBackground(Background::Color(LIGHT_GRAY)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
@@ -275,7 +275,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
 
     NewWidget::new_with_props(
         root_widget,
-        Properties::new()
+        PropertySet::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
             .with(Padding::all(2.0))
             .with(Gap::new(1.px())),

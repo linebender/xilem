@@ -157,7 +157,7 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{NewWidget, Properties};
+    use crate::core::{NewWidget, PropertySet};
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -180,8 +180,8 @@ mod tests {
     #[test]
     fn edit_spinner() {
         let image_1 = {
-            let spinner =
-                Spinner::new().with_props(Properties::one(ContentColor::new(palette::css::PURPLE)));
+            let spinner = Spinner::new()
+                .with_props(PropertySet::one(ContentColor::new(palette::css::PURPLE)));
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), spinner, Size::new(30.0, 30.0));

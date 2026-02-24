@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
+use masonry::core::{ArcStr, NewWidget, PropertySet, StyleProperty};
 use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
@@ -112,7 +112,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Prose<Sta
 
         // TODO - Replace this with properties on the Prose view
         // once we implement property inheritance or something like it.
-        let mut props = Properties::new();
+        let mut props = PropertySet::new();
         if let Some(color) = self.text_color {
             props.insert(ContentColor { color });
         }

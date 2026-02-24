@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, Properties, StyleProperty, Widget};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::{ImageAlphaType, ImageData, ImageFormat};
 use masonry::properties::ObjectFit;
@@ -45,7 +45,7 @@ impl DemoPage for ImageDemo {
     fn build(&self) -> NewWidget<dyn Widget> {
         let image = NewWidget::new_with_props(
             Image::new(make_image_data()),
-            Properties::one(ObjectFit::Contain),
+            PropertySet::one(ObjectFit::Contain),
         );
 
         let body = Flex::column()
