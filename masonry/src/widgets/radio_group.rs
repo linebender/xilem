@@ -4,13 +4,12 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::Axis;
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::LenReq;
 
 /// A radio group container that holds radio buttons.
