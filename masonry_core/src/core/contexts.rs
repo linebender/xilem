@@ -1813,7 +1813,8 @@ impl_context_method!(
         /// Creates a new [layer] at a specified `position`, and ties it to the current widget.
         ///
         /// The layer will be removed when the current widget is removed from the tree.
-        /// A widget can only have one layer of any given type `W` at a time: if a widget creates two layers of the same type, the old layer will be removed.
+        /// A widget can only have one layer of any given type `W` at a time:
+        /// if a widget creates two layers of the same type, the old layer will be removed.
         ///
         /// The given `position` must be in the window's coordinate space.
         ///
