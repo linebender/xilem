@@ -494,7 +494,7 @@ impl<T: Steppable> StepInput<T> {
         if modified {
             let display_value = this.widget.display_value(base);
             if let Some(label) = this.widget.label.as_mut() {
-                this.ctx.mutate_later(label, move |mut label| {
+                this.ctx.mutate_child_later(label, move |mut label| {
                     Label::set_text(&mut label, display_value);
                 });
                 this.ctx.request_layout();
@@ -588,7 +588,7 @@ impl<T: Steppable> StepInput<T> {
         // Refresh the displayed value too
         let display_value = this.widget.display_value(this.widget.value);
         if let Some(label) = this.widget.label.as_mut() {
-            this.ctx.mutate_later(label, move |mut label| {
+            this.ctx.mutate_child_later(label, move |mut label| {
                 Label::set_text(&mut label, display_value);
             });
             this.ctx.request_layout();
@@ -617,7 +617,7 @@ impl<T: Steppable> StepInput<T> {
     fn handle_updated_value<A: AnyDebug + Send + From<Step<T>>>(&mut self, ctx: &mut EventCtx<'_>) {
         let display_value = self.display_value(self.value);
         if let Some(label) = self.label.as_mut() {
-            ctx.mutate_later(label, move |mut label| {
+            ctx.mutate_child_later(label, move |mut label| {
                 Label::set_text(&mut label, display_value);
             });
             ctx.request_layout();
