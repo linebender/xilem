@@ -1839,7 +1839,7 @@ mod tests {
     use std::fmt::Display;
 
     use super::*;
-    use crate::core::{NewWidget, Properties, WidgetOptions, WidgetTag};
+    use crate::core::{NewWidget, PropertySet, WidgetOptions, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::types::CrossAxisAlignment;
     use crate::properties::{Dimensions, Padding};
@@ -2425,11 +2425,11 @@ mod tests {
 
     #[test]
     fn awkward_layout() {
-        let basic = |base, props: Properties| {
+        let basic = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Basic);
             StepInput::new(base, 1, 0, usize::MAX).with_props(props)
         };
-        let flow = |base, props: Properties| {
+        let flow = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Flow);
             StepInput::new(base, 1, 0, usize::MAX).with_props(props)
         };
