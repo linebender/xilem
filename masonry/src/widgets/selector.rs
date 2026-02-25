@@ -4,22 +4,19 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Vec2;
 
-use crate::core::MeasureCtx;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayerType, LayoutCtx, NewWidget, PaintCtx,
-    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
+    PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Axis, Size};
+use crate::kurbo::{Axis, Size, Vec2};
 use crate::layers::SelectorMenu;
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::theme;
 use crate::util::debug_panic;
-use crate::widgets::Label;
-use crate::widgets::selector_item::SelectorItem;
+use crate::widgets::{Label, SelectorItem};
 
 /// A selector which displays a list of options when you click it.
 ///
@@ -270,10 +267,7 @@ impl Widget for Selector {
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.child, child_origin);
 
-        let child_baseline = ctx.child_baseline_offset(&self.child);
-        let child_bottom = child_origin.y + child_size.height;
-        let bottom_gap = size.height - child_bottom;
-        ctx.set_baseline_offset(child_baseline + bottom_gap);
+        ctx.derive_baselines(&self.child);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
