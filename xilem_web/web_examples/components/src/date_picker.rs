@@ -1,3 +1,6 @@
+// Copyright 2026 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use time::{Date, Duration, OffsetDateTime};
 use xilem_web::{elements::html, interfaces::Element, modifiers::style};
 
