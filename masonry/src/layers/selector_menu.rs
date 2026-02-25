@@ -4,7 +4,6 @@
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, HasProperty,
@@ -12,6 +11,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
 use crate::properties::Gap;
 use crate::widgets::{SelectionChanged, Selector};
@@ -296,6 +296,22 @@ impl Widget for SelectorMenu {
             ctx.place_child(child, Point::new(0.0, y_offset));
 
             y_offset += child_size.height + gap_length;
+        }
+
+        if !self.children.is_empty() {
+            let first_child = self.children.first().unwrap();
+            let (first_baseline, _) = ctx.child_aligned_baselines(first_child);
+            let first_child_origin = ctx.child_origin(first_child);
+            let first_baseline = first_child_origin.y + first_baseline;
+
+            let last_child = self.children.last().unwrap();
+            let (_, last_baseline) = ctx.child_aligned_baselines(last_child);
+            let last_child_origin = ctx.child_origin(last_child);
+            let last_baseline = last_child_origin.y + last_baseline;
+
+            ctx.set_baselines(first_baseline, last_baseline);
+        } else {
+            ctx.clear_baselines();
         }
     }
 

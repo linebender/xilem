@@ -285,8 +285,7 @@ impl Widget for TextInput {
         let child_origin = Point::ORIGIN;
         ctx.place_child(&mut self.text, child_origin);
 
-        let child_baseline = ctx.child_baseline_offset(&self.text);
-        ctx.set_baseline_offset(child_baseline);
+        ctx.derive_baselines(&self.text);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);

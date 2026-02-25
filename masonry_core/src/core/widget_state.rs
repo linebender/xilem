@@ -110,14 +110,19 @@ pub(crate) struct WidgetState {
     /// This is the union of clipped effective paint-box rects, i.e. the union of
     /// globally transformed aligned border-box rects with paint insets applied.
     pub(crate) bounding_box: Rect,
-    /// The offset of the baseline relative to the bottom of the widget's layout border-box.
+
+    /// The offset of the first baseline relative to the top of the widget's layout border-box.
     ///
-    /// In general, this will be zero; the bottom of the widget will be considered
+    /// In general, this will be `f64::NAN`; the bottom of the widget will be considered
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
-    pub(crate) layout_baseline_offset: f64,
-    /// The pixel-snapped position of the baseline in the parent's border-box coordinate space.
-    pub(crate) baseline_y: f64,
+    pub(crate) first_baseline: f64,
+    /// The offset of the last baseline relative to the top of the widget's layout border-box.
+    ///
+    /// In general, this will be `f64::NAN`; the bottom of the widget will be considered
+    /// the baseline. Widgets that contain text or controls that expect to be
+    /// laid out alongside text can set this as appropriate.
+    pub(crate) last_baseline: f64,
 
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
@@ -276,8 +281,8 @@ impl WidgetState {
             border_box_insets: Insets::ZERO,
             paint_insets: Insets::ZERO,
             bounding_box: Rect::ZERO,
-            layout_baseline_offset: 0.0,
-            baseline_y: 0.0,
+            first_baseline: f64::NAN,
+            last_baseline: f64::NAN,
             clip_path: Option::default(),
             transform: options.transform,
             window_transform: Affine::IDENTITY,
@@ -392,9 +397,40 @@ impl WidgetState {
         self.window_transform.translation().to_point()
     }
 
-    /// Returns the baseline offset relative to the bottom of the widget's aligned border-box.
-    pub(crate) fn baseline_offset(&self) -> f64 {
-        self.end_point.y - self.baseline_y
+    /// Returns the first baseline relative to the top of the widget's layout border-box.
+    pub(crate) fn layout_first_baseline(&self) -> f64 {
+        if self.first_baseline.is_nan() {
+            self.layout_border_box_size.height
+        } else {
+            self.first_baseline
+        }
+    }
+
+    /// Returns the last baseline relative to the top of the widget's layout border-box.
+    pub(crate) fn layout_last_baseline(&self) -> f64 {
+        if self.last_baseline.is_nan() {
+            self.layout_border_box_size.height
+        } else {
+            self.last_baseline
+        }
+    }
+
+    /// Returns the first baseline relative to the top of the widget's aligned border-box.
+    pub(crate) fn aligned_first_baseline(&self) -> f64 {
+        if self.first_baseline.is_nan() {
+            self.end_point.y - self.origin.y
+        } else {
+            self.first_baseline
+        }
+    }
+
+    /// Returns the last baseline relative to the top of the widget's aligned border-box.
+    pub(crate) fn aligned_last_baseline(&self) -> f64 {
+        if self.last_baseline.is_nan() {
+            self.end_point.y - self.origin.y
+        } else {
+            self.last_baseline
+        }
     }
 
     /// Returns the area being edited by an IME, in the window's coordinate space.

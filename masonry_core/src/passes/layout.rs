@@ -494,8 +494,8 @@ pub(crate) fn run_layout_on(
 
     if trace {
         trace!(
-            "Computed layout: border-box={}, baseline={}, insets={:?}",
-            border_box_size, state.layout_baseline_offset, state.paint_insets,
+            "Computed layout: border-box={}, first_baseline={}, last_baseline={} insets={:?}",
+            border_box_size, state.first_baseline, state.last_baseline, state.paint_insets,
         );
     }
 
@@ -566,12 +566,10 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 /// Places the child at `origin` in its parent's border-box coordinate space.
 pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
     let end_point = origin + child_state.layout_border_box_size.to_vec2();
-    let baseline_y = end_point.y - child_state.layout_baseline_offset;
     // TODO - Account for display scale in pixel snapping
     // See https://github.com/linebender/xilem/issues/1264
     let origin = origin.round();
     let end_point = end_point.round();
-    let baseline_y = baseline_y.round();
 
     // TODO - We may want to invalidate in other cases as well
     if origin != child_state.origin {
@@ -579,7 +577,6 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
     }
     child_state.origin = origin;
     child_state.end_point = end_point;
-    child_state.baseline_y = baseline_y;
 
     child_state.is_expecting_place_child_call = false;
 }

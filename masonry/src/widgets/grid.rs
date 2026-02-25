@@ -13,7 +13,7 @@ use crate::core::{
     NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::Gap;
 use crate::util::debug_panic;
@@ -390,21 +390,44 @@ impl Widget for Grid {
                 Point::new(child.x as f64 * cell_width, child.y as f64 * cell_height);
             ctx.place_child(&mut child.widget, child_origin);
         }
-    }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() {
-            let color = ctx.debug_color();
-            let border_box = ctx.border_box();
-            let content_box = ctx.content_box();
-            let baseline = content_box.height() - ctx.baseline_offset();
-            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
+        if !self.children.is_empty() {
+            // Determine the first and last occupied row
+            let min_row = self.children.iter().map(|c| c.y).min().unwrap();
+            let max_row = self.children.iter().map(|c| c.y + c.height).max().unwrap();
 
-            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
+            // Find the first occupied cell
+            let mut min_row_children = self
+                .children
+                .iter()
+                .filter(|c| c.y == min_row)
+                .collect::<Vec<_>>();
+            min_row_children.sort_by_key(|c| c.x);
+            let min_row_child = min_row_children.first().unwrap();
+            let min_row_child_origin = ctx.child_origin(&min_row_child.widget);
+            let (first_baseline, _) = ctx.child_aligned_baselines(&min_row_child.widget);
+            let first_baseline = min_row_child_origin.y + first_baseline;
+
+            // Find the last occupied cell
+            let mut max_row_children = self
+                .children
+                .iter()
+                .filter(|c| c.y + c.height == max_row)
+                .collect::<Vec<_>>();
+            max_row_children.sort_by_key(|c| c.x + c.width);
+            let max_row_child = max_row_children.last().unwrap();
+            let max_row_child_origin = ctx.child_origin(&max_row_child.widget);
+            let (_, last_baseline) = ctx.child_aligned_baselines(&max_row_child.widget);
+            let last_baseline = max_row_child_origin.y + last_baseline;
+
+            // Set the container baselines
+            ctx.set_baselines(first_baseline, last_baseline);
+        } else {
+            ctx.clear_baselines();
         }
     }
+
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -435,10 +458,12 @@ impl Widget for Grid {
 mod tests {
     use super::*;
     use crate::layout::AsUnit;
-    use crate::properties::Dimensions;
+    use crate::palette;
+    use crate::properties::types::CrossAxisAlignment;
+    use crate::properties::{Background, Dimensions, Padding};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
-    use crate::widgets::Button;
+    use crate::widgets::{Button, Flex, Label};
 
     #[test]
     fn test_grid_basics() {
@@ -594,5 +619,56 @@ mod tests {
             );
         });
         assert_render_snapshot!(harness, "grid_2x2_with_overlapping_c");
+    }
+
+    #[test]
+    fn grid_baselines() {
+        let grid = Grid::with_dimensions(3, 3)
+            .with(
+                Label::new("A\nB").with_props((
+                    Padding::from_vh(0., 0.),
+                    Background::Color(palette::css::ORANGE),
+                )),
+                GridParams::new(1, 0, 1, 1),
+            )
+            .with(
+                Label::new("C\nD").with_props((
+                    Padding::from_vh(8., 0.),
+                    Background::Color(palette::css::DARK_BLUE),
+                )),
+                GridParams::new(0, 0, 1, 2),
+            )
+            .with(
+                Label::new("E\nF").with_props((
+                    Padding::from_vh(16., 0.),
+                    Background::Color(palette::css::DARK_SALMON),
+                )),
+                GridParams::new(2, 0, 1, 3),
+            )
+            .with(
+                Label::new("G\nH").with_props((
+                    Padding::from_vh(24., 0.),
+                    Background::Color(palette::css::DARK_SLATE_BLUE),
+                )),
+                GridParams::new(1, 1, 1, 2),
+            )
+            .with_props(Dimensions::width(80.px()));
+
+        let root = Flex::row()
+            .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)
+            .with_fixed(Label::new("Out").with_auto_id())
+            .with_fixed(grid)
+            .with_props(Padding::all(10.));
+
+        let window_size = Size::new(150.0, 200.0);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+
+        assert_render_snapshot!(harness, "grid_baselines_first");
+
+        harness.edit_root_widget(|mut root| {
+            Flex::set_cross_axis_alignment(&mut root, CrossAxisAlignment::LastBaseline);
+        });
+
+        assert_render_snapshot!(harness, "grid_baselines_last");
     }
 }

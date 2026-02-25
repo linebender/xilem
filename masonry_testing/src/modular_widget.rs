@@ -115,6 +115,7 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
                 ctx.run_layout(child, child_size);
                 ctx.place_child(child, Point::ZERO);
+                ctx.derive_baselines(child);
             })
             .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
     }
@@ -149,10 +150,18 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 let auto_size = SizeDef::fit(size);
                 let context_size = size.into();
 
-                for child in children {
+                for child in children.iter_mut() {
                     let child_size = ctx.compute_size(child, auto_size, context_size);
                     ctx.run_layout(child, child_size);
                     ctx.place_child(child, Point::ZERO);
+                }
+
+                if let Some(child) = children.first() {
+                    let (first_baseline, _) = ctx.child_aligned_baselines(child);
+                    let (_, last_baseline) = ctx.child_aligned_baselines(children.last().unwrap());
+                    ctx.set_baselines(first_baseline, last_baseline);
+                } else {
+                    ctx.clear_baselines();
                 }
             })
             .children_fn(|children| children.iter().map(|child| child.id()).collect())

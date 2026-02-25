@@ -7,7 +7,7 @@ use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, FromDynWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Line, Point, Size, Stroke};
+use crate::kurbo::{Axis, Line, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
 use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
 use crate::util::stroke;
@@ -277,10 +277,7 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
             self.separator_line_y = None;
         }
 
-        let label_baseline = ctx.child_baseline_offset(&self.header_label);
-        let label_bottom = label_origin.y + label_size.height;
-        let bottom_gap = size.height - label_bottom;
-        ctx.set_baseline_offset(label_baseline + bottom_gap);
+        ctx.derive_baselines(&self.header_label);
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -301,18 +298,6 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
                 let line = Line::new((x1, y), (x2, y));
                 stroke(scene, &line, border_color.color, border_width.width);
             }
-        }
-
-        // paint the baseline if we're debugging layout
-        if ctx.debug_paint_enabled() {
-            let color = ctx.debug_color();
-            let border_box = ctx.border_box();
-            let content_box = ctx.content_box();
-            let baseline = content_box.height() - ctx.baseline_offset();
-            let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
-
-            let stroke_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-            scene.stroke(&stroke_style, Affine::IDENTITY, color, None, &line);
         }
     }
 

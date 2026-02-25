@@ -119,7 +119,7 @@ impl DemoPage for TransformsDemo {
 
         let target = NewWidget::new_with(
             SizedBox::new(
-                Label::new("Transform me")
+                Label::new("Transform me\nand\nsee what happens")
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_auto_id(),
             )
