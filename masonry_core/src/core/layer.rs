@@ -13,6 +13,13 @@ use crate::core::{EventCtx, PointerEvent, PropertiesMut};
 pub enum LayerType {
     /// A simple tooltip showing some text until the mouse moves.
     Tooltip(String),
+    /// A menu showing the different options of a selector widget.
+    Selector {
+        /// The text of the options.
+        options: Vec<String>,
+        /// The initially selected option.
+        selected_option: usize,
+    },
     /// Unknown layer type. Always use the widget fallback.
     #[default]
     Other,

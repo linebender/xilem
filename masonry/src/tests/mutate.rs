@@ -27,9 +27,11 @@ fn mutate_order() {
             sender2.send(2).unwrap();
         });
 
-        parent.ctx.mutate_later(&mut parent.widget.state, move |_| {
-            sender3.send(3).unwrap();
-        });
+        parent
+            .ctx
+            .mutate_child_later(&mut parent.widget.state, move |_| {
+                sender3.send(3).unwrap();
+            });
 
         sender1.send(1).unwrap();
     });
