@@ -3,7 +3,7 @@ html,body {
 }
 
 .hidden {
-  display:none;
+  display: none;
 }
 
 .card {
@@ -28,7 +28,71 @@ html,body {
   padding: 1em;
 }
 
-button {
+.card button {
   margin: 0.3em 0.7em;
   padding: 0.3em 0.5em;
+}
+
+input.date {
+  margin: 2em 0;
+  padding: 0.3em 0.5em;
+  border-width: 1px;
+  border-radius: 3px;
+}
+
+.date-picker {
+  display: grid;
+  max-width: 300px;
+  background-color: #eee;
+  border-width: 1px;
+  border-radius: 5px;
+}
+
+.date-picker .actions,
+.date-picker .nav-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.date-picker .nav-bar .title {
+  flex: 1;
+  text-align: center;
+}
+
+.date-picker .actions button,
+.date-picker .nav-bar button {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.date-picker .calendar {
+  margin: 0.25rem;
+  text-align: center;
+  font-size: 0.9em;
+  border-collapse: collapse;
+}
+
+.date-picker .calendar .day {
+  border-radius: 0.5rem;
+  width: 1.5rem;
+  height: 1.75rem;
+  cursor: pointer;
+}
+
+.date-picker .calendar .day.selected {
+  background: #0a0;
+}
+
+.date-picker .calendar .day.today {
+  background: #88f;
+}
+
+.date-picker .calendar .day.not-in-month {
+  color: #aaa;
+}
+
+.ml-auto {
+  margin-left: auto;
 }

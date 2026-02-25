@@ -1,72 +1,99 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Shows creating components.
+//! This example shows how to create generic components.
 
-use xilem_web::core::map_action;
-use xilem_web::elements::html;
-use xilem_web::interfaces::Element;
-use xilem_web::{Action, App, DomFragment, document_body};
+use time::{Date, format_description::FormatItem, macros::format_description};
+use xilem_web::{
+    App,
+    core::{MessageResult, map_action, map_message_result, map_state},
+    document_body,
+    elements::html,
+    interfaces::Element,
+};
+
+// These modules could also be in an external crate.
+mod card;
+mod date_picker;
+
+const DATE_FORMAT: &[FormatItem<'static>] = format_description!("[year]-[day]-[month]");
 
 #[derive(Default)]
 struct AppState {
     clicks: i32,
     card_collapsed: bool,
+    date: Option<Date>,
+    date_picker: date_picker::State,
 }
 
-enum CardAction<M> {
-    Toggle,
-    Child(M),
-}
+impl AppState {
+    fn click(&mut self) {
+        self.clicks += 1;
+    }
 
-impl<M> Action for CardAction<M> {}
+    fn toggle_card(&mut self) {
+        self.card_collapsed = !self.card_collapsed;
+    }
 
-fn card<State, Child, ChildAction>(
-    title: &'static str,
-    collapsed: bool,
-    content: Child,
-) -> impl Element<State, CardAction<ChildAction>>
-where
-    Child: DomFragment<State, ChildAction>,
-    State: 'static,
-    ChildAction: 'static,
-{
-    let content = map_action(
-        html::div(content)
-            .class("content")
-            .class(collapsed.then_some("hidden")),
-        |_, msg| CardAction::Child(msg),
-    );
+    fn show_date_picker(&mut self) {
+        self.date_picker.popup_open = true;
+    }
 
-    html::div((
-        html::h3(title)
-            .class("title")
-            .on_click(|_, _| CardAction::Toggle),
-        content,
-    ))
-    .class("card")
+    fn close_date_picker(&mut self) {
+        self.date_picker.popup_open = false;
+    }
 }
 
 fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
-    let card = map_action(
-        card(
-            "Card Example",
-            state.card_collapsed,
-            html::div((
-                "Some content ...",
-                state.clicks,
-                html::button("click").on_click(|s: &mut AppState, _| {
-                    s.clicks += 1;
-                }),
-            )),
-        ),
-        |state: &mut AppState, msg: CardAction<()>| match msg {
-            CardAction::Toggle => state.card_collapsed = !state.card_collapsed,
-            CardAction::Child(_) => {}
-        },
-    );
+    let counter = html::button("click me!").on_click(|state: &mut AppState, _| state.click());
 
-    html::div(card)
+    let card_content = html::div(("Some content ... ", state.clicks, counter));
+
+    let card = card::view("Card Example", state.card_collapsed, card_content);
+    let card = map_action(card, map_card_action);
+
+    let date_input = html::input(())
+        .attr(
+            "value",
+            state
+                .date
+                .map(|date| date.format(DATE_FORMAT).unwrap())
+                .unwrap_or_default(),
+        )
+        .class("date")
+        .on_focus(|state: &mut AppState, _| state.show_date_picker());
+
+    let date_picker = date_picker::view(&state.date_picker);
+    let date_picker = map_state(date_picker, |state: &mut AppState| &mut state.date_picker);
+    let date_picker = map_message_result(date_picker, handle_date_picker_message_result);
+
+    html::div((card, html::div((date_input, date_picker))))
+}
+
+fn map_card_action(state: &mut AppState, action: card::Action<()>) {
+    match action {
+        card::Action::Toggle => state.toggle_card(),
+        card::Action::Child(()) => {}
+    }
+}
+
+fn handle_date_picker_message_result(
+    state: &mut AppState,
+    message_result: MessageResult<date_picker::Action>,
+) -> MessageResult<()> {
+    let MessageResult::Action(action) = message_result else {
+        return message_result.map(|_| ());
+    };
+    match action {
+        date_picker::Action::DateChanged(date) => {
+            state.date = date;
+            state.close_date_picker();
+        }
+        date_picker::Action::Cancelled => {
+            state.close_date_picker();
+        }
+    }
+    MessageResult::Action(())
 }
 
 fn main() {

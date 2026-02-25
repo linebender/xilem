@@ -723,6 +723,7 @@ name = "components"
 version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
+ "time",
  "wasm-bindgen",
  "web-sys",
  "xilem_web",
@@ -4059,6 +4060,7 @@ checksum = "f9e442fc33d7fdb45aa9bfeb312c095964abdf596f7567261062b2a7107aaabd"
 dependencies = [
  "deranged",
  "itoa",
+ "js-sys",
  "libc",
  "num-conv",
  "num_threads",
