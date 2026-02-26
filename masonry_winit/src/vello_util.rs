@@ -190,6 +190,7 @@ impl RenderContext {
             target_texture,
             target_view,
             blitter,
+            resizing: false,
         };
         self.configure_surface(&surface);
         Ok(surface)
@@ -205,6 +206,43 @@ impl RenderContext {
         surface.config.width = width;
         surface.config.height = height;
         self.configure_surface(surface);
+    }
+
+    /// Handles changes of the window resizing state for a surface.
+    ///
+    /// On macOS/Metal, interactive window resizing is driven by `CoreAnimation` transactions. During
+    /// that phase, enabling `present_with_transaction` avoids visible jitter.
+    #[cfg(target_os = "macos")]
+    pub(crate) fn on_window_resize_state_change(
+        &self,
+        surface: &mut RenderSurface<'_>,
+        resizing: bool,
+    ) {
+        if surface.resizing == resizing {
+            return;
+        }
+
+        // SAFETY: We only mutate a backend-specific flag on the Metal HAL surface when the
+        // runtime backend matches Metal. This mirrors the eframe/egui-wgpu fix.
+        //
+        // TODO: Update to new API once Vello is on v28 of WGPU
+        // https://github.com/linebender/xilem/pull/1551#issuecomment-3864370306
+        #[allow(
+            unsafe_code,
+            reason = "We only mutate a backend-specific flag on the Metal HAL surface when the runtime backend matches Metal"
+        )]
+        unsafe {
+            if let Some(hal_surface) = surface.surface.as_hal::<::wgpu::hal::api::Metal>() {
+                let raw =
+                    std::ptr::from_ref::<::wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
+                (*raw).present_with_transaction = resizing;
+            }
+        }
+
+        // The flag affects presentation behavior and must be applied via reconfigure.
+        self.configure_surface(surface);
+
+        surface.resizing = resizing;
     }
 
     pub(crate) fn set_present_mode(
@@ -314,6 +352,7 @@ pub(crate) struct RenderSurface<'s> {
     pub target_texture: Texture,
     pub target_view: TextureView,
     pub blitter: TextureBlitter,
+    pub resizing: bool,
 }
 
 impl std::fmt::Debug for RenderSurface<'_> {
@@ -326,6 +365,7 @@ impl std::fmt::Debug for RenderSurface<'_> {
             .field("target_texture", &self.target_texture)
             .field("target_view", &self.target_view)
             .field("blitter", &"(Not Debug)")
+            .field("resizing", &self.resizing)
             .finish()
     }
 }
