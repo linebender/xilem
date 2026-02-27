@@ -46,7 +46,7 @@ fn build_accessibility_tree(
         };
         let mut node = build_access_node(widget, &mut ctx, scale_factor);
         let props = PropertiesRef {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.accessibility(&mut ctx, &props, &mut node);
