@@ -61,9 +61,7 @@ impl Widget for RadioGroup {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         ctx.run_layout(&mut self.child, size);
         ctx.place_child(&mut self.child, Point::ORIGIN);
-
-        let child_baseline = ctx.child_baseline_offset(&self.child);
-        ctx.set_baseline_offset(child_baseline);
+        ctx.derive_baselines(&self.child);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
