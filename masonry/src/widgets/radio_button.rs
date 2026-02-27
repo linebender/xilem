@@ -73,7 +73,7 @@ impl RadioButton {
             return;
         };
         let self_id = this.ctx.widget_id();
-        this.ctx.mutate_widget_later(parent_id, move |mut group| {
+        this.ctx.mutate_later(parent_id, move |mut group| {
             let group = group.downcast::<RadioGroup>();
             Self::update_group(group, self_id, checked);
         });
@@ -112,7 +112,7 @@ impl RadioButton {
             return;
         };
         let self_id = ctx.widget_id();
-        ctx.mutate_widget_later(parent_id, move |mut group| {
+        ctx.mutate_later(parent_id, move |mut group| {
             let group = group.downcast::<RadioGroup>();
             Self::update_group(group, self_id, true);
         });
@@ -126,7 +126,7 @@ impl RadioButton {
         {
             // We don't bother checking that the button still exists,
             // the mutate pass does that for us.
-            group.ctx.mutate_widget_later(button_id, move |mut group| {
+            group.ctx.mutate_later(button_id, move |mut group| {
                 let mut button = group.downcast::<Self>();
                 button.widget.selected = false;
                 button.ctx.request_render();
