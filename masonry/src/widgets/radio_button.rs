@@ -301,10 +301,7 @@ impl Widget for RadioButton {
         let label_origin = Point::new(check_side + check_padding, 0.);
         ctx.place_child(&mut self.label, label_origin);
 
-        let label_baseline = ctx.child_baseline_offset(&self.label);
-        let label_bottom = label_origin.y + label_size.height;
-        let bottom_gap = size.height - label_bottom;
-        ctx.set_baseline_offset(label_baseline + bottom_gap);
+        ctx.derive_baselines(&self.label);
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
