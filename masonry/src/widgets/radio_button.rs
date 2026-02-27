@@ -440,7 +440,7 @@ impl Widget for RadioButton {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Properties, StyleProperty, WidgetTag};
+    use crate::core::{StyleProperty, WidgetTag};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
@@ -512,10 +512,7 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = NewWidget::new_with_props(
-                label,
-                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
-            );
+            let label = NewWidget::new_with_props(label, ContentColor::new(ACCENT_COLOR));
             let radio = NewWidget::new(RadioButton::from_label(true, label));
             let group = NewWidget::new(RadioGroup::new(radio));
 
