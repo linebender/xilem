@@ -23,7 +23,17 @@ pub(crate) trait DemoPage {
 
     fn on_selected(&mut self, _render_root: &mut RenderRoot) {}
 
+    // TODO - Replace with "on_action" method?
+
     fn on_button_press(&mut self, _render_root: &mut RenderRoot, _widget_id: WidgetId) -> bool {
+        false
+    }
+
+    fn on_radio_button_selected(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _widget_id: WidgetId,
+    ) -> bool {
         false
     }
 

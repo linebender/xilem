@@ -37,6 +37,7 @@ fn update_anim_for_widget(
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
+            ancestors: None,
         };
         let mut props = PropertiesMut {
             map: properties,
