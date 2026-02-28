@@ -15,9 +15,9 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
-    MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
+    AccessCtx, AccessEvent, ActionCtx, ChildrenIds, ComposeCtx, CursorIcon, ErasedAction, EventCtx,
+    Layer, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::LenReq;
@@ -71,6 +71,8 @@ pub enum Record {
     AccessEvent(AccessEvent),
     /// Animation frame.
     AnimFrame(u64),
+    /// Action.
+    Action((String, WidgetId)),
     /// Register children
     RegisterChildren,
     /// Update
@@ -193,6 +195,18 @@ impl<W: Widget> Widget for Recorder<W> {
     ) {
         self.recording.push(Record::AnimFrame(interval));
         self.child.on_anim_frame(ctx, props, interval);
+    }
+
+    fn on_action(
+        &mut self,
+        ctx: &mut ActionCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        action: &ErasedAction,
+        source: WidgetId,
+    ) {
+        self.recording
+            .push(Record::Action((action.type_name().into(), source)));
+        self.child.on_action(ctx, props, action, source);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {

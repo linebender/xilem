@@ -6,6 +6,7 @@
 //! widget/property set in our tests if needed.
 
 mod accessibility;
+mod action;
 mod anim;
 mod compose;
 mod event;

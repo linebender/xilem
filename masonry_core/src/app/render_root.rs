@@ -22,6 +22,7 @@ use crate::core::{
     WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
+use crate::passes::action::run_action_pass;
 use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
 use crate::passes::event::{
@@ -132,6 +133,9 @@ pub(crate) struct RenderRootState {
 
     /// List of callbacks that will run in the next `mutate` pass.
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
+
+    /// List of actions that will be handled in the next `action` pass.
+    pub(crate) actions: Vec<(ErasedAction, WidgetId)>,
 
     /// Whether an IME session is active.
     pub(crate) is_ime_active: bool,
@@ -354,6 +358,7 @@ impl RenderRoot {
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
+                actions: Vec::new(),
                 is_ime_active: false,
                 last_sent_ime_area: INVALID_IME_AREA,
                 scene_cache: HashMap::new(),
@@ -749,6 +754,7 @@ impl RenderRoot {
             // Calling a run_xxx_pass should always be very fast if the pass doesn't need to do anything.
 
             run_mutate_pass(self);
+            run_action_pass(self);
             run_update_widget_tree_pass(self);
             run_update_disabled_pass(self);
             run_update_stashed_pass(self);
@@ -943,6 +949,7 @@ impl RenderRootState {
         self.needs_pointer_pass
             || self.focused_widget != self.next_focused_widget
             || !self.mutate_callbacks.is_empty()
+            || !self.actions.is_empty()
     }
 }
 

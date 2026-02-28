@@ -14,9 +14,10 @@ use vello::Scene;
 use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
+    AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
+    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
+    pre_paint,
 };
 use crate::layout::LenReq;
 
@@ -208,6 +209,19 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut UpdateCtx<'_>,
         props: &mut PropertiesMut<'_>,
         interval: u64,
+    ) {
+    }
+
+    /// Handles an `action` from a `source` widget deeper in the tree.
+    ///
+    /// If the action isn't marked as handled then it will bubble up the widget tree
+    /// and eventually to the app driver.
+    fn on_action(
+        &mut self,
+        ctx: &mut ActionCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        action: &ErasedAction,
+        source: WidgetId,
     ) {
     }
 

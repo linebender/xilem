@@ -5,10 +5,10 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
-    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
-    WidgetRef, find_widget_under_pointer, pre_paint,
+    AccessCtx, AccessEvent, ActionCtx, ChildrenIds, ComposeCtx, CursorIcon, ErasedAction, EventCtx,
+    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut,
+    PropertiesRef, PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
@@ -22,6 +22,8 @@ pub(crate) type TextEventFn<S> =
 pub(crate) type AccessEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &AccessEvent);
 pub(crate) type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, u64);
+pub(crate) type ActionFn<S> =
+    dyn FnMut(&mut S, &mut ActionCtx<'_>, &mut PropertiesMut<'_>, &ErasedAction, WidgetId);
 pub(crate) type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
 pub(crate) type UpdateFn<S> =
     dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
@@ -50,6 +52,7 @@ pub struct ModularWidget<S> {
     on_text_event: Option<Box<TextEventFn<S>>>,
     on_access_event: Option<Box<AccessEventFn<S>>>,
     on_anim_frame: Option<Box<AnimFrameFn<S>>>,
+    on_action: Option<Box<ActionFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
     property_change: Option<Box<PropertyChangeFn<S>>>,
@@ -81,6 +84,7 @@ impl<S> ModularWidget<S> {
             on_text_event: None,
             on_access_event: None,
             on_anim_frame: None,
+            on_action: None,
             register_children: None,
             update: None,
             property_change: None,
@@ -243,6 +247,16 @@ impl<S> ModularWidget<S> {
         self
     }
 
+    /// See [`Widget::on_action`]
+    pub fn action_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut ActionCtx<'_>, &mut PropertiesMut<'_>, &ErasedAction, WidgetId)
+        + 'static,
+    ) -> Self {
+        self.on_action = Some(Box::new(f));
+        self
+    }
+
     /// See [`Widget::register_children`]
     pub fn register_children_fn(
         mut self,
@@ -389,6 +403,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
     ) {
         if let Some(f) = self.on_anim_frame.as_mut() {
             f(&mut self.state, ctx, props, interval);
+        }
+    }
+
+    fn on_action(
+        &mut self,
+        ctx: &mut ActionCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        action: &ErasedAction,
+        source: WidgetId,
+    ) {
+        if let Some(f) = self.on_action.as_mut() {
+            f(&mut self.state, ctx, props, action, source);
         }
     }
 
