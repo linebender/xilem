@@ -11,17 +11,10 @@ use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::layout::Length;
 use crate::palette::css::DIM_GRAY;
 use crate::peniko::Color;
-use crate::properties::{
-    ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
-    CheckmarkStrokeWidth, ContentColor, CornerRadius, Dimensions, DisabledBackground,
-    DisabledCheckmarkColor, DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor,
-    Padding, PlaceholderColor, SelectionColor, ThumbColor, ThumbRadius, ToggledBackground,
-    TrackThickness, UnfocusedSelectionColor,
-};
-use crate::widgets::{
-    Badge, Button, Checkbox, DisclosureButton, Divider, Flex, Grid, Label, ProgressBar, Selector,
-    SelectorItem, Spinner, StepInput, Steppable, Switch, TextArea, TextInput,
-};
+
+// We use glob imports here to avoid frequent merge conflicts.
+use crate::properties::*;
+use crate::widgets::*;
 
 /// Default color for the app background.
 ///
