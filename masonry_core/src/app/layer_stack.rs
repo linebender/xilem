@@ -65,14 +65,6 @@ impl LayerStack {
         self.layers[idx].widget.id()
     }
 
-    /// The position of the given layer.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `idx` is out of bounds.
-    pub(crate) fn layer_pos(&self, idx: usize) -> Point {
-        self.layers[idx].pos
-    }
 }
 
 // --- MARK: IMPL WIDGETMUT

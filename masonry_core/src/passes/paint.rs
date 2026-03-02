@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Rect, Stroke};
+use vello::kurbo::{Affine, Line, Rect, Stroke};
 use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
@@ -15,37 +15,39 @@ use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{get_debug_color, stroke};
 
 /// A painted overlay layer, ready for compositing.
+///
+/// The scene is in the layer's local coordinate space. To composite into
+/// window space, apply the layer's [`transform`](Self::transform).
 pub struct PaintedLayer {
-    /// The rendered scene for this layer, in window coordinate space.
+    /// The rendered scene for this layer, in the layer's local coordinate space.
     pub scene: Scene,
-    /// The layer's origin in window coordinate space.
-    pub origin: Point,
+    /// Transform from layer-local space to window space.
+    ///
+    /// For layers placed at a simple position, this is a translation.
+    /// Apply this transform when compositing the layer's scene into window space.
+    pub transform: Affine,
     /// The root widget ID of this layer.
     pub root_id: WidgetId,
 }
 
 /// Result of the paint pass — one scene per layer.
 ///
-/// The base layer contains the main application content.
-/// Overlay layers contain tooltips, menus, and other popups,
-/// ordered from bottom to top (painter's order).
+/// The base layer contains the main application content in window coordinate space.
+/// Overlay layers contain tooltips, menus, and other popups in layer-local coordinate
+/// space, ordered from bottom to top (painter's order).
 pub struct PaintResult {
-    /// The base layer scene (main application content).
+    /// The base layer scene (main application content) in window coordinate space.
     pub base: Scene,
-    /// Overlay layer scenes in z-order (bottom to top).
+    /// Overlay layer scenes in z-order (bottom to top), each in layer-local coordinates.
     pub overlays: Vec<PaintedLayer>,
 }
 
 impl PaintResult {
-    /// Recomposite all layers into a single scene.
-    ///
-    /// All layer scenes are in window coordinate space, so they are appended
-    /// with identity transforms. The result is visually identical to the
-    /// previous single-scene rendering.
+    /// Recomposite all layers into a single scene in window coordinate space.
     pub fn composite(&self) -> Scene {
         let mut scene = self.base.clone();
         for layer in &self.overlays {
-            scene.append(&layer.scene, None);
+            scene.append(&layer.scene, Some(layer.transform));
         }
         scene
     }
@@ -200,27 +202,38 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     let mut scene_cache = std::mem::take(&mut root.global_state.scene_cache);
 
     let root_id = root.root_id();
-    let layer_info = root.layer_info();
+    let layer_ids = root.layer_ids();
 
     // Paint each layer into its own scene.
     let mut base_scene = Scene::new();
     let mut overlays = Vec::new();
 
-    for (idx, &(layer_widget_id, layer_pos)) in layer_info.iter().enumerate() {
+    for (idx, &layer_widget_id) in layer_ids.iter().enumerate() {
         if idx == 0 {
+            // Base layer: paint directly in window space.
             paint_layer(root, &mut base_scene, &mut scene_cache, root_id, layer_widget_id);
         } else {
-            let mut layer_scene = Scene::new();
+            // Overlay layers: paint in window space first, then transform to layer-local.
+            let mut window_space_scene = Scene::new();
             paint_layer(
                 root,
-                &mut layer_scene,
+                &mut window_space_scene,
                 &mut scene_cache,
                 root_id,
                 layer_widget_id,
             );
+
+            // The layer root's window_transform maps from layer-local to window space.
+            // We apply its inverse to convert the window-space scene to layer-local space.
+            let layer_transform = root.widget_arena.get_state(layer_widget_id).window_transform;
+            let inverse_transform = layer_transform.inverse();
+
+            let mut layer_scene = Scene::new();
+            layer_scene.append(&window_space_scene, Some(inverse_transform));
+
             overlays.push(PaintedLayer {
                 scene: layer_scene,
-                origin: layer_pos,
+                transform: layer_transform,
                 root_id: layer_widget_id,
             });
         }
@@ -245,16 +258,21 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
         }
 
         // Draw the hover rect in the owning layer's scene.
-        let target_scene = if layer_root == layer_info[0].0 {
-            &mut base_scene
+        // For overlay layers, we need to transform the window-space rect
+        // into the layer's local coordinate space.
+        if layer_root == layer_ids[0] {
+            // Base layer: scene is in window space, draw directly.
+            base_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
+        } else if let Some(layer) = overlays.iter_mut().find(|l| l.root_id == layer_root) {
+            // Overlay layer: scene is in layer-local space, apply inverse transform.
+            let inverse = layer.transform.inverse();
+            layer
+                .scene
+                .fill(Fill::NonZero, inverse, HOVER_FILL_COLOR, None, &rect);
         } else {
-            overlays
-                .iter_mut()
-                .find(|l| l.root_id == layer_root)
-                .map(|l| &mut l.scene)
-                .unwrap_or(&mut base_scene)
-        };
-        target_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
+            // Fallback: draw in base scene.
+            base_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
+        }
     }
 
     PaintResult {

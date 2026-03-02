@@ -415,10 +415,10 @@ impl RenderRoot {
         stack.layer_id(layer_idx)
     }
 
-    /// Returns the widget ID and position of each layer, in stack order.
+    /// Returns the widget ID of each layer, in stack order.
     ///
     /// Index 0 is the base layer; subsequent entries are overlay layers.
-    pub(crate) fn layer_info(&self) -> Vec<(WidgetId, Point)> {
+    pub(crate) fn layer_ids(&self) -> Vec<WidgetId> {
         let node_ref = self
             .widget_arena
             .nodes
@@ -428,7 +428,7 @@ impl RenderRoot {
 
         let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
         (0..stack.layer_count())
-            .map(|i| (stack.layer_id(i), stack.layer_pos(i)))
+            .map(|i| stack.layer_id(i))
             .collect()
     }
 
