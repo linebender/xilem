@@ -211,7 +211,13 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     for (idx, &layer_widget_id) in layer_ids.iter().enumerate() {
         if idx == 0 {
             // Base layer: paint directly in window space.
-            paint_layer(root, &mut base_scene, &mut scene_cache, root_id, layer_widget_id);
+            paint_layer(
+                root,
+                &mut base_scene,
+                &mut scene_cache,
+                root_id,
+                layer_widget_id,
+            );
         } else {
             // Overlay layers: paint in window space first, then transform to layer-local.
             let mut window_space_scene = Scene::new();
@@ -225,7 +231,10 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
 
             // The layer root's window_transform maps from layer-local to window space.
             // We apply its inverse to convert the window-space scene to layer-local space.
-            let layer_transform = root.widget_arena.get_state(layer_widget_id).window_transform;
+            let layer_transform = root
+                .widget_arena
+                .get_state(layer_widget_id)
+                .window_transform;
             let inverse_transform = layer_transform.inverse();
 
             let mut layer_scene = Scene::new();
@@ -262,7 +271,13 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
         // into the layer's local coordinate space.
         if layer_root == layer_ids[0] {
             // Base layer: scene is in window space, draw directly.
-            base_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
+            base_scene.fill(
+                Fill::NonZero,
+                Affine::IDENTITY,
+                HOVER_FILL_COLOR,
+                None,
+                &rect,
+            );
         } else if let Some(layer) = overlays.iter_mut().find(|l| l.root_id == layer_root) {
             // Overlay layer: scene is in layer-local space, apply inverse transform.
             let inverse = layer.transform.inverse();
@@ -271,7 +286,13 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
                 .fill(Fill::NonZero, inverse, HOVER_FILL_COLOR, None, &rect);
         } else {
             // Fallback: draw in base scene.
-            base_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
+            base_scene.fill(
+                Fill::NonZero,
+                Affine::IDENTITY,
+                HOVER_FILL_COLOR,
+                None,
+                &rect,
+            );
         }
     }
 

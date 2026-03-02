@@ -64,7 +64,6 @@ impl LayerStack {
     pub(crate) fn layer_id(&self, idx: usize) -> WidgetId {
         self.layers[idx].widget.id()
     }
-
 }
 
 // --- MARK: IMPL WIDGETMUT
