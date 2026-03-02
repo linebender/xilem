@@ -6,13 +6,50 @@ use std::collections::HashMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Rect, Stroke};
+use vello::kurbo::{Affine, Line, Point, Rect, Stroke};
 use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{get_debug_color, stroke};
+
+/// A painted overlay layer, ready for compositing.
+pub struct PaintedLayer {
+    /// The rendered scene for this layer, in window coordinate space.
+    pub scene: Scene,
+    /// The layer's origin in window coordinate space.
+    pub origin: Point,
+    /// The root widget ID of this layer.
+    pub root_id: WidgetId,
+}
+
+/// Result of the paint pass — one scene per layer.
+///
+/// The base layer contains the main application content.
+/// Overlay layers contain tooltips, menus, and other popups,
+/// ordered from bottom to top (painter's order).
+pub struct PaintResult {
+    /// The base layer scene (main application content).
+    pub base: Scene,
+    /// Overlay layer scenes in z-order (bottom to top).
+    pub overlays: Vec<PaintedLayer>,
+}
+
+impl PaintResult {
+    /// Recomposite all layers into a single scene.
+    ///
+    /// All layer scenes are in window coordinate space, so they are appended
+    /// with identity transforms. The result is visually identical to the
+    /// previous single-scene rendering.
+    pub fn composite(&self) -> Scene {
+        let mut scene = self.base.clone();
+        for layer in &self.overlays {
+            scene.append(&layer.scene, None);
+        }
+        scene
+    }
+}
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
@@ -155,43 +192,113 @@ fn paint_widget(
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#render-passes).
-pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
+pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     let _span = info_span!("paint").entered();
-
-    // TODO - Reserve scene
-    // https://github.com/linebender/xilem/issues/524
-    let mut complete_scene = Scene::new();
-
-    let root_node = root.widget_arena.get_node_mut(root.root_id());
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
     let mut scene_cache = std::mem::take(&mut root.global_state.scene_cache);
 
-    paint_widget(
-        &mut root.global_state,
-        &root.default_properties,
-        &mut complete_scene,
-        &mut scene_cache,
-        root_node,
-    );
+    let root_id = root.root_id();
+    let layer_info = root.layer_info();
+
+    // Paint each layer into its own scene.
+    let mut base_scene = Scene::new();
+    let mut overlays = Vec::new();
+
+    for (idx, &(layer_widget_id, layer_pos)) in layer_info.iter().enumerate() {
+        if idx == 0 {
+            paint_layer(root, &mut base_scene, &mut scene_cache, root_id, layer_widget_id);
+        } else {
+            let mut layer_scene = Scene::new();
+            paint_layer(
+                root,
+                &mut layer_scene,
+                &mut scene_cache,
+                root_id,
+                layer_widget_id,
+            );
+            overlays.push(PaintedLayer {
+                scene: layer_scene,
+                origin: layer_pos,
+                root_id: layer_widget_id,
+            });
+        }
+    }
+
     root.global_state.scene_cache = scene_cache;
 
-    // Display a rectangle over the hovered widget
+    // Display a rectangle over the hovered widget, in the layer that owns it.
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
         let rect =
             Rect::from_origin_size(state.border_box_window_origin(), state.border_box_size());
 
-        complete_scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            HOVER_FILL_COLOR,
-            None,
-            &rect,
-        );
+        // Walk up the widget tree to find which layer root this widget belongs to.
+        let mut layer_root = hovered_widget;
+        while let Some(parent) = root.widget_arena.parent_of(layer_root) {
+            if parent == root_id {
+                break;
+            }
+            layer_root = parent;
+        }
+
+        // Draw the hover rect in the owning layer's scene.
+        let target_scene = if layer_root == layer_info[0].0 {
+            &mut base_scene
+        } else {
+            overlays
+                .iter_mut()
+                .find(|l| l.root_id == layer_root)
+                .map(|l| &mut l.scene)
+                .unwrap_or(&mut base_scene)
+        };
+        target_scene.fill(Fill::NonZero, Affine::IDENTITY, HOVER_FILL_COLOR, None, &rect);
     }
 
-    complete_scene
+    PaintResult {
+        base: base_scene,
+        overlays,
+    }
+}
+
+/// Paint a single layer's widget subtree into `target_scene`.
+///
+/// This is a helper that handles the split borrows needed to access
+/// `global_state`, `default_properties`, and `widget_arena` simultaneously.
+fn paint_layer(
+    root: &mut RenderRoot,
+    target_scene: &mut Scene,
+    scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
+    root_id: WidgetId,
+    layer_widget_id: WidgetId,
+) {
+    // Clear the LayerStack's own paint flags (its paint is a no-op).
+    // This is idempotent so safe to call per-layer.
+    {
+        let root_node = root.widget_arena.get_node_mut(root_id);
+        let state = &mut root_node.item.state;
+        state.request_pre_paint = false;
+        state.request_paint = false;
+        state.request_post_paint = false;
+        state.needs_paint = false;
+    }
+
+    // Get the layer child from the arena, then pass split borrows to paint_widget.
+    let root_node = root.widget_arena.get_node_mut(root_id);
+    let Some(layer_node) = root_node.children.into_item_mut(layer_widget_id) else {
+        debug_panic!(
+            "Error in paint pass: cannot find layer child {layer_widget_id:?} in LayerStack"
+        );
+        return;
+    };
+
+    paint_widget(
+        &mut root.global_state,
+        &root.default_properties,
+        target_scene,
+        scene_cache,
+        layer_node,
+    );
 }

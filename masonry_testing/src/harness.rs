@@ -487,7 +487,8 @@ impl<W: Widget> TestHarness<W> {
     // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
     // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
-        let (contents_scene, tree_update) = self.render_root.redraw();
+        let (paint_result, tree_update) = self.render_root.redraw();
+        let contents_scene = paint_result.composite();
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);

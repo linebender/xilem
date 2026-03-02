@@ -29,7 +29,7 @@ use crate::passes::event::{
 };
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
-use crate::passes::paint::run_paint_pass;
+use crate::passes::paint::{PaintResult, run_paint_pass};
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_fonts_pass, run_update_pointer_pass, run_update_scroll_pass,
@@ -415,6 +415,23 @@ impl RenderRoot {
         stack.layer_id(layer_idx)
     }
 
+    /// Returns the widget ID and position of each layer, in stack order.
+    ///
+    /// Index 0 is the base layer; subsequent entries are overlay layers.
+    pub(crate) fn layer_info(&self) -> Vec<(WidgetId, Point)> {
+        let node_ref = self
+            .widget_arena
+            .nodes
+            .find(self.root_id())
+            .expect("root widget not in widget tree");
+        let widget = &*node_ref.item.widget;
+
+        let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
+        (0..stack.layer_count())
+            .map(|i| (stack.layer_id(i), stack.layer_pos(i)))
+            .collect()
+    }
+
     pub(crate) fn root_state(&self) -> &WidgetState {
         &self
             .widget_arena
@@ -536,16 +553,16 @@ impl RenderRoot {
     ///
     /// Returns an update to the accessibility tree and a Vello scene representing
     /// the widget tree's current state.
-    pub fn redraw(&mut self) -> (Scene, Option<TreeUpdate>) {
+    pub fn redraw(&mut self) -> (PaintResult, Option<TreeUpdate>) {
         self.run_rewrite_passes();
 
         let access_tree_active = self.global_state.access_tree_active;
 
         // TODO - Handle invalidation regions
-        let scene = run_paint_pass(self);
+        let paint_result = run_paint_pass(self);
         let tree_update = access_tree_active
             .then(|| run_accessibility_pass(self, self.global_state.scale_factor));
-        (scene, tree_update)
+        (paint_result, tree_update)
     }
 
     /// Returns the current icon that the mouse should display.

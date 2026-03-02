@@ -52,7 +52,6 @@ impl LayerStack {
     }
 
     /// Returns the number of layers, including the base layer.
-    #[expect(dead_code, reason = "Might be useful later")]
     pub(crate) fn layer_count(&self) -> usize {
         self.layers.len()
     }
@@ -64,6 +63,15 @@ impl LayerStack {
     /// Panics if `idx` is out of bounds.
     pub(crate) fn layer_id(&self, idx: usize) -> WidgetId {
         self.layers[idx].widget.id()
+    }
+
+    /// The position of the given layer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    pub(crate) fn layer_pos(&self, idx: usize) -> Point {
+        self.layers[idx].pos
     }
 }
 
