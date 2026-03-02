@@ -52,7 +52,6 @@ impl LayerStack {
     }
 
     /// Returns the number of layers, including the base layer.
-    #[expect(dead_code, reason = "Might be useful later")]
     pub(crate) fn layer_count(&self) -> usize {
         self.layers.len()
     }

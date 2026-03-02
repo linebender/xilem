@@ -8,6 +8,9 @@ mod render_root;
 mod tracing_backend;
 
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+
+// Re-export paint result types for consumers of `RenderRoot::redraw()`.
+pub use crate::passes::paint::{PaintResult, PaintedLayer};
 pub use tracing_backend::{
     TracingSubscriberHasBeenSetError, default_tracing_subscriber, try_init_test_tracing,
     try_init_tracing,

@@ -685,7 +685,11 @@ impl MasonryState<'_> {
         let animation_continues = window.render_root.needs_anim();
         self.last_anim = animation_continues.then_some(now);
 
-        let (scene, tree_update) = window.render_root.redraw();
+        let (paint_result, tree_update) = window.render_root.redraw();
+        // Recomposite all layers into a single scene for Vello.
+        // All layer scenes use window-space transforms, so identity compositing
+        // produces identical visual output to the previous single-scene approach.
+        let scene = paint_result.composite();
         Self::render(
             surface,
             window,
