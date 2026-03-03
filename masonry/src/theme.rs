@@ -319,6 +319,10 @@ pub fn default_property_set() -> DefaultProperties {
     default_step_input_style::<f32>(&mut properties);
     default_step_input_style::<f64>(&mut properties);
 
+    // Slider
+    properties.insert::<Slider, _>(Background::Color(ZYNC_800));
+    properties.insert::<Slider, _>(BarColor(ACCENT_COLOR));
+
     properties
 }
 
