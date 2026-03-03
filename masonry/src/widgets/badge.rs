@@ -10,14 +10,12 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, PropertySet, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::parley::style::FontWeight;
-use crate::properties::ContentColor;
-use crate::theme::TEXT_COLOR;
 use crate::widgets::Label;
 
 /// A non-interactive badge (pill) widget that hosts a single child.
@@ -94,7 +92,7 @@ impl Badge {
         let label = Label::new(text)
             .with_style(StyleProperty::FontSize(12.0))
             .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
-            .with_props(PropertySet::new().with(ContentColor::new(TEXT_COLOR)));
+            .with_auto_id();
 
         Self::new(label)
     }
