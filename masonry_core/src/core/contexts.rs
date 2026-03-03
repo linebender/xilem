@@ -261,7 +261,7 @@ impl MutateCtx<'_> {
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: &mut node_mut.item.state,
             properties: PropertiesMut {
-                map: &mut node_mut.item.properties,
+                set: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
             },
             changed_properties: &mut node_mut.item.changed_properties,
@@ -323,7 +323,7 @@ impl<'w> QueryCtx<'w> {
             global_state: self.global_state,
             widget_state: &child_node.item.state,
             properties: PropertiesRef {
-                map: &child_node.item.properties,
+                set: &child_node.item.properties,
                 default_map: self.properties.default_map,
             },
             children: child_node.children,
@@ -2081,7 +2081,7 @@ impl RegisterCtx<'_> {
         let node = WidgetArenaNode {
             widget: widget.as_box_dyn(),
             state,
-            properties: properties.map,
+            properties,
             changed_properties: TypeSet::default(),
         };
         self.children.insert(id, node);

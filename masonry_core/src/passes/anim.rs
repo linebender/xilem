@@ -39,7 +39,7 @@ fn update_anim_for_widget(
             default_properties,
         };
         let mut props = PropertiesMut {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.on_anim_frame(&mut ctx, &mut props, elapsed_ns);

@@ -75,7 +75,7 @@ fn run_targeted_update_pass(
             default_properties: &root.default_properties,
         };
         let mut props = PropertiesMut {
-            map: properties,
+            set: properties,
             default_map: root.default_properties.for_widget(widget.type_id()),
         };
         pass_fn(widget, &mut ctx, &mut props);
@@ -111,7 +111,7 @@ fn run_single_update_pass(
         default_properties: &root.default_properties,
     };
     let mut props = PropertiesMut {
-        map: properties,
+        set: properties,
         default_map: root.default_properties.for_widget(widget.type_id()),
     };
     pass_fn(widget, &mut ctx, &mut props);
@@ -152,7 +152,7 @@ fn update_widget_tree(
             default_properties,
         };
         let mut props = PropertiesMut {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.update(&mut ctx, &mut props, &Update::WidgetAdded);
@@ -280,7 +280,7 @@ fn update_disabled_for_widget(
             default_properties,
         };
         let mut props = PropertiesMut {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
@@ -359,7 +359,7 @@ fn update_stashed_for_widget(
             default_properties,
         };
         let mut props = PropertiesMut {
-            map: properties,
+            set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
@@ -995,7 +995,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             global_state: &root.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                map: properties,
+                set: properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             },
             children,
@@ -1043,7 +1043,7 @@ fn update_fonts_for_widget(
         default_properties,
     };
     let mut props = PropertiesMut {
-        map: properties,
+        set: properties,
         default_map: default_properties.for_widget(widget.type_id()),
     };
     widget.update(&mut ctx, &mut props, &Update::FontsChanged);
