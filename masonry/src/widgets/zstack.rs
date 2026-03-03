@@ -8,7 +8,7 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Rect, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
@@ -271,7 +271,7 @@ impl Widget for ZStack {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, _scene: &mut Scene) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().map(|x| &mut x.widget) {
@@ -294,7 +294,7 @@ impl Widget for ZStack {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut Node,
     ) {
     }

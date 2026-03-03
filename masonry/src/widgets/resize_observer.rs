@@ -4,8 +4,8 @@
 use std::mem;
 
 use crate::core::{
-    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PropertiesRef, RegisterCtx,
-    Widget, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::LenReq;
@@ -144,7 +144,7 @@ impl Widget for ResizeObserver {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _scene: &mut vello::Scene,
     ) {
     }
@@ -156,7 +156,7 @@ impl Widget for ResizeObserver {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut accesskit::Node,
     ) {
     }

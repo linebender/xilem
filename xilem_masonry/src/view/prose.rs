@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::core::{ArcStr, NewWidget, PropertySet, StyleProperty};
 use masonry::parley::FontWeight;
-use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
+use masonry::properties::{ContentColor, LineBreaking};
 use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -16,7 +16,6 @@ pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> 
     Prose {
         content: content.into(),
         text_color: None,
-        disabled_text_color: None,
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
@@ -41,7 +40,6 @@ pub struct Prose<State, Action> {
     content: ArcStr,
 
     text_color: Option<Color>,
-    disabled_text_color: Option<Color>,
     text_alignment: TextAlign,
     text_size: f32,
     line_break_mode: LineBreaking,
@@ -57,14 +55,6 @@ impl<State, Action> Prose<State, Action> {
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
     pub fn text_color(mut self, color: Color) -> Self {
         self.text_color = Some(color);
-        self
-    }
-
-    /// Set the text's color when the text input is disabled.
-    ///
-    /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
-    pub fn disabled_text_color(mut self, color: Color) -> Self {
-        self.disabled_text_color = Some(color);
         self
     }
 
@@ -116,9 +106,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Prose<Sta
         if let Some(color) = self.text_color {
             props.insert(ContentColor { color });
         }
-        if let Some(color) = self.disabled_text_color {
-            props.insert(DisabledContentColor(ContentColor { color }));
-        }
         let text_area = NewWidget::new_with_props(text_area, props);
 
         let pod = ctx.create_pod(
@@ -146,14 +133,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Prose<Sta
                 text_area.remove_prop::<ContentColor>();
             }
         }
-        if self.disabled_text_color != prev.disabled_text_color {
-            if let Some(color) = self.disabled_text_color {
-                text_area.insert_prop(DisabledContentColor(ContentColor { color }));
-            } else {
-                text_area.remove_prop::<DisabledContentColor>();
-            }
-        }
-
         if prev.content != self.content {
             widgets::TextArea::reset_text(&mut text_area, &self.content);
         }

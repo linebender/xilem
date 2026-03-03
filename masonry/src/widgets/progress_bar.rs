@@ -181,20 +181,31 @@ impl Widget for ProgressBar {
         ctx.derive_baselines(&self.label);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(ctx, props);
+        let p = PrePaintProps::fetch(props);
 
-        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
+        paint_background(
+            scene,
+            bbox,
+            &p.background,
+            &p.border_width,
+            &p.corner_radius,
+        );
         // We need to delay painting the border until after we paint the filled bar area.
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let border_box = ctx.border_box();
-        let border_width = props.get::<BorderWidth>();
-        let corner_radius = props.get::<CornerRadius>();
-        let border_color = props.get::<BorderColor>();
+        let border_width = *props.get::<BorderWidth>();
+        let corner_radius = *props.get::<CornerRadius>();
+        let border_color = *props.get::<BorderColor>();
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
@@ -213,13 +224,19 @@ impl Widget for ProgressBar {
                 // Currently bg_rect() gives a rect without borders, so we can use it.
                 // However in the future when bg_rect() gets expanded to include borders,
                 // we'll need to create a special sans-border rect for this fill.
-                let bg_rect = border_width.bg_rect(border_box, corner_radius);
+                let bg_rect = border_width.bg_rect(border_box, &corner_radius);
 
                 fill(scene, &bg_rect, &gradient);
             }
         }
 
-        paint_border(scene, border_box, border_color, border_width, corner_radius);
+        paint_border(
+            scene,
+            border_box,
+            &border_color,
+            &border_width,
+            &corner_radius,
+        );
     }
 
     fn accessibility_role(&self) -> Role {
@@ -229,7 +246,7 @@ impl Widget for ProgressBar {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         node.set_min_numeric_value(0.0);

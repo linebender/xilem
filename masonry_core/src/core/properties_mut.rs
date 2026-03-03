@@ -8,9 +8,9 @@ use crate::util::AnyMap;
 ///
 /// Used by the [`Widget`](crate::core::Widget) trait during most passes.
 pub struct PropertiesMut<'a> {
-    pub(crate) set: &'a mut PropertySet,
+    pub(crate) local: &'a mut PropertySet,
     pub(crate) default_map: &'a AnyMap,
-    pub(crate) stack: Option<&'a PropertyStack>,
+    pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
     pub(crate) selection: &'a mut PropertySelection,
 }
@@ -22,7 +22,7 @@ impl PropertiesMut<'_> {
     ///
     /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
-        self.set.map.contains::<P>()
+        self.local.map.contains::<P>()
     }
 
     /// Returns value of property `P`.
@@ -31,14 +31,15 @@ impl PropertiesMut<'_> {
     /// then default properties, then [`Property::static_default()`].
     pub fn get<P: Property>(&mut self) -> &P {
         // 1. Local properties
-        if let Some(p) = self.set.map.get::<P>() {
+        if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
         // 2. Property stack (writes to cache and relevance tracking on miss)
-        if let Some(stack) = self.stack {
-            if let Some(p) = stack.resolve_cached_mut::<P>(self.selection, self.class_set) {
-                return p;
-            }
+        if let Some(p) = self
+            .stack
+            .resolve_cached_mut::<P>(self.selection, self.class_set)
+        {
+            return p;
         }
         // 3. Default properties
         if let Some(p) = self.default_map.get::<P>() {
@@ -48,15 +49,74 @@ impl PropertiesMut<'_> {
         P::static_default()
     }
 
-    /// Returns the defined value of property `P`.
+    /// Warms the [`PropertyStack`] cache for property `P`.
     ///
-    /// If the widget has an explicit entry, or the default property map has an explicit entry,
-    /// then this will return a value. Otherwise it will return `None`.
-    pub fn get_defined<P: Property>(&self) -> Option<&P> {
-        self.set
-            .map
-            .get::<P>()
-            .or_else(|| self.default_map.get::<P>())
+    /// Searches the stack for a matching entry and, if found, records it in
+    /// [`PropertySelection`] along with its relevance metadata. Subsequent
+    /// calls to [`get_cached`](Self::get_cached) will use the cached result
+    /// without requiring a mutable borrow.
+    ///
+    /// **Call this before `get_cached`** for every property type that may be
+    /// resolved from the stack. Properties found in the local [`PropertySet`]
+    /// or in `DefaultProperties` do not need a prior `resolve` call (they are
+    /// always accessible via `&self`), but calling `resolve` for them is
+    /// harmless.
+    ///
+    /// # Usage pattern
+    ///
+    /// ```ignore
+    /// // Phase 1 — populate the cache (each call takes &mut self temporarily)
+    /// props.resolve::<Background>();
+    /// props.resolve::<BorderColor>();
+    ///
+    /// // Phase 2 — read with shared borrows (can be held simultaneously)
+    /// let bg    = props.get_cached::<Background>();
+    /// let color = props.get_cached::<BorderColor>();
+    /// use_both(bg, color);
+    /// ```
+    pub fn resolve<P: Property>(&mut self) {
+        let _ = self
+            .stack
+            .resolve_cached_mut::<P>(self.selection, self.class_set);
+    }
+
+    /// Returns a shared reference to property `P` using the cached stack resolution.
+    ///
+    /// Because this takes `&self`, multiple results from `get_cached` may be held
+    /// simultaneously — unlike [`get`](Self::get), which takes `&mut self`.
+    ///
+    /// **Prerequisite:** call [`resolve`](Self::resolve) first for any property
+    /// that may come from the [`PropertyStack`]. Without a prior `resolve`, the
+    /// cache may not be populated and relevance tracking will not be updated,
+    /// which can cause `run_update_props_pass` to miss cache invalidations.
+    ///
+    /// For a single property lookup that does not need to be held alongside
+    /// another, prefer [`get`](Self::get) directly.
+    pub fn get_cached<P: Property>(&self) -> &P {
+        if !self.selection.is_cached::<P>() {
+            debug_panic!(
+                "Property {} was not resolved before get_cached",
+                std::any::type_name::<P>()
+            );
+        }
+        // 1. Local properties (always accessible; no stack involvement)
+        if let Some(p) = self.local.map.get::<P>() {
+            return p;
+        }
+        // 2. Property stack (reads from selection cache; linear scan as fallback
+        //    if resolve was not called, but does not update the cache or relevance)
+        if let Some(p) = self
+            .stack
+            .resolve_cached::<P>(self.selection, self.class_set)
+        {
+            return p;
+        }
+        // 3. Default properties
+        if let Some(p) = self.default_map.get::<P>() {
+            return p;
+        }
+        // 4. Static default
+        P::static_default()
     }
 
     /// Sets local property `P` to given value. Returns the previous value if `P` was already set.
@@ -67,7 +127,7 @@ impl PropertiesMut<'_> {
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
     pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
-        self.set.map.insert(value)
+        self.local.map.insert(value)
     }
 
     /// Removes local property `P`. Returns the previous value if `P` was set.
@@ -78,18 +138,18 @@ impl PropertiesMut<'_> {
     ///
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
     pub fn remove<P: Property>(&mut self) -> Option<P> {
-        self.set.map.remove::<P>()
+        self.local.map.remove::<P>()
     }
 
-    /// Returns a mutable reference to the local properties for direct access.
+    /// Returns a reference to the local properties for direct access.
     pub fn local_properties(&mut self) -> &mut PropertySet {
-        self.set
+        self.local
     }
 
     /// Returns a `PropertiesMut` for the same underlying properties with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
-            set: &mut *self.set,
+            local: &mut *self.local,
             default_map: self.default_map,
             stack: self.stack,
             class_set: self.class_set,

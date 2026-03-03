@@ -369,7 +369,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
     /// and can paint things outside the clip.
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         pre_paint(ctx, props, scene);
     }
 
@@ -377,13 +377,13 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This is called before the children are drawn.
     /// To draw on top of children, see [`Widget::post_paint`].
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene);
 
     /// Final paint method, which paints on top of the widget's children.
     ///
     /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
     /// and can paint things outside the clip.
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
     }
 
     /// Returns what kind of "thing" the widget fundamentally is.
@@ -401,7 +401,7 @@ pub trait Widget: AsDynWidget + Any {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &mut PropertiesMut<'_>,
         node: &mut Node,
     );
 
