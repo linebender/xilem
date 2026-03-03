@@ -218,7 +218,13 @@ impl Widget for Badged {
         ctx.place_child(badge, badge_origin);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

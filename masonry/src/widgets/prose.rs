@@ -165,7 +165,12 @@ impl Widget for Prose {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, _scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
         // All painting is handled by the child
     }
 

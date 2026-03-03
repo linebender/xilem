@@ -30,9 +30,11 @@ pub(crate) type MeasureFn<S> =
     dyn FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64;
 pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size);
 pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
-pub(crate) type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &mut PropertiesMut<'_>, &mut Scene);
+pub(crate) type PaintFn<S> =
+    dyn FnMut(&mut S, &mut PaintCtx<'_>, &mut PropertiesMut<'_>, &mut Scene);
 pub(crate) type RoleFn<S> = dyn Fn(&S) -> Role;
-pub(crate) type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &mut PropertiesMut<'_>, &mut Node);
+pub(crate) type AccessFn<S> =
+    dyn FnMut(&mut S, &mut AccessCtx<'_>, &mut PropertiesMut<'_>, &mut Node);
 pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
 
 /// A widget that can be constructed from individual functions, builder-style.
@@ -456,7 +458,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         if let Some(f) = self.pre_paint.as_mut() {
             f(&mut self.state, ctx, props, scene);
         } else {
@@ -470,7 +477,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn post_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         if let Some(f) = self.post_paint.as_mut() {
             f(&mut self.state, ctx, props, scene);
         }
