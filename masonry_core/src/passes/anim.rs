@@ -5,13 +5,14 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, WidgetArenaNode};
+use crate::core::{DefaultProperties, PropertiesMut, PropertyArena, UpdateCtx, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: UPDATE ANIM
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     elapsed_ns: u64,
 ) {
@@ -19,6 +20,8 @@ fn update_anim_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
+    let selection = &mut node.item.property_selection;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.anim, state);
 
@@ -32,16 +35,21 @@ fn update_anim_for_widget(
     // set in response to `AnimFrame`.
     if state.request_anim {
         state.request_anim = false;
+        let stack = property_arena.get(state.property_stack_id);
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
             ancestors: None,
+            property_arena,
         };
         let mut props = PropertiesMut {
             set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
+            selection,
         };
         widget.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }
@@ -51,6 +59,7 @@ fn update_anim_for_widget(
         update_anim_for_widget(
             global_state,
             default_properties,
+            property_arena,
             node.reborrow_mut(),
             elapsed_ns,
         );
@@ -72,6 +81,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     update_anim_for_widget(
         &mut root.global_state,
         &root.default_properties,
+        &root.property_arena,
         root_node,
         elapsed_ns,
     );

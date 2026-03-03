@@ -20,7 +20,10 @@ pub(crate) fn mutate_widget<R>(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let changed_properties = &mut node.item.changed_properties;
+    let class_set = &node.item.class_set;
+    let selection = &mut node.item.property_selection;
     let id = state.id;
+    let stack = root.property_arena.get(state.property_stack_id);
 
     let _span = info_span!("mutate_widget", name = widget.short_type_name()).entered();
 
@@ -37,10 +40,14 @@ pub(crate) fn mutate_widget<R>(
             properties: PropertiesMut {
                 set: properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
+                stack,
+                class_set,
+                selection,
             },
             changed_properties,
             children,
             default_properties: &root.default_properties,
+            property_arena: &root.property_arena,
         },
         widget,
     };

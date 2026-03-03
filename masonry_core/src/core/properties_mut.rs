@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Property, PropertySet};
+use crate::core::{ClassSet, Property, PropertySelection, PropertySet, PropertyStack};
 use crate::util::AnyMap;
 
 /// Mutable reference to a collection of [properties](Property) that a widget has access to.
@@ -10,6 +10,9 @@ use crate::util::AnyMap;
 pub struct PropertiesMut<'a> {
     pub(crate) set: &'a mut PropertySet,
     pub(crate) default_map: &'a AnyMap,
+    pub(crate) stack: Option<&'a PropertyStack>,
+    pub(crate) class_set: &'a ClassSet,
+    pub(crate) selection: &'a mut PropertySelection,
 }
 
 // TODO - Better document local vs default properties.
@@ -24,17 +27,25 @@ impl PropertiesMut<'_> {
 
     /// Returns value of property `P`.
     ///
-    /// If the widget has an entry for `P`, returns its value.
-    /// If the default property map has an entry for `P`, returns its value.
-    /// Otherwise returns [`Property::static_default()`].
-    pub fn get<P: Property>(&self) -> &P {
+    /// Checks local properties first, then the property stack (cache write-through),
+    /// then default properties, then [`Property::static_default()`].
+    pub fn get<P: Property>(&mut self) -> &P {
+        // 1. Local properties
         if let Some(p) = self.set.map.get::<P>() {
-            p
-        } else if let Some(p) = self.default_map.get::<P>() {
-            p
-        } else {
-            P::static_default()
+            return p;
         }
+        // 2. Property stack (writes to cache and relevance tracking on miss)
+        if let Some(stack) = self.stack {
+            if let Some(p) = stack.resolve_cached_mut::<P>(self.selection, self.class_set) {
+                return p;
+            }
+        }
+        // 3. Default properties
+        if let Some(p) = self.default_map.get::<P>() {
+            return p;
+        }
+        // 4. Static default
+        P::static_default()
     }
 
     /// Returns the defined value of property `P`.
@@ -80,6 +91,9 @@ impl PropertiesMut<'_> {
         PropertiesMut {
             set: &mut *self.set,
             default_map: self.default_map,
+            stack: self.stack,
+            class_set: self.class_set,
+            selection: &mut *self.selection,
         }
     }
 }

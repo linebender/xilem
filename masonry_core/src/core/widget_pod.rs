@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{PropertySet, Widget, WidgetId, WidgetTag, WidgetTagInner};
+use crate::core::{PropertySet, PropertyStackId, Widget, WidgetId, WidgetTag, WidgetTagInner};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -38,6 +38,8 @@ pub struct NewWidget<W: ?Sized> {
     pub options: WidgetOptions,
     /// The properties the widget will be created with.
     pub properties: PropertySet,
+    /// The id of the cascading stack of properties that will be applied to this widget, if any.
+    pub property_stack_id: Option<PropertyStackId>,
 
     pub(crate) tag: Option<WidgetTagInner>,
 }
@@ -109,6 +111,7 @@ impl<W: Widget> NewWidget<W> {
             options,
             properties: props.into(),
             tag: tag.map(|tag| tag.inner),
+            property_stack_id: None,
         }
     }
 
@@ -150,7 +153,14 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             options: self.options,
             properties: self.properties,
             tag: self.tag,
+            property_stack_id: self.property_stack_id,
         }
+    }
+
+    /// Assigns a [`PropertyStack`](crate::core::PropertyStack) to this widget.
+    pub fn with_property_stack(mut self, id: PropertyStackId) -> Self {
+        self.property_stack_id = Some(id);
+        self
     }
 
     /// Creates a `WidgetPod` which will be added to the widget tree.
