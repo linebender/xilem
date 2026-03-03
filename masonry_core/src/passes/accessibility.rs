@@ -7,13 +7,16 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetArenaNode, WidgetId};
+use crate::core::{
+    AccessCtx, DefaultProperties, PropertiesRef, PropertyArena, Widget, WidgetArenaNode, WidgetId,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: BUILD TREE
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     tree_update: &mut TreeUpdate,
     node: ArenaMut<'_, WidgetArenaNode>,
     scale_factor: Option<f64>,
@@ -22,6 +25,8 @@ fn build_accessibility_tree(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
+    let selection = &node.item.property_selection;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.access, state);
 
@@ -38,6 +43,7 @@ fn build_accessibility_tree(
             );
         }
 
+        let stack = property_arena.get(state.property_stack_id);
         let mut ctx = AccessCtx {
             global_state,
             widget_state: state,
@@ -48,6 +54,9 @@ fn build_accessibility_tree(
         let props = PropertiesRef {
             set: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
+            selection,
         };
         widget.accessibility(&mut ctx, &props, &mut node);
 
@@ -66,6 +75,7 @@ fn build_accessibility_tree(
         build_accessibility_tree(
             global_state,
             default_properties,
+            property_arena,
             tree_update,
             node.reborrow_mut(),
             None,
@@ -164,6 +174,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     build_accessibility_tree(
         &mut root.global_state,
         &root.default_properties,
+        &root.property_arena,
         &mut tree_update,
         root_node,
         Some(scale_factor),

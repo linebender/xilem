@@ -6,13 +6,14 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, DefaultProperties, WidgetArenaNode};
+use crate::core::{ComposeCtx, DefaultProperties, PropertyArena, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
 fn compose_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_transformed: bool,
     parent_window_transform: Affine,
@@ -45,6 +46,7 @@ fn compose_widget(
         widget_state: state,
         children: children.reborrow_mut(),
         default_properties,
+        property_arena,
     };
     if ctx.widget_state.request_compose {
         widget.compose(&mut ctx);
@@ -65,6 +67,7 @@ fn compose_widget(
         compose_widget(
             global_state,
             default_properties,
+            property_arena,
             node.reborrow_mut(),
             transformed,
             parent_transform,
@@ -94,6 +97,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     compose_widget(
         &mut root.global_state,
         &root.default_properties,
+        &root.property_arena,
         root_node,
         false,
         Affine::IDENTITY,

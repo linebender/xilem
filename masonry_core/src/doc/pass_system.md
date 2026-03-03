@@ -64,6 +64,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **update_scrolls:** Updates the scroll positions of widgets.
 - **compose:** Assigns transforms to widgets.
 - **update_pointer:** Updates the hovered status of widgets and the current cursor icon.
+- **update_props:** Apply changes to computed properties when classes change.
 
 The layout pass may call [`Widget::measure`] any number of times, including zero.
 It may then call [`Widget::layout`].
@@ -150,6 +151,10 @@ This pass updates thing that need to change as a result of either a pointer havi
 It updates the hovered and [active] status of widgets and sends related events.
 
 It also update the pointer's icon depending on which widget it's hovering.
+
+#### "Update properties" pass
+
+TODO
 
 #### "Update fonts" pass
 
