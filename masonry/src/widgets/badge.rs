@@ -9,15 +9,13 @@ use tracing::{Span, trace_span};
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, PropertySet, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::parley::style::FontWeight;
-use crate::properties::{ContentColor, DisabledContentColor};
-use crate::theme::{DISABLED_TEXT_COLOR, TEXT_COLOR};
 use crate::widgets::Label;
 
 /// A non-interactive badge (pill) widget that hosts a single child.
@@ -43,7 +41,6 @@ use crate::widgets::Label;
 ///
 /// [`Background`]: crate::properties::Background
 /// [`CornerRadius`]: crate::properties::CornerRadius
-/// [`DisabledBackground`]: crate::properties::DisabledBackground
 pub struct Badge {
     child: WidgetPod<dyn Widget>,
 }
@@ -95,11 +92,7 @@ impl Badge {
         let label = Label::new(text)
             .with_style(StyleProperty::FontSize(12.0))
             .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
-            .with_props(
-                PropertySet::new()
-                    .with(ContentColor::new(TEXT_COLOR))
-                    .with(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR))),
-            );
+            .with_auto_id();
 
         Self::new(label)
     }

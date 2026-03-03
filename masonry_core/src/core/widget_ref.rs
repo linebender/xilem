@@ -97,7 +97,9 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     /// If the default property set has an entry for `P`, returns that entry.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get_prop<T: Property>(&self) -> &T {
-        self.ctx.properties.get::<T>()
+        self.ctx
+            .properties
+            .get_without_saving::<T>(self.ctx.property_cache())
     }
 
     /// Attempts to downcast to `WidgetRef` of concrete widget type.

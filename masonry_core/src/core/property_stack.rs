@@ -1,19 +1,23 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
 use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::core::{PropertySet, Selector};
+use crate::core::{ClassSet, Property, PropertyCache, PropertySet, Selector};
 
 /// A unique identifier for a single [`PropertyStack`].
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct PropertyStackId(pub(crate) NonZeroU64);
 
-/// TODO - Placeholder type for future PR.
+/// A cascading set of properties that can be applied to widgets.
+///
+/// Each layer of the stack consists of a [`Selector`] and a set of properties.
+/// When resolving a property, the stack is traversed from top to bottom until
+/// a matching selector with the requested property is found.
 #[derive(Default)]
-#[expect(dead_code, reason = "Future PR")]
 pub struct PropertyStack {
     pub(crate) stack: Vec<(Selector, PropertySet)>,
 }
@@ -52,5 +56,74 @@ impl PropertyStack {
     /// Creates an empty `PropertyStack`.
     pub const fn new() -> Self {
         Self { stack: Vec::new() }
+    }
+
+    /// Pushes a new entry onto the stack.
+    ///
+    /// The selector is used to determine whether the entry applies to a given widget based on its class set.
+    pub fn push(&mut self, selector: Selector, properties: impl Into<PropertySet>) {
+        self.stack.push((selector, properties.into()));
+    }
+
+    pub(crate) fn resolve(&self, classes: &ClassSet, prop_type: TypeId) -> Option<usize> {
+        // Iter over items and indices
+        for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
+            if selector.matches(classes) && prop_set.map.as_raw().contains_key(&prop_type) {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    pub(crate) fn resolve_cached<P: Property>(
+        &self,
+        cache: &PropertyCache,
+        classes: &ClassSet,
+    ) -> Option<&P> {
+        let index = cache
+            .entries
+            .get(&TypeId::of::<P>())
+            .copied()
+            .unwrap_or_default();
+        let index = index.or_else(|| self.resolve(classes, TypeId::of::<P>()))?;
+
+        let Some(item) = self.stack[index].1.get::<P>() else {
+            debug_panic!("Invalid PropertyCache");
+            return None;
+        };
+        Some(item)
+    }
+
+    // TODO - Refactor with resolve_cached? Overall this is ugly code.
+    pub(crate) fn resolve_cached_mut<P: Property>(
+        &self,
+        cache: &mut PropertyCache,
+        classes: &ClassSet,
+    ) -> Option<&P> {
+        if let Some(cached_index) = cache.entries.get(&TypeId::of::<P>()).copied() {
+            let Some(cached_index) = cached_index else {
+                // We've cached that there is no matching entry in the stack.
+                return None;
+            };
+            let Some(item) = self.stack[cached_index].1.get::<P>() else {
+                debug_panic!("Invalid PropertyCache");
+                return None;
+            };
+            return Some(item);
+        }
+
+        for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
+            cache.extend_relevant(selector);
+
+            if selector.matches(classes)
+                && let Some(item) = prop_set.map.get::<P>()
+            {
+                cache.entries.insert(TypeId::of::<P>(), Some(i));
+                return Some(item);
+            }
+        }
+
+        cache.entries.insert(TypeId::of::<P>(), None);
+        None
     }
 }

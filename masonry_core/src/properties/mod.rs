@@ -36,15 +36,7 @@ pub(crate) fn core_property_changed(ctx: &mut UpdateCtx<'_>, property_type: Type
         || Padding::matches(property_type)
     {
         ctx.request_layout();
-    } else if DisabledBackground::matches(property_type)
-        || ActiveBackground::matches(property_type)
-        || Background::matches(property_type)
-        || FocusedBorderColor::matches(property_type)
-        || HoveredBorderColor::matches(property_type)
-        || BorderColor::matches(property_type)
-        || BorderWidth::matches(property_type)
-        || CornerRadius::matches(property_type)
-    {
+    } else if Background::matches(property_type) || BorderColor::matches(property_type) {
         ctx.request_pre_paint();
     }
 }

@@ -10,16 +10,13 @@ use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
     NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod, paint_background, paint_border, paint_box_shadow,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
-use crate::properties::{
-    CaretColor, ContentColor, FocusedBorderColor, LineBreaking, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
-};
+use crate::properties::{CaretColor, ContentColor, LineBreaking, PlaceholderColor, SelectionColor};
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -151,7 +148,6 @@ impl TextInput {
 impl HasProperty<CaretColor> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
-impl HasProperty<UnfocusedSelectionColor> for TextInput {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {
@@ -171,6 +167,24 @@ impl Widget for TextInput {
                 // If the user clicks the padding area around the text,
                 // we still want to focus the text area.
                 ctx.set_focus(self.text.id());
+            }
+            _ => {}
+        }
+    }
+
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
+        match event {
+            TextEvent::WindowFocusChange(focused) => {
+                if *focused {
+                    ctx.remove_class("#unfocused");
+                } else {
+                    ctx.add_class("#unfocused");
+                }
             }
             _ => {}
         }
@@ -197,13 +211,6 @@ impl Widget for TextInput {
                 let mut text_area = Self::text_mut(&mut input);
                 text_area.insert_prop(color);
             });
-        } else if property_type == TypeId::of::<UnfocusedSelectionColor>() {
-            ctx.mutate_self_later(|mut input| {
-                let mut input = input.downcast::<Self>();
-                let color = *input.get_prop::<UnfocusedSelectionColor>();
-                let mut text_area = Self::text_mut(&mut input);
-                text_area.insert_prop(color);
-            });
         } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
                 let mut input = input.downcast::<Self>();
@@ -227,12 +234,6 @@ impl Widget for TextInput {
                 ctx.mutate_self_later(|mut input| {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<SelectionColor>();
-                    let mut text_area = Self::text_mut(&mut input);
-                    text_area.insert_prop(color);
-                });
-                ctx.mutate_self_later(|mut input| {
-                    let mut input = input.downcast::<Self>();
-                    let color = *input.get_prop::<UnfocusedSelectionColor>();
                     let mut text_area = Self::text_mut(&mut input);
                     text_area.insert_prop(color);
                 });
@@ -308,14 +309,8 @@ impl Widget for TextInput {
         painter: &mut Painter<'_>,
     ) {
         let bbox = ctx.border_box();
-        let mut p = PrePaintProps::fetch(ctx, props);
-
-        // We want to show a focus border if our child TextArea is focused
-        if ctx.has_focus_target()
-            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            p.border_color = &fb.0;
-        }
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
         paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);

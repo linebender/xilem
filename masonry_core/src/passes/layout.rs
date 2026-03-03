@@ -47,8 +47,9 @@ fn measure_border_box(
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
 
-    let border = props.get::<BorderWidth>();
-    let padding = props.get::<Padding>();
+    let cache = ctx.property_cache();
+    let border = props.get::<BorderWidth>(cache);
+    let padding = props.get::<Padding>(cache);
 
     let border_length = border.length(axis).dp(scale);
     let padding_length = padding.length(axis).dp(scale);
@@ -182,6 +183,7 @@ pub(crate) fn resolve_length(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
+    let cache = &mut node.item.state.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
@@ -192,7 +194,7 @@ pub(crate) fn resolve_length(
         stack,
         class_set,
     };
-    let dims = props.get::<Dimensions>();
+    let dims = props.get::<Dimensions>(cache);
 
     // Resolve the dimension on the given axis
     let len_def = dims
@@ -268,6 +270,7 @@ pub(crate) fn resolve_size(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
+    let cache = &mut node.item.state.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
@@ -278,7 +281,7 @@ pub(crate) fn resolve_size(
         stack,
         class_set,
     };
-    let dims = props.get::<Dimensions>();
+    let dims = props.get::<Dimensions>(cache);
 
     // Resolve the dimensions
     let inline_auto = auto_size.dim(inline);
@@ -411,8 +414,8 @@ pub(crate) fn run_layout_on(
         class_set,
     };
 
-    let border_width = props.get::<BorderWidth>();
-    let padding = props.get::<Padding>();
+    let border_width = props.get::<BorderWidth>(&mut state.property_cache);
+    let padding = props.get::<Padding>(&mut state.property_cache);
 
     // Force the border-box size to be large enough to actually contain the border and padding.
     let minimum_size = Size::ZERO;
@@ -491,7 +494,7 @@ pub(crate) fn run_layout_on(
     widget.layout(&mut ctx, &props, content_box_size);
 
     // Make sure the paint insets cover the shadow insets
-    let shadow = props.get::<BoxShadow>();
+    let shadow = props.get::<BoxShadow>(&mut state.property_cache);
     if shadow.is_visible() {
         let shadow_insets = shadow.get_insets();
         state.paint_insets = Insets {

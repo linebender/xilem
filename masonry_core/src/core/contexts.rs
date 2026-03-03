@@ -16,8 +16,8 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, ResizeDirection, Widget,
-    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId, ResizeDirection,
+    Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -254,6 +254,32 @@ impl_context_method!(
     MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    RawCtx<'_>,
+    {
+        /// Returns a mutable reference to this widget's property cache.
+        pub fn property_cache(&mut self) -> &mut PropertyCache {
+            &mut self.widget_state.property_cache
+        }
+    }
+);
+
+impl QueryCtx<'_> {
+    /// Returns a reference to this widget's property cache.
+    pub fn property_cache(&self) -> &PropertyCache {
+        &self.widget_state.property_cache
+    }
+}
+
+impl_context_method!(
+    MutateCtx<'_>,
+    ActionCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    MeasureCtx<'_>,
+    LayoutCtx<'_>,
+    ComposeCtx<'_>,
     RawCtx<'_>,
     {
         /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
@@ -349,6 +375,13 @@ impl MutateCtx<'_> {
     /// [local transform]: Self::transform
     pub fn transform_has_changed(&self) -> bool {
         self.widget_state.transform_changed
+    }
+
+    /// Sets which property stack this widget uses for property resolution.
+    pub fn set_property_stack(&mut self, stack_id: PropertyStackId) {
+        self.widget_state.needs_update_props = true;
+        self.widget_state.force_property_update = true;
+        self.widget_state.property_stack_id = Some(stack_id);
     }
 }
 
@@ -1082,6 +1115,13 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_border_box_size
     }
 
+    /// Returns whether a child of this widget is [stashed].
+    ///
+    /// [stashed]: crate::doc::masonry_concepts#stashed
+    pub fn child_is_stashed(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
+        self.get_child_state(child).is_stashed
+    }
+
     /// Sets the widget's clip path in the widget's content-box coordinate space.
     ///
     /// A widget's clip path will have two effects:
@@ -1727,6 +1767,24 @@ impl_context_method!(
             self.widget_state.transform = transform;
             self.widget_state.transform_changed = true;
             self.request_compose();
+        }
+
+        // TODO - Document classes
+
+        /// Adds a string to this widget's class set.
+        ///
+        /// Changes will be applied in the next update pass and may affect property resolution.
+        pub fn add_class(&mut self, class: &str) {
+            self.widget_state.class_diff.add(class);
+            self.widget_state.needs_update_props = true;
+        }
+
+        /// Removes a string from this widget's class set.
+        ///
+        /// Changes will be applied in the next update pass and may affect property resolution.
+        pub fn remove_class(&mut self, class: &str) {
+            self.widget_state.class_diff.remove(class);
+            self.widget_state.needs_update_props = true;
         }
     }
 );

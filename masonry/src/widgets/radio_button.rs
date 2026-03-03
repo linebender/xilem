@@ -17,10 +17,7 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Cap, Circle, Dashes, Join, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor,
-    FocusedBorderColor, HoveredBorderColor,
-};
+use crate::properties::{BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth};
 use crate::theme;
 use crate::widgets::{Label, RadioGroup};
 
@@ -91,7 +88,6 @@ impl RadioButton {
     }
 }
 
-impl HasProperty<DisabledCheckmarkColor> for RadioButton {}
 impl HasProperty<CheckmarkColor> for RadioButton {}
 
 /// The action type emitted by [`RadioButton`] when it is selected.
@@ -233,7 +229,6 @@ impl Widget for RadioButton {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         CheckmarkStrokeWidth::prop_changed(ctx, property_type);
-        DisabledCheckmarkColor::prop_changed(ctx, property_type);
         CheckmarkColor::prop_changed(ctx, property_type);
     }
 
@@ -310,7 +305,8 @@ impl Widget for RadioButton {
         painter: &mut Painter<'_>,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(ctx, props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
         paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
@@ -352,27 +348,18 @@ impl Widget for RadioButton {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let is_focused = ctx.is_focus_target();
-        let is_hovered = ctx.is_hovered();
+        let cache = ctx.property_cache();
+        let border_color = *props.get::<BorderColor>(cache);
+        let border_width = *props.get::<BorderWidth>(cache);
+        let brush = *props.get::<CheckmarkColor>(cache);
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_size = Size::new(check_side, check_side);
-
-        let border_width = props.get::<BorderWidth>();
 
         let border_circle = Circle::new(
             check_size.to_rect().center(),
             (check_side - border_width.width) * 0.5,
         );
-
-        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
 
         // Paint the radio button border
         let border_stroke = Stroke::new(border_width.width);
@@ -382,14 +369,6 @@ impl Widget for RadioButton {
 
         // Paint the checkmark if checked
         if self.selected {
-            let brush = if ctx.is_disabled()
-                && let Some(dc) = props.get_defined::<DisabledCheckmarkColor>()
-            {
-                &dc.0
-            } else {
-                props.get::<CheckmarkColor>()
-            };
-
             // TODO: Create a prop for ellipse size. Default: 50% of border size
             let check_circle = Circle::new(check_size.to_rect().center(), check_side * 0.25);
             painter.fill(check_circle, brush.color).draw();

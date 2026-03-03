@@ -17,9 +17,7 @@ use crate::imaging::Painter;
 use crate::kurbo::{Axis, Circle, Join, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    FocusedBorderColor, HoveredBorderColor, ThumbColor, ThumbRadius, ToggledBackground,
-    TrackThickness,
+    Background, BorderColor, BorderWidth, CornerRadius, ThumbColor, ThumbRadius, TrackThickness,
 };
 
 /// A switch switch that can be turned on or off.
@@ -62,10 +60,11 @@ impl Switch {
 impl Switch {
     /// Sets the switch state.
     pub fn set_on(this: &mut WidgetMut<'_, Self>, on: bool) {
-        if this.widget.on != on {
-            this.widget.on = on;
-            // On state impacts appearance and accessibility node
-            this.ctx.request_render();
+        this.widget.on = on;
+        if on {
+            this.ctx.add_class("#toggled");
+        } else {
+            this.ctx.remove_class("#toggled");
         }
     }
 }
@@ -75,9 +74,9 @@ impl Switch {
     /// Calculates the track dimensions based on properties.
     ///
     /// Returns `(track_width, track_height)`.
-    fn track_dimensions(props: &PropertiesRef<'_>, scale: f64) -> (f64, f64) {
-        let track_thickness = props.get::<TrackThickness>().0 * scale;
-        let thumb_radius = props.get::<ThumbRadius>().0 * scale;
+    fn track_dimensions(track_thickness: f64, thumb_radius: f64, scale: f64) -> (f64, f64) {
+        let track_thickness = track_thickness * scale;
+        let thumb_radius = thumb_radius * scale;
 
         // The track height is the larger of track_thickness or thumb diameter
         let track_height = track_thickness.max(thumb_radius * 2.0);
@@ -88,7 +87,6 @@ impl Switch {
     }
 }
 
-impl HasProperty<ToggledBackground> for Switch {}
 impl HasProperty<ThumbRadius> for Switch {}
 impl HasProperty<ThumbColor> for Switch {}
 impl HasProperty<TrackThickness> for Switch {}
@@ -163,6 +161,11 @@ impl Widget for Switch {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::WidgetAdded => {
+                if self.on {
+                    ctx.add_class("#toggled");
+                }
+            }
             Update::HoveredChanged(_)
             | Update::ActiveChanged(_)
             | Update::FocusChanged(_)
@@ -177,7 +180,6 @@ impl Widget for Switch {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        ToggledBackground::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         TrackThickness::prop_changed(ctx, property_type);
@@ -185,7 +187,7 @@ impl Widget for Switch {
 
     fn measure(
         &mut self,
-        _ctx: &mut MeasureCtx<'_>,
+        ctx: &mut MeasureCtx<'_>,
         props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
@@ -195,7 +197,11 @@ impl Widget for Switch {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let (track_width, track_height) = Self::track_dimensions(props, scale);
+        let cache = ctx.property_cache();
+        let track_thickness = props.get::<TrackThickness>(cache).0;
+        let thumb_radius = props.get::<ThumbRadius>(cache).0;
+        let (track_width, track_height) =
+            Self::track_dimensions(track_thickness, thumb_radius, scale);
 
         match axis {
             Axis::Horizontal => track_width,
@@ -224,18 +230,20 @@ impl Widget for Switch {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let is_focused = ctx.is_focus_target();
-        let is_pressed = ctx.is_active();
-        let is_hovered = ctx.is_hovered();
         let is_disabled = ctx.is_disabled();
 
         let size = ctx.border_box_size();
 
-        let (track_width, track_height) = Self::track_dimensions(props, scale);
-        let thumb_radius = props.get::<ThumbRadius>().0 * scale;
-        let border_width = props.get::<BorderWidth>().width * scale;
-        let corner_radius = props.get::<CornerRadius>().radius * scale;
-        let thumb_color = props.get::<ThumbColor>().0;
+        let border_box_translation = ctx.border_box_translation();
+        let cache = ctx.property_cache();
+        let track_thickness_val = props.get::<TrackThickness>(cache).0;
+        let thumb_radius_val = props.get::<ThumbRadius>(cache).0;
+        let (track_width, track_height) =
+            Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
+        let thumb_radius = thumb_radius_val * scale;
+        let border_width = props.get::<BorderWidth>(cache).width * scale;
+        let corner_radius = props.get::<CornerRadius>(cache).radius * scale;
+        let thumb_color = props.get::<ThumbColor>(cache).0;
 
         // Center the track within the available space
         let track_x = (size.width - track_width) / 2.0;
@@ -245,20 +253,9 @@ impl Widget for Switch {
             track_y,
             track_x + track_width,
             track_y + track_height,
-        ) - ctx.border_box_translation();
+        ) - border_box_translation;
 
-        // Determine track background color
-        let track_bg = if is_disabled && let Some(db) = props.get_defined::<DisabledBackground>() {
-            &db.0
-        } else if is_pressed && let Some(ab) = props.get_defined::<ActiveBackground>() {
-            &ab.0
-        } else if self.on
-            && let Some(tb) = props.get_defined::<ToggledBackground>()
-        {
-            &tb.0
-        } else {
-            props.get::<Background>()
-        };
+        let track_bg = props.get::<Background>(cache);
 
         // Paint track background
         let track_corner_radius = corner_radius.min(track_height / 2.0);
@@ -266,15 +263,7 @@ impl Widget for Switch {
         let brush = track_bg.get_peniko_brush_for_rect(track_rect);
         painter.fill(track_rounded, &brush).draw();
 
-        // Determine border color
-        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
+        let border_color = props.get::<BorderColor>(cache);
 
         // Paint track border
         if border_width > 0.0 {
@@ -286,7 +275,7 @@ impl Widget for Switch {
         }
 
         // Calculate thumb position (centered vertically, left/right based on state)
-        let thumb_y = size.height / 2.0 - ctx.border_box_translation().y;
+        let thumb_y = size.height / 2.0 - border_box_translation.y;
         let thumb_x = if self.on {
             // Thumb on the right
             track_rect.x1 - thumb_radius - border_width / 2.0
