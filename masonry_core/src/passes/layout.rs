@@ -193,7 +193,9 @@ pub(crate) fn resolve_length(
     let class_set = &node.item.class_set;
     let selection = &node.item.property_selection;
     let widget = &mut *node.item.widget;
-    let stack = property_arena.get(node.item.state.property_stack_id);
+    let stack = property_arena
+        .get(node.item.state.property_stack_id)
+        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
     let props = PropertiesRef {
         set: &node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
@@ -281,7 +283,9 @@ pub(crate) fn resolve_size(
     let class_set = &node.item.class_set;
     let selection = &node.item.property_selection;
     let widget = &mut *node.item.widget;
-    let stack = property_arena.get(node.item.state.property_stack_id);
+    let stack = property_arena
+        .get(node.item.state.property_stack_id)
+        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
     let props = PropertiesRef {
         set: &node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
@@ -415,7 +419,9 @@ pub(crate) fn run_layout_on(
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
 
-    let stack = property_arena.get(state.property_stack_id);
+    let stack = property_arena
+        .get(state.property_stack_id)
+        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
     let props = PropertiesRef {
         set: properties,
         default_map: default_properties.for_widget(widget.type_id()),

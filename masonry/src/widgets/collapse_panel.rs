@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, FromDynWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Line, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
@@ -280,14 +280,14 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
         ctx.derive_baselines(&self.header_label);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
         if let Some(y) = self.separator_line_y {
-            let border_width = props.get::<BorderWidth>();
-            let border_color = props.get::<BorderColor>();
+            let border_width = *props.get::<BorderWidth>();
+            let border_color = *props.get::<BorderColor>();
 
             let border_box = ctx.border_box();
 
@@ -308,7 +308,7 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut accesskit::Node,
     ) {
     }

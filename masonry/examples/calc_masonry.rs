@@ -22,9 +22,7 @@ use masonry::layout::AsUnit;
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, Gap, HoveredBorderColor, Padding,
-};
+use masonry::properties::{Background, BorderColor, BorderWidth, Gap, Padding};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -188,7 +186,7 @@ impl AppDriver for CalcState {
 
 fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
-    const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
+    //const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
     let button = Button::new(
         Label::new(label)
@@ -200,8 +198,9 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
         button,
         PropertySet::new()
             .with(Background::Color(BLUE))
-            .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
-            .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
+            // TODO - Move to new prop system
+            //.with(ActiveBackground(Background::Color(LIGHT_BLUE)))
+            //.with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
             .with(BorderWidth::all(2.0))
             .with(CalcAction::Op(op)),
@@ -214,7 +213,7 @@ fn op_button(op: char) -> NewWidget<Button> {
 
 fn digit_button(digit: u8) -> NewWidget<Button> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
-    const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
+    //const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
     let button = Button::new(
         Label::new(format!("{digit}"))
@@ -226,8 +225,8 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
         button,
         PropertySet::new()
             .with(Background::Color(GRAY))
-            .with(ActiveBackground(Background::Color(LIGHT_GRAY)))
-            .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
+            //.with(ActiveBackground(Background::Color(LIGHT_GRAY)))
+            //.with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
             .with(BorderWidth::all(2.0))
             .with(CalcAction::Digit(digit)),

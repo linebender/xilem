@@ -43,19 +43,6 @@ impl ContentColor {
     }
 }
 
-/// The color of a widget's content when disabled.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct DisabledContentColor(pub ContentColor);
-
-impl Property for DisabledContentColor {
-    fn static_default() -> &'static Self {
-        static DEFAULT: DisabledContentColor = DisabledContentColor(ContentColor {
-            color: AlphaColor::BLACK,
-        });
-        &DEFAULT
-    }
-}
-
 // ---
 
 impl Default for ContentColor {
@@ -65,24 +52,6 @@ impl Default for ContentColor {
 }
 
 impl ContentColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
-    }
-}
-
-// ---
-
-impl Default for DisabledContentColor {
-    fn default() -> Self {
-        *Self::static_default()
-    }
-}
-
-impl DisabledContentColor {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {

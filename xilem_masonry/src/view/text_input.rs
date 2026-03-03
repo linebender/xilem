@@ -4,10 +4,7 @@
 use masonry::core::{ArcStr, NewWidget, PropertySet};
 use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::properties::{
-    CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
-};
+use masonry::properties::{CaretColor, ContentColor, PlaceholderColor, SelectionColor};
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
@@ -87,7 +84,6 @@ where
         on_changed: Box::new(on_changed),
         on_enter: None,
         text_color: None,
-        disabled_text_color: None,
         placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
@@ -108,7 +104,6 @@ pub struct TextInput<State: 'static, Action> {
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
     text_color: Option<Color>,
-    disabled_text_color: Option<Color>,
     placeholder: ArcStr,
     text_alignment: TextAlign,
     text_size: f32,
@@ -129,14 +124,6 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
         self
     }
 
-    /// Set the text's color when the text input is disabled.
-    ///
-    /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
-    pub fn disabled_text_color(mut self, color: Color) -> Self {
-        self.disabled_text_color = Some(color);
-        self
-    }
-
     /// Set the insertion caret's color.
     ///
     /// This overwrites the default `CaretColor` property for the inner `TextArea` widget.
@@ -149,16 +136,6 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// This overwrites the default `SelectionColor` property for the inner `TextArea` widget.
     pub fn selection_color(self, color: Color) -> Prop<SelectionColor, Self, State, Action> {
         self.prop(SelectionColor { color })
-    }
-
-    /// Set the selection's color when the window is unfocused.
-    ///
-    /// This overwrites the default `UnfocusedSelectionColor` property for the inner `TextArea` widget.
-    pub fn unfocused_selection_color(
-        self,
-        color: Color,
-    ) -> Prop<UnfocusedSelectionColor, Self, State, Action> {
-        self.prop(UnfocusedSelectionColor(SelectionColor { color }))
     }
 
     /// Set the string which is shown when the input is empty.
@@ -264,9 +241,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         if let Some(color) = self.text_color {
             props.insert(ContentColor { color });
         }
-        if let Some(color) = self.disabled_text_color {
-            props.insert(DisabledContentColor(ContentColor { color }));
-        }
 
         let text_input =
             widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
@@ -297,13 +271,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
                 element.insert_prop(ContentColor { color });
             } else {
                 element.remove_prop::<ContentColor>();
-            }
-        }
-        if self.disabled_text_color != prev.disabled_text_color {
-            if let Some(color) = self.disabled_text_color {
-                element.insert_prop(DisabledContentColor(ContentColor { color }));
-            } else {
-                element.remove_prop::<DisabledContentColor>();
             }
         }
         if self.placeholder != prev.placeholder {

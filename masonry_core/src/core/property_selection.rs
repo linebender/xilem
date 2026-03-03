@@ -4,12 +4,12 @@
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
-use crate::core::Selector;
+use crate::core::{Property, Selector};
 
 #[derive(Default)]
 pub(crate) struct PropertySelection {
     /// Maps property type IDs to the index of the matching entry in the property stack, if any.
-    pub(crate) selected: HashMap<TypeId, usize>,
+    pub(crate) selected: HashMap<TypeId, Option<usize>>,
     /// User-defined class strings that influenced at least one cached resolution.
     pub(crate) relevant_classes: HashSet<String>,
     /// Which pseudo-class flags influenced at least one cached resolution.
@@ -28,5 +28,9 @@ impl PropertySelection {
         self.relevant_is_active |= selector.is_active.is_some();
         self.relevant_is_disabled |= selector.is_disabled.is_some();
         self.relevant_has_focus_target |= selector.has_focus_target.is_some();
+    }
+
+    pub(crate) fn is_cached<P: Property>(&self) -> bool {
+        self.selected.contains_key(&TypeId::of::<P>())
     }
 }

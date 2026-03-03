@@ -8,7 +8,7 @@ use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
-    AccessCtx, DefaultProperties, PropertiesRef, PropertyArena, Widget, WidgetArenaNode, WidgetId,
+    AccessCtx, DefaultProperties, PropertiesMut, PropertyArena, Widget, WidgetArenaNode, WidgetId,
 };
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -26,7 +26,7 @@ fn build_accessibility_tree(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &node.item.property_selection;
+    let selection = &mut node.item.property_selection;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.access, state);
 
@@ -43,7 +43,9 @@ fn build_accessibility_tree(
             );
         }
 
-        let stack = property_arena.get(state.property_stack_id);
+        let stack = property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
         let mut ctx = AccessCtx {
             global_state,
             widget_state: state,
@@ -51,14 +53,14 @@ fn build_accessibility_tree(
             tree_update,
         };
         let mut node = build_access_node(widget, &mut ctx, scale_factor);
-        let props = PropertiesRef {
-            set: properties,
+        let mut props = PropertiesMut {
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
             selection,
         };
-        widget.accessibility(&mut ctx, &props, &mut node);
+        widget.accessibility(&mut ctx, &mut props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {

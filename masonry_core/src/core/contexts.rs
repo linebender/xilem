@@ -265,14 +265,19 @@ impl MutateCtx<'_> {
             .item_mut(child.id())
             .expect("get_mut: child not found");
         let child_stack_id = node_mut.item.state.property_stack_id;
+        let child_type_id = node_mut.item.widget.type_id();
+        let child_stack = self
+            .property_arena
+            .get(child_stack_id)
+            .unwrap_or_else(|| self.default_properties.stack_for_widget(child_type_id));
         let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: &mut node_mut.item.state,
             properties: PropertiesMut {
-                set: &mut node_mut.item.properties,
+                local: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
-                stack: self.property_arena.get(child_stack_id),
+                stack: child_stack,
                 class_set: &node_mut.item.class_set,
                 selection: &mut node_mut.item.property_selection,
             },
@@ -352,15 +357,18 @@ impl<'w> QueryCtx<'w> {
             .children
             .into_item(child)
             .expect("get_mut: child not found");
+        let child_type_id = child_node.item.widget.type_id();
+        let child_stack = self
+            .property_arena
+            .get(child_node.item.state.property_stack_id)
+            .unwrap_or_else(|| self.default_properties.stack_for_widget(child_type_id));
         let child_ctx = QueryCtx {
             global_state: self.global_state,
             widget_state: &child_node.item.state,
             properties: PropertiesRef {
                 set: &child_node.item.properties,
                 default_map: self.properties.default_map,
-                stack: self
-                    .property_arena
-                    .get(child_node.item.state.property_stack_id),
+                stack: child_stack,
                 class_set: &child_node.item.class_set,
                 selection: &child_node.item.property_selection,
             },

@@ -778,7 +778,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         );
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::ScrollView
@@ -787,7 +787,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         node.set_clips_children();

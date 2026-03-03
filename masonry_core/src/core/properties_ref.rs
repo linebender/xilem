@@ -11,7 +11,7 @@ use crate::util::AnyMap;
 pub struct PropertiesRef<'a> {
     pub(crate) set: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,
-    pub(crate) stack: Option<&'a PropertyStack>,
+    pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
     pub(crate) selection: &'a PropertySelection,
 }
@@ -36,10 +36,11 @@ impl PropertiesRef<'_> {
             return p;
         }
         // 2. Property stack (cache read only; linear scan on cache miss)
-        if let Some(stack) = self.stack {
-            if let Some(p) = stack.resolve_cached::<P>(self.selection, self.class_set) {
-                return p;
-            }
+        if let Some(p) = self
+            .stack
+            .resolve_cached::<P>(self.selection, self.class_set)
+        {
+            return p;
         }
         // 3. Default properties
         if let Some(p) = self.default_map.get::<P>() {
@@ -47,18 +48,6 @@ impl PropertiesRef<'_> {
         }
         // 4. Static default
         P::static_default()
-    }
-
-    // TODO - Remove this once cascading properties are implemented.
-    /// Returns the defined value of property `P`.
-    ///
-    /// If the widget has an explicit entry, or the default property map has an explicit entry,
-    /// then this will return a value. Otherwise it will return `None`.
-    pub fn get_defined<P: Property>(&self) -> Option<&P> {
-        self.set
-            .map
-            .get::<P>()
-            .or_else(|| self.default_map.get::<P>())
     }
 
     /// Returns a reference to the local properties for direct access.

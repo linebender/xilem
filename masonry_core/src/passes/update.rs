@@ -16,6 +16,7 @@ use crate::core::{
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
+use crate::properties::core_property_changed;
 
 // --- MARK: HELPERS
 /// Returns the id path starting from the given widget id and ending at the root.
@@ -70,7 +71,10 @@ fn run_targeted_update_pass(
         let properties = &mut node.item.properties;
         let class_set = &node.item.class_set;
         let selection = &mut node.item.property_selection;
-        let stack = root.property_arena.get(state.property_stack_id);
+        let stack = root
+            .property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| root.default_properties.stack_for_widget(widget.type_id()));
 
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
@@ -80,7 +84,7 @@ fn run_targeted_update_pass(
             property_arena: &root.property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: root.default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
@@ -113,7 +117,10 @@ fn run_single_update_pass(
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
     let selection = &mut node.item.property_selection;
-    let stack = root.property_arena.get(state.property_stack_id);
+    let stack = root
+        .property_arena
+        .get(state.property_stack_id)
+        .unwrap_or_else(|| root.default_properties.stack_for_widget(widget.type_id()));
 
     let mut ctx = UpdateCtx {
         global_state: &mut root.global_state,
@@ -123,7 +130,7 @@ fn run_single_update_pass(
         property_arena: &root.property_arena,
     };
     let mut props = PropertiesMut {
-        set: properties,
+        local: properties,
         default_map: root.default_properties.for_widget(widget.type_id()),
         stack,
         class_set,
@@ -163,7 +170,9 @@ fn update_widget_tree(
     register_children(global_state, widget, state, children.reborrow_mut());
 
     if state.is_new {
-        let stack = property_arena.get(state.property_stack_id);
+        let stack = property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
@@ -172,7 +181,7 @@ fn update_widget_tree(
             property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
@@ -309,7 +318,9 @@ fn update_disabled_for_widget(
     }
 
     if disabled != state.is_disabled {
-        let stack = property_arena.get(state.property_stack_id);
+        let stack = property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
@@ -318,7 +329,7 @@ fn update_disabled_for_widget(
             property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
@@ -331,9 +342,6 @@ fn update_disabled_for_widget(
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
-        // DisabledBackground needs pre-paint
-        state.request_pre_paint = true;
-        state.needs_paint = true;
     }
 
     state.needs_update_disabled = false;
@@ -400,7 +408,9 @@ fn update_stashed_for_widget(
     }
 
     if stashed != state.is_stashed {
-        let stack = property_arena.get(state.property_stack_id);
+        let stack = property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
@@ -409,7 +419,7 @@ fn update_stashed_for_widget(
             property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
@@ -745,17 +755,11 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             widget.update(ctx, props, &Update::FocusChanged(false));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
-            // FocusedBorderColor needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
         });
         run_single_update_pass(root, next_focused, |widget, ctx, props| {
             widget.update(ctx, props, &Update::FocusChanged(true));
             ctx.widget_state.request_accessibility = true;
             ctx.widget_state.needs_accessibility = true;
-            // FocusedBorderColor needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
         });
 
         if let Some(next_focused) = next_focused {
@@ -919,18 +923,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             ctx.widget_state.is_active = false;
             ctx.widget_state.class_diff.is_active = Some(false);
             ctx.widget_state.needs_update_props = true;
-            // ActiveBackground needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
             ctx.widget_state.class_diff.is_active = Some(true);
             ctx.widget_state.needs_update_props = true;
-            // ActiveBackground needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
     }
@@ -1024,18 +1022,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             ctx.widget_state.is_hovered = false;
             ctx.widget_state.class_diff.is_hovered = Some(false);
             ctx.widget_state.needs_update_props = true;
-            // HoveredBorderColor needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(false));
         });
         run_single_update_pass(root, next_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = true;
             ctx.widget_state.class_diff.is_hovered = Some(true);
             ctx.widget_state.needs_update_props = true;
-            // HoveredBorderColor needs pre-paint
-            ctx.widget_state.request_pre_paint = true;
-            ctx.widget_state.needs_paint = true;
             widget.update(ctx, props, &Update::HoveredChanged(true));
         });
     }
@@ -1056,13 +1048,17 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         let state = &root_node.item.state;
         let properties = &root_node.item.properties;
 
+        let stack = root
+            .property_arena
+            .get(state.property_stack_id)
+            .unwrap_or_else(|| root.default_properties.stack_for_widget(widget.type_id()));
         let ctx = QueryCtx {
             global_state: &root.global_state,
             widget_state: state,
             properties: PropertiesRef {
                 set: properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
-                stack: root.property_arena.get(state.property_stack_id),
+                stack,
                 class_set: &root_node.item.class_set,
                 selection: &root_node.item.property_selection,
             },
@@ -1133,6 +1129,7 @@ fn update_props_for_widget(
                     default_properties,
                     property_arena,
                 };
+                core_property_changed(&mut ctx, type_id);
                 widget.property_changed(&mut ctx, type_id);
             }
             *selection = PropertySelection::default();
@@ -1205,7 +1202,9 @@ fn update_fonts_for_widget(
 
     let _span = enter_span(state);
 
-    let stack = property_arena.get(state.property_stack_id);
+    let stack = property_arena
+        .get(state.property_stack_id)
+        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
     let mut ctx = UpdateCtx {
         global_state,
         widget_state: state,
@@ -1214,7 +1213,7 @@ fn update_fonts_for_widget(
         property_arena,
     };
     let mut props = PropertiesMut {
-        set: properties,
+        local: properties,
         default_map: default_properties.for_widget(widget.type_id()),
         stack,
         class_set,

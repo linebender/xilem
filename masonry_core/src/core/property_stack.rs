@@ -54,8 +54,8 @@ impl Display for PropertyStackId {
 
 impl PropertyStack {
     /// Creates an empty `PropertyStack`.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { stack: Vec::new() }
     }
 
     /// Pushes a new entry onto the stack.
@@ -80,7 +80,11 @@ impl PropertyStack {
         selected: &PropertySelection,
         classes: &ClassSet,
     ) -> Option<&P> {
-        let index = selected.selected.get(&TypeId::of::<P>()).copied();
+        let index = selected
+            .selected
+            .get(&TypeId::of::<P>())
+            .copied()
+            .unwrap_or_default();
         let index = index.or_else(|| self.resolve::<P>(classes))?;
 
         let Some(item) = self.stack[index].1.get::<P>() else {
@@ -96,20 +100,30 @@ impl PropertyStack {
         selected: &mut PropertySelection,
         classes: &ClassSet,
     ) -> Option<&P> {
-        let mut index = selected.selected.get(&TypeId::of::<P>()).copied();
-        if index.is_none() {
-            index = self.resolve::<P>(classes);
-            if let Some(i) = index {
-                selected.selected.insert(TypeId::of::<P>(), i);
-                selected.extend_relevant(&self.stack[i].0);
+        if let Some(cached_index) = selected.selected.get(&TypeId::of::<P>()).copied() {
+            let Some(cached_index) = cached_index else {
+                // We've cached that there is no matching entry in the stack.
+                return None;
+            };
+            let Some(item) = self.stack[cached_index].1.get::<P>() else {
+                debug_panic!("Invalid PropertySelection cache");
+                return None;
+            };
+            return Some(item);
+        }
+
+        for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
+            selected.extend_relevant(selector);
+
+            if selector.matches(classes)
+                && let Some(item) = prop_set.map.get::<P>()
+            {
+                selected.selected.insert(TypeId::of::<P>(), Some(i));
+                return Some(item);
             }
         }
-        let index = index?;
 
-        let Some(item) = self.stack[index].1.get::<P>() else {
-            debug_panic!("Invalid PropertySelection cache");
-            return None;
-        };
-        Some(item)
+        selected.selected.insert(TypeId::of::<P>(), None);
+        None
     }
 }
