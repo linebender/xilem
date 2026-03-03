@@ -80,4 +80,3 @@ impl SelectionColor {
         ctx.request_paint_only();
     }
 }
-

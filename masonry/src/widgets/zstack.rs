@@ -271,7 +271,13 @@ impl Widget for ZStack {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().map(|x| &mut x.widget) {

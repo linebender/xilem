@@ -6,7 +6,9 @@
 use masonry::core::HasProperty;
 use masonry::layout::Dim;
 pub use masonry::properties::types::{Gradient, GradientShape};
-pub use masonry::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding};
+pub use masonry::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+};
 use masonry::properties::{ContentColor, Dimensions, Gap, LineBreaking};
 use vello::peniko::Color;
 

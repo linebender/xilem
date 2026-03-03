@@ -197,7 +197,8 @@ impl Widget for Switch {
 
         let track_thickness = props.get::<TrackThickness>().0;
         let thumb_radius = props.get::<ThumbRadius>().0;
-        let (track_width, track_height) = Self::track_dimensions(track_thickness, thumb_radius, scale);
+        let (track_width, track_height) =
+            Self::track_dimensions(track_thickness, thumb_radius, scale);
 
         match axis {
             Axis::Horizontal => track_width,
@@ -227,7 +228,8 @@ impl Widget for Switch {
 
         let track_thickness_val = props.get::<TrackThickness>().0;
         let thumb_radius_val = props.get::<ThumbRadius>().0;
-        let (track_width, track_height) = Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
+        let (track_width, track_height) =
+            Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
         let thumb_radius = thumb_radius_val * scale;
         let border_width = props.get::<BorderWidth>().width * scale;
         let corner_radius = props.get::<CornerRadius>().radius * scale;
