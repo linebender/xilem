@@ -37,7 +37,7 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
 [crate::view::text_input]: https://docs.rs/xilem/latest/xilem/view/fn.text_input.html
 [crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
-[xilem_core]: https://docs.rs/parley_core/latest/xilem_core
+[xilem_core]: https://docs.rs/xilem_core/latest/xilem_core
 [xilem_examples]: ./examples/
 
 [masonry_winit]: https://crates.io/crates/masonry_winit
