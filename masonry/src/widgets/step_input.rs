@@ -12,15 +12,13 @@ use vello::Scene;
 use crate::core::keyboard::{Code, Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, CursorIcon, EventCtx, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, Property, PropertySet, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, Property, QueryCtx, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::peniko::{Fill, Gradient};
-use crate::properties::{
-    BackwardColor, ContentColor, DisabledContentColor, ForwardColor, HeatColor, StepInputStyle,
-};
+use crate::properties::{BackwardColor, ContentColor, ForwardColor, HeatColor, StepInputStyle};
 use crate::theme;
 use crate::widgets::Label;
 
@@ -1266,7 +1264,6 @@ impl<T: Steppable> Widget for StepInput<T> {
         if StepInputStyle::matches(property_type) {
             ctx.request_layout();
         } else if ContentColor::matches(property_type)
-            || DisabledContentColor::matches(property_type)
             || BackwardColor::matches(property_type)
             || ForwardColor::matches(property_type)
             || HeatColor::matches(property_type)
@@ -1285,20 +1282,6 @@ impl<T: Steppable> Widget for StepInput<T> {
                 let mut label = this.ctx.get_mut(label);
                 label.insert_prop(prop);
             });
-        } else if DisabledContentColor::matches(property_type) {
-            ctx.mutate_self_later(|mut this| {
-                let mut this = this.downcast::<Self>();
-                let prop = this.get_prop_defined::<DisabledContentColor>().copied();
-                let Some(label) = this.widget.label.as_mut() else {
-                    return;
-                };
-                let mut label = this.ctx.get_mut(label);
-                if let Some(prop) = prop {
-                    label.insert_prop(prop);
-                } else {
-                    label.remove_prop::<DisabledContentColor>();
-                }
-            });
         }
     }
 
@@ -1306,15 +1289,9 @@ impl<T: Steppable> Widget for StepInput<T> {
         match event {
             Update::WidgetAdded => {
                 let color = props.get::<ContentColor>();
-                let color_disabled = props.get_defined::<DisabledContentColor>();
-
-                let mut props = PropertySet::one(*color);
-                if let Some(color_disabled) = color_disabled {
-                    props = props.with(*color_disabled);
-                }
 
                 let display_value = self.display_value(self.value);
-                self.label = Some(Label::new(display_value).with_props(props).to_pod());
+                self.label = Some(Label::new(display_value).with_props(*color).to_pod());
                 ctx.children_changed();
             }
             Update::ActiveChanged(active) => {
@@ -1447,7 +1424,7 @@ impl<T: Steppable> Widget for StepInput<T> {
         ctx.derive_baselines(label);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         match props.get::<StepInputStyle>() {
             StepInputStyle::Basic => Self::paint_basic(self, ctx, props, scene),
             StepInputStyle::Flow => Self::paint_flow(self, ctx, props, scene),
@@ -1461,7 +1438,7 @@ impl<T: Steppable> Widget for StepInput<T> {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         // NOTE: Can't set numeric value/min/max/step because AccessKit only seems to support f64.
@@ -1544,18 +1521,16 @@ impl<T: Steppable> StepInput<T> {
     fn paint_basic(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &PropertiesRef<'_>,
+        props: &mut PropertiesMut<'_>,
         scene: &mut Scene,
     ) {
-        let color_content = if ctx.is_disabled()
-            && let Some(dc) = props.get_defined::<DisabledContentColor>()
-        {
-            &dc.0
-        } else {
-            props.get::<ContentColor>()
-        };
-        let color_backward = props.get::<BackwardColor>();
-        let color_forward = props.get::<ForwardColor>();
+        props.resolve::<ContentColor>();
+        props.resolve::<BackwardColor>();
+        props.resolve::<ForwardColor>();
+
+        let color_content = props.get_cached::<ContentColor>();
+        let color_backward = props.get_cached::<BackwardColor>();
+        let color_forward = props.get_cached::<ForwardColor>();
 
         let size = ctx.content_box_size();
         let (_, forward, backward) = self.visual_speed();
@@ -1622,17 +1597,21 @@ impl<T: Steppable> StepInput<T> {
         clippy::trivially_copy_pass_by_ref,
         reason = "Widget::paint gets props by ref"
     )]
-    fn paint_flow(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let color_content = if ctx.is_disabled()
-            && let Some(dc) = props.get_defined::<DisabledContentColor>()
-        {
-            &dc.0
-        } else {
-            props.get::<ContentColor>()
-        };
-        let color_backward = props.get::<BackwardColor>();
-        let color_forward = props.get::<ForwardColor>();
-        let color_heat = props.get::<HeatColor>();
+    fn paint_flow(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
+        props.resolve::<ContentColor>();
+        props.resolve::<BackwardColor>();
+        props.resolve::<ForwardColor>();
+        props.resolve::<HeatColor>();
+
+        let color_content = props.get_cached::<ContentColor>();
+        let color_backward = props.get_cached::<BackwardColor>();
+        let color_forward = props.get_cached::<ForwardColor>();
+        let color_heat = props.get_cached::<HeatColor>();
 
         let size = ctx.content_box_size();
         let (speed, forward, backward) = self.visual_speed();
