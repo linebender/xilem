@@ -260,6 +260,10 @@ where
             //     avoiding infinite loops.
             MessageResult::Action(()) => {
                 self.run_logic(masonry_ctx);
+                // Check if the app wants to exit after this state mutation.
+                if !self.state.keep_running() {
+                    masonry_ctx.exit();
+                }
             }
             MessageResult::RequestRebuild => {
                 window.view.masonry_root.rebuild(

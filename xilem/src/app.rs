@@ -120,8 +120,7 @@ impl<State>
 pub trait AppState {
     /// Returns whether the application should keep running or exit.
     ///
-    /// Is currently only checked after a close request.
-    // TODO: check this after every state mutation
+    /// Checked after every state mutation (actions, close requests, etc.).
     fn keep_running(&self) -> bool;
 }
 
