@@ -31,6 +31,7 @@ smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 vello.workspace = true
 include_doc_path.workspace = true
+resvg.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"

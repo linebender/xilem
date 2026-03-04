@@ -274,6 +274,12 @@ impl Default for TestHarnessParams {
     }
 }
 
+/// Roboto is our current test font.
+pub const ROBOTO: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/resources/fonts/roboto/Roboto-Regular.ttf"
+));
+
 impl<W: Widget> TestHarness<W> {
     // -- MARK: CREATE
     /// Builds harness with given root widget.
@@ -324,10 +330,6 @@ impl<W: Widget> TestHarness<W> {
         // harnesses.
         let _ = try_init_test_tracing();
 
-        const ROBOTO: &[u8] = include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/resources/fonts/roboto/Roboto-Regular.ttf"
-        ));
         let data = Blob::new(Arc::new(ROBOTO));
 
         let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();

@@ -69,6 +69,7 @@ smallvec = "1.15.1"
 hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
 dpi = "0.1.2"
 image = { version = "0.25.9", default-features = false }
+resvg = "0.47.0"
 web-time = "1.1.0"
 bitflags = "2.10.0"
 accesskit = "0.21.1"
