@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Rect, Stroke};
+use vello::kurbo::{Affine, Line, Stroke};
 use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
@@ -59,6 +59,7 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
+    window_to_layer_transform: &Affine,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
     let mut children = node.children;
@@ -116,9 +117,9 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
-    let transform = state
-        .window_transform
-        .pre_translate(state.border_box_translation());
+    let border_box_to_layer_transform = *window_to_layer_transform * state.window_transform;
+    let content_box_to_layer_transform =
+        border_box_to_layer_transform.pre_translate(state.border_box_translation());
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
         let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
@@ -128,14 +129,14 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append(pre_scene, Some(transform));
+        complete_scene.append(pre_scene, Some(content_box_to_layer_transform));
 
         if let Some(clip) = state.clip_path {
-            // The clip path is stored in border-box space, so need just window transform.
-            complete_scene.push_clip_layer(Fill::NonZero, state.window_transform, &clip);
+            // The clip path is stored in border-box space, so need to use that transform.
+            complete_scene.push_clip_layer(Fill::NonZero, border_box_to_layer_transform, &clip);
         }
 
-        complete_scene.append(scene, Some(transform));
+        complete_scene.append(scene, Some(content_box_to_layer_transform));
     }
 
     let parent_state = &mut *state;
@@ -150,6 +151,7 @@ fn paint_widget(
             default_properties,
             complete_scene,
             scene_cache,
+            window_to_layer_transform,
             node.reborrow_mut(),
         );
         parent_state.merge_up(&mut node.item.state);
@@ -167,7 +169,13 @@ fn paint_widget(
             let mut draw_baseline = |baseline| {
                 let line = Line::new((0., baseline), (state.end_point.x, baseline));
                 let baseline_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-                complete_scene.stroke(&baseline_style, state.window_transform, color, None, &line);
+                complete_scene.stroke(
+                    &baseline_style,
+                    border_box_to_layer_transform,
+                    color,
+                    None,
+                    &line,
+                );
             };
             if !state.first_baseline.is_nan() {
                 draw_baseline(state.first_baseline);
@@ -188,7 +196,7 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append(post_scene, Some(transform));
+        complete_scene.append(post_scene, Some(content_box_to_layer_transform));
     }
 }
 
@@ -210,7 +218,6 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
 
     for (idx, &layer_widget_id) in layer_ids.iter().enumerate() {
         if idx == 0 {
-            // Base layer: paint directly in window space.
             paint_layer(
                 root,
                 &mut base_scene,
@@ -219,30 +226,23 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
                 layer_widget_id,
             );
         } else {
-            // Overlay layers: paint in window space first, then transform to layer-local.
-            let mut window_space_scene = Scene::new();
+            let mut layer_scene = Scene::new();
             paint_layer(
                 root,
-                &mut window_space_scene,
+                &mut layer_scene,
                 &mut scene_cache,
                 root_id,
                 layer_widget_id,
             );
 
-            // The layer root's window_transform maps from layer-local to window space.
-            // We apply its inverse to convert the window-space scene to layer-local space.
-            let layer_transform = root
+            let layer_to_window_transform = root
                 .widget_arena
                 .get_state(layer_widget_id)
                 .window_transform;
-            let inverse_transform = layer_transform.inverse();
-
-            let mut layer_scene = Scene::new();
-            layer_scene.append(&window_space_scene, Some(inverse_transform));
 
             overlays.push(PaintedLayer {
                 scene: layer_scene,
-                transform: layer_transform,
+                transform: layer_to_window_transform,
                 root_id: layer_widget_id,
             });
         }
@@ -254,8 +254,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
-        let rect =
-            Rect::from_origin_size(state.border_box_window_origin(), state.border_box_size());
+        let rect = state.border_box_size().to_rect();
+        let border_box_to_window_transform = state.window_transform;
 
         // Walk up the widget tree to find which layer root this widget belongs to.
         let mut layer_root = hovered_widget;
@@ -266,29 +266,36 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
             layer_root = parent;
         }
 
+        let window_to_layer_transform = root
+            .widget_arena
+            .get_state(layer_root)
+            .window_transform
+            .inverse();
+        let border_box_to_layer_transform =
+            window_to_layer_transform * border_box_to_window_transform;
+
         // Draw the hover rect in the owning layer's scene.
-        // For overlay layers, we need to transform the window-space rect
-        // into the layer's local coordinate space.
         if layer_root == layer_ids[0] {
-            // Base layer: scene is in window space, draw directly.
             base_scene.fill(
                 Fill::NonZero,
-                Affine::IDENTITY,
+                border_box_to_layer_transform,
                 HOVER_FILL_COLOR,
                 None,
                 &rect,
             );
         } else if let Some(layer) = overlays.iter_mut().find(|l| l.root_id == layer_root) {
-            // Overlay layer: scene is in layer-local space, apply inverse transform.
-            let inverse = layer.transform.inverse();
-            layer
-                .scene
-                .fill(Fill::NonZero, inverse, HOVER_FILL_COLOR, None, &rect);
+            layer.scene.fill(
+                Fill::NonZero,
+                border_box_to_layer_transform,
+                HOVER_FILL_COLOR,
+                None,
+                &rect,
+            );
         } else {
             // Fallback: draw in base scene.
             base_scene.fill(
                 Fill::NonZero,
-                Affine::IDENTITY,
+                border_box_to_layer_transform,
                 HOVER_FILL_COLOR,
                 None,
                 &rect,
@@ -333,11 +340,14 @@ fn paint_layer(
         return;
     };
 
+    let window_to_layer_transform = layer_node.item.state.window_transform.inverse();
+
     paint_widget(
         &mut root.global_state,
         &root.default_properties,
         target_scene,
         scene_cache,
+        &window_to_layer_transform,
         layer_node,
     );
 }
