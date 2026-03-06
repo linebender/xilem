@@ -10,14 +10,12 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, PropertySet, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::parley::style::FontWeight;
-use crate::properties::{ContentColor, DisabledContentColor};
-use crate::theme::{DISABLED_TEXT_COLOR, TEXT_COLOR};
 use crate::widgets::Label;
 
 /// A non-interactive badge (pill) widget that hosts a single child.
@@ -43,7 +41,6 @@ use crate::widgets::Label;
 ///
 /// [`Background`]: crate::properties::Background
 /// [`CornerRadius`]: crate::properties::CornerRadius
-/// [`DisabledBackground`]: crate::properties::DisabledBackground
 pub struct Badge {
     child: WidgetPod<dyn Widget>,
 }
@@ -95,11 +92,7 @@ impl Badge {
         let label = Label::new(text)
             .with_style(StyleProperty::FontSize(12.0))
             .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
-            .with_props(
-                PropertySet::new()
-                    .with(ContentColor::new(TEXT_COLOR))
-                    .with(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR))),
-            );
+            .with_auto_id();
 
         Self::new(label)
     }
@@ -196,7 +189,13 @@ impl Widget for Badge {
         ctx.derive_baselines(&self.child);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -205,7 +204,7 @@ impl Widget for Badge {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut Node,
     ) {
     }

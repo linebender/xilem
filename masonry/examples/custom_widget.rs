@@ -105,7 +105,7 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
         // (ctx.content_box_size() returns the size of the content rect we're painting in)
         let size = ctx.content_box_size();
@@ -181,7 +181,7 @@ impl Widget for CustomWidget {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         let text = &self.0;

@@ -126,6 +126,17 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let widget = &*node_ref.item.widget;
                 let state = &node_ref.item.state;
                 let properties = &node_ref.item.properties;
+                let class_set = &node_ref.item.class_set;
+                let selection = &node_ref.item.property_selection;
+                let stack = self
+                    .ctx
+                    .property_arena
+                    .get(state.property_stack_id)
+                    .unwrap_or_else(|| {
+                        self.ctx
+                            .default_properties
+                            .stack_for_widget(widget.type_id())
+                    });
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,
@@ -133,9 +144,13 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     properties: PropertiesRef {
                         set: properties,
                         default_map: self.ctx.properties.default_map,
+                        stack,
+                        class_set,
+                        selection,
                     },
                     children,
                     default_properties: self.ctx.default_properties,
+                    property_arena: self.ctx.property_arena,
                 };
 
                 WidgetRef { ctx, widget }

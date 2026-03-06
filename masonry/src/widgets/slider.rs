@@ -354,22 +354,23 @@ impl Widget for Slider {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         // Get parameters and resolve colors
         // TODO: Create a dedicated TrackColor property
-        let track_color = if let Some(b) = props.get_defined::<Background>() {
-            b
-        } else {
-            &Background::Color(theme::ZYNC_800)
-        };
-        let active_track_color = if let Some(bc) = props.get_defined::<BarColor>() {
-            bc.0
-        } else {
-            theme::ACCENT_COLOR
-        };
-        let thumb_color = props.get::<ThumbColor>().0;
-        let track_thickness = props.get::<TrackThickness>().0;
-        let base_thumb_radius = props.get::<ThumbRadius>().0;
+
+        // Phase 1: warm the stack cache for all properties we need
+        props.resolve::<Background>();
+        props.resolve::<BarColor>();
+        props.resolve::<ThumbColor>();
+        props.resolve::<TrackThickness>();
+        props.resolve::<ThumbRadius>();
+
+        // Phase 2: read via shared borrows (can be held simultaneously)
+        let track_color = props.get_cached::<Background>();
+        let active_track_color = props.get_cached::<BarColor>().0;
+        let thumb_color = props.get_cached::<ThumbColor>().0;
+        let track_thickness = props.get_cached::<TrackThickness>().0;
+        let base_thumb_radius = props.get_cached::<ThumbRadius>().0;
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state
@@ -458,7 +459,7 @@ impl Widget for Slider {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         node.set_orientation(Orientation::Horizontal);

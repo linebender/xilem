@@ -18,7 +18,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::LenReq;
-use crate::properties::{ContentColor, DisabledContentColor, LineBreaking};
+use crate::properties::{ContentColor, LineBreaking};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
 use crate::{TextAlign, TextAlignOptions, theme};
@@ -29,7 +29,7 @@ use crate::{TextAlign, TextAlignOptions, theme};
 /// need support for displaying text, such as a button.
 ///
 /// You can customize the look of this label with the
-/// [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
+/// [`LineBreaking`] and [`ContentColor`] properties.
 ///
 #[doc = concat!(
     "![Styled label](",
@@ -195,7 +195,7 @@ impl Label {
     /// Sets a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
+    /// Use the [`ContentColor`] property instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
@@ -272,7 +272,7 @@ impl Label {
     /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
+    /// Use the [`ContentColor`] property instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
@@ -463,7 +463,6 @@ impl Label {
 }
 
 impl HasProperty<ContentColor> for Label {}
-impl HasProperty<DisabledContentColor> for Label {}
 impl HasProperty<LineBreaking> for Label {}
 
 // --- MARK: IMPL WIDGET
@@ -479,7 +478,6 @@ impl Widget for Label {
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         LineBreaking::prop_changed(ctx, property_type);
         ContentColor::prop_changed(ctx, property_type);
-        DisabledContentColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -593,14 +591,8 @@ impl Widget for Label {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let text_color = if ctx.is_disabled()
-            && let Some(dc) = props.get_defined::<DisabledContentColor>()
-        {
-            &dc.0
-        } else {
-            props.get::<ContentColor>()
-        };
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+        let text_color = props.get::<ContentColor>();
 
         let layout = &self.layouts[self.active_layout];
 
@@ -620,7 +612,7 @@ impl Widget for Label {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();

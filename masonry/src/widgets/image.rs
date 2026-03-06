@@ -171,7 +171,7 @@ impl Widget for Image {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let content_box = ctx.content_box();
         let object_fit = props.get::<ObjectFit>();
         // For drawing we want to scale the actual image data lengths, which means
@@ -200,7 +200,7 @@ impl Widget for Image {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         if let Some(alt_text) = &self.alt_text {

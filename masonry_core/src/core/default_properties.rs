@@ -5,18 +5,21 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
 
-use crate::core::{Property, Widget};
+use crate::core::{Property, PropertyStack, Widget};
 use crate::util::AnyMap;
+
+static EMPTY_STACK: PropertyStack = PropertyStack::new();
 
 /// A collection of default [properties](Property) for all widgets.
 ///
 /// Default property values can be added to this collection for
 /// every `(widget type, property type)` pair.
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct DefaultProperties {
     /// Maps widget types to the default property map for that widget.
     pub(crate) map: HashMap<TypeId, AnyMap>,
     pub(crate) dummy_map: AnyMap,
+    pub(crate) stacks: HashMap<TypeId, PropertyStack>,
 }
 
 impl DefaultProperties {
@@ -30,6 +33,7 @@ impl DefaultProperties {
         Self {
             map: HashMap::new(),
             dummy_map: AnyMap::new(),
+            stacks: HashMap::new(),
         }
     }
 
@@ -40,7 +44,16 @@ impl DefaultProperties {
         self.map.entry(TypeId::of::<W>()).or_default().insert(value)
     }
 
+    /// Sets the default property stack for widget `W`.
+    pub fn insert_stack<W: Widget>(&mut self, stack: PropertyStack) {
+        self.stacks.insert(TypeId::of::<W>(), stack);
+    }
+
     pub(crate) fn for_widget(&self, id: TypeId) -> &AnyMap {
         self.map.get(&id).unwrap_or(&self.dummy_map)
+    }
+
+    pub(crate) fn stack_for_widget(&self, id: TypeId) -> &PropertyStack {
+        self.stacks.get(&id).unwrap_or(&EMPTY_STACK)
     }
 }

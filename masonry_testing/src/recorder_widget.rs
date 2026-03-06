@@ -233,17 +233,27 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.compose(ctx);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         self.recording.push(Record::PrePaint);
         self.child.pre_paint(ctx, props, scene);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         self.recording.push(Record::Paint);
         self.child.paint(ctx, props, scene);
     }
 
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn post_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         self.recording.push(Record::PostPaint);
         self.child.post_paint(ctx, props, scene);
     }
@@ -255,7 +265,7 @@ impl<W: Widget> Widget for Recorder<W> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        props: &PropertiesRef<'_>,
+        props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         self.recording.push(Record::Accessibility);

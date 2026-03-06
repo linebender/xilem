@@ -165,7 +165,12 @@ impl Widget for Prose {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
         // All painting is handled by the child
     }
 
@@ -176,7 +181,7 @@ impl Widget for Prose {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut Node,
     ) {
     }

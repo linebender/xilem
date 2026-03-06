@@ -6,8 +6,6 @@ use crate::peniko::BrushRef;
 use crate::peniko::color::{AlphaColor, Srgb};
 
 // Every widget has a border color.
-impl<W: Widget> HasProperty<FocusedBorderColor> for W {}
-impl<W: Widget> HasProperty<HoveredBorderColor> for W {}
 impl<W: Widget> HasProperty<BorderColor> for W {}
 
 /// The color of a widget's border.
@@ -16,14 +14,6 @@ impl<W: Widget> HasProperty<BorderColor> for W {}
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
 }
-
-/// The color of a widget's border when hovered by a pointer.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct HoveredBorderColor(pub BorderColor);
-
-/// The color of a widget's border when focused.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct FocusedBorderColor(pub BorderColor);
 
 // ---
 
@@ -64,39 +54,5 @@ impl BorderColor {
     pub const fn is_visible(&self) -> bool {
         let alpha = self.color.components[3];
         alpha != 0.0
-    }
-}
-
-// ---
-
-impl Default for HoveredBorderColor {
-    fn default() -> Self {
-        *Self::static_default()
-    }
-}
-
-impl Property for HoveredBorderColor {
-    fn static_default() -> &'static Self {
-        static DEFAULT: HoveredBorderColor = HoveredBorderColor(BorderColor {
-            color: AlphaColor::TRANSPARENT,
-        });
-        &DEFAULT
-    }
-}
-
-// ---
-
-impl Default for FocusedBorderColor {
-    fn default() -> Self {
-        *Self::static_default()
-    }
-}
-
-impl Property for FocusedBorderColor {
-    fn static_default() -> &'static Self {
-        static DEFAULT: FocusedBorderColor = FocusedBorderColor(BorderColor {
-            color: AlphaColor::TRANSPARENT,
-        });
-        &DEFAULT
     }
 }

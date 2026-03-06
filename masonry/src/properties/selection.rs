@@ -45,24 +45,6 @@ impl Property for SelectionColor {
     }
 }
 
-/// The background color of a [`TextArea`]'s selection when unfocused.
-///
-/// Need to contrast the [`ContentColor`].
-///
-/// [`ContentColor`]: crate::properties::ContentColor
-/// [`TextArea`]: crate::widgets::TextArea
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct UnfocusedSelectionColor(pub SelectionColor);
-
-impl Property for UnfocusedSelectionColor {
-    fn static_default() -> &'static Self {
-        static DEFAULT: UnfocusedSelectionColor = UnfocusedSelectionColor(SelectionColor {
-            color: AlphaColor::from_rgb8(176, 176, 176),
-        });
-        &DEFAULT
-    }
-}
-
 // ---
 
 impl Default for CaretColor {
@@ -90,24 +72,6 @@ impl Default for SelectionColor {
 }
 
 impl SelectionColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type != TypeId::of::<Self>() {
-            return;
-        }
-        ctx.request_paint_only();
-    }
-}
-
-// ---
-
-impl Default for UnfocusedSelectionColor {
-    fn default() -> Self {
-        *Self::static_default()
-    }
-}
-
-impl UnfocusedSelectionColor {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
