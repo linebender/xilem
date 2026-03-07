@@ -13,6 +13,7 @@ members = [
     "xilem_web/web_examples/counter",
     "xilem_web/web_examples/counter_custom_element",
     "xilem_web/web_examples/elm",
+    "xilem_web/web_examples/external_communication",
     "xilem_web/web_examples/fetch",
     "xilem_web/web_examples/todomvc",
     "xilem_web/web_examples/mathml_svg",
