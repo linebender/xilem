@@ -27,12 +27,12 @@
           fontconfig
 
           libxkbcommon
-          xorg.libxcb
-          xorg.libX11
-          xorg.libXcursor
-          xorg.libXi
-          xorg.libXrandr
-          xorg.libXxf86vm
+          libxcb
+          libX11
+          libXcursor
+          libXi
+          libXrandr
+          libXxf86vm
 
           vulkan-loader
 
