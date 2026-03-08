@@ -1,2 +1,4 @@
+/.envrc
+/.direnv
 /target
 .DS_Store
