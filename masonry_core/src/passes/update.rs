@@ -1121,7 +1121,7 @@ fn update_props_for_widget(
         return;
     }
 
-    if !state.class_diff.is_empty() {
+    if !state.class_diff.is_empty() || state.force_property_update {
         let class_diff = std::mem::take(&mut state.class_diff);
 
         // Check whether to update cache entries before applying the diff.
@@ -1151,6 +1151,7 @@ fn update_props_for_widget(
     }
 
     state.needs_update_props = false;
+    state.force_property_update = false;
 
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {

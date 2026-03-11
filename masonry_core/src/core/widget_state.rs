@@ -259,6 +259,8 @@ pub(crate) struct WidgetState {
     pub(crate) property_stack_id: Option<PropertyStackId>,
     /// Pending class changes to apply during `run_update_props_pass`.
     pub(crate) class_diff: ClassSetDiff,
+    // TODO - Rename
+    pub(crate) force_property_update: bool,
 
     // --- DEBUG INFO ---
     /// The typename of the associated widget.
@@ -340,6 +342,7 @@ impl WidgetState {
 
             property_stack_id,
             class_diff: ClassSetDiff::default(),
+            force_property_update: false,
 
             trace_span: Span::none(),
             #[cfg(debug_assertions)]
