@@ -16,8 +16,9 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, DefaultProperties, ErasedAction, FromDynWidget, LayerType,
-    NewWidget, PropertiesMut, PropertiesRef, PropertyArena, PropertySelection, ResizeDirection,
-    Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    NewWidget, PropertiesMut, PropertiesRef, PropertyArena, PropertySelection, PropertyStackId,
+    ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -345,6 +346,17 @@ impl MutateCtx<'_> {
     pub fn remove_class(&mut self, class: &str) {
         self.widget_state.class_diff.remove(class);
         self.widget_state.needs_update_props = true;
+    }
+
+    /// Sets which property stack this widget uses for property resolution.
+    pub fn set_property_stack(&mut self, stack_id: PropertyStackId) {
+        self.properties.selection.selected.clear();
+        self.widget_state.needs_update_props = true;
+        self.widget_state.force_property_update = true;
+        self.widget_state.property_stack_id = Some(stack_id);
+        // FIXME - More fine-grained update
+        self.request_layout();
+        self.request_render();
     }
 }
 

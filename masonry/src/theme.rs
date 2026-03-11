@@ -183,25 +183,54 @@ pub fn default_property_set() -> DefaultProperties {
         properties.insert_stack::<Switch>(stack);
     }
 
+    // FIXME
+    use crate::widgets::Selector as SelectorButton;
+
     // Selector
-    properties.insert::<Selector, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Selector, _>(CornerRadius { radius: 2. });
-    properties.insert::<Selector, _>(BorderWidth {
+    properties.insert::<SelectorButton, _>(Padding::from_vh(6., 16.));
+    properties.insert::<SelectorButton, _>(CornerRadius { radius: 2. });
+    properties.insert::<SelectorButton, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
 
-    properties.insert::<Selector, _>(Background::Color(ZYNC_800));
-    properties.insert::<Selector, _>(ActiveBackground(Background::Color(ZYNC_700)));
-    properties.insert::<Selector, _>(DisabledBackground(Background::Color(Color::BLACK)));
-    properties.insert::<Selector, _>(BorderColor { color: ZYNC_700 });
-    properties.insert::<Selector, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
-    properties.insert::<Selector, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+    properties.insert::<SelectorButton, _>(Background::Color(ZYNC_800));
+    properties.insert::<SelectorButton, _>(BorderColor { color: ZYNC_700 });
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_active(true),
+            PropertySet::one(Background::Color(ZYNC_700)),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(Background::Color(Color::BLACK)),
+        );
+        stack.push(
+            Selector::new().with_hovered(true),
+            PropertySet::one(BorderColor { color: ZYNC_500 }),
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            PropertySet::one(BorderColor { color: FOCUS_COLOR }),
+        );
+        properties.insert_stack::<SelectorButton>(stack);
+    }
 
     // SelectorItem
     properties.insert::<SelectorItem, _>(Padding::from_vh(6., 16.));
     properties.insert::<SelectorItem, _>(Background::Color(ZYNC_900));
-    properties.insert::<SelectorItem, _>(ActiveBackground(Background::Color(ZYNC_800)));
-    properties.insert::<SelectorItem, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_active(true),
+            PropertySet::one(Background::Color(ZYNC_800)),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(Background::Color(Color::BLACK)),
+        );
+        properties.insert_stack::<SelectorItem>(stack);
+    }
 
     // Flex
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));
@@ -225,9 +254,9 @@ pub fn default_property_set() -> DefaultProperties {
     {
         let mut stack = PropertyStack::new();
         stack.push(
-            Selector::new().with_focused(false),
+            Selector::classes(&["#unfocused"]),
             PropertySet::one(SelectionColor {
-                color: DISABLED_TEXT_COLOR,
+                color: Color::from_rgb8(176, 176, 176),
             }),
         );
         stack.push(
@@ -340,13 +369,30 @@ fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
     });
 
     properties.insert::<StepInput<T>, _>(ContentColor::new(TEXT_COLOR));
-    properties
-        .insert::<StepInput<T>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
     properties.insert::<StepInput<T>, _>(Background::Color(ZYNC_800));
-    properties.insert::<StepInput<T>, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<StepInput<T>, _>(BorderColor { color: ZYNC_700 });
-    properties.insert::<StepInput<T>, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
-    properties.insert::<StepInput<T>, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(ContentColor::new(DISABLED_TEXT_COLOR)),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(Background::Color(Color::BLACK)),
+        );
+        stack.push(
+            Selector::new().with_hovered(true),
+            PropertySet::one(BorderColor { color: ZYNC_500 }),
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            PropertySet::one(BorderColor { color: FOCUS_COLOR }),
+        );
+
+        properties.insert_stack::<StepInput<T>>(stack);
+    }
 }
 
 /// Set of default properties used in unit tests.
