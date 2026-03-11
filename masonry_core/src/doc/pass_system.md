@@ -94,6 +94,12 @@ It's more powerful and gives complete access to the tree, but is also slightly m
 
 Widgets should try to fit their logic into the other passes, and use `mutate_later()` sparsely.
 
+### The action pass
+
+The **action** pass propagates a widget's action up the tree towards the app driver.
+This allows any ancestor widget to react to descendant widget actions or to even set them as handled, stopping the propagation.
+For example some complex widget might be a composition of more basic widgets and it might translate `Button` widget actions into its own actions.
+
 ### Update passes
 
 Update passes mostly run internal calculations.
