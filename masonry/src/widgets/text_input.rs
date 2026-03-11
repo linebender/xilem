@@ -16,10 +16,7 @@ use crate::core::{
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
-use crate::properties::{
-    CaretColor, ContentColor, FocusedBorderColor, LineBreaking, PlaceholderColor, SelectionColor,
-    UnfocusedSelectionColor,
-};
+use crate::properties::{CaretColor, ContentColor, LineBreaking, PlaceholderColor, SelectionColor};
 use crate::widgets::{Label, TextArea};
 
 /// The text input widget displays text which can be edited by the user,
@@ -151,7 +148,6 @@ impl TextInput {
 impl HasProperty<CaretColor> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
 impl HasProperty<SelectionColor> for TextInput {}
-impl HasProperty<UnfocusedSelectionColor> for TextInput {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {
@@ -196,13 +192,8 @@ impl Widget for TextInput {
                 let color = *input.get_prop::<SelectionColor>();
                 let mut text_area = Self::text_mut(&mut input);
                 text_area.insert_prop(color);
-            });
-        } else if property_type == TypeId::of::<UnfocusedSelectionColor>() {
-            ctx.mutate_self_later(|mut input| {
-                let mut input = input.downcast::<Self>();
-                let color = *input.get_prop::<UnfocusedSelectionColor>();
-                let mut text_area = Self::text_mut(&mut input);
-                text_area.insert_prop(color);
+                println!("world");
+                dbg!(color);
             });
         } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -228,12 +219,7 @@ impl Widget for TextInput {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<SelectionColor>();
                     let mut text_area = Self::text_mut(&mut input);
-                    text_area.insert_prop(color);
-                });
-                ctx.mutate_self_later(|mut input| {
-                    let mut input = input.downcast::<Self>();
-                    let color = *input.get_prop::<UnfocusedSelectionColor>();
-                    let mut text_area = Self::text_mut(&mut input);
+                    println!("hello");
                     text_area.insert_prop(color);
                 });
                 ctx.mutate_self_later(|mut input| {
@@ -301,23 +287,39 @@ impl Widget for TextInput {
         }
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         let bbox = ctx.border_box();
-        let mut p = PrePaintProps::fetch(ctx, props);
+        let p = PrePaintProps::fetch(props);
 
-        // We want to show a focus border if our child TextArea is focused
-        if ctx.has_focus_target()
-            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            p.border_color = &fb.0;
-        }
-
-        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
-        paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
+        paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
+        paint_background(
+            scene,
+            bbox,
+            &p.background,
+            &p.border_width,
+            &p.corner_radius,
+        );
+        paint_border(
+            scene,
+            bbox,
+            &p.border_color,
+            &p.border_width,
+            &p.corner_radius,
+        );
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -326,7 +328,7 @@ impl Widget for TextInput {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         node.set_placeholder(self.placeholder_text.to_string());
@@ -387,7 +389,9 @@ mod tests {
 
         assert_render_snapshot!(harness, "text_input_selection");
 
+        println!("hi");
         harness.process_text_event(TextEvent::WindowFocusChange(false));
+        println!("hi2");
 
         assert_render_snapshot!(harness, "text_input_selection_unfocused");
 

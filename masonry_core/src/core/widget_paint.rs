@@ -3,13 +3,10 @@
 
 use vello::Scene;
 
-use crate::core::{PaintCtx, PropertiesRef};
+use crate::core::{PaintCtx, PropertiesMut};
 use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::peniko::Fill;
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor,
-};
+use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};
 
 /// References to common pre-paint properties.
 pub struct PrePaintProps<'a> {
@@ -31,32 +28,18 @@ pub struct PrePaintProps<'a> {
 
 impl<'a> PrePaintProps<'a> {
     /// Returns common pre-paint properties based on widget state.
-    pub fn fetch(ctx: &mut PaintCtx<'_>, props: &'a PropertiesRef<'_>) -> Self {
-        let box_shadow = props.get::<BoxShadow>();
-        let background = if ctx.is_disabled()
-            && let Some(db) = props.get_defined::<DisabledBackground>()
-        {
-            &db.0
-        } else if ctx.is_active()
-            && let Some(ab) = props.get_defined::<ActiveBackground>()
-        {
-            &ab.0
-        } else {
-            props.get::<Background>()
-        };
-        let border_color = if ctx.is_focus_target()
-            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if ctx.is_hovered()
-            && let Some(hb) = props.get_defined::<HoveredBorderColor>()
-        {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
-        let border_width = props.get::<BorderWidth>();
-        let corner_radius = props.get::<CornerRadius>();
+    pub fn fetch(props: &'a mut PropertiesMut<'_>) -> Self {
+        props.resolve::<BoxShadow>();
+        props.resolve::<Background>();
+        props.resolve::<BorderColor>();
+        props.resolve::<BorderWidth>();
+        props.resolve::<CornerRadius>();
+
+        let box_shadow = props.get_cached::<BoxShadow>();
+        let background = props.get_cached::<Background>();
+        let border_color = props.get_cached::<BorderColor>();
+        let border_width = props.get_cached::<BorderWidth>();
+        let corner_radius = props.get_cached::<CornerRadius>();
 
         Self {
             box_shadow,
@@ -69,13 +52,25 @@ impl<'a> PrePaintProps<'a> {
 }
 
 /// Paints the widget's box shadow, background, and border.
-pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
     let bbox = ctx.border_box();
-    let p = PrePaintProps::fetch(ctx, props);
+    let p = PrePaintProps::fetch(props);
 
-    paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-    paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
-    paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
+    paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
+    paint_background(
+        scene,
+        bbox,
+        &p.background,
+        &p.border_width,
+        &p.corner_radius,
+    );
+    paint_border(
+        scene,
+        bbox,
+        &p.border_color,
+        &p.border_width,
+        &p.corner_radius,
+    );
 }
 
 /// Paints the widget's box shadow.

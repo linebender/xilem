@@ -12,8 +12,8 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx, PropertiesRef, RegisterCtx,
-    Widget, WidgetId, WidgetPod,
+    AccessCtx, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::core::{MeasureCtx, WidgetMut};
 use crate::kurbo::{Axis, Rect, Size};
@@ -177,7 +177,13 @@ impl Widget for Align {
         ctx.derive_baselines(&self.child);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _scene: &mut Scene,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -186,7 +192,7 @@ impl Widget for Align {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _node: &mut Node,
     ) {
     }

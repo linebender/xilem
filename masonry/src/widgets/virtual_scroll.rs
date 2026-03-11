@@ -943,7 +943,7 @@ impl Widget for VirtualScroll {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         _scene: &mut vello::Scene,
     ) {
         // We run these checks in `paint` as they are outside of the pass-based fixedpoint loop
@@ -974,7 +974,7 @@ impl Widget for VirtualScroll {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut accesskit::Node,
     ) {
         node.set_clips_children();

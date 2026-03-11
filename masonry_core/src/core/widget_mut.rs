@@ -80,16 +80,8 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// If the widget has an entry for `P`, returns that entry.
     /// If the default property set has an entry for `P`, returns that entry.
     /// Otherwise returns [`Property::static_default()`].
-    pub fn get_prop<T: Property>(&self) -> &T {
+    pub fn get_prop<T: Property>(&mut self) -> &T {
         self.ctx.properties.get::<T>()
-    }
-
-    /// Returns the defined value of property `P`.
-    ///
-    /// If the widget has an explicit entry, or the default property map has an explicit entry,
-    /// then this will return a value. Otherwise it will return `None`.
-    pub fn get_prop_defined<P: Property>(&self) -> Option<&P> {
-        self.ctx.properties.get_defined::<P>()
     }
 
     /// Sets property `T` to given value. Returns the previous value if `T` was already set locally.

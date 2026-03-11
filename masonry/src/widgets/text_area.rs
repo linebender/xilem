@@ -20,9 +20,7 @@ use crate::core::{
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
 use crate::layout::LenReq;
 use crate::peniko::Fill;
-use crate::properties::{
-    CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
-};
+use crate::properties::{CaretColor, ContentColor, SelectionColor};
 use crate::theme::default_text_styles;
 use crate::util::bounding_box_to_rect;
 use crate::util::debug_panic;
@@ -141,7 +139,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
+    /// Use the [`ContentColor`] property instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///
@@ -269,7 +267,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
+    /// Use the [`ContentColor`] property instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///
@@ -844,9 +842,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         CaretColor::prop_changed(ctx, property_type);
         ContentColor::prop_changed(ctx, property_type);
-        DisabledContentColor::prop_changed(ctx, property_type);
         SelectionColor::prop_changed(ctx, property_type);
-        UnfocusedSelectionColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -985,7 +981,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         ctx.set_ime_area(self.ime_area());
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -997,13 +993,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         };
         if ctx.is_focus_target() {
             let caret_color = props.get::<CaretColor>().color;
-            let selection_color = if !ctx.is_window_focused()
-                && let Some(us) = props.get_defined::<UnfocusedSelectionColor>()
-            {
-                us.0.color
-            } else {
-                props.get::<SelectionColor>().color
-            };
+            let selection_color = props.get::<SelectionColor>().color;
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
                     Fill::NonZero,
@@ -1027,13 +1017,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             };
         }
 
-        let text_color = if ctx.is_disabled()
-            && let Some(dc) = props.get_defined::<DisabledContentColor>()
-        {
-            &dc.0
-        } else {
-            props.get::<ContentColor>()
-        };
+        let text_color = props.get::<ContentColor>();
 
         render_text(
             scene,
@@ -1062,7 +1046,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         if !EDITABLE {
