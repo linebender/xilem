@@ -2289,6 +2289,7 @@ dependencies = [
  "tracing",
  "tracing-tracy",
  "ui-events-winit",
+ "wgpu",
  "wgpu-profiler",
  "winit",
 ]
