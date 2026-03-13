@@ -3,6 +3,8 @@
 
 //! Views for the widgets which are built-in to Masonry. These are the primitives your Xilem app's view tree will generally be constructed from.
 
+mod badge;
+mod badged;
 mod button;
 mod canvas;
 mod checkbox;
@@ -15,6 +17,8 @@ mod portal;
 mod progress_bar;
 mod prop;
 mod prose;
+mod radio_button;
+mod radio_group;
 mod resize_observer;
 mod sized_box;
 mod slider;
@@ -29,6 +33,8 @@ mod virtual_scroll;
 mod worker;
 mod zstack;
 
+pub use self::badge::*;
+pub use self::badged::*;
 pub use self::button::*;
 pub use self::canvas::*;
 pub use self::checkbox::*;
@@ -41,6 +47,8 @@ pub use self::portal::*;
 pub use self::progress_bar::*;
 pub use self::prop::*;
 pub use self::prose::*;
+pub use self::radio_button::*;
+pub use self::radio_group::*;
 pub use self::resize_observer::*;
 pub use self::sized_box::*;
 pub use self::slider::*;

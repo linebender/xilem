@@ -4,7 +4,7 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageCtx, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// The View for [`map_state`].
 ///
@@ -44,7 +44,7 @@ where
 ///     other: i32,
 /// }
 ///
-/// fn count_view(count: i32) -> impl WidgetView<Edit<i32>> {
+/// fn count_view(count: i32) -> impl WidgetView<i32> {
 ///     flex((
 ///         label(format!("count: {}", count)),
 ///         button("+", |count| *count += 1),
@@ -52,8 +52,8 @@ where
 ///     ))
 /// }
 ///
-/// fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> {
-///     map_state(count_view(state.count), |state: &mut AppState, ()|  &mut state.count)
+/// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
 /// }
 /// ```
 pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>(
@@ -61,11 +61,10 @@ pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F
     f: F,
 ) -> MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: ViewArgument,
-    ChildState: ViewArgument,
+    ParentState: 'static,
+    ChildState: 'static,
     V: View<ChildState, Action, Context>,
-    // :(, see https://doc.rust-lang.org/error_codes/E0582.html
-    F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,
+    F: for<'a> Fn(&'a mut ParentState) -> &'a mut ChildState + 'static,
     MapState<V, F, ParentState, ChildState, Action, Context>: View<ParentState, Action, Context>,
 {
     MapState {
@@ -82,11 +81,10 @@ impl<V, F, ParentState, ChildState, Action, Context> ViewMarker
 impl<ParentState, ChildState, Action, Context, V, F> View<ParentState, Action, Context>
     for MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: ViewArgument,
-    ChildState: ViewArgument,
+    ParentState: 'static,
+    ChildState: 'static,
     V: View<ChildState, Action, Context>,
-    // :(, see https://doc.rust-lang.org/error_codes/E0582.html
-    F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,
+    F: for<'a> Fn(&'a mut ParentState) -> &'a mut ChildState + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
 {
@@ -96,9 +94,9 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) -> (Self::Element, Self::ViewState) {
-        self.child.build(ctx, (self.map_state)(app_state, &()))
+        self.child.build(ctx, (self.map_state)(app_state))
     }
 
     fn rebuild(
@@ -107,14 +105,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) {
         self.child.rebuild(
             &prev.child,
             view_state,
             ctx,
             element,
-            (self.map_state)(app_state, &()),
+            (self.map_state)(app_state),
         );
     }
 
@@ -132,13 +130,9 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, ParentState>,
+        app_state: &mut ParentState,
     ) -> MessageResult<Action> {
-        self.child.message(
-            view_state,
-            message,
-            element,
-            (self.map_state)(app_state, &()),
-        )
+        self.child
+            .message(view_state, message, element, (self.map_state)(app_state))
     }
 }

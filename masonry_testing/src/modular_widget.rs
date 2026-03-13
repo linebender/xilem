@@ -6,9 +6,9 @@ use std::any::TypeId;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx,
-    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
-    PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
+    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    WidgetRef, find_widget_under_pointer, pre_paint,
 };
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
@@ -43,6 +43,7 @@ pub struct ModularWidget<S> {
     pub state: S,
     icon: CursorIcon,
     accepts_pointer_interaction: bool,
+    propagates_pointer_interaction: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
     on_pointer_event: Option<Box<PointerEventFn<S>>>,
@@ -73,6 +74,7 @@ impl<S> ModularWidget<S> {
             state,
             icon: CursorIcon::Default,
             accepts_pointer_interaction: true,
+            propagates_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
             on_pointer_event: None,
@@ -113,6 +115,7 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
                 ctx.run_layout(child, child_size);
                 ctx.place_child(child, Point::ZERO);
+                ctx.derive_baselines(child);
             })
             .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
     }
@@ -147,10 +150,18 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 let auto_size = SizeDef::fit(size);
                 let context_size = size.into();
 
-                for child in children {
+                for child in children.iter_mut() {
                     let child_size = ctx.compute_size(child, auto_size, context_size);
                     ctx.run_layout(child, child_size);
                     ctx.place_child(child, Point::ZERO);
+                }
+
+                if let Some(child) = children.first() {
+                    let (first_baseline, _) = ctx.child_aligned_baselines(child);
+                    let (_, last_baseline) = ctx.child_aligned_baselines(children.last().unwrap());
+                    ctx.set_baselines(first_baseline, last_baseline);
+                } else {
+                    ctx.clear_baselines();
                 }
             })
             .children_fn(|children| children.iter().map(|child| child.id()).collect())
@@ -170,6 +181,12 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
+        self
+    }
+
+    /// See [`Widget::propagates_pointer_interaction`]
+    pub fn propagates_pointer_interaction(mut self, flag: bool) -> Self {
+        self.propagates_pointer_interaction = flag;
         self
     }
 
@@ -475,6 +492,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
         self.accepts_pointer_interaction
     }
 
+    fn propagates_pointer_interaction(&self) -> bool {
+        self.propagates_pointer_interaction
+    }
+
     fn accepts_focus(&self) -> bool {
         self.accepts_focus
     }
@@ -518,7 +539,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         NewWidget::new(self)
     }
 
-    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
+    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,
     {

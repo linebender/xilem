@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewId, ViewPathTracker, ViewSequence,
+    AppendVec, Count, ElementSplice, MessageCtx, MessageResult, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
 };
 
 /// The state used to implement `ViewSequence` for `Vec<impl ViewSequence>`
@@ -63,7 +63,7 @@ fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for Vec<Seq>
 where
-    State: ViewArgument,
+    State: 'static,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -81,7 +81,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        mut app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         let generations = alloc::vec![0; self.len()];
@@ -92,9 +92,7 @@ where
             .map(|((index, seq), generation)| {
                 let id = create_generational_view_id(index, *generation);
                 let this_skip = elements.index() - start_idx;
-                let inner_state = ctx.with_id(id, |ctx| {
-                    seq.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
-                });
+                let inner_state = ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
                 (this_skip, inner_state)
             })
             .collect();
@@ -111,7 +109,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        mut app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         let start_idx = elements.index();
         for (i, (((child, child_prev), (child_skip, child_state)), child_generation)) in self
@@ -125,13 +123,7 @@ where
             // Rebuild the items which are common to both vectors
             let id = create_generational_view_id(i, *child_generation);
             ctx.with_id(id, |ctx| {
-                child.seq_rebuild(
-                    child_prev,
-                    child_state,
-                    ctx,
-                    elements,
-                    State::reborrow_mut(&mut app_state),
-                );
+                child.seq_rebuild(child_prev, child_state, ctx, elements, app_state);
             });
         }
         let n = self.len();
@@ -187,9 +179,8 @@ where
                         .map(|(index, (seq, generation))| {
                             let id = create_generational_view_id(index + prev_n, *generation);
                             let this_skip = elements.index() + outer_idx - start_idx;
-                            let inner_state = ctx.with_id(id, |ctx| {
-                                seq.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
-                            });
+                            let inner_state =
+                                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
                             (this_skip, inner_state)
                         }),
                 );
@@ -221,7 +212,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()

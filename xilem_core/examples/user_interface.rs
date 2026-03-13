@@ -7,11 +7,11 @@
 use core::any::Any;
 
 use xilem_core::{
-    Arg, Edit, Environment, MessageCtx, MessageResult, Mut, SuperElement, View, ViewArgument,
-    ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    Environment, MessageCtx, MessageResult, Mut, SuperElement, View, ViewElement, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
-fn app_logic(_: &mut u32) -> impl WidgetView<Edit<u32>> + use<> {
+fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
     Button {}
 }
 
@@ -51,14 +51,14 @@ impl<W: Widget> ViewElement for WidgetBox<W> {
 }
 
 impl ViewMarker for Button {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Button {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for Button {
     type Element = WidgetBox<ButtonWidget>;
     type ViewState = ();
 
     fn build(
         &self,
         _ctx: &mut ViewCtx,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> (Self::Element, Self::ViewState) {
         (
             WidgetBox {
@@ -74,7 +74,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Button {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) {
         // Nothing to do
     }
@@ -93,7 +93,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Button {
         _view_state: &mut Self::ViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         MessageResult::Nop
     }
@@ -150,13 +150,13 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
-trait WidgetView<State: ViewArgument, Action = ()>:
+trait WidgetView<State: 'static, Action = ()>:
     View<State, Action, ViewCtx, Element = WidgetBox<Self::Widget>> + Send + Sync
 {
     type Widget: Widget + Send + Sync;
 }
 
-impl<V, State: ViewArgument, Action, W> WidgetView<State, Action> for V
+impl<V, State: 'static, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = WidgetBox<W>> + Send + Sync,
     W: Widget + Send + Sync,

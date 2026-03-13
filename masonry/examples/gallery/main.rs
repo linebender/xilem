@@ -10,6 +10,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+mod badge;
 mod basics;
 mod checkbox;
 mod demo;
@@ -17,9 +18,12 @@ mod divider;
 mod image;
 mod kitchen_sink;
 mod progress;
+mod radio_buttons;
 mod slider;
 mod spinner;
 mod split;
+mod step_input;
+mod svg;
 mod switch;
 mod text_input;
 mod tooltip;
@@ -32,8 +36,8 @@ use masonry::properties::Padding;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
-    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal, SizedBox,
-    SwitchToggled,
+    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal,
+    RadioButtonSelected, SizedBox, Step, SwitchToggled,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -188,6 +192,45 @@ impl AppDriver for Driver {
             Err(action) => action,
         };
 
+        // Steps.
+        let action = match action.downcast::<Step<isize>>() {
+            Ok(step) => {
+                let value = step.value;
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_step(render_root, widget_id, value))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
+        // Selected radio button.
+        let action = match action.downcast::<RadioButtonSelected>() {
+            Ok(_) => {
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_radio_button_selected(render_root, widget_id))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
         // Switch toggles.
         let action = match action.downcast::<SwitchToggled>() {
             Ok(toggled) => {
@@ -228,14 +271,18 @@ impl AppDriver for Driver {
 fn build_demos() -> Vec<Box<dyn DemoPage>> {
     let mut demos: Vec<Box<dyn DemoPage>> = vec![
         Box::new(basics::BasicsDemo::new(new_demo_shell_tags())),
+        Box::new(badge::BadgeDemo::new(new_demo_shell_tags())),
         Box::new(checkbox::CheckboxDemo::new(new_demo_shell_tags())),
         Box::new(divider::DividerDemo::new(new_demo_shell_tags())),
         Box::new(image::ImageDemo::new(new_demo_shell_tags())),
         Box::new(kitchen_sink::KitchenSinkDemo::new(new_demo_shell_tags())),
         Box::new(progress::ProgressDemo::new(new_demo_shell_tags())),
+        Box::new(radio_buttons::RadioButtonsDemo::new(new_demo_shell_tags())),
         Box::new(slider::SliderDemo::new(new_demo_shell_tags())),
         Box::new(spinner::SpinnerDemo::new(new_demo_shell_tags())),
         Box::new(split::SplitDemo::new(new_demo_shell_tags())),
+        Box::new(step_input::StepInputDemo::new(new_demo_shell_tags())),
+        Box::new(svg::SvgDemo::new(new_demo_shell_tags())),
         Box::new(SwitchDemo::new(new_demo_shell_tags())),
         Box::new(text_input::TextInputDemo::new(new_demo_shell_tags())),
         Box::new(tooltip::TooltipDemo::new(new_demo_shell_tags())),

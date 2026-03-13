@@ -3,8 +3,8 @@
 
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
-use crate::core::{Widget, WidgetId, WidgetState};
-use crate::util::{AnyMap, TypeSet};
+use crate::core::{PropertySet, Widget, WidgetId, WidgetState};
+use crate::util::TypeSet;
 
 pub(crate) struct WidgetArena {
     pub(crate) nodes: TreeArena<WidgetArenaNode>,
@@ -13,7 +13,7 @@ pub(crate) struct WidgetArena {
 pub(crate) struct WidgetArenaNode {
     pub(crate) widget: Box<dyn Widget>,
     pub(crate) state: WidgetState,
-    pub(crate) properties: AnyMap,
+    pub(crate) properties: PropertySet,
     pub(crate) changed_properties: TypeSet,
 }
 

@@ -3,10 +3,10 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::parley::{FontFamily, GenericFamily};
+use masonry::parley::{FontFamily, GenericFamily, LineHeight};
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, TextAlign, ViewCtx};
 
 /// A non-interactive text element.
@@ -21,9 +21,8 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// use xilem::masonry::parley::style::FontWeight;
 /// use xilem::masonry::parley::fontique;
 /// # use xilem::WidgetView;
-/// # use xilem::core::Edit;
 ///
-/// # fn view() -> impl WidgetView<Edit<()>> {
+/// # fn view() -> impl WidgetView<()> {
 /// label("Text example.")
 ///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)
@@ -38,6 +37,8 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
+        enable_hinting: true,
+        line_height: LineHeight::default(),
         font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
     }
 }
@@ -51,6 +52,8 @@ pub struct Label {
     text_alignment: TextAlign,
     text_size: f32,
     weight: FontWeight,
+    enable_hinting: bool,
+    line_height: LineHeight,
     font: FontStack<'static>,
     // TODO: add more attributes of `masonry::widgets::Label`
 }
@@ -75,6 +78,18 @@ impl Label {
         self
     }
 
+    /// Sets whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
+    pub fn enable_hinting(mut self, enable_hinting: bool) -> Self {
+        self.enable_hinting = enable_hinting;
+        self
+    }
+
+    /// Sets line height.
+    pub fn line_height(mut self, line_height: LineHeight) -> Self {
+        self.line_height = line_height;
+        self
+    }
+
     /// Set the [font stack](FontStack) this label will use.
     ///
     /// A font stack allows for providing fallbacks. If there is no matching font
@@ -95,17 +110,19 @@ where
 }
 
 impl ViewMarker for Label {}
-impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
+impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
-                .with_style(StyleProperty::FontStack(self.font.clone())),
+                .with_style(StyleProperty::LineHeight(self.line_height))
+                .with_style(StyleProperty::FontStack(self.font.clone()))
+                .with_hint(self.enable_hinting),
         );
         (pod, ())
     }
@@ -116,7 +133,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
@@ -130,8 +147,14 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
         if prev.weight != self.weight {
             widgets::Label::insert_style(&mut element, StyleProperty::FontWeight(self.weight));
         }
+        if prev.line_height != self.line_height {
+            widgets::Label::insert_style(&mut element, StyleProperty::LineHeight(self.line_height));
+        }
         if prev.font != self.font {
             widgets::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
+        }
+        if prev.enable_hinting != self.enable_hinting {
+            widgets::Label::set_hint(&mut element, self.enable_hinting);
         }
     }
 
@@ -142,7 +165,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Label {
         (): &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

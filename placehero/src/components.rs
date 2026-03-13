@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use megalodon::entities::Status;
-use xilem::core::{Arg, ViewArgument};
 use xilem::masonry::layout::AsUnit;
 use xilem::style::Style;
 use xilem::view::{
@@ -28,7 +27,7 @@ mod media;
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
-fn base_status<State: ViewArgument>(
+fn base_status<State: 'static>(
     status: &Status,
 ) -> impl FlexSequence<State, Navigation> + use<State> {
     // TODO: This really should be Arced or something.
@@ -75,7 +74,7 @@ fn base_status<State: ViewArgument>(
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            text_button("View Replies", move |_: Arg<'_, State>| {
+            text_button("View Replies", move |_: &mut State| {
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))

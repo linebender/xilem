@@ -96,6 +96,19 @@ pub trait AppDriver {
         action: ErasedAction,
     );
 
+    /// A hook which will be executed for async actions sent outside the widget tree.
+    ///
+    /// This is called when the winit event loop gets a [`MasonryUserEvent::AsyncAction`] event.
+    ///
+    /// [`MasonryUserEvent::AsyncAction`]: crate::app::MasonryUserEvent::AsyncAction
+    fn on_async_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        action: ErasedAction,
+    ) {
+    }
+
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
     ///
     /// Use cases include loading fonts.

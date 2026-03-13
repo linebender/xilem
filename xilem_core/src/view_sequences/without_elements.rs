@@ -5,8 +5,8 @@ use core::marker::PhantomData;
 
 use crate::element::NoElement;
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
-    ViewPathTracker, ViewSequence,
+    AppendVec, Count, ElementSplice, MessageCtx, MessageResult, ViewElement, ViewPathTracker,
+    ViewSequence,
 };
 
 /// A stub `ElementSplice` implementation for `NoElement`.
@@ -57,9 +57,9 @@ pub struct WithoutElements<Seq, State, Action, Context> {
 ///
 /// ```
 /// # use xilem_core::docs::{DocsViewSequence as WidgetViewSequence, some_component_generic as component};
-/// use xilem_core::{without_elements, run_once, Edit};
+/// use xilem_core::{without_elements, run_once};
 ///
-/// fn isolated_child(state: &mut AppState) -> impl WidgetViewSequence<Edit<AppState>> {
+/// fn isolated_child(state: &mut AppState) -> impl WidgetViewSequence<AppState> {
 ///     (component(state), without_elements(run_once(|| {})))
 /// }
 ///
@@ -69,7 +69,6 @@ pub fn without_elements<State, Action, Context, Seq>(
     seq: Seq,
 ) -> WithoutElements<Seq, State, Action, Context>
 where
-    State: ViewArgument,
     State: 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
@@ -84,7 +83,6 @@ where
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for WithoutElements<Seq, State, Action, Context>
 where
-    State: ViewArgument,
     State: 'static,
     Action: 'static,
     Element: ViewElement,
@@ -99,7 +97,7 @@ where
         &self,
         ctx: &mut Context,
         _elements: &mut AppendVec<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> Self::SeqState {
         self.seq
             .seq_build(ctx, &mut AppendVec::default(), app_state)
@@ -111,7 +109,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         _elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         self.seq
             .seq_rebuild(&prev.seq, seq_state, ctx, &mut NoElements, app_state);
@@ -131,7 +129,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageCtx,
         _elements: &mut impl ElementSplice<Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.seq
             .seq_message(seq_state, message, &mut NoElements, app_state)

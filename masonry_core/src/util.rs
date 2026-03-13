@@ -3,8 +3,6 @@
 
 //! Miscellaneous utility functions.
 
-use std::any::Any;
-
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, Fill};
@@ -33,6 +31,7 @@ macro_rules! debug_panic {
     };
 }
 
+use crate::core::{Widget, WidgetId};
 pub use crate::debug_panic;
 
 /// Provides sanitization of values.
@@ -109,7 +108,7 @@ impl Sanitize for Option<f64> {
 
 // ---
 
-pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
+pub(crate) type AnyMap = anymap3::Map<dyn anymap3::CloneAny + Send + Sync>;
 pub(crate) type TypeSet = std::collections::HashSet<
     std::any::TypeId,
     std::hash::BuildHasherDefault<anymap3::TypeIdHasher>,
@@ -201,4 +200,12 @@ static DEBUG_COLOR: &[Color] = &[
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]
+}
+
+// ---
+
+pub(crate) struct ParentLinkedList<'a> {
+    pub(crate) widget: &'a dyn Widget,
+    pub(crate) id: WidgetId,
+    pub(crate) parent: Option<&'a Self>,
 }

@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    NewWidget, Properties, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
+    NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
 };
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
@@ -119,14 +119,14 @@ impl DemoPage for TransformsDemo {
 
         let target = NewWidget::new_with(
             SizedBox::new(
-                Label::new("Transform me")
+                Label::new("Transform me\nand\nsee what happens")
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_auto_id(),
             )
             .size(160.0.px(), 160.0.px()),
             Some(self.target),
             WidgetOptions::default(),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x35, 0x35, 0x35)))
                 .with(Padding::all(12.0)),
         );

@@ -10,7 +10,7 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
-    PrePaintProps, Properties, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update,
+    PrePaintProps, PropertiesMut, PropertiesRef, Property, PropertySet, RegisterCtx, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, paint_background, paint_border,
     paint_box_shadow,
 };
@@ -49,7 +49,7 @@ impl ProgressBar {
     /// A `None` value (or NaN) will show an indeterminate progress bar.
     pub fn new(progress: Option<f64>) -> Self {
         let progress = clamp_progress(progress);
-        let label_props = Properties::one(LineBreaking::Overflow);
+        let label_props = PropertySet::one(LineBreaking::Overflow);
         let label =
             NewWidget::new_with_props(Label::new(Self::value(progress)), label_props).to_pod();
         Self { progress, label }
@@ -177,6 +177,8 @@ impl Widget for ProgressBar {
 
         let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.label, child_origin);
+
+        ctx.derive_baselines(&self.label);
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -254,7 +256,7 @@ impl Widget for ProgressBar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{NewWidget, Properties};
+    use crate::core::{NewWidget, PropertySet};
     use crate::palette;
     use crate::properties::{BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -345,7 +347,7 @@ mod tests {
     fn edit_progressbar() {
         let image_1 = {
             let bar = ProgressBar::new(Some(0.5))
-                .with_props(Properties::new().with(BarColor(palette::css::PURPLE)));
+                .with_props(PropertySet::new().with(BarColor(palette::css::PURPLE)));
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), bar, Size::new(60.0, 20.0));

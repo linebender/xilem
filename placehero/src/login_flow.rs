@@ -5,7 +5,7 @@
 
 use xilem::{
     WidgetView,
-    core::{Edit, one_of::Either},
+    core::one_of::Either,
     view::{CrossAxisAlignment, FlexExt, flex_col, label, prose},
 };
 
@@ -27,7 +27,7 @@ impl PlaceheroWithLogin {
 
 pub(crate) fn app_logic(
     state: &mut PlaceheroWithLogin,
-) -> impl WidgetView<Edit<PlaceheroWithLogin>> + use<> {
+) -> impl WidgetView<PlaceheroWithLogin> + use<> {
     let Some(_login) = &mut state.login else {
         return Either::A(flex_col((
             prose("Error: Placehero not ran using cargo run.")

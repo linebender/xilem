@@ -1,7 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -29,11 +29,11 @@ use crate::passes::event::{
 };
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
-use crate::passes::paint::run_paint_pass;
+use crate::passes::paint::{PaintResult, run_paint_pass};
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
-    run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
-    run_update_widget_tree_pass,
+    run_update_fonts_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_stashed_pass, run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
 use crate::properties::Dimensions;
@@ -127,13 +127,6 @@ pub(crate) struct RenderRootState {
     // TODO: move font context out of RenderRootState so that we only have it once per app
     pub(crate) font_context: FontContext,
 
-    /// Whether the loaded fonts have changed since the last layout pass.
-    ///
-    /// This is present so that child widgets can cache a Parley Layout, whilst
-    /// still updating text properly if fonts have changed.
-    // TODO: Should this be an `update` instead?
-    pub(crate) fonts_changed: bool,
-
     /// Cache for Parley text layout data.
     pub(crate) text_layout_context: LayoutContext<BrushIndex>,
 
@@ -150,6 +143,9 @@ pub(crate) struct RenderRootState {
     pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
+
+    /// Map of layers attached to widgets, keyed by the attached widget id, then the type of the layer root.
+    pub(crate) attached_layers: HashMap<WidgetId, HashMap<TypeId, WidgetId>>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -356,13 +352,13 @@ impl RenderRoot {
                     }),
                     source_cache: SourceCache::default(),
                 },
-                fonts_changed: false,
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
                 last_sent_ime_area: INVALID_IME_AREA,
                 scene_cache: HashMap::new(),
                 widget_tags: HashMap::new(),
+                attached_layers: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
@@ -417,6 +413,23 @@ impl RenderRoot {
 
         let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
         stack.layer_id(layer_idx)
+    }
+
+    /// Returns the widget ID of each layer, in stack order.
+    ///
+    /// Index 0 is the base layer; subsequent entries are overlay layers.
+    pub(crate) fn layer_ids(&self) -> Vec<WidgetId> {
+        let node_ref = self
+            .widget_arena
+            .nodes
+            .find(self.root_id())
+            .expect("root widget not in widget tree");
+        let widget = &*node_ref.item.widget;
+
+        let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
+        (0..stack.layer_count())
+            .map(|i| stack.layer_id(i))
+            .collect()
     }
 
     pub(crate) fn root_state(&self) -> &WidgetState {
@@ -532,8 +545,7 @@ impl RenderRoot {
             .font_context
             .collection
             .register_fonts(data, None);
-        self.global_state.fonts_changed = true;
-        self.request_layout_all();
+        run_update_fonts_pass(self);
         ret
     }
 
@@ -541,16 +553,16 @@ impl RenderRoot {
     ///
     /// Returns an update to the accessibility tree and a Vello scene representing
     /// the widget tree's current state.
-    pub fn redraw(&mut self) -> (Scene, Option<TreeUpdate>) {
+    pub fn redraw(&mut self) -> (PaintResult, Option<TreeUpdate>) {
         self.run_rewrite_passes();
 
         let access_tree_active = self.global_state.access_tree_active;
 
         // TODO - Handle invalidation regions
-        let scene = run_paint_pass(self);
+        let paint_result = run_paint_pass(self);
         let tree_update = access_tree_active
             .then(|| run_accessibility_pass(self, self.global_state.scale_factor));
-        (scene, tree_update)
+        (paint_result, tree_update)
     }
 
     /// Returns the current icon that the mouse should display.
@@ -578,7 +590,7 @@ impl RenderRoot {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                map: properties,
+                set: properties,
                 default_map: self.default_properties.for_widget(widget.type_id()),
             },
             children,
@@ -856,35 +868,6 @@ impl RenderRoot {
         request_render_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
-    }
-
-    /// Requires that each widget gets relayouted.
-    ///
-    /// This is used if something ambient changes and we expect that
-    /// many widgets will depend on in it their layout.
-    ///
-    /// This also runs the rewrite passes (i.e. it actions the relayout as well)
-    /// Currently only used for font loading.
-    pub(crate) fn request_layout_all(&mut self) {
-        fn request_layout_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
-            let children = node.children;
-            let widget = &mut *node.item.widget;
-            let state = &mut node.item.state;
-
-            state.set_needs_layout(true);
-            state.request_layout = true;
-
-            let id = state.id;
-            recurse_on_children(id, widget, children, |node| {
-                request_layout_all_in(node);
-            });
-        }
-
-        let root_node = self.widget_arena.get_node_mut(self.root_id());
-        request_layout_all_in(root_node);
-        // We need to perform a relayout before the next pointer/keyboard input event.
-        // So we do it now, rather than deferring it until a redraw.
-        self.run_rewrite_passes();
     }
 
     /// Checks whether the given id points to a widget that is "interactive".

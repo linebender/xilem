@@ -9,19 +9,19 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerEvent, PointerUpdate, Properties, PropertiesMut, PropertiesRef,
+    NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet,
     RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::kurbo::{Axis, Point, Size, Vec2};
 use masonry::layers::Tooltip;
-use masonry::layout::{LayoutSize, LenReq, SizeDef};
+use masonry::layout::{AsUnit, LayoutSize, LenReq, SizeDef};
 use masonry::parley::FontWeight;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
 use masonry::theme::default_property_set;
 use masonry::util::{Duration, Instant};
 use masonry::vello::Scene;
 use masonry::vello::peniko::Color;
-use masonry::widgets::{Flex, Label};
+use masonry::widgets::{Flex, Label, Selector};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -170,9 +170,9 @@ fn main() {
         let tooltip = NewWidget::new_with_props(
             Tooltip::new(NewWidget::new_with_props(
                 Label::new("Tooltip!!!"),
-                Properties::one(ContentColor::new(Color::BLACK)),
+                PropertySet::one(ContentColor::new(Color::BLACK)),
             )),
-            Properties::from((
+            PropertySet::from((
                 BorderWidth::all(1.),
                 BorderColor::new(Color::BLACK),
                 Background::Color(Color::WHITE),
@@ -184,10 +184,14 @@ fn main() {
 
     let overlay_box = OverlayBox::new(label.with_auto_id(), Box::new(overlayer));
 
+    let selector = Selector::new(vec!["A".to_string(), "B".to_string(), "C".to_string()]);
+
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
         .with_spacer(1.)
         .with_fixed(overlay_box.with_auto_id())
+        .with_fixed_spacer(80.px())
+        .with_fixed(selector.with_auto_id())
         .with_spacer(1.);
 
     let driver = Driver {};

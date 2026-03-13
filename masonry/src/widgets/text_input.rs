@@ -9,9 +9,10 @@ use vello::Scene;
 
 use crate::TextAlign;
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
+    AccessCtx, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
+    NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps,
+    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
@@ -156,6 +157,25 @@ impl HasProperty<UnfocusedSelectionColor> for TextInput {}
 impl Widget for TextInput {
     type Action = NoAction;
 
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
+        match event {
+            PointerEvent::Down(PointerButtonEvent {
+                button: None | Some(PointerButton::Primary),
+                ..
+            }) => {
+                // If the user clicks the padding area around the text,
+                // we still want to focus the text area.
+                ctx.set_focus(self.text.id());
+            }
+            _ => {}
+        }
+    }
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
         ctx.register_child(&mut self.placeholder);
@@ -265,8 +285,7 @@ impl Widget for TextInput {
         let child_origin = Point::ORIGIN;
         ctx.place_child(&mut self.text, child_origin);
 
-        let child_baseline = ctx.child_baseline_offset(&self.text);
-        ctx.set_baseline_offset(child_baseline);
+        ctx.derive_baselines(&self.text);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
@@ -318,7 +337,7 @@ impl Widget for TextInput {
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
-        trace_span!("Prose", id = id.trace())
+        trace_span!("TextInput", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

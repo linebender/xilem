@@ -143,6 +143,11 @@ pub enum Update {
     ///
     /// [focused]: crate::doc::masonry_concepts#text-focus
     ChildFocusChanged(bool),
+
+    /// Called when available fonts have changed.
+    ///
+    /// Widgets that directly use fonts should recompute their font selection.
+    FontsChanged,
 }
 
 /// An enum for specifying whether an event was handled.
@@ -279,6 +284,7 @@ impl Update {
             Self::FocusChanged(true) => "FocusChanged(true)",
             Self::ChildFocusChanged(true) => "ChildFocusChanged(true)",
             Self::RequestPanToChild(_) => "RequestPanToChild(_)",
+            Self::FontsChanged => "FontsChanged",
         }
     }
 }

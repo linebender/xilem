@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use masonry::layout::Length;
 use masonry::widgets;
 
-use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
@@ -32,7 +32,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// ```
 pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     V: WidgetView<State, Action>,
     SizedBox<V, State, Action>: WidgetView<State, Action>,
 {
@@ -72,18 +72,14 @@ impl<V, State, Action> SizedBox<V, State, Action> {
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
     type Element = Pod<widgets::SizedBox>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx, app_state);
         let widget = widgets::SizedBox::new(child.new_widget)
             .raw_width(self.width)
@@ -98,7 +94,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         if self.width != prev.width {
             widgets::SizedBox::set_raw_width(&mut element, self.width);
@@ -130,7 +126,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");

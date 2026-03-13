@@ -8,9 +8,7 @@ use masonry::kurbo::Size;
 use masonry::properties::Dimensions;
 use masonry::widgets::{self, LayoutChanged};
 
-use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which calls the `on_resize` callback whenever the size of its child changes.
@@ -31,13 +29,13 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// ```rust,no_run
 /// # use xilem_masonry as xilem;
-/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex}, masonry::kurbo::{Size, Axis}};
+/// # use xilem::{WidgetView, view::{resize_observer, flex}, masonry::kurbo::{Size, Axis}};
 ///
 /// struct State {
 ///     available_size: Size,
 /// }
 ///
-/// # fn my_component(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// # fn my_component(state: &mut State) -> impl WidgetView<State> {
 /// resize_observer(
 ///     |state: &mut State, size: Size| state.available_size = size,
 ///     flex(
@@ -60,8 +58,8 @@ pub fn resize_observer<State, Action, V, F>(
 ) -> ResizeObserver<V, F, State, Action>
 where
     V: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, Size) -> Action,
-    State: ViewArgument,
+    F: Fn(&mut State, Size) -> Action,
+    State: 'static,
     ResizeObserver<V, F, State, Action>: WidgetView<State, Action>,
 {
     ResizeObserver {
@@ -88,20 +86,16 @@ const RESIZE_OBSERVER_CONTENT_VIEW_ID: ViewId = ViewId::new(0xa9e569bf);
 impl<V, F, State, Action> ViewMarker for ResizeObserver<V, F, State, Action> {}
 impl<V, F, State, Action> View<State, Action, ViewCtx> for ResizeObserver<V, F, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     F: 'static,
     V: WidgetView<State, Action>,
-    F: Fn(Arg<'_, State>, Size) -> Action,
+    F: Fn(&mut State, Size) -> Action,
 {
     type Element = Pod<widgets::ResizeObserver>;
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = ctx.with_id(RESIZE_OBSERVER_CONTENT_VIEW_ID, |ctx| {
             self.inner.build(ctx, app_state)
         });
@@ -120,7 +114,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         ctx.with_id(RESIZE_OBSERVER_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
@@ -156,14 +150,14 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
-        mut app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         match message.take_first() {
             Some(RESIZE_OBSERVER_CONTENT_VIEW_ID) => self.inner.message(
                 view_state,
                 message,
                 widgets::ResizeObserver::child_mut(&mut element).downcast(),
-                State::reborrow_mut(&mut app_state),
+                app_state,
             ),
             None => match message.take_message::<LayoutChanged>() {
                 Some(_) => MessageResult::Action((self.on_resize)(

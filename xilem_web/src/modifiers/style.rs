@@ -10,9 +10,7 @@ use peniko::kurbo::Vec2;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{Modifier, WithModifier};
-use crate::core::{
-    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
-};
+use crate::core::{MessageCtx, MessageResult, Mut, View, ViewElement, ViewMarker};
 use crate::diff::{Diff, diff_iters};
 use crate::vecmap::VecMap;
 use crate::{DomView, ViewCtx};
@@ -462,7 +460,7 @@ impl<E, S, T, A> Style<E, S, T, A> {
 impl<E, S, State, Action> ViewMarker for Style<E, S, State, Action> {}
 impl<V, S, State, Action> View<State, Action, ViewCtx> for Style<V, S, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     S: StyleIter,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
@@ -472,11 +470,7 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let style_iter = self.styles.style_modifiers_iter();
         let (mut e, s) = ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)
@@ -491,7 +485,7 @@ where
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, *len, |mut elem| {
             self.el
@@ -515,7 +509,7 @@ where
         (_, view_state): &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.el.message(view_state, message, element, app_state)
     }
@@ -554,7 +548,7 @@ fn rotate_transform_modifier(transform: Option<&CowStr>, radians: &f64) -> Style
 impl<V, State, Action> ViewMarker for Rotate<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for Rotate<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
@@ -563,11 +557,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
@@ -584,7 +574,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
@@ -614,7 +604,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.el.message(view_state, message, element, app_state)
     }
@@ -683,7 +673,7 @@ fn scale_transform_modifier(transform: Option<&CowStr>, scale: &ScaleValue) -> S
 impl<E, State, Action> ViewMarker for Scale<E, State, Action> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for Scale<V, State, Action>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Styles>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Styles>,
@@ -692,11 +682,7 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, State>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
@@ -713,7 +699,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
@@ -743,7 +729,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         self.el.message(view_state, message, element, app_state)
     }

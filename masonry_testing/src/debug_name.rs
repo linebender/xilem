@@ -6,7 +6,7 @@ use std::fmt::Display;
 use masonry_core::core::Property;
 
 /// Helper property for tying a name to a widget.
-#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DebugName(pub String);
 
 impl Property for DebugName {

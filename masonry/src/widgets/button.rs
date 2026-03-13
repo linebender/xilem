@@ -213,10 +213,7 @@ impl Widget for Button {
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
         ctx.place_child(&mut self.child, child_origin);
 
-        let child_baseline = ctx.child_baseline_offset(&self.child);
-        let child_bottom = child_origin.y + child_size.height;
-        let bottom_gap = size.height - child_bottom;
-        ctx.set_baseline_offset(child_baseline + bottom_gap);
+        ctx.derive_baselines(&self.child);
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
@@ -236,6 +233,10 @@ impl Widget for Button {
 
     fn children_ids(&self) -> ChildrenIds {
         ChildrenIds::from_slice(&[self.child.id()])
+    }
+
+    fn propagates_pointer_interaction(&self) -> bool {
+        false
     }
 
     fn accepts_focus(&self) -> bool {
@@ -259,7 +260,7 @@ mod tests {
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::{CollectionWidget, PointerButton, Properties, StyleProperty};
+    use crate::core::{CollectionWidget, PointerButton, PropertySet, StyleProperty};
     use crate::layout::AsUnit;
     use crate::properties::{
         BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, Gap, Padding,
@@ -327,7 +328,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
+                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
             );
 
             let button = NewWidget::new(Button::new(label));
@@ -405,7 +406,7 @@ mod tests {
             );
         let root_widget = NewWidget::new_with_props(
             grid,
-            Properties::new()
+            PropertySet::new()
                 .with(Padding::all(20.0))
                 .with(Gap::new(40.px())),
         );

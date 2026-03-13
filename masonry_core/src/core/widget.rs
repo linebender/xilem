@@ -15,7 +15,7 @@ use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
 };
 use crate::layout::LenReq;
@@ -438,6 +438,18 @@ pub trait Widget: AsDynWidget + Any {
         true
     }
 
+    /// Whether this widget lets pointer events and [hovered] status reach its children. True by default.
+    ///
+    /// If false, the widget's children will not get pointer events, affect the cursor icon,
+    /// will never be considered hovered, and will not be returned by `find_widget_under_pointer`.
+    ///
+    /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    ///
+    /// [hovered]: crate::doc::masonry_concepts#hovered
+    fn propagates_pointer_interaction(&self) -> bool {
+        true
+    }
+
     /// Whether this widget gets [text focus]. False by default.
     ///
     /// If true, pressing Tab can focus this widget.
@@ -538,8 +550,8 @@ pub trait Widget: AsDynWidget + Any {
         NewWidget::new(self)
     }
 
-    /// Convenience method to wrap this in a [`NewWidget`] with the given [`Properties`].
-    fn with_props(self, props: impl Into<Properties>) -> NewWidget<Self>
+    /// Convenience method to wrap this in a [`NewWidget`] with the given [`PropertySet`].
+    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
     where
         Self: Sized,
     {
@@ -553,6 +565,7 @@ pub fn find_widget_under_pointer<'c>(
     ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
+    // TEST EARLY-EXITS
     if !ctx.bounding_box().contains(pos) {
         return None;
     }
@@ -568,24 +581,29 @@ pub fn find_widget_under_pointer<'c>(
         return None;
     }
 
-    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-    // of overlapping children.
-    for child_id in widget.children_ids().iter().rev() {
-        let child_ref = ctx.get(*child_id);
-        if let Some(child) = child_ref
-            .widget
-            .find_widget_under_pointer(child_ref.ctx, pos)
-        {
-            return Some(child);
+    // TEST CHILDREN
+    if ctx.propagates_pointer_interaction() {
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in widget.children_ids().iter().rev() {
+            let child_ref = ctx.get(*child_id);
+            if let Some(child) = child_ref
+                .widget
+                .find_widget_under_pointer(child_ref.ctx, pos)
+            {
+                return Some(child);
+            }
         }
     }
 
-    // If no child is under pointer, test the current widget.
-    if ctx.accepts_pointer_interaction() && ctx.border_box().contains(local_pos) {
-        Some(WidgetRef { widget, ctx })
-    } else {
-        None
+    // TEST THE CURRENT WIDGET
+    if !ctx.accepts_pointer_interaction() {
+        return None;
     }
+    if !ctx.border_box().contains(local_pos) {
+        return None;
+    }
+    Some(WidgetRef { widget, ctx })
 }
 
 /// Marker trait for widgets whose parents can get a raw mutable reference to them.
@@ -618,18 +636,6 @@ impl WidgetId {
         static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
         let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         Self(id.try_into().unwrap())
-    }
-
-    // TODO - Remove
-    // Currently used in Xilem for event routing.
-    #[doc(hidden)]
-    pub const fn reserved(raw: u16) -> Self {
-        let id = u64::MAX - raw as u64;
-        match NonZeroU64::new(id) {
-            Some(id) => Self(id),
-            // panic safety: u64::MAX - any u16 can never be zero
-            None => unreachable!(),
-        }
     }
 
     /// Returns the integer value of the `WidgetId`.

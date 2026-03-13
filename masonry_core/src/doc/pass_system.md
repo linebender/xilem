@@ -151,6 +151,12 @@ It updates the hovered and [active] status of widgets and sends related events.
 
 It also update the pointer's icon depending on which widget it's hovering.
 
+#### "Update fonts" pass
+
+This pass informs widgets that the available set of fonts has changed.
+
+If the widget uses fonts directly it'll have to invalidate its existing use and re-assess what fonts are available.
+
 
 ### Layout pass
 

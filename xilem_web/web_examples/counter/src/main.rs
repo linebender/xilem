@@ -3,7 +3,6 @@
 
 //! A simple counter
 
-use xilem_web::core::Edit;
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlButtonElement};
 use xilem_web::{App, DomFragment, document_body};
@@ -46,17 +45,17 @@ impl AppState {
 fn btn<F: Fn(&mut AppState, web_sys::PointerEvent) + 'static>(
     label: &'static str,
     click_fn: F,
-) -> impl HtmlButtonElement<Edit<AppState>> {
-    el::button::<Edit<AppState>, _, _>(label).on_click::<F, _>(click_fn)
+) -> impl HtmlButtonElement<AppState> {
+    el::button::<AppState, _, _>(label).on_click::<F, _>(click_fn)
 }
 
 /// And functions that return a sequence of views.
-fn huzzah(state: &mut AppState) -> impl DomFragment<Edit<AppState>> + use<> {
+fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (state.clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 }
 
 /// Even the root `app_logic` can return a sequence of views
-fn app_logic(state: &mut AppState) -> impl DomFragment<Edit<AppState>> + use<> {
+fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),

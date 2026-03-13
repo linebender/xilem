@@ -5,7 +5,7 @@ use masonry::peniko::Color;
 use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
-use crate::core::{Arg, Edit, MessageCtx, Mut, View, ViewElement, ViewMarker};
+use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
@@ -26,7 +26,7 @@ pub(crate) type WindowViewState = <Box<AnyWidgetView<(), ()>> as View<(), (), Vi
 /// state somewhere.
 ///
 /// `title` initializes [`WindowOptions`].
-pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
+pub fn window<V: WidgetView<State>, State: 'static>(
     id: WindowId,
     title: impl Into<String>,
     root_view: V,
@@ -67,18 +67,14 @@ impl ViewElement for PodWindow {
 
 impl<State> ViewMarker for WindowView<State> where State: 'static {}
 
-// TODO: Reconsider how this works with ViewArgument.
+// TODO: Reconsider how this works.
 // There are *reasonable* arguments for making this be `View<()>`, i.e. the root state is just another local.
-impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
+impl<State> View<State, (), ViewCtx> for WindowView<State> {
     type Element = PodWindow;
 
     type ViewState = WindowViewState;
 
-    fn build(
-        &self,
-        ctx: &mut ViewCtx,
-        app_state: Arg<'_, Edit<State>>,
-    ) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (InitialRootWidget(root_widget), view_state) = self.masonry_root.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
@@ -100,7 +96,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         window: Mut<'_, Self::Element>,
-        app_state: Arg<'_, Edit<State>>,
+        app_state: &mut State,
     ) {
         self.options.rebuild(&prev.options, window.handle());
         if self.base_color != prev.base_color {
@@ -131,7 +127,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
         window: Mut<'_, Self::Element>,
-        app_state: Arg<'_, Edit<State>>,
+        app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
         self.masonry_root
             .message(view_state, message, window.render_root(), app_state)

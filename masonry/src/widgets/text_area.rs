@@ -851,6 +851,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::FontsChanged => {
+                // HACK: We force the editor to relayout by pretending to edit the styles.
+                //       We know that the lifecycle of dirty tracking in Parley's
+                //       editor will need to change eventually anyway...
+                let _ = self.editor.edit_styles();
+                ctx.request_layout();
+            }
             Update::FocusChanged(_) => {
                 ctx.request_render();
             }
@@ -920,14 +927,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         //       but that's potentially wasted work for measure.
         //       Should probably split up that PlainEditor method.
 
-        // TODO: Don't trigger style change multiple times per layout pass for font changes,
-        //       by storing some marker that states we've already dealt with it this pass.
-        if ctx.fonts_changed() {
-            // HACK: We force the editor to relayout by pretending to edit the styles.
-            // We know that the lifecycle of dirty tracking in Parley's
-            // editor will need to change eventually anyway...
-            let _ = self.editor.edit_styles();
-        }
         let (fctx, lctx) = ctx.text_contexts();
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
@@ -969,16 +968,19 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.rendered_generation = new_generation;
         }
 
-        // TODO: Don't trigger style change multiple times per layout pass for font changes,
-        //       by storing some marker that states we've already dealt with it this pass.
-        if ctx.fonts_changed() {
-            // HACK: We force the editor to relayout by pretending to edit the styles.
-            // We know that the lifecycle of dirty tracking in Parley's
-            // editor will need to change eventually anyway...
-            let _ = self.editor.edit_styles();
-        }
         let (fctx, lctx) = ctx.text_contexts();
-        self.editor.layout(fctx, lctx);
+        let layout = self.editor.layout(fctx, lctx);
+
+        let line_count = layout.len();
+        if line_count > 0 {
+            let line_first = layout.get(0).unwrap();
+            let line_last = layout.get(line_count - 1).unwrap();
+            let first_baseline = line_first.metrics().baseline as f64;
+            let last_baseline = line_last.metrics().baseline as f64;
+            ctx.set_baselines(first_baseline, last_baseline);
+        } else {
+            ctx.clear_baselines();
+        }
 
         ctx.set_ime_area(self.ime_area());
     }
@@ -1114,7 +1116,7 @@ mod tests {
     use masonry_testing::TestHarnessParams;
 
     use super::*;
-    use crate::core::{KeyboardEvent, Modifiers, NewWidget, Properties};
+    use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet};
     use crate::kurbo::Size;
     use crate::palette;
     use crate::testing::TestHarness;
@@ -1177,7 +1179,7 @@ mod tests {
         let base_target = {
             let area = NewWidget::new_with_props(
                 TextArea::new_immutable("Test string"),
-                Properties::new().with(ContentColor::new(palette::css::AZURE)),
+                PropertySet::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
             let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
@@ -1188,7 +1190,7 @@ mod tests {
         {
             let area = NewWidget::new_with_props(
                 TextArea::new_immutable("Different string"),
-                Properties::new().with(ContentColor::new(palette::css::AZURE)),
+                PropertySet::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
             let mut harness = TestHarness::create_with(test_property_set(), area, test_params);

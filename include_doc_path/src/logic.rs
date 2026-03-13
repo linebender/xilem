@@ -3,11 +3,8 @@
 
 use std::path::Path;
 
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Literal, Span, TokenStream};
 use quote::quote;
-use syn::LitStr;
-
-// TODO - Remove syn dependency?
 
 fn env(key: &str) -> Option<String> {
     std::env::var(key).ok().filter(|s| !s.trim().is_empty())
@@ -36,13 +33,13 @@ fn github_to_raw(repo: &str) -> Result<String, ()> {
 }
 
 fn literal_string(content: &str, span: Span) -> TokenStream {
-    let lit = LitStr::new(content, span);
+    let mut lit = Literal::string(content);
+    lit.set_span(span);
     quote!(#lit)
 }
 
 fn compile_error(msg: &str, span: Span) -> TokenStream {
-    let lit = LitStr::new(msg, span);
-    quote!(compile_error!(#lit))
+    super::compile_error(msg, span).into()
 }
 
 pub(crate) fn include_doc_path_impl(

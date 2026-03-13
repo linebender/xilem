@@ -84,11 +84,6 @@ pub struct CanvasSizeChanged {
 impl Widget for Canvas {
     type Action = CanvasSizeChanged;
 
-    // TODO - Do we want the Canvas to be transparent to pointer events?
-    fn accepts_pointer_interaction(&self) -> bool {
-        true
-    }
-
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn measure(
@@ -157,7 +152,7 @@ mod tests {
     use masonry_testing::assert_render_snapshot;
 
     use super::*;
-    use crate::core::{DefaultProperties, Properties, render_text};
+    use crate::core::{DefaultProperties, PropertySet, render_text};
     use crate::kurbo::{Affine, BezPath, Stroke};
     use crate::parley::{
         Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
@@ -172,7 +167,7 @@ mod tests {
 
         let mut harness = TestHarness::create(
             DefaultProperties::default(),
-            canvas.with_props(Properties::default()),
+            canvas.with_props(PropertySet::default()),
         );
 
         harness.edit_root_widget(|mut canvas| {
@@ -213,7 +208,7 @@ mod tests {
         harness_params.window_size = Size::new(200., 200.);
         let mut harness = TestHarness::create_with(
             DefaultProperties::default(),
-            canvas.with_props(Properties::default()),
+            canvas.with_props(PropertySet::default()),
             harness_params,
         );
 

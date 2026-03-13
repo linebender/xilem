@@ -52,7 +52,6 @@ impl LayerStack {
     }
 
     /// Returns the number of layers, including the base layer.
-    #[expect(dead_code, reason = "Might be useful later")]
     pub(crate) fn layer_count(&self) -> usize {
         self.layers.len()
     }
@@ -200,8 +199,7 @@ impl Widget for LayerStack {
         // The base layer is always located at our origin.
         ctx.place_child(&mut base_layer.widget, Point::ORIGIN);
 
-        let baseline = ctx.child_baseline_offset(&base_layer.widget);
-        ctx.set_baseline_offset(baseline);
+        ctx.derive_baselines(&base_layer.widget);
 
         for layer in &mut self.layers[1..] {
             // Other layers don't take part in our measurement,

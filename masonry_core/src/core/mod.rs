@@ -4,9 +4,13 @@
 //! Basic types and traits Masonry is built on.
 
 mod contexts;
+mod default_properties;
 mod events;
 mod layer;
-mod properties;
+mod properties_mut;
+mod properties_ref;
+mod property;
+mod property_set;
 mod text;
 mod widget;
 mod widget_arena;
@@ -18,9 +22,13 @@ mod widget_state;
 mod widget_tag;
 
 pub use contexts::*;
+pub use default_properties::*;
 pub use events::*;
 pub use layer::*;
-pub use properties::*;
+pub use properties_mut::*;
+pub use properties_ref::*;
+pub use property::*;
+pub use property_set::*;
 pub use text::*;
 pub use widget::*;
 pub use widget_mut::*;

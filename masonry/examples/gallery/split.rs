@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, Properties, StyleProperty, Widget};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
 use masonry::properties::{Background, Padding};
@@ -35,7 +35,7 @@ impl DemoPage for SplitDemo {
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_auto_id(),
             ),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x1f, 0x2a, 0x44)))
                 .with(Padding::all(12.0)),
         );
@@ -46,7 +46,7 @@ impl DemoPage for SplitDemo {
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_auto_id(),
             ),
-            Properties::new()
+            PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x2b, 0x3c, 0x2f)))
                 .with(Padding::all(12.0)),
         );

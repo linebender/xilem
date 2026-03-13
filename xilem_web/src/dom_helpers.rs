@@ -34,3 +34,15 @@ pub fn input_event_target_value(event: &web_sys::Event) -> Option<String> {
         .value()
         .into()
 }
+
+/// Helper to get the value from an HTML textarea element from a given event.
+///
+/// Returns `None` if the event isn't a valid input event or conversions fail.
+pub fn textarea_event_target_value(event: &web_sys::Event) -> Option<String> {
+    event
+        .target()?
+        .dyn_into::<web_sys::HtmlTextAreaElement>()
+        .ok()?
+        .value()
+        .into()
+}

@@ -11,7 +11,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 /// **IMPORTANT:** This property is defined for [`Label`] and [`TextArea`], *not*
 /// for widgets embedding them such as [`Button`], [`Checkbox`], [`TextInput`], [`Prose`], etc.
 ///
-/// This property is also defined for [`Spinner`].
+/// This property is also defined for [`Spinner`] and [`StepInput`].
 ///
 /// [`Label`]: crate::widgets::Label
 /// [`TextArea`]: crate::widgets::TextArea
@@ -19,6 +19,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 /// [`Checkbox`]: crate::widgets::Checkbox
 /// [`TextInput`]: crate::widgets::TextInput
 /// [`Spinner`]: crate::widgets::Spinner
+/// [`StepInput`]: crate::widgets::StepInput
 /// [`Prose`]: crate::widgets::Prose
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]

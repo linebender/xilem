@@ -13,7 +13,6 @@ use xilem::view::{
     FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
-use xilem_core::{Edit, ViewArgument};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -191,7 +190,7 @@ impl Calculator {
     }
 }
 
-fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Edit<Calculator>> {
+fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
         views.push(digit_button(num).grid_pos(i32::try_from(i).unwrap(), row));
@@ -201,7 +200,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Edit<Calculat
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: Length = Length::const_px(2.);
-fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
     grid(
         (
             // Display
@@ -253,7 +252,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<>
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-fn centered_flex_row<State: ViewArgument, Seq: FlexSequence<State> + Send + Sync + 'static>(
+fn centered_flex_row<State: 'static, Seq: FlexSequence<State> + Send + Sync + 'static>(
     sequence: Seq,
 ) -> impl WidgetView<State, ()> {
     flex_row(sequence)
@@ -264,15 +263,15 @@ fn centered_flex_row<State: ViewArgument, Seq: FlexSequence<State> + Send + Sync
 
 /// Returns a label intended to be used in the calculator's top display.
 /// The default text size is out of proportion for this use case.
-fn display_label(text: &str) -> impl WidgetView<Edit<Calculator>> + use<> {
+fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
 /// Returns one button
 fn one_button(
-    content: impl WidgetView<Edit<Calculator>>,
+    content: impl WidgetView<Calculator>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
-) -> impl WidgetView<Edit<Calculator>> {
+) -> impl WidgetView<Calculator> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     button(content, callback)
         .background_color(BLUE)
@@ -283,7 +282,7 @@ fn one_button(
 
 /// Returns a button that triggers the calculator's operator handler,
 /// `on_entered_operator()`.
-fn operator_button(math_operator: MathOperator) -> impl WidgetView<Edit<Calculator>> {
+fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
     one_button(
         label(math_operator.as_str()),
         move |data: &mut Calculator| {
@@ -293,7 +292,7 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Edit<Calculat
 }
 
 /// A button which adds `digit` to the current input when pressed
-fn digit_button(digit: &'static str) -> impl WidgetView<Edit<Calculator>> {
+fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
 
     text_button(digit, |data: &mut Calculator| {

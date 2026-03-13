@@ -3,7 +3,7 @@
 
 use assert_matches::assert_matches;
 
-use crate::core::{NewWidget, Properties, Widget, WidgetTag};
+use crate::core::{NewWidget, PropertySet, Widget, WidgetTag};
 use crate::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
@@ -176,7 +176,7 @@ fn paint_transparency() {
             Dimensions::fixed(20.px(), 20.px()),
         ));
 
-        let mut props = Properties::new();
+        let mut props = PropertySet::new();
         if let Some(bg_color) = bg_color {
             props = props.with(Background::Color(bg_color));
         }

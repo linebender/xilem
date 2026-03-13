@@ -10,8 +10,8 @@ use tokio::task::JoinHandle;
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    Arg, MessageCtx, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
-    ViewMarker, ViewPathTracker,
+    MessageCtx, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 /// Launch a task which will run until the view is no longer in the tree.
@@ -30,11 +30,11 @@ pub fn task<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> Task<State, Action, F, H, M>
 where
-    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut,
+    F: Fn(MessageProxy<M>, &mut State) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
-    State: ViewArgument,
+    State: 'static,
 {
     const {
         assert!(
@@ -59,11 +59,11 @@ pub fn task_raw<M, F, H, State, Action, Fut>(
     on_event: H,
 ) -> Task<State, Action, F, H, M>
 where
-    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut,
+    F: Fn(MessageProxy<M>, &mut State) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
-    State: ViewArgument,
+    State: 'static,
 {
     Task {
         init_future,
@@ -82,18 +82,18 @@ pub struct Task<State, Action, F, H, M> {
 impl<State, Action, F, H, M> ViewMarker for Task<State, Action, F, H, M> {}
 impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<State, Action, F, H, M>
 where
-    State: ViewArgument,
+    State: 'static,
     Action: 'static,
-    F: Fn(MessageProxy<M>, Arg<'_, State>) -> Fut + 'static,
+    F: Fn(MessageProxy<M>, &mut State) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
 {
     type Element = NoElement;
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx, state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
@@ -109,7 +109,7 @@ where
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         // Nothing to do
     }
@@ -128,7 +128,7 @@ where
         _: &mut Self::ViewState,
         message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
-        app_state: Arg<'_, State>,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

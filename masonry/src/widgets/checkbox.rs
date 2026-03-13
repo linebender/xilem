@@ -138,8 +138,11 @@ impl Widget for Checkbox {
         }
     }
 
+    fn propagates_pointer_interaction(&self) -> bool {
+        false
+    }
+
     fn accepts_focus(&self) -> bool {
-        // Checkbox can be tab-focused...
         true
     }
 
@@ -249,10 +252,7 @@ impl Widget for Checkbox {
         let label_origin = Point::new(check_side + check_padding, 0.);
         ctx.place_child(&mut self.label, label_origin);
 
-        let label_baseline = ctx.child_baseline_offset(&self.label);
-        let label_bottom = label_origin.y + label_size.height;
-        let bottom_gap = size.height - label_bottom;
-        ctx.set_baseline_offset(label_baseline + bottom_gap);
+        ctx.derive_baselines(&self.label);
     }
 
     fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -389,7 +389,7 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{Properties, StyleProperty};
+    use crate::core::{PropertySet, StyleProperty};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
@@ -456,7 +456,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
+                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
             );
             let checkbox = NewWidget::new(Checkbox::from_label(true, label));
 

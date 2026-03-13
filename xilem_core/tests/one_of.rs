@@ -159,7 +159,7 @@ impl
 fn one_of_path() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (element, _state) = view1.build(&mut ctx, ());
+    let (element, _state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.view_path.len(), 1);
     assert_eq!(element.view_path[0], ViewId::new(0));
@@ -170,11 +170,11 @@ fn one_of_path() {
 fn one_of_same_type_rebuild() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
 
     let view2 = OneOf2::A(record_ops_0(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(element.view_path[0], ViewId::new(0));
     assert_eq!(
@@ -188,11 +188,11 @@ fn one_of_same_type_rebuild() {
 fn one_of_type_change_rebuild() {
     let view1 = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
 
     let view2 = OneOf2::B(record_ops_1(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(element.view_path[0], ViewId::new(1));
     assert_eq!(
@@ -210,7 +210,7 @@ fn one_of_type_change_rebuild() {
 fn one_of_passthrough_teardown() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
@@ -227,12 +227,12 @@ fn one_of_passthrough_teardown() {
 fn one_of_passthrough_message() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
-        let result = view1.message(&mut state, ctx, &mut element, ());
+        let result = view1.message(&mut state, ctx, &mut element, &mut ());
         assert_action(result, 0);
     });
 }
@@ -241,12 +241,12 @@ fn one_of_passthrough_message() {
 fn one_of_no_message_after_stale() {
     let view1 = OneOf2::A(OperationView::<0>(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     let path = element.view_path.clone();
 
     let view2 = OneOf2::B(OperationView::<1>(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -258,7 +258,7 @@ fn one_of_no_message_after_stale() {
     );
 
     ctx.with_message_context(path, DynMessage::new(()), |ctx| {
-        let result = view2.message(&mut state, ctx, &mut element, ());
+        let result = view2.message(&mut state, ctx, &mut element, &mut ());
         assert!(matches!(result, MessageResult::Stale));
     });
 }
@@ -267,12 +267,12 @@ fn one_of_no_message_after_stale() {
 fn one_of_no_message_after_stale_then_same_type() {
     let view1 = OneOf2::A(OperationView::<0>(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx, ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     let path = element.view_path.clone();
 
     let view2 = OneOf2::B(OperationView::<1>(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, ());
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -284,7 +284,7 @@ fn one_of_no_message_after_stale_then_same_type() {
     );
 
     let view3 = OneOf2::A(OperationView::<0>(2));
-    view3.rebuild(&view2, &mut state, &mut ctx, &mut element, ());
+    view3.rebuild(&view2, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -298,7 +298,7 @@ fn one_of_no_message_after_stale_then_same_type() {
     );
 
     ctx.with_message_context(path, DynMessage::new(()), |ctx| {
-        let result = view3.message(&mut state, ctx, &mut element, ());
+        let result = view3.message(&mut state, ctx, &mut element, &mut ());
         assert!(matches!(result, MessageResult::Stale));
     });
 }

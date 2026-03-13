@@ -14,6 +14,7 @@ mod placeholder_color;
 mod progress_bar;
 mod selection;
 mod slider;
+mod step_input;
 mod switch;
 
 pub mod types;
@@ -27,6 +28,7 @@ pub use placeholder_color::*;
 pub use progress_bar::*;
 pub use selection::*;
 pub use slider::*;
+pub use step_input::*;
 pub use switch::*;
 
 pub use masonry_core::properties::*;

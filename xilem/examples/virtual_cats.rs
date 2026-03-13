@@ -26,7 +26,6 @@ use xilem::view::{
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, TextAlign, WidgetView, WindowOptions, Xilem,
 };
-use xilem_core::Edit;
 
 /// The main state of the application.
 struct VirtualCats {
@@ -49,7 +48,7 @@ enum ImageState {
 }
 
 impl VirtualCats {
-    fn virtual_item(&mut self, idx: i64) -> impl WidgetView<Edit<Self>> + use<> {
+    fn virtual_item(&mut self, idx: i64) -> impl WidgetView<Self> + use<> {
         let index: usize = idx.try_into().expect("VirtualScroll bounds set correctly.");
         let item = self
             .statuses
@@ -137,7 +136,7 @@ impl VirtualCats {
         )
     }
 
-    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         sized_box(virtual_scroll(
             0..i64::try_from(self.statuses.len()).unwrap(),
             Self::virtual_item,

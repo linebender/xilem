@@ -57,7 +57,6 @@ mod message;
 mod message_context;
 mod message_proxy;
 mod view;
-mod view_argument;
 mod view_ctx;
 mod view_sequence;
 
@@ -75,7 +74,6 @@ pub use self::message::{DynMessage, MessageResult, SendMessage};
 pub use self::message_context::MessageCtx;
 pub use self::message_proxy::{MessageProxy, ProxyError, RawProxy};
 pub use self::view::{View, ViewMarker};
-pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
 pub use self::view_ctx::{ViewId, ViewPathTracker};
 pub use self::view_sequence::{Count, ViewSequence};
 pub use self::view_sequences::{WithoutElements, without_elements};

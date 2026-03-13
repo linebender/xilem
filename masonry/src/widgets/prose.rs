@@ -155,6 +155,7 @@ impl Widget for Prose {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         ctx.run_layout(&mut self.text, size);
         ctx.place_child(&mut self.text, Point::ORIGIN);
+        ctx.derive_baselines(&self.text);
 
         if self.clip {
             let border_box = size.to_rect() + ctx.border_box_insets();
@@ -201,7 +202,7 @@ mod tests {
 
     use super::*;
     use crate::TextAlign;
-    use crate::core::Properties;
+    use crate::core::PropertySet;
     use crate::kurbo::Size;
     use crate::layout::AsUnit;
     use crate::properties::Gap;
@@ -260,7 +261,7 @@ mod tests {
             .with(prose4.with_auto_id(), CrossAxisAlignment::Center)
             .with(prose5.with_auto_id(), CrossAxisAlignment::Center)
             .with(prose6.with_auto_id(), CrossAxisAlignment::Center);
-        let flex = NewWidget::new_with_props(flex, Properties::one(Gap::ZERO));
+        let flex = NewWidget::new_with_props(flex, PropertySet::one(Gap::ZERO));
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 120.0));

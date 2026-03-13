@@ -4,7 +4,6 @@
 //! Implementation of the View trait for various kurbo shapes.
 
 use peniko::kurbo::{BezPath, Circle, Line, Rect};
-use xilem_core::{Arg, ViewArgument};
 
 use crate::core::{MessageCtx, MessageResult, Mut, OrphanView};
 use crate::modifiers::{Attributes, WithModifier};
@@ -26,14 +25,14 @@ fn create_element<R>(
     })
 }
 
-impl<State: ViewArgument, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgLineElement>;
 
     fn orphan_build(
         view: &Line,
         ctx: &mut Self,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("line", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
@@ -52,7 +51,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Line, State, Action> for V
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
             let attrs = &mut element.modifier();
@@ -76,21 +75,21 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Line, State, Action> for V
         (): &mut Self::OrphanViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         // TODO: Panic here?
         MessageResult::Stale
     }
 }
 
-impl<State: ViewArgument, Action: 'static> OrphanView<Rect, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgRectElement>;
 
     fn orphan_build(
         view: &Rect,
         ctx: &mut Self,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("rect", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
@@ -109,7 +108,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Rect, State, Action> for V
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
             let attrs = &mut element.modifier();
@@ -133,20 +132,20 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Rect, State, Action> for V
         (): &mut Self::OrphanViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         MessageResult::Stale
     }
 }
 
-impl<State: ViewArgument, Action: 'static> OrphanView<Circle, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgCircleElement>;
 
     fn orphan_build(
         view: &Circle,
         ctx: &mut Self,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("circle", ctx, 3, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
@@ -164,7 +163,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Circle, State, Action> for
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 3, |mut element| {
             let attrs = &mut element.modifier();
@@ -187,20 +186,20 @@ impl<State: ViewArgument, Action: 'static> OrphanView<Circle, State, Action> for
         (): &mut Self::OrphanViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         MessageResult::Stale
     }
 }
 
-impl<State: ViewArgument, Action: 'static> OrphanView<BezPath, State, Action> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgPathElement>;
 
     fn orphan_build(
         view: &BezPath,
         ctx: &mut Self,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("path", ctx, 1, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
@@ -216,7 +215,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<BezPath, State, Action> fo
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        _: Arg<'_, State>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
             let attrs = &mut element.modifier();
@@ -243,7 +242,7 @@ impl<State: ViewArgument, Action: 'static> OrphanView<BezPath, State, Action> fo
         _view_state: &mut Self::OrphanViewState,
         _message: &mut MessageCtx,
         _element: Mut<'_, Self::OrphanElement>,
-        _app_state: Arg<'_, State>,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
         MessageResult::Stale
     }

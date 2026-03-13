@@ -3,7 +3,7 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::hash_map::Entry;
 
 use accesskit::{NodeId, TreeUpdate};
@@ -23,7 +23,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{TypeSet, get_debug_color};
+use crate::util::{ParentLinkedList, TypeSet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -105,6 +105,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) ancestors: Option<&'a ParentLinkedList<'a>>,
 }
 
 /// A context provided to [`Widget::measure`] methods.
@@ -261,7 +262,7 @@ impl MutateCtx<'_> {
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: &mut node_mut.item.state,
             properties: PropertiesMut {
-                map: &mut node_mut.item.properties,
+                set: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
             },
             changed_properties: &mut node_mut.item.changed_properties,
@@ -295,6 +296,7 @@ impl MutateCtx<'_> {
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
+            ancestors: None,
         }
     }
 
@@ -323,7 +325,7 @@ impl<'w> QueryCtx<'w> {
             global_state: self.global_state,
             widget_state: &child_node.item.state,
             properties: PropertiesRef {
-                map: &child_node.item.properties,
+                set: &child_node.item.properties,
                 default_map: self.properties.default_map,
             },
             children: child_node.children,
@@ -355,20 +357,14 @@ impl_context_method!(
         /// as a child for non-interactive text.
         /// These contexts could however be useful for custom text editing, such as for rich text editing.
         ///
-        /// Any cached text layouts should be invalidated in the layout pass when [`Self::fonts_changed`]
-        /// returns `true`.
+        /// Any cached text layouts should be invalidated when receiving [`Update::FontsChanged`].
+        ///
+        /// [`Update::FontsChanged`]: crate::core::Update::FontsChanged
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
             (
                 &mut self.global_state.font_context,
                 &mut self.global_state.text_layout_context,
             )
-        }
-
-        /// Whether the set of loaded fonts has changed since layout was most recently called.
-        ///
-        /// Any cached text layouts should be invalidated in the layout pass when this is `true`.
-        pub fn fonts_changed(&mut self) -> bool {
-            self.global_state.fonts_changed
         }
     }
 );
@@ -742,6 +738,19 @@ impl LayoutCtx<'_> {
         }
     }
 
+    #[track_caller]
+    fn assert_placed(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
+        if self.get_child_state(child).is_expecting_place_child_call {
+            debug_panic!(
+                "Error in {}: trying to call '{}' with child '{}' {} before placing it",
+                self.widget_id(),
+                method_name,
+                self.get_child_dyn(child).short_type_name(),
+                child.id(),
+            );
+        }
+    }
+
     /// Computes the `child`'s preferred border-box size.
     ///
     /// The returned size will be finite, non-negative, and in device pixels.
@@ -878,25 +887,56 @@ impl LayoutCtx<'_> {
         self.widget_state.paint_insets = insets.nonnegative();
     }
 
-    /// Sets an explicit baseline position for this widget.
+    /// Sets explicit baselines for this widget.
     ///
-    /// The baseline position is used to align widgets that contain text,
+    /// The baseline positions are used to align widgets that contain text,
     /// such as buttons, labels, and other controls. It may also be used
     /// by other widgets that are opinionated about how they are aligned
     /// relative to neighbouring text, such as switches or checkboxes.
     ///
-    /// The provided value must be the distance from the *bottom* of this
-    /// widget's content-box to its baseline.
-    pub fn set_baseline_offset(&mut self, baseline: f64) {
-        self.widget_state.layout_baseline_offset =
-            baseline + self.widget_state.border_box_insets.y1;
+    /// The provided values must be the distance from the top of this
+    /// widget's content-box to its baseline. If there aren't multiple
+    /// baselines then set the same baseline as both `first` and `last`.
+    ///
+    /// Most container widgets can use [`derive_baselines`] instead.
+    /// Multi-child containers should derive their baselines using [`child_aligned_baselines`].
+    ///
+    /// [`derive_baselines`]: Self::derive_baselines
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    pub fn set_baselines(&mut self, first_baseline: f64, last_baseline: f64) {
+        self.widget_state.first_baseline = first_baseline + self.widget_state.border_box_insets.y0;
+        self.widget_state.last_baseline = last_baseline + self.widget_state.border_box_insets.y0;
     }
 
-    /// Clears an explicitly set baseline position for this widget.
+    /// Sets explicit baselines for this widget such that they match the child's aligned baselines.
+    ///
+    /// Most container widgets should use this method to derive their baselines from their child.
+    /// More complex containers can use [`child_aligned_baselines`] in multi-child scenarios.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    ///
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    #[track_caller]
+    pub fn derive_baselines(&mut self, child: &WidgetPod<impl Widget + ?Sized>) {
+        self.assert_layout_done(child, "derive_baselines");
+        self.assert_placed(child, "derive_baselines");
+
+        let child_state = self.get_child_state(child);
+        let first_baseline = child_state.origin.y + child_state.aligned_first_baseline();
+        let last_baseline = child_state.origin.y + child_state.aligned_last_baseline();
+        self.widget_state.first_baseline = first_baseline;
+        self.widget_state.last_baseline = last_baseline;
+    }
+
+    /// Clears explicitly set baseline positions for this widget.
     ///
     /// This results in the effective baseline being the bottom edge of this widget's border-box.
-    pub fn clear_baseline_offset(&mut self) {
-        self.widget_state.layout_baseline_offset = 0.;
+    pub fn clear_baselines(&mut self) {
+        self.widget_state.first_baseline = f64::NAN;
+        self.widget_state.last_baseline = f64::NAN;
     }
 
     /// Returns the insets for converting between content-box and border-box rects.
@@ -917,16 +957,72 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).needs_layout()
     }
 
-    /// The distance from the bottom of the child widget's layout border-box to its baseline.
+    /// Returns the `child` widget's `(first, last)` layout baselines.
+    ///
+    /// The distances are from the top of the child widget's layout border-box to its baseline.
+    ///
+    /// Call this if the child's baseline plays a role in choosing its placement.
+    /// For deriving this widget's baselines call [`child_aligned_baselines`] instead,
+    /// or better yet use [`derive_baselines`] if possible.
     ///
     /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
+    ///
+    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    /// [`derive_baselines`]: Self::derive_baselines
     #[track_caller]
-    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
-        self.assert_layout_done(child, "child_baseline_offset");
-        self.get_child_state(child).layout_baseline_offset
+    pub fn child_layout_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
+        self.assert_layout_done(child, "child_layout_baselines");
+
+        let child_state = self.get_child_state(child);
+        (
+            child_state.layout_first_baseline(),
+            child_state.layout_last_baseline(),
+        )
+    }
+
+    /// Returns the `child` widget's `(first, last)` aligned baselines.
+    ///
+    /// The distances are from the top of the child widget's aligned border-box to its baseline.
+    ///
+    /// This aligned version should be used for deriving this widget's own baselines based
+    /// on the child's baselines. That is if [`derive_baselines`] can't be used.
+    /// For deciding where to place the child based on its baselines,
+    /// you need to use [`child_layout_baselines`] instead.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    ///
+    /// [`derive_baselines`]: Self::derive_baselines
+    /// [`child_layout_baselines`]: Self::child_layout_baselines
+    #[track_caller]
+    pub fn child_aligned_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
+        self.assert_layout_done(child, "child_aligned_baselines");
+        self.assert_placed(child, "child_aligned_baselines");
+
+        let child_state = self.get_child_state(child);
+        (
+            child_state.aligned_first_baseline(),
+            child_state.aligned_last_baseline(),
+        )
+    }
+
+    /// Returns the given child's aligned border-box origin
+    /// in this widget's content-box coordinate space.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
+    /// have not been called yet for the child.
+    #[track_caller]
+    pub fn child_origin(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Point {
+        self.assert_layout_done(child, "child_origin");
+        self.assert_placed(child, "child_origin");
+        self.get_child_state(child).origin - self.widget_state.border_box_translation()
     }
 
     /// Returns the given child's layout border-box size.
@@ -1133,10 +1229,16 @@ impl_context_method!(
             self.widget_state.bounding_box
         }
 
-        /// Returns the baseline offset relative to the bottom of the widget's aligned content-box.
-        pub fn baseline_offset(&self) -> f64 {
-            let border_box_baseline = self.widget_state.baseline_offset();
-            border_box_baseline - self.widget_state.border_box_insets.y1
+        /// Returns the first baseline relative to the top of the widget's aligned content-box.
+        pub fn first_baseline(&self) -> f64 {
+            let border_box_baseline = self.widget_state.aligned_first_baseline();
+            border_box_baseline - self.widget_state.border_box_insets.y0
+        }
+
+        /// Returns the last baseline relative to the top of the widget's aligned content-box.
+        pub fn last_baseline(&self) -> f64 {
+            let border_box_baseline = self.widget_state.aligned_last_baseline();
+            border_box_baseline - self.widget_state.border_box_insets.y0
         }
 
         /// The clip path of the widget, if any was set.
@@ -1328,16 +1430,29 @@ impl_context_method!(
         }
 
         /// Whether this widget gets pointer events and hovered status.
+        ///
+        /// See [`Widget::accepts_pointer_interaction()`] for details.
         pub fn accepts_pointer_interaction(&self) -> bool {
             self.widget_state.accepts_pointer_interaction
         }
 
+        /// Whether children of this widget get pointer events and hovered status.
+        ///
+        /// See [`Widget::propagates_pointer_interaction()`] for details.
+        pub fn propagates_pointer_interaction(&self) -> bool {
+            self.widget_state.propagates_pointer_interaction
+        }
+
         /// Whether this widget gets text focus.
+        ///
+        /// See [`Widget::accepts_focus()`] for details.
         pub fn accepts_focus(&self) -> bool {
             self.widget_state.accepts_focus
         }
 
         /// Whether this widget gets IME events.
+        ///
+        /// See [`Widget::accepts_text_input()`] for details.
         pub fn accepts_text_input(&self) -> bool {
             self.widget_state.accepts_text_input
         }
@@ -1507,6 +1622,12 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
             }
 
             global_state.scene_cache.remove(&state.id);
+
+            if let Some(layers) = global_state.attached_layers.remove(&state.id) {
+                for (_, layer_id) in layers {
+                    global_state.emit_signal(RenderRootSignal::RemoveLayer(layer_id));
+                }
+            }
         }
 
         let id = child.id();
@@ -1592,7 +1713,7 @@ impl_context_method!(
         /// Queues a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
+        pub fn mutate_child_later<W: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
@@ -1600,6 +1721,22 @@ impl_context_method!(
             let callback = MutateCallback {
                 id: child.id(),
                 callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Queues a callback that will be called with a [`WidgetMut`] for the widget with the given id.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_later(
+            &mut self,
+            // TODO - Use WidgetTag instead?
+            target: WidgetId,
+            f: impl FnOnce(WidgetMut<'_, dyn Widget>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: target,
+                callback: Box::new(f),
             };
             self.global_state.mutate_callbacks.push(callback);
         }
@@ -1810,11 +1947,82 @@ impl_context_method!(
             ));
         }
 
+        /// Creates a new [layer] at a specified `position`, and ties it to the current widget.
+        ///
+        /// The layer will be removed when the current widget is removed from the tree.
+        /// A widget can only have one layer of any given type `W` at a time:
+        /// if a widget creates two layers of the same type, the old layer will be removed.
+        ///
+        /// The given `position` must be in the window's coordinate space.
+        ///
+        /// # Panics
+        ///
+        /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
+        ///
+        /// [layer]: crate::doc::masonry_concepts#layers
+        pub fn create_attached_layer<W: Widget + ?Sized>(
+            &mut self,
+            layer_type: LayerType,
+            mut fallback_widget: NewWidget<W>,
+            position: Point,
+        ) {
+            trace!("create_attached_layer");
+
+            if fallback_widget.widget.as_layer().is_none() {
+                debug_panic!(
+                    "cannot create layer of type {} - `Widget::as_layer()` returned None",
+                    fallback_widget.widget.short_type_name()
+                );
+                return;
+            }
+
+            // FIXME - Add LayerId type and use that instead.
+            let layer_id = fallback_widget.id;
+
+            let layers = self
+                .global_state
+                .attached_layers
+                .entry(self.widget_id())
+                .or_default();
+            if let Some(prev) = layers.insert(TypeId::of::<W>(), layer_id) {
+                self.global_state
+                    .emit_signal(RenderRootSignal::RemoveLayer(prev));
+            }
+            self.global_state.emit_signal(RenderRootSignal::NewLayer(
+                layer_type,
+                fallback_widget.erased(),
+                position,
+            ));
+        }
+
+        /// Returns the attached layer created by this widget with the given type `W`.
+        ///
+        /// See [`Self::create_attached_layer`] for more details.
+        pub fn get_attached_layer<W: Widget + ?Sized>(&self) -> Option<WidgetId> {
+            self.global_state
+                .attached_layers
+                .get(&self.widget_id())?
+                .get(&TypeId::of::<W>())
+                .copied()
+        }
+
         /// Removes the layer with the specified widget as root.
         pub fn remove_layer(&mut self, root_widget_id: WidgetId) {
             trace!("remove_layer");
             self.global_state
                 .emit_signal(RenderRootSignal::RemoveLayer(root_widget_id));
+
+            let Some(layers) = self.global_state.attached_layers.get_mut(&self.widget_id()) else {
+                return;
+            };
+
+            let layer_type_id = layers
+                .iter()
+                .find(|(_, id)| **id == root_widget_id)
+                .map(|(type_id, _)| *type_id);
+            if let Some(type_id) = layer_type_id {
+                layers.remove(&type_id);
+            }
         }
 
         /// Repositions the layer with the specified widget as root.
@@ -1827,6 +2035,24 @@ impl_context_method!(
         }
     }
 );
+
+impl UpdateCtx<'_> {
+    /// Returns the nearest ancestor of this widget that is of type `W`, along with its `WidgetId`.
+    ///
+    /// This should only be called during [`WidgetAdded`](crate::core::Update::WidgetAdded).
+    /// Calling it in other contexts will always return `None`.
+    // FIXME: We should move this method out of `UpdateCtx` to avoid having this disclaimer.
+    pub fn nearest_ancestor<W: Widget>(&self) -> Option<(&W, WidgetId)> {
+        let mut list = self.ancestors;
+        while let Some(node) = list {
+            if let Some(widget) = W::from_dyn(node.widget) {
+                return Some((widget, node.id));
+            }
+            list = node.parent;
+        }
+        None
+    }
+}
 
 impl RegisterCtx<'_> {
     /// Registers a child widget.
@@ -1876,7 +2102,7 @@ impl RegisterCtx<'_> {
         let node = WidgetArenaNode {
             widget: widget.as_box_dyn(),
             state,
-            properties: properties.map,
+            properties,
             changed_properties: TypeSet::default(),
         };
         self.children.insert(id, node);

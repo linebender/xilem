@@ -88,20 +88,18 @@ fn run_event_pass<E>(
         return Handled::No;
     }
 
-    if let Some(id) = target {
-        let state = root.widget_arena.get_state(id);
-
-        if state.is_disabled && skip_if_disabled {
-            return Handled::No;
-        }
-    }
-
     let original_target = target;
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
         let mut node = root.widget_arena.get_node_mut(widget_id);
+
+        if skip_if_disabled && node.item.state.is_disabled {
+            // If the widget is disabled, we skip it and bubble to its parent.
+            target_widget_id = parent_id;
+            continue;
+        }
 
         if !is_handled {
             let _span = enter_span(&node.item.state);
@@ -124,7 +122,7 @@ fn run_event_pass<E>(
             }
 
             let mut props = PropertiesMut {
-                map: &mut node.item.properties,
+                set: &mut node.item.properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             };
             pass_fn(widget, &mut ctx, &mut props, event);
@@ -194,7 +192,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
                 is_handled: false,
             };
             let mut props = PropertiesMut {
-                map: &mut layer_root.item.properties,
+                set: &mut layer_root.item.properties,
                 default_map: root.default_properties.for_widget(layer.type_id()),
             };
 

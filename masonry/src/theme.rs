@@ -9,17 +9,12 @@ use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::layout::Length;
+use crate::palette::css::DIM_GRAY;
 use crate::peniko::Color;
-use crate::properties::{
-    ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
-    CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, FocusedBorderColor, Gap, HoveredBorderColor, Padding, PlaceholderColor,
-    SelectionColor, ThumbColor, ThumbRadius, ToggledBackground, TrackThickness,
-    UnfocusedSelectionColor,
-};
-use crate::widgets::{
-    Button, Checkbox, Divider, Flex, Grid, Label, ProgressBar, Spinner, Switch, TextArea, TextInput,
-};
+
+// We use glob imports here to avoid frequent merge conflicts.
+use crate::properties::*;
+use crate::widgets::*;
 
 /// Default color for the app background.
 ///
@@ -57,9 +52,18 @@ pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
 pub const DEFAULT_GAP: Length = Length::const_px(10.0);
 pub const DEFAULT_SPACER_LEN: Length = Length::const_px(10.0);
 pub const WIDGET_CONTROL_COMPONENT_PADDING: Length = Length::const_px(4.0);
+pub const SELECTOR_MIN_WIDTH: f64 = 100.0;
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
+
+    // Badge
+    properties.insert::<Badge, _>(Padding::from_vh(3., 5.));
+    properties.insert::<Badge, _>(CornerRadius { radius: 999. });
+    properties.insert::<Badge, _>(BorderWidth { width: 0. });
+    properties.insert::<Badge, _>(Background::Color(ACCENT_COLOR));
+    properties.insert::<Badge, _>(DisabledBackground(Background::Color(ZYNC_800)));
+    properties.insert::<Badge, _>(BorderColor { color: ZYNC_700 });
 
     // Button
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
@@ -94,6 +98,14 @@ pub fn default_property_set() -> DefaultProperties {
         color: DISABLED_TEXT_COLOR,
     }));
 
+    // DisclosureButton
+    properties.insert::<DisclosureButton, _>(ContentColor::new(DIM_GRAY));
+    properties.insert::<DisclosureButton, _>(Dimensions::fixed(
+        Length::const_px(16.),
+        Length::const_px(16.),
+    ));
+    properties.insert::<DisclosureButton, _>(Padding::all(4.));
+
     // Divider
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
 
@@ -113,6 +125,26 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Switch, _>(ThumbColor(Color::WHITE));
     properties.insert::<Switch, _>(ThumbRadius(8.0));
     properties.insert::<Switch, _>(TrackThickness(20.0));
+
+    // Selector
+    properties.insert::<Selector, _>(Padding::from_vh(6., 16.));
+    properties.insert::<Selector, _>(CornerRadius { radius: 2. });
+    properties.insert::<Selector, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<Selector, _>(Background::Color(ZYNC_800));
+    properties.insert::<Selector, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<Selector, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<Selector, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Selector, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Selector, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+
+    // SelectorItem
+    properties.insert::<SelectorItem, _>(Padding::from_vh(6., 16.));
+    properties.insert::<SelectorItem, _>(Background::Color(ZYNC_900));
+    properties.insert::<SelectorItem, _>(ActiveBackground(Background::Color(ZYNC_800)));
+    properties.insert::<SelectorItem, _>(DisabledBackground(Background::Color(Color::BLACK)));
 
     // Flex
     properties.insert::<Flex, _>(Gap::new(DEFAULT_GAP));
@@ -175,8 +207,39 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
 
+    // RadioButton
+    properties.insert::<RadioButton, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<RadioButton, _>(Background::Color(ZYNC_800));
+    properties.insert::<RadioButton, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<RadioButton, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<RadioButton, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<RadioButton, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<RadioButton, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
+
+    properties.insert::<RadioButton, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<RadioButton, _>(DisabledCheckmarkColor(CheckmarkColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
+
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
+
+    // StepInput
+    default_step_input_style::<u8>(&mut properties);
+    default_step_input_style::<i8>(&mut properties);
+    default_step_input_style::<u16>(&mut properties);
+    default_step_input_style::<i16>(&mut properties);
+    default_step_input_style::<u32>(&mut properties);
+    default_step_input_style::<i32>(&mut properties);
+    default_step_input_style::<u64>(&mut properties);
+    default_step_input_style::<i64>(&mut properties);
+    default_step_input_style::<usize>(&mut properties);
+    default_step_input_style::<isize>(&mut properties);
+    default_step_input_style::<f32>(&mut properties);
+    default_step_input_style::<f64>(&mut properties);
 
     properties
 }
@@ -185,6 +248,23 @@ pub fn default_property_set() -> DefaultProperties {
 pub fn default_text_styles(styles: &mut StyleSet) {
     styles.insert(StyleProperty::LineHeight(LineHeight::FontSizeRelative(1.2)));
     styles.insert(GenericFamily::SystemUi.into());
+}
+
+fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
+    properties.insert::<StepInput<T>, _>(Padding::from_vh(6., 0.));
+    properties.insert::<StepInput<T>, _>(CornerRadius { radius: 6. });
+    properties.insert::<StepInput<T>, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<StepInput<T>, _>(ContentColor::new(TEXT_COLOR));
+    properties
+        .insert::<StepInput<T>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<StepInput<T>, _>(Background::Color(ZYNC_800));
+    properties.insert::<StepInput<T>, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<StepInput<T>, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<StepInput<T>, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<StepInput<T>, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
 }
 
 /// Set of default properties used in unit tests.

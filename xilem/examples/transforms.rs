@@ -6,7 +6,6 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::core::Edit;
 use xilem::core::one_of::Either;
 use xilem::masonry::kurbo::{Affine, Vec2};
 use xilem::style::Style as _;
@@ -20,7 +19,7 @@ struct TransformsGame {
 }
 
 impl TransformsGame {
-    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         let rotation_correct = (self.rotation % TAU).abs() < 0.001;
         let scale_correct = self.scale >= 0.99 && self.scale <= 1.01;
         let translation_correct = self.translation.x == 0.0 && self.translation.y == 0.0;

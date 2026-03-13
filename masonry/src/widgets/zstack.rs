@@ -241,6 +241,8 @@ impl Widget for ZStack {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let context_size = size.into();
         let auto_size = SizeDef::fit(size);
+        let mut min_baseline = f64::INFINITY;
+        let mut max_baseline = f64::NEG_INFINITY;
         for child in &mut self.children {
             let child_size = ctx.compute_size(&mut child.widget, auto_size, context_size);
             ctx.run_layout(&mut child.widget, child_size);
@@ -250,11 +252,22 @@ impl Widget for ZStack {
                 ChildAlignment::ParentAligned => self.alignment,
             };
 
-            let extra_width = (size.width - child_size.width).max(0.);
-            let extra_height = (size.height - child_size.height).max(0.);
+            let extra_width = size.width - child_size.width;
+            let extra_height = size.height - child_size.height;
             let child_origin =
                 child_alignment.resolve(Rect::new(0., 0., extra_width, extra_height));
             ctx.place_child(&mut child.widget, child_origin);
+
+            let child_origin = ctx.child_origin(&child.widget);
+
+            let (first_baseline, last_baseline) = ctx.child_aligned_baselines(&child.widget);
+            min_baseline = min_baseline.min(child_origin.y + first_baseline);
+            max_baseline = max_baseline.max(child_origin.y + last_baseline);
+        }
+        if !self.children.is_empty() {
+            ctx.set_baselines(min_baseline, max_baseline);
+        } else {
+            ctx.clear_baselines();
         }
     }
 
@@ -295,7 +308,7 @@ impl Widget for ZStack {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Properties;
+    use crate::core::PropertySet;
     use crate::layout::AsUnit;
     use crate::peniko::color::palette;
     use crate::properties::{Background, BorderColor, BorderWidth};
@@ -305,12 +318,12 @@ mod tests {
 
     #[test]
     fn zstack_alignments_parent_aligned() {
-        let mut bg_props = Properties::new();
+        let mut bg_props = PropertySet::new();
         bg_props.insert(Background::Color(palette::css::BLUE));
         bg_props.insert(BorderColor::new(palette::css::TEAL));
         bg_props.insert(BorderWidth::all(2.0));
 
-        let mut fg_props = Properties::new();
+        let mut fg_props = PropertySet::new();
         fg_props.insert(Background::Color(palette::css::RED));
         fg_props.insert(BorderColor::new(palette::css::PINK));
         fg_props.insert(BorderWidth::all(2.0));
