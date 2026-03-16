@@ -180,7 +180,6 @@ impl Widget for TextInput {
     ) {
         match event {
             TextEvent::WindowFocusChange(focused) => {
-                println!("FOOOOOOOOOO");
                 if *focused {
                     ctx.remove_class("#unfocused");
                 } else {
@@ -198,7 +197,6 @@ impl Widget for TextInput {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        println!("BAAAAAAAARRR");
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -212,7 +210,7 @@ impl Widget for TextInput {
                 let mut input = input.downcast::<Self>();
                 let color = *input.get_prop::<SelectionColor>();
                 let mut text_area = Self::text_mut(&mut input);
-                text_area.insert_prop(dbg!(color));
+                text_area.insert_prop(color);
             });
         } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -227,7 +225,6 @@ impl Widget for TextInput {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::WidgetAdded => {
-                dbg!(TypeId::of::<SelectionColor>());
                 // FIXME - Find more elegant way to propagate property to child.
                 ctx.mutate_self_later(|mut input| {
                     let mut input = input.downcast::<Self>();
@@ -239,7 +236,6 @@ impl Widget for TextInput {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<SelectionColor>();
                     let mut text_area = Self::text_mut(&mut input);
-                    println!("Setting selection color to {color:?}");
                     text_area.insert_prop(color);
                 });
                 ctx.mutate_self_later(|mut input| {
