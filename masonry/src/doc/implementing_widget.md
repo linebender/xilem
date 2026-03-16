@@ -35,11 +35,11 @@ trait Widget {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update);
 
     fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> f64;
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size);
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene);
     fn accessibility_role(&self) -> Role;
-    fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, props: &PropertiesRef<'_>, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, props: &mut PropertiesMut<'_>, node: &mut Node);
 
     // ...
 }
@@ -197,7 +197,7 @@ impl Widget for ColorRectangle {
         }
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, _size: Size) {}
 
     // ...
 }

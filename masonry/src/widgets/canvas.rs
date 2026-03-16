@@ -105,7 +105,7 @@ impl Widget for Canvas {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         if self.size != size {
             self.size = size;
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });

@@ -552,7 +552,7 @@ impl Widget for Label {
         length as f64
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;

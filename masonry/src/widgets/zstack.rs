@@ -238,7 +238,7 @@ impl Widget for ZStack {
         length
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         let context_size = size.into();
         let auto_size = SizeDef::fit(size);
         let mut min_baseline = f64::INFINITY;

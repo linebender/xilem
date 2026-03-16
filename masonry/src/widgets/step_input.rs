@@ -1385,7 +1385,7 @@ impl<T: Steppable> Widget for StepInput<T> {
         min_result.max(length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
         let Some(label) = self.label.as_mut() else {
             ctx.clear_baselines();
             return;

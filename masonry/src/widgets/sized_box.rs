@@ -268,7 +268,7 @@ impl Widget for SizedBox {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         let Some(child) = self.child.as_mut() else {
             // No child, so no layout work beyond resetting baselines
             ctx.clear_baselines();

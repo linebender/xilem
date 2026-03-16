@@ -262,7 +262,7 @@ impl Widget for TextInput {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         ctx.run_layout(&mut self.text, size);
 
         let child_origin = Point::ORIGIN;

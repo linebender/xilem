@@ -223,7 +223,7 @@ impl<W: Widget> Widget for Recorder<W> {
         length
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
         self.recording.push(Record::Layout(size));
         self.child.layout(ctx, props, size);
     }

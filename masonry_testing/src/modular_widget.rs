@@ -28,7 +28,7 @@ pub(crate) type UpdateFn<S> =
 pub(crate) type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
 pub(crate) type MeasureFn<S> =
     dyn FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64;
-pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size);
+pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, Size);
 pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
 pub(crate) type PaintFn<S> =
     dyn FnMut(&mut S, &mut PaintCtx<'_>, &mut PropertiesMut<'_>, &mut Scene);
@@ -288,7 +288,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size) + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, Size) + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
@@ -430,7 +430,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
             .unwrap_or_default()
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
         if let Some(f) = self.layout.as_mut() {
             f(&mut self.state, ctx, props, size);
         }

@@ -13,8 +13,8 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
-    ChildrenIds, DefaultProperties, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget,
-    WidgetArenaNode, WidgetState,
+    ChildrenIds, DefaultProperties, LayoutCtx, MeasureCtx, PropertiesMut, PropertiesRef,
+    PropertyArena, Widget, WidgetArenaNode, WidgetState,
 };
 use crate::kurbo::{Axis, Insets, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, MeasurementInputs, SizeDef};
@@ -384,7 +384,7 @@ pub(crate) fn run_layout_on(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &node.item.property_selection;
+    let selection = &mut node.item.property_selection;
     let id = state.id;
     let trace = global_state.trace.layout;
     let _span = enter_span_if(trace, state);
@@ -414,16 +414,21 @@ pub(crate) fn run_layout_on(
     let stack = property_arena
         .get(state.property_stack_id)
         .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
-    let props = PropertiesRef {
-        set: properties,
+    let mut props = PropertiesMut {
+        local: properties,
         default_map: default_properties.for_widget(widget.type_id()),
         stack,
         class_set,
         selection,
     };
 
-    let border_width = props.get::<BorderWidth>();
-    let padding = props.get::<Padding>();
+    // Warm the cache for properties read in this function.
+    props.resolve::<BorderWidth>();
+    props.resolve::<Padding>();
+    props.resolve::<BoxShadow>();
+
+    let border_width = props.get_cached::<BorderWidth>();
+    let padding = props.get_cached::<Padding>();
 
     // Force the border-box size to be large enough to actually contain the border and padding.
     let minimum_size = Size::ZERO;
@@ -500,10 +505,10 @@ pub(crate) fn run_layout_on(
     };
 
     // Run the widget's layout
-    widget.layout(&mut ctx, &props, content_box_size);
+    widget.layout(&mut ctx, &mut props, content_box_size);
 
     // Make sure the paint insets cover the shadow insets
-    let shadow = props.get::<BoxShadow>();
+    let shadow = props.get_cached::<BoxShadow>();
     if shadow.is_visible() {
         let shadow_insets = shadow.get_insets();
         state.paint_insets = Insets {

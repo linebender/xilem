@@ -198,7 +198,7 @@ impl Widget for Badged {
         )
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         let content_size = ctx.compute_size(&mut self.content, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.content, content_size);
         ctx.place_child(&mut self.content, Point::ORIGIN);

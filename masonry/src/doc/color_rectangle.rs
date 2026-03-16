@@ -147,7 +147,7 @@ impl Widget for ColorRectangle {
         }
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, _size: Size) {}
 
     // ---
 

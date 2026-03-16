@@ -171,7 +171,7 @@ impl Widget for ProgressBar {
         potential_length.max(label_length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.label, label_size);
 

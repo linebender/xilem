@@ -249,7 +249,7 @@ impl Widget for IndexedStack {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         // There's nothing to lay out if we don't have any children
         if self.children.is_empty() {
             return;

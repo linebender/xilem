@@ -358,7 +358,7 @@ pub trait Widget: AsDynWidget + Any {
     /// [`children_ids`]: Self::children_ids
     /// [`paint`]: Self::paint
     /// [`MinContent`]: crate::layout::Dim::MinContent
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size);
 
     /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}

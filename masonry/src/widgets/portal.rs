@@ -688,7 +688,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         let auto_size = SizeDef::new(
             match self.constrain_horizontal {
                 true => LenDef::FitContent(size.width),

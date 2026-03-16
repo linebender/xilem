@@ -122,7 +122,7 @@ impl Widget for VerticalStack {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         size: Size,
     ) {
         let gap_count = (self.children.len() - 1) as f64;

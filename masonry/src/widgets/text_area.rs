@@ -942,7 +942,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         length
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;

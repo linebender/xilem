@@ -57,7 +57,7 @@ trait Widget {
     // ...
 
     fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> f64;
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size);
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>);
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
@@ -130,7 +130,7 @@ impl Widget for VerticalStack {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         size: Size,
     ) {
         let gap_count = (self.children.len() - 1) as f64;
