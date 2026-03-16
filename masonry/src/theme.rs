@@ -256,7 +256,7 @@ pub fn default_property_set() -> DefaultProperties {
         stack.push(
             Selector::classes(&["#unfocused"]),
             PropertySet::one(SelectionColor {
-                color: Color::from_rgb8(176, 176, 176),
+                color: DISABLED_TEXT_COLOR,
             }),
         );
         stack.push(
@@ -279,12 +279,6 @@ pub fn default_property_set() -> DefaultProperties {
     {
         let mut stack = PropertyStack::new();
         stack.push(
-            Selector::new().with_focused(false),
-            PropertySet::one(SelectionColor {
-                color: DISABLED_TEXT_COLOR,
-            }),
-        );
-        stack.push(
             Selector::new().with_disabled(true),
             PropertySet::one(ContentColor::new(DISABLED_TEXT_COLOR)),
         );
@@ -297,12 +291,6 @@ pub fn default_property_set() -> DefaultProperties {
     });
     {
         let mut stack = PropertyStack::new();
-        stack.push(
-            Selector::new().with_focused(false),
-            PropertySet::one(SelectionColor {
-                color: DISABLED_TEXT_COLOR,
-            }),
-        );
         stack.push(
             Selector::new().with_disabled(true),
             PropertySet::one(ContentColor::new(DISABLED_TEXT_COLOR)),

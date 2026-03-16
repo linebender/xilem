@@ -1,8 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use tracing::{info_span, trace};
 use tree_arena::{ArenaMut, ArenaMutList};
@@ -1110,6 +1109,11 @@ fn update_props_for_widget(
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
+    let widget_type_id = node.item.widget.type_id();
+    let stack = property_arena
+        .get(node.item.state.property_stack_id)
+        .unwrap_or_else(|| default_properties.stack_for_widget(widget_type_id));
+
     let mut children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
@@ -1123,30 +1127,35 @@ fn update_props_for_widget(
 
     if !state.class_diff.is_empty() || state.force_property_update {
         let class_diff = std::mem::take(&mut state.class_diff);
+        class_diff.apply(class_set);
 
         // Check whether to update cache entries before applying the diff.
         let reset_cache = selected_props_changed(&class_diff, selection);
 
-        class_diff.apply(class_set);
-
         if reset_cache {
-            let type_ids: Vec<TypeId> = selection.selected.keys().copied().collect();
+            let mut new_selected = HashMap::with_capacity(selection.selected.len());
 
-            // TODO - Perform finer-grained updates.
-            // For now we just reset the entire cache, which might be expensive
+            // For now we just check the entire cache, which might be expensive
             // if a widget has a lot of properties.
-            for type_id in type_ids {
-                let mut ctx = UpdateCtx {
-                    global_state,
-                    widget_state: state,
-                    children: children.reborrow_mut(),
-                    default_properties,
-                    property_arena,
-                };
-                core_property_changed(&mut ctx, type_id);
-                widget.property_changed(&mut ctx, type_id);
+            for (type_id, index) in &selection.selected {
+                let new_index = stack.resolve(class_set, *type_id);
+
+                if new_index != *index || state.force_property_update {
+                    let mut ctx = UpdateCtx {
+                        global_state,
+                        widget_state: state,
+                        children: children.reborrow_mut(),
+                        default_properties,
+                        property_arena,
+                    };
+
+                    core_property_changed(&mut ctx, *type_id);
+                    widget.property_changed(&mut ctx, *type_id);
+                } else {
+                    new_selected.insert(*type_id, *index);
+                }
             }
-            *selection = PropertySelection::default();
+            selection.selected = new_selected;
         }
     }
 

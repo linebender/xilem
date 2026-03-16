@@ -332,33 +332,11 @@ impl MutateCtx<'_> {
         self.widget_state.transform_changed
     }
 
-    // TODO - Document classes
-
-    /// Adds a string to this widget's class set.
-    ///
-    /// Changes will be applied in the next update pass and may affect property resolution.
-    pub fn add_class(&mut self, class: &str) {
-        self.widget_state.class_diff.add(class);
-        self.widget_state.needs_update_props = true;
-    }
-
-    /// Removes a string from this widget's class set.
-    ///
-    /// Changes will be applied in the next update pass and may affect property resolution.
-    pub fn remove_class(&mut self, class: &str) {
-        self.widget_state.class_diff.remove(class);
-        self.widget_state.needs_update_props = true;
-    }
-
     /// Sets which property stack this widget uses for property resolution.
     pub fn set_property_stack(&mut self, stack_id: PropertyStackId) {
-        self.properties.selection.selected.clear();
         self.widget_state.needs_update_props = true;
         self.widget_state.force_property_update = true;
         self.widget_state.property_stack_id = Some(stack_id);
-        // FIXME - More fine-grained update
-        self.request_layout();
-        self.request_render();
     }
 }
 
@@ -1732,6 +1710,24 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.transform = transform;
         self.widget_state.transform_changed = true;
         self.request_compose();
+    }
+
+    // TODO - Document classes
+
+    /// Adds a string to this widget's class set.
+    ///
+    /// Changes will be applied in the next update pass and may affect property resolution.
+    pub fn add_class(&mut self, class: &str) {
+        self.widget_state.class_diff.add(class);
+        self.widget_state.needs_update_props = true;
+    }
+
+    /// Removes a string from this widget's class set.
+    ///
+    /// Changes will be applied in the next update pass and may affect property resolution.
+    pub fn remove_class(&mut self, class: &str) {
+        self.widget_state.class_diff.remove(class);
+        self.widget_state.needs_update_props = true;
     }
 });
 

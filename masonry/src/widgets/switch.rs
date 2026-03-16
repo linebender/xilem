@@ -164,6 +164,11 @@ impl Widget for Switch {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::WidgetAdded => {
+                if self.on {
+                    ctx.add_class("#toggled");
+                }
+            }
             Update::HoveredChanged(_)
             | Update::ActiveChanged(_)
             | Update::FocusChanged(_)

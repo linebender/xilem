@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::core::{Property, Selector};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(crate) struct PropertySelection {
     /// Maps property type IDs to the index of the matching entry in the property stack, if any.
     pub(crate) selected: HashMap<TypeId, Option<usize>>,

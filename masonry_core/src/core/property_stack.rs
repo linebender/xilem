@@ -65,10 +65,10 @@ impl PropertyStack {
         self.stack.push((selector, properties));
     }
 
-    pub(crate) fn resolve<P: Property>(&self, classes: &ClassSet) -> Option<usize> {
+    pub(crate) fn resolve(&self, classes: &ClassSet, prop_type: TypeId) -> Option<usize> {
         // Iter over items and indices
         for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
-            if selector.matches(classes) && prop_set.map.contains::<P>() {
+            if selector.matches(classes) && prop_set.map.as_raw().contains_key(&prop_type) {
                 return Some(i);
             }
         }
@@ -85,7 +85,7 @@ impl PropertyStack {
             .get(&TypeId::of::<P>())
             .copied()
             .unwrap_or_default();
-        let index = index.or_else(|| self.resolve::<P>(classes))?;
+        let index = index.or_else(|| self.resolve(classes, TypeId::of::<P>()))?;
 
         let Some(item) = self.stack[index].1.get::<P>() else {
             debug_panic!("Invalid PropertySelection cache");

@@ -11,8 +11,8 @@ use crate::TextAlign;
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
     NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod, paint_background, paint_border, paint_box_shadow,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
@@ -172,12 +172,33 @@ impl Widget for TextInput {
         }
     }
 
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
+        match event {
+            TextEvent::WindowFocusChange(focused) => {
+                println!("FOOOOOOOOOO");
+                if *focused {
+                    ctx.remove_class("#unfocused");
+                } else {
+                    ctx.add_class("#unfocused");
+                }
+                ctx.request_render();
+            }
+            _ => {}
+        }
+    }
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
         ctx.register_child(&mut self.placeholder);
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        println!("BAAAAAAAARRR");
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<CaretColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -191,7 +212,7 @@ impl Widget for TextInput {
                 let mut input = input.downcast::<Self>();
                 let color = *input.get_prop::<SelectionColor>();
                 let mut text_area = Self::text_mut(&mut input);
-                text_area.insert_prop(color);
+                text_area.insert_prop(dbg!(color));
             });
         } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -206,6 +227,7 @@ impl Widget for TextInput {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::WidgetAdded => {
+                dbg!(TypeId::of::<SelectionColor>());
                 // FIXME - Find more elegant way to propagate property to child.
                 ctx.mutate_self_later(|mut input| {
                     let mut input = input.downcast::<Self>();
@@ -217,6 +239,7 @@ impl Widget for TextInput {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<SelectionColor>();
                     let mut text_area = Self::text_mut(&mut input);
+                    println!("Setting selection color to {color:?}");
                     text_area.insert_prop(color);
                 });
                 ctx.mutate_self_later(|mut input| {
