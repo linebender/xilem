@@ -224,7 +224,6 @@ impl Widget for ColorRectangle {
 
 // Implementation from "Reading widget properties" tutorial.
 #[expect(dead_code, reason = "example code")]
-#[expect(clippy::trivially_copy_pass_by_ref, reason = "example code")]
 impl ColorRectangle {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let background = props.get::<Background>();

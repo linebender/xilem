@@ -1514,10 +1514,6 @@ impl<T: Steppable> StepInput<T> {
     }
 
     // Paint controls in the basic style.
-    #[expect(
-        clippy::trivially_copy_pass_by_ref,
-        reason = "Widget::paint gets props by ref"
-    )]
     fn paint_basic(
         &mut self,
         ctx: &mut PaintCtx<'_>,
@@ -1593,10 +1589,6 @@ impl<T: Steppable> StepInput<T> {
     }
 
     // Paint controls in the flow style.
-    #[expect(
-        clippy::trivially_copy_pass_by_ref,
-        reason = "Widget::paint gets props by ref"
-    )]
     fn paint_flow(
         &mut self,
         ctx: &mut PaintCtx<'_>,

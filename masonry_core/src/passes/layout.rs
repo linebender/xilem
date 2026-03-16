@@ -35,10 +35,6 @@ use crate::util::Sanitize;
 /// `cross_length`, if present, must be [sanitized] and in device pixels.
 ///
 /// [sanitized]: Sanitize
-#[expect(
-    clippy::trivially_copy_pass_by_ref,
-    reason = "Widget::measure takes props by ref"
-)]
 fn measure_border_box(
     widget: &mut dyn Widget,
     ctx: &mut MeasureCtx<'_>,
@@ -87,10 +83,6 @@ fn measure_border_box(
 ///
 /// [sanitized]: Sanitize
 /// [`measure`]: Widget::measure
-#[expect(
-    clippy::trivially_copy_pass_by_ref,
-    reason = "Widget::measure takes props by ref"
-)]
 fn resolve_len_def(
     widget: &mut dyn Widget,
     ctx: &mut MeasureCtx<'_>,

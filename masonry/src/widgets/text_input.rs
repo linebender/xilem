@@ -192,8 +192,6 @@ impl Widget for TextInput {
                 let color = *input.get_prop::<SelectionColor>();
                 let mut text_area = Self::text_mut(&mut input);
                 text_area.insert_prop(color);
-                println!("world");
-                dbg!(color);
             });
         } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
@@ -219,7 +217,6 @@ impl Widget for TextInput {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<SelectionColor>();
                     let mut text_area = Self::text_mut(&mut input);
-                    println!("hello");
                     text_area.insert_prop(color);
                 });
                 ctx.mutate_self_later(|mut input| {
@@ -296,21 +293,9 @@ impl Widget for TextInput {
         let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(props);
 
-        paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
-        paint_background(
-            scene,
-            bbox,
-            &p.background,
-            &p.border_width,
-            &p.corner_radius,
-        );
-        paint_border(
-            scene,
-            bbox,
-            &p.border_color,
-            &p.border_width,
-            &p.corner_radius,
-        );
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
     }
 
     fn paint(
@@ -389,9 +374,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "text_input_selection");
 
-        println!("hi");
         harness.process_text_event(TextEvent::WindowFocusChange(false));
-        println!("hi2");
 
         assert_render_snapshot!(harness, "text_input_selection_unfocused");
 

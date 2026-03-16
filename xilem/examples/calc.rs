@@ -277,7 +277,10 @@ fn one_button(
         .background_color(BLUE)
         .corner_radius(10.)
         .border_color(Color::TRANSPARENT)
-        .hovered_border_color(Color::WHITE)
+
+    // FIXME before merging:
+    // Implement way to use conditional properties in Xilem
+    //.hovered_border_color(Color::WHITE)
 }
 
 /// Returns a button that triggers the calculator's operator handler,

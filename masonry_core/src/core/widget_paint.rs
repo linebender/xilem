@@ -56,21 +56,9 @@ pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &
     let bbox = ctx.border_box();
     let p = PrePaintProps::fetch(props);
 
-    paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
-    paint_background(
-        scene,
-        bbox,
-        &p.background,
-        &p.border_width,
-        &p.corner_radius,
-    );
-    paint_border(
-        scene,
-        bbox,
-        &p.border_color,
-        &p.border_width,
-        &p.corner_radius,
-    );
+    paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+    paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+    paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
 }
 
 /// Paints the widget's box shadow.

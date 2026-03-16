@@ -190,14 +190,8 @@ impl Widget for ProgressBar {
         let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(props);
 
-        paint_box_shadow(scene, bbox, &p.box_shadow, &p.corner_radius);
-        paint_background(
-            scene,
-            bbox,
-            &p.background,
-            &p.border_width,
-            &p.corner_radius,
-        );
+        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
+        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
         // We need to delay painting the border until after we paint the filled bar area.
     }
 
