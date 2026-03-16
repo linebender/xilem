@@ -1146,6 +1146,7 @@ fn update_props_for_widget(
                         widget_state: state,
                         children: children.reborrow_mut(),
                         default_properties,
+                        ancestors: None,
                         property_arena,
                     };
 
