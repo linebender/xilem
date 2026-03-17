@@ -40,7 +40,6 @@ fn update_anim_for_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors: None,
             property_arena,
         };

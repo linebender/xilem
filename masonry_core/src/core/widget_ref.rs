@@ -144,7 +144,6 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                         selection,
                     },
                     children,
-                    default_properties: self.ctx.default_properties,
                     property_arena: self.ctx.property_arena,
                 };
 

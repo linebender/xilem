@@ -51,7 +51,6 @@ pub(crate) fn mutate_widget<R>(
             },
             changed_properties,
             children,
-            default_properties: &root.property_arena.default_properties,
             property_arena: &root.property_arena,
         },
         widget,

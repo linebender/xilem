@@ -79,7 +79,6 @@ fn run_targeted_update_pass(
             global_state: &mut root.global_state,
             widget_state: state,
             children,
-            default_properties: &root.property_arena.default_properties,
             ancestors: None,
             property_arena: &root.property_arena,
         };
@@ -128,7 +127,6 @@ fn run_single_update_pass(
         global_state: &mut root.global_state,
         widget_state: state,
         children,
-        default_properties: &root.property_arena.default_properties,
         ancestors: None,
         property_arena: &root.property_arena,
     };
@@ -182,7 +180,6 @@ fn update_widget_tree(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors,
             property_arena,
         };
@@ -336,7 +333,6 @@ fn update_disabled_for_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors: None,
             property_arena,
         };
@@ -425,7 +421,6 @@ fn update_stashed_for_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors: None,
             property_arena,
         };
@@ -1076,7 +1071,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
                 selection: &root_node.item.property_selection,
             },
             children,
-            default_properties: &root.property_arena.default_properties,
             property_arena: &root.property_arena,
         };
 
@@ -1105,7 +1099,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 /// See the [passes documentation](crate::doc::pass_system#update-passes).
 fn update_props_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
@@ -1143,7 +1136,6 @@ fn update_props_for_widget(
                         global_state,
                         widget_state: state,
                         children: children.reborrow_mut(),
-                        default_properties,
                         ancestors: None,
                         property_arena,
                     };
@@ -1165,7 +1157,6 @@ fn update_props_for_widget(
     recurse_on_children(id, widget, children, |mut node| {
         update_props_for_widget(
             global_state,
-            default_properties,
             property_arena,
             node.reborrow_mut(),
         );
@@ -1199,7 +1190,6 @@ pub(crate) fn run_update_props_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_props_for_widget(
         &mut root.global_state,
-        &root.property_arena.default_properties,
         &root.property_arena,
         root_node,
     );
@@ -1230,7 +1220,6 @@ fn update_fonts_for_widget(
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
-        default_properties,
         ancestors: None,
         property_arena,
     };

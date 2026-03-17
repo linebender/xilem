@@ -610,7 +610,6 @@ impl RenderRoot {
                 selection,
             },
             children,
-            default_properties: &self.property_arena.default_properties,
             property_arena: &self.property_arena,
         };
         Some(WidgetRef { ctx, widget })

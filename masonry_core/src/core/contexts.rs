@@ -15,8 +15,8 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BrushIndex, ClassSet, DefaultProperties, ErasedAction, FromDynWidget, LayerType,
-    NewWidget, PropertiesMut, PropertiesRef, PropertyArena, PropertySelection, PropertyStackId,
+    AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertySelection, PropertyStackId,
     ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
     WidgetState,
 };
@@ -57,7 +57,6 @@ pub struct MutateCtx<'a> {
     pub(crate) properties: PropertiesMut<'a>,
     pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
 }
 
@@ -70,7 +69,6 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) properties: PropertiesRef<'a>,
     pub(crate) children: ArenaRefList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
 }
 
@@ -80,7 +78,6 @@ pub struct RawCtx<'a> {
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
 }
 
@@ -89,7 +86,6 @@ pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
@@ -109,7 +105,6 @@ pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) ancestors: Option<&'a ParentLinkedList<'a>>,
     pub(crate) property_arena: &'a PropertyArena,
 }
@@ -119,7 +114,6 @@ pub struct MeasureCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
     pub(crate) auto_length: LenDef,
     pub(crate) context_size: LayoutSize,
@@ -131,7 +125,6 @@ pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
 }
 
@@ -140,7 +133,6 @@ pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) property_arena: &'a PropertyArena,
 }
 
@@ -282,7 +274,6 @@ impl MutateCtx<'_> {
             },
             changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
-            default_properties: self.default_properties,
             property_arena: self.property_arena,
         };
         WidgetMut {
@@ -302,7 +293,6 @@ impl MutateCtx<'_> {
             properties: self.properties.reborrow_mut(),
             changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
-            default_properties: self.default_properties,
             property_arena: self.property_arena,
         }
     }
@@ -312,7 +302,6 @@ impl MutateCtx<'_> {
             global_state: self.global_state,
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
-            default_properties: self.default_properties,
             ancestors: None,
             property_arena: self.property_arena,
         }
@@ -361,7 +350,6 @@ impl<'w> QueryCtx<'w> {
                 selection: &child_node.item.property_selection,
             },
             children: child_node.children,
-            default_properties: self.default_properties,
             property_arena: self.property_arena,
         };
         WidgetRef {
@@ -629,7 +617,6 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
         let node = self.children.item_mut(id).unwrap();
         resolve_length(
             self.global_state,
-            self.default_properties,
             self.property_arena,
             node,
             auto_length,
@@ -819,7 +806,6 @@ impl LayoutCtx<'_> {
         let node = self.children.item_mut(id).unwrap();
         resolve_size(
             self.global_state,
-            self.default_properties,
             self.property_arena,
             node,
             auto_size,
@@ -851,13 +837,7 @@ impl LayoutCtx<'_> {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
 
-        run_layout_on(
-            self.global_state,
-            self.default_properties,
-            self.property_arena,
-            node,
-            chosen_size,
-        );
+        run_layout_on(self.global_state, self.property_arena, node, chosen_size);
 
         let state_mut = &mut self.children.item_mut(id).unwrap().item.state;
         self.widget_state.merge_up(state_mut);
@@ -1816,7 +1796,6 @@ impl_context_method!(
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
-                default_properties: self.default_properties,
                 property_arena: self.property_arena,
             };
 
@@ -1851,7 +1830,6 @@ impl_context_method!(
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
-                default_properties: self.default_properties,
                 property_arena: self.property_arena,
             };
 
