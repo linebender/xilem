@@ -137,7 +137,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     global_state: self.ctx.global_state,
                     widget_state: state,
                     properties: PropertiesRef {
-                        set: properties,
+                        local: properties,
                         default_map: self.ctx.properties.default_map,
                         stack,
                         class_set,

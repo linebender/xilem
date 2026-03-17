@@ -343,7 +343,7 @@ impl<'w> QueryCtx<'w> {
             global_state: self.global_state,
             widget_state: &child_node.item.state,
             properties: PropertiesRef {
-                set: &child_node.item.properties,
+                local: &child_node.item.properties,
                 default_map: self.properties.default_map,
                 stack: child_stack,
                 class_set: &child_node.item.class_set,

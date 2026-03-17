@@ -600,7 +600,7 @@ impl RenderRoot {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                set: properties,
+                local: properties,
                 default_map: self
                     .property_arena
                     .default_properties

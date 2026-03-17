@@ -1061,7 +1061,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             global_state: &root.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                set: properties,
+                local: properties,
                 default_map: root
                     .property_arena
                     .default_properties
@@ -1155,11 +1155,7 @@ fn update_props_for_widget(
 
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {
-        update_props_for_widget(
-            global_state,
-            property_arena,
-            node.reborrow_mut(),
-        );
+        update_props_for_widget(global_state, property_arena, node.reborrow_mut());
         parent_state.merge_up(&mut node.item.state);
     });
 }
@@ -1188,11 +1184,7 @@ pub(crate) fn run_update_props_pass(root: &mut RenderRoot) {
     }
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    update_props_for_widget(
-        &mut root.global_state,
-        &root.property_arena,
-        root_node,
-    );
+    update_props_for_widget(&mut root.global_state, &root.property_arena, root_node);
 }
 
 // ----------------

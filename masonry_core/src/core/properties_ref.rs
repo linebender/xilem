@@ -9,7 +9,7 @@ use crate::util::AnyMap;
 /// Used by the [`Widget`](crate::core::Widget) trait during rendering passes and in some search methods.
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
-    pub(crate) set: &'a PropertySet,
+    pub(crate) local: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,
     pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
@@ -23,7 +23,7 @@ impl PropertiesRef<'_> {
     ///
     /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
-        self.set.map.contains::<P>()
+        self.local.map.contains::<P>()
     }
 
     /// Returns value of property `P`.
@@ -32,7 +32,7 @@ impl PropertiesRef<'_> {
     /// then default properties, then [`Property::static_default()`].
     pub fn get<P: Property>(&self) -> &P {
         // 1. Local properties
-        if let Some(p) = self.set.map.get::<P>() {
+        if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
         // 2. Property stack (cache read only; linear scan on cache miss)
@@ -52,6 +52,6 @@ impl PropertiesRef<'_> {
 
     /// Returns a reference to the local properties for direct access.
     pub fn local_properties(&self) -> &PropertySet {
-        self.set
+        self.local
     }
 }

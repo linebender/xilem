@@ -186,7 +186,7 @@ pub(crate) fn resolve_length(
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
-        set: &node.item.properties,
+        local: &node.item.properties,
         default_map: property_arena
             .default_properties
             .for_widget(widget.type_id()),
@@ -274,7 +274,7 @@ pub(crate) fn resolve_size(
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
-        set: &node.item.properties,
+        local: &node.item.properties,
         default_map: property_arena
             .default_properties
             .for_widget(widget.type_id()),
