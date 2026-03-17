@@ -3,7 +3,7 @@
 
 use vello::Scene;
 
-use crate::core::{PaintCtx, PropertyCache, PropertiesMut};
+use crate::core::{PaintCtx, PropertiesMut, PropertyCache};
 use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::peniko::Fill;
 use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};

@@ -38,10 +38,7 @@ impl PropertiesMut<'_> {
             return p;
         }
         // 2. Property stack (writes to cache and relevance tracking on miss)
-        if let Some(p) = self
-            .stack
-            .resolve_cached_mut::<P>(cache, self.class_set)
-        {
+        if let Some(p) = self.stack.resolve_cached_mut::<P>(cache, self.class_set) {
             return p;
         }
         // 3. Default properties
@@ -59,9 +56,7 @@ impl PropertiesMut<'_> {
     /// Subsequent calls to [`get_cached`](Self::get_cached) will use the
     /// cached result without requiring a mutable borrow on the cache.
     pub fn resolve<P: Property>(&self, cache: &mut PropertyCache) {
-        let _ = self
-            .stack
-            .resolve_cached_mut::<P>(cache, self.class_set);
+        let _ = self.stack.resolve_cached_mut::<P>(cache, self.class_set);
     }
 
     /// Returns a shared reference to property `P` using the cached stack resolution.
