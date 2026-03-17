@@ -165,11 +165,11 @@ impl Widget for Svg {
         object_fit.measure(axis, len_req, cross_length, preferred_size)
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
+    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, _size: Size) {
         self.rasterized = None;
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let content_box = ctx.content_box();
 
         // NOTE: Ideally we would translate the SVG tree into scene draw calls.
@@ -233,7 +233,7 @@ impl Widget for Svg {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         if let Some(alt_text) = &self.alt_text {

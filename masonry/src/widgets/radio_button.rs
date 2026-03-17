@@ -17,10 +17,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Cap, Circle, Dashes, Join, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
-use crate::properties::{
-    BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor,
-    FocusedBorderColor, HoveredBorderColor,
-};
+use crate::properties::{BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth};
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, RadioGroup};
@@ -92,7 +89,6 @@ impl RadioButton {
     }
 }
 
-impl HasProperty<DisabledCheckmarkColor> for RadioButton {}
 impl HasProperty<CheckmarkColor> for RadioButton {}
 
 /// The action type emitted by [`RadioButton`] when it is selected.
@@ -234,7 +230,6 @@ impl Widget for RadioButton {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         CheckmarkStrokeWidth::prop_changed(ctx, property_type);
-        DisabledCheckmarkColor::prop_changed(ctx, property_type);
         CheckmarkColor::prop_changed(ctx, property_type);
     }
 
@@ -282,7 +277,7 @@ impl Widget for RadioButton {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -304,9 +299,14 @@ impl Widget for RadioButton {
         ctx.derive_baselines(&self.label);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        scene: &mut Scene,
+    ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(ctx, props);
+        let p = PrePaintProps::fetch(props);
 
         paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
         paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
@@ -342,32 +342,26 @@ impl Widget for RadioButton {
         // Skip painting the regular border while the check border uses that property
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let is_focused = ctx.is_focus_target();
-        let is_hovered = ctx.is_hovered();
+        props.resolve::<BorderColor>();
+        props.resolve::<BorderWidth>();
+        props.resolve::<CheckmarkColor>();
+
+        let border_color = props.get_cached::<BorderColor>();
+        let border_width = props.get_cached::<BorderWidth>();
+        let brush = props.get_cached::<CheckmarkColor>();
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_size = Size::new(check_side, check_side);
-
-        let border_width = props.get::<BorderWidth>();
 
         let border_circle = Circle::new(
             check_size.to_rect().center(),
             (check_side - border_width.width) * 0.5,
         );
-
-        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
 
         // Paint the radio button border
         stroke(
@@ -387,14 +381,6 @@ impl Widget for RadioButton {
 
         // Paint the checkmark if checked
         if self.selected {
-            let brush = if ctx.is_disabled()
-                && let Some(dc) = props.get_defined::<DisabledCheckmarkColor>()
-            {
-                &dc.0
-            } else {
-                props.get::<CheckmarkColor>()
-            };
-
             // TODO: Create a prop for ellipse size. Default: 50% of border size
             let check_circle = Circle::new(check_size.to_rect().center(), check_side * 0.25);
             fill(scene, &check_circle, brush.color);
@@ -408,7 +394,7 @@ impl Widget for RadioButton {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        _props: &mut PropertiesMut<'_>,
         node: &mut Node,
     ) {
         node.add_action(accesskit::Action::Click);

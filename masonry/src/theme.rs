@@ -325,16 +325,34 @@ pub fn default_property_set() -> DefaultProperties {
     });
 
     properties.insert::<RadioButton, _>(Background::Color(ZYNC_800));
-    properties.insert::<RadioButton, _>(ActiveBackground(Background::Color(ZYNC_700)));
-    properties.insert::<RadioButton, _>(DisabledBackground(Background::Color(Color::BLACK)));
     properties.insert::<RadioButton, _>(BorderColor { color: ZYNC_700 });
-    properties.insert::<RadioButton, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
-    properties.insert::<RadioButton, _>(FocusedBorderColor(BorderColor { color: FOCUS_COLOR }));
-
     properties.insert::<RadioButton, _>(CheckmarkColor { color: TEXT_COLOR });
-    properties.insert::<RadioButton, _>(DisabledCheckmarkColor(CheckmarkColor {
-        color: DISABLED_TEXT_COLOR,
-    }));
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_active(true),
+            PropertySet::one(Background::Color(ZYNC_700)),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(Background::Color(Color::BLACK)),
+        );
+        stack.push(
+            Selector::new().with_hovered(true),
+            PropertySet::one(BorderColor { color: ZYNC_500 }),
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            PropertySet::one(BorderColor { color: FOCUS_COLOR }),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            PropertySet::one(CheckmarkColor {
+                color: DISABLED_TEXT_COLOR,
+            }),
+        );
+        properties.insert_stack::<RadioButton>(stack);
+    }
 
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
