@@ -6,7 +6,7 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{ClassSetDiff, PropertyStackId, WidgetId, WidgetOptions};
+use crate::core::{ClassSetDiff, PropertyCache, PropertyStackId, WidgetId, WidgetOptions};
 use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
@@ -261,6 +261,8 @@ pub(crate) struct WidgetState {
     pub(crate) class_diff: ClassSetDiff,
     // TODO - Rename
     pub(crate) force_property_update: bool,
+    /// Cached property stack resolutions for this widget.
+    pub(crate) property_cache: PropertyCache,
 
     // --- DEBUG INFO ---
     /// The typename of the associated widget.
@@ -343,6 +345,7 @@ impl WidgetState {
             property_stack_id,
             class_diff: ClassSetDiff::default(),
             force_property_update: false,
+            property_cache: PropertyCache::default(),
 
             trace_span: Span::none(),
             #[cfg(debug_assertions)]

@@ -188,7 +188,7 @@ impl Widget for Switch {
 
     fn measure(
         &mut self,
-        _ctx: &mut MeasureCtx<'_>,
+        ctx: &mut MeasureCtx<'_>,
         props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
@@ -198,8 +198,9 @@ impl Widget for Switch {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let track_thickness = props.get::<TrackThickness>().0;
-        let thumb_radius = props.get::<ThumbRadius>().0;
+        let cache = ctx.property_cache();
+        let track_thickness = props.get::<TrackThickness>(cache).0;
+        let thumb_radius = props.get::<ThumbRadius>(cache).0;
         let (track_width, track_height) =
             Self::track_dimensions(track_thickness, thumb_radius, scale);
 
@@ -229,14 +230,16 @@ impl Widget for Switch {
 
         let size = ctx.border_box_size();
 
-        let track_thickness_val = props.get::<TrackThickness>().0;
-        let thumb_radius_val = props.get::<ThumbRadius>().0;
+        let border_box_translation = ctx.border_box_translation();
+        let cache = ctx.property_cache();
+        let track_thickness_val = props.get::<TrackThickness>(cache).0;
+        let thumb_radius_val = props.get::<ThumbRadius>(cache).0;
         let (track_width, track_height) =
             Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
         let thumb_radius = thumb_radius_val * scale;
-        let border_width = props.get::<BorderWidth>().width * scale;
-        let corner_radius = props.get::<CornerRadius>().radius * scale;
-        let thumb_color = props.get::<ThumbColor>().0;
+        let border_width = props.get::<BorderWidth>(cache).width * scale;
+        let corner_radius = props.get::<CornerRadius>(cache).radius * scale;
+        let thumb_color = props.get::<ThumbColor>(cache).0;
 
         // Center the track within the available space
         let track_x = (size.width - track_width) / 2.0;
@@ -246,9 +249,9 @@ impl Widget for Switch {
             track_y,
             track_x + track_width,
             track_y + track_height,
-        ) - ctx.border_box_translation();
+        ) - border_box_translation;
 
-        let track_bg = props.get::<Background>();
+        let track_bg = props.get::<Background>(cache);
 
         // Paint track background
         let track_corner_radius = corner_radius.min(track_height / 2.0);
@@ -256,7 +259,7 @@ impl Widget for Switch {
         let brush = track_bg.get_peniko_brush_for_rect(track_rect);
         fill(scene, &track_rounded, &brush);
 
-        let border_color = props.get::<BorderColor>();
+        let border_color = props.get::<BorderColor>(cache);
 
         // Paint track border
         if border_width > 0.0 {
@@ -264,7 +267,7 @@ impl Widget for Switch {
         }
 
         // Calculate thumb position (centered vertically, left/right based on state)
-        let thumb_y = size.height / 2.0 - ctx.border_box_translation().y;
+        let thumb_y = size.height / 2.0 - border_box_translation.y;
         let thumb_x = if self.on {
             // Thumb on the right
             track_rect.x1 - thumb_radius - border_width / 2.0

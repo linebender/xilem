@@ -12,7 +12,6 @@ pub struct PropertiesMut<'a> {
     pub(crate) default_map: &'a AnyMap,
     pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
-    pub(crate) cache: &'a mut PropertyCache,
 }
 
 // TODO - Better document local vs default properties.
@@ -29,7 +28,11 @@ impl PropertiesMut<'_> {
     ///
     /// Checks local properties first, then the property stack (cache write-through),
     /// then default properties, then [`Property::static_default()`].
-    pub fn get<P: Property>(&mut self) -> &P {
+    ///
+    /// The returned `&P` borrows from `self`, not from `cache`, so multiple
+    /// `get` results can be held simultaneously as long as each call re-borrows
+    /// the cache independently.
+    pub fn get<P: Property>(&self, cache: &mut PropertyCache) -> &P {
         // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {
             return p;
@@ -37,7 +40,7 @@ impl PropertiesMut<'_> {
         // 2. Property stack (writes to cache and relevance tracking on miss)
         if let Some(p) = self
             .stack
-            .resolve_cached_mut::<P>(self.cache, self.class_set)
+            .resolve_cached_mut::<P>(cache, self.class_set)
         {
             return p;
         }
@@ -52,38 +55,19 @@ impl PropertiesMut<'_> {
     /// Warms the [`PropertyStack`] cache for property `P`.
     ///
     /// Searches the stack for a matching entry and, if found, records it in
-    /// a cached.
+    /// the cache.
     /// Subsequent calls to [`get_cached`](Self::get_cached) will use the
-    /// cached result without requiring a mutable borrow.
-    ///
-    /// **Call this before `get_cached`** for every property type that may be
-    /// resolved from the stack. Properties found in the local [`PropertySet`]
-    /// or in `DefaultProperties` do not need a prior `resolve` call (they are
-    /// always accessible via `&self`), but calling `resolve` for them is
-    /// harmless.
-    ///
-    /// # Usage pattern
-    ///
-    /// ```ignore
-    /// // Phase 1 — populate the cache (each call takes &mut self temporarily)
-    /// props.resolve::<Background>();
-    /// props.resolve::<BorderColor>();
-    ///
-    /// // Phase 2 — read with shared borrows (can be held simultaneously)
-    /// let bg    = props.get_cached::<Background>();
-    /// let color = props.get_cached::<BorderColor>();
-    /// use_both(bg, color);
-    /// ```
-    pub fn resolve<P: Property>(&mut self) {
+    /// cached result without requiring a mutable borrow on the cache.
+    pub fn resolve<P: Property>(&self, cache: &mut PropertyCache) {
         let _ = self
             .stack
-            .resolve_cached_mut::<P>(self.cache, self.class_set);
+            .resolve_cached_mut::<P>(cache, self.class_set);
     }
 
     /// Returns a shared reference to property `P` using the cached stack resolution.
     ///
-    /// Because this takes `&self`, multiple results from `get_cached` may be held
-    /// simultaneously — unlike [`get`](Self::get), which takes `&mut self`.
+    /// Because this takes `&PropertyCache` (shared), multiple results from
+    /// `get_cached` may be held simultaneously.
     ///
     /// **Prerequisite:** call [`resolve`](Self::resolve) first for any property
     /// that may come from the [`PropertyStack`]. Without a prior `resolve`, the
@@ -92,8 +76,8 @@ impl PropertiesMut<'_> {
     ///
     /// For a single property lookup that does not need to be held alongside
     /// another, prefer [`get`](Self::get) directly.
-    pub fn get_cached<P: Property>(&self) -> &P {
-        if !self.cache.is_cached::<P>() {
+    pub fn get_cached<P: Property>(&self, cache: &PropertyCache) -> &P {
+        if !cache.is_cached::<P>() {
             debug_panic!(
                 "Property {} was not resolved before get_cached",
                 std::any::type_name::<P>()
@@ -105,10 +89,7 @@ impl PropertiesMut<'_> {
         }
         // 2. Property stack (reads from cache; linear scan as fallback
         //    if resolve was not called, but does not update the cache or relevance)
-        if let Some(p) = self
-            .stack
-            .resolve_cached::<P>(self.cache, self.class_set)
-        {
+        if let Some(p) = self.stack.resolve_cached::<P>(cache, self.class_set) {
             return p;
         }
         // 3. Default properties
@@ -144,16 +125,5 @@ impl PropertiesMut<'_> {
     /// Returns a reference to the local properties for direct access.
     pub fn local_properties(&mut self) -> &mut PropertySet {
         self.local
-    }
-
-    /// Returns a `PropertiesMut` for the same underlying properties with a shorter lifetime.
-    pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
-        PropertiesMut {
-            local: &mut *self.local,
-            default_map: self.default_map,
-            stack: self.stack,
-            class_set: self.class_set,
-            cache: &mut *self.cache,
-        }
     }
 }

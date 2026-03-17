@@ -309,7 +309,8 @@ impl Widget for Grid {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let gap = props.get::<Gap>();
+        let cache = ctx.property_cache();
+        let gap = props.get::<Gap>(cache);
 
         let gap_length = gap.gap.dp(scale);
 
@@ -366,7 +367,8 @@ impl Widget for Grid {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let gap = props.get::<Gap>();
+        let cache = ctx.property_cache();
+        let gap = props.get::<Gap>(cache);
 
         let gap_length = gap.gap.dp(scale);
 

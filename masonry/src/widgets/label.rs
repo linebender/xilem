@@ -505,7 +505,8 @@ impl Widget for Label {
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
 
-        let line_break_mode = props.get::<LineBreaking>();
+        let cache = ctx.property_cache();
+        let line_break_mode = props.get::<LineBreaking>(cache);
 
         // Calculate the max advance for the inline axis, with None indicating unbounded.
         let max_advance = match line_break_mode {
@@ -557,7 +558,8 @@ impl Widget for Label {
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
 
-        let line_break_mode = props.get::<LineBreaking>();
+        let cache = ctx.property_cache();
+        let line_break_mode = props.get::<LineBreaking>(cache);
 
         let inline_space = size.get_coord(inline) as f32;
 
@@ -591,8 +593,9 @@ impl Widget for Label {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
-        let text_color = props.get::<ContentColor>();
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+        let cache = ctx.property_cache();
+        let text_color = props.get::<ContentColor>(cache);
 
         let layout = &self.layouts[self.active_layout];
 

@@ -138,14 +138,14 @@ pub struct ComposeCtx<'a> {
 /// A context passed to [`Widget::paint`] method.
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
 }
 
 /// A context passed to [`Widget::accessibility`] method.
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) tree_update: &'a mut TreeUpdate,
 }
@@ -224,6 +224,31 @@ impl_context_method!(
     MeasureCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    RawCtx<'_>,
+    {
+        /// Returns a mutable reference to this widget's property cache.
+        pub fn property_cache(&mut self) -> &mut PropertyCache {
+            &mut self.widget_state.property_cache
+        }
+    }
+);
+
+impl QueryCtx<'_> {
+    /// Returns a reference to this widget's property cache.
+    pub fn property_cache(&self) -> &PropertyCache {
+        &self.widget_state.property_cache
+    }
+}
+
+impl_context_method!(
+    MutateCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    MeasureCtx<'_>,
+    LayoutCtx<'_>,
+    ComposeCtx<'_>,
     RawCtx<'_>,
     {
         /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
@@ -269,7 +294,6 @@ impl MutateCtx<'_> {
                 default_map: self.properties.default_map,
                 stack: child_stack,
                 class_set: &node_mut.item.class_set,
-                cache: &mut node_mut.item.property_cache,
             },
             changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
@@ -289,7 +313,12 @@ impl MutateCtx<'_> {
             // It will still be called when the original borrow is dropped.
             parent_widget_state: None,
             widget_state: self.widget_state,
-            properties: self.properties.reborrow_mut(),
+            properties: PropertiesMut {
+                local: &mut *self.properties.local,
+                default_map: self.properties.default_map,
+                stack: self.properties.stack,
+                class_set: self.properties.class_set,
+            },
             changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
             property_arena: self.property_arena,
@@ -346,7 +375,6 @@ impl<'w> QueryCtx<'w> {
                 default_map: self.properties.default_map,
                 stack: child_stack,
                 class_set: &child_node.item.class_set,
-                cache: &child_node.item.property_cache,
             },
             children: child_node.children,
             property_arena: self.property_arena,
@@ -2147,7 +2175,6 @@ impl RegisterCtx<'_> {
             properties,
             changed_properties: TypeSet::default(),
             class_set: ClassSet::default(),
-            property_cache: PropertyCache::default(),
         };
         self.children.insert(id, node);
     }

@@ -3,7 +3,7 @@
 
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
-use crate::core::{ClassSet, PropertyCache, PropertySet, Widget, WidgetId, WidgetState};
+use crate::core::{ClassSet, PropertySet, Widget, WidgetId, WidgetState};
 use crate::util::TypeSet;
 
 pub(crate) struct WidgetArena {
@@ -16,7 +16,6 @@ pub(crate) struct WidgetArenaNode {
     pub(crate) properties: PropertySet,
     pub(crate) changed_properties: TypeSet,
     pub(crate) class_set: ClassSet,
-    pub(crate) property_cache: PropertyCache,
 }
 
 impl WidgetArena {

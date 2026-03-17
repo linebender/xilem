@@ -992,8 +992,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
-            let caret_color = props.get::<CaretColor>().color;
-            let selection_color = props.get::<SelectionColor>().color;
+            let (caret_color, selection_color) = {
+                let cache = ctx.property_cache();
+                (
+                    props.get::<CaretColor>(cache).color,
+                    props.get::<SelectionColor>(cache).color,
+                )
+            };
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
                     Fill::NonZero,
@@ -1017,7 +1022,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             };
         }
 
-        let text_color = props.get::<ContentColor>();
+        let cache = ctx.property_cache();
+        let text_color = props.get::<ContentColor>(cache);
 
         render_text(
             scene,

@@ -166,11 +166,14 @@ impl Widget for Slider {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
+                let width = ctx.content_box_size().width;
+                let is_focused = ctx.is_focus_target();
+                let cache = ctx.property_cache();
                 if self.update_value_from_position(
                     local_pos.x,
-                    ctx.content_box_size().width,
-                    *props.get(),
-                    ctx.is_focus_target(),
+                    width,
+                    *props.get(cache),
+                    is_focused,
                 ) {
                     ctx.submit_action::<f64>(self.value);
                 }
@@ -178,11 +181,14 @@ impl Widget for Slider {
             PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if ctx.is_active() {
                     let local_pos = ctx.local_position(current.position);
+                    let width = ctx.content_box_size().width;
+                    let is_focused = ctx.is_focus_target();
+                    let cache = ctx.property_cache();
                     if self.update_value_from_position(
                         local_pos.x,
-                        ctx.content_box_size().width,
-                        *props.get(),
-                        ctx.is_focus_target(),
+                        width,
+                        *props.get(cache),
+                        is_focused,
                     ) {
                         ctx.submit_action::<f64>(self.value);
                     }
@@ -322,7 +328,7 @@ impl Widget for Slider {
 
     fn measure(
         &mut self,
-        _ctx: &mut MeasureCtx<'_>,
+        ctx: &mut MeasureCtx<'_>,
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
@@ -339,8 +345,9 @@ impl Widget for Slider {
                 LenReq::FitContent(space) => space,
             },
             Axis::Vertical => {
-                let thumb_radius = props.get::<ThumbRadius>();
-                let track_thickness = props.get::<TrackThickness>();
+                let cache = ctx.property_cache();
+                let thumb_radius = props.get::<ThumbRadius>(cache);
+                let track_thickness = props.get::<TrackThickness>(cache);
 
                 let thumb_length = thumb_radius.0 * 2.0 * scale;
                 let track_length = track_thickness.0 * scale;
@@ -358,11 +365,12 @@ impl Widget for Slider {
         // Get parameters and resolve colors
         // TODO: Create a dedicated TrackColor property
 
-        let active_track_color = props.get::<BarColor>().0;
-        let thumb_color = props.get::<ThumbColor>().0;
-        let track_thickness = props.get::<TrackThickness>().0;
-        let base_thumb_radius = props.get::<ThumbRadius>().0;
-        let track_color = props.get::<Background>();
+        let cache = ctx.property_cache();
+        let active_track_color = props.get::<BarColor>(cache).0;
+        let thumb_color = props.get::<ThumbColor>(cache).0;
+        let track_thickness = props.get::<TrackThickness>(cache).0;
+        let base_thumb_radius = props.get::<ThumbRadius>(cache).0;
+        let track_color = props.get::<Background>(cache);
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state

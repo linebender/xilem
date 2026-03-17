@@ -153,7 +153,7 @@ impl Widget for Image {
 
     fn measure(
         &mut self,
-        _ctx: &mut MeasureCtx<'_>,
+        ctx: &mut MeasureCtx<'_>,
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
@@ -163,7 +163,8 @@ impl Widget for Image {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let object_fit = props.get::<ObjectFit>();
+        let cache = ctx.property_cache();
+        let object_fit = props.get::<ObjectFit>(cache);
         let preferred_size = self.preferred_size(scale);
 
         object_fit.measure(axis, len_req, cross_length, preferred_size)
@@ -173,7 +174,8 @@ impl Widget for Image {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let content_box = ctx.content_box();
-        let object_fit = props.get::<ObjectFit>();
+        let cache = ctx.property_cache();
+        let object_fit = props.get::<ObjectFit>(cache);
         // For drawing we want to scale the actual image data lengths, which means
         // we need to avoid using Image::preferred_size which does not match the data.
         let image_size = Size::new(

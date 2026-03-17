@@ -34,6 +34,7 @@ pub use properties_mut::*;
 pub use properties_ref::*;
 pub use property::*;
 pub use property_arena::*;
+pub use property_cache::*;
 pub use property_set::*;
 pub use property_stack::*;
 pub use selector::*;
@@ -54,7 +55,6 @@ pub use ui_events::pointer::{
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
 pub(crate) use class_set::*;
-pub(crate) use property_cache::*;
 pub(crate) use widget_arena::*;
 pub(crate) use widget_state::*;
 

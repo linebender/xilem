@@ -3,7 +3,7 @@
 
 use vello::Scene;
 
-use crate::core::{PaintCtx, PropertiesMut};
+use crate::core::{PaintCtx, PropertyCache, PropertiesMut};
 use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::peniko::Fill;
 use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};
@@ -28,18 +28,12 @@ pub struct PrePaintProps<'a> {
 
 impl<'a> PrePaintProps<'a> {
     /// Returns common pre-paint properties based on widget state.
-    pub fn fetch(props: &'a mut PropertiesMut<'_>) -> Self {
-        props.resolve::<BoxShadow>();
-        props.resolve::<Background>();
-        props.resolve::<BorderColor>();
-        props.resolve::<BorderWidth>();
-        props.resolve::<CornerRadius>();
-
-        let box_shadow = props.get_cached::<BoxShadow>();
-        let background = props.get_cached::<Background>();
-        let border_color = props.get_cached::<BorderColor>();
-        let border_width = props.get_cached::<BorderWidth>();
-        let corner_radius = props.get_cached::<CornerRadius>();
+    pub fn fetch(props: &'a PropertiesMut<'_>, cache: &mut PropertyCache) -> Self {
+        let box_shadow = props.get::<BoxShadow>(cache);
+        let background = props.get::<Background>(cache);
+        let border_color = props.get::<BorderColor>(cache);
+        let border_width = props.get::<BorderWidth>(cache);
+        let corner_radius = props.get::<CornerRadius>(cache);
 
         Self {
             box_shadow,
@@ -54,7 +48,8 @@ impl<'a> PrePaintProps<'a> {
 /// Paints the widget's box shadow, background, and border.
 pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
     let bbox = ctx.border_box();
-    let p = PrePaintProps::fetch(props);
+    let cache = ctx.property_cache();
+    let p = PrePaintProps::fetch(props, cache);
 
     paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
     paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);

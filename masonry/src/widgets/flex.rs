@@ -713,7 +713,8 @@ impl Widget for Flex {
         let main = self.direction;
         let cross = main.cross();
 
-        let gap = props.get::<Gap>();
+        let cache = ctx.property_cache();
+        let gap = props.get::<Gap>(cache);
 
         let gap_length = gap.gap.dp(scale);
         let gap_count = self.children.len().saturating_sub(1);
@@ -924,7 +925,8 @@ impl Widget for Flex {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let gap = props.get::<Gap>();
+        let cache = ctx.property_cache();
+        let gap = props.get::<Gap>(cache);
         let gap_length = gap.gap.dp(scale);
         let gap_count = self.children.len().saturating_sub(1);
 

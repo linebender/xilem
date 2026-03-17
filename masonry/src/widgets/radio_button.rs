@@ -306,7 +306,8 @@ impl Widget for RadioButton {
         scene: &mut Scene,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
         paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
@@ -342,14 +343,15 @@ impl Widget for RadioButton {
         // Skip painting the regular border while the check border uses that property
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border_color = *props.get::<BorderColor>();
-        let border_width = *props.get::<BorderWidth>();
-        let brush = *props.get::<CheckmarkColor>();
+        let cache = ctx.property_cache();
+        let border_color = *props.get::<BorderColor>(cache);
+        let border_width = *props.get::<BorderWidth>(cache);
+        let brush = *props.get::<CheckmarkColor>(cache);
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_size = Size::new(check_side, check_side);

@@ -591,7 +591,6 @@ impl RenderRoot {
         let state = &node_ref.item.state;
         let properties = &node_ref.item.properties;
         let class_set = &node_ref.item.class_set;
-        let cache = &node_ref.item.property_cache;
         let stack = self
             .property_arena
             .get(state.property_stack_id, widget.type_id());
@@ -607,7 +606,6 @@ impl RenderRoot {
                     .for_widget(widget.type_id()),
                 stack,
                 class_set,
-                cache,
             },
             children,
             property_arena: &self.property_arena,

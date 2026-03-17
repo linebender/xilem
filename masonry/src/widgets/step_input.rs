@@ -1288,7 +1288,8 @@ impl<T: Steppable> Widget for StepInput<T> {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::WidgetAdded => {
-                let color = props.get::<ContentColor>();
+                let cache = ctx.property_cache();
+                let color = props.get::<ContentColor>(cache);
 
                 let display_value = self.display_value(self.value);
                 self.label = Some(Label::new(display_value).with_props(*color).to_pod());
@@ -1322,7 +1323,8 @@ impl<T: Steppable> Widget for StepInput<T> {
 
         let content_height = theme::BASIC_WIDGET_HEIGHT.dp(scale);
 
-        let style = props.get::<StepInputStyle>();
+        let cache = ctx.property_cache();
+        let style = props.get::<StepInputStyle>(cache);
 
         let (len_req, min_result) = match len_req {
             LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
@@ -1391,7 +1393,8 @@ impl<T: Steppable> Widget for StepInput<T> {
             return;
         };
 
-        let style = props.get::<StepInputStyle>();
+        let cache = ctx.property_cache();
+        let style = props.get::<StepInputStyle>(cache);
 
         // Reserve MinContent worth of button space
         let buttons_width = match style {
@@ -1425,7 +1428,8 @@ impl<T: Steppable> Widget for StepInput<T> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
-        match props.get::<StepInputStyle>() {
+        let cache = ctx.property_cache();
+        match props.get::<StepInputStyle>(cache) {
             StepInputStyle::Basic => Self::paint_basic(self, ctx, props, scene),
             StepInputStyle::Flow => Self::paint_flow(self, ctx, props, scene),
         }
@@ -1520,9 +1524,10 @@ impl<T: Steppable> StepInput<T> {
         props: &mut PropertiesMut<'_>,
         scene: &mut Scene,
     ) {
-        let color_content = *props.get::<ContentColor>();
-        let color_backward = *props.get::<BackwardColor>();
-        let color_forward = *props.get::<ForwardColor>();
+        let cache = ctx.property_cache();
+        let color_content = *props.get::<ContentColor>(cache);
+        let color_backward = *props.get::<BackwardColor>(cache);
+        let color_forward = *props.get::<ForwardColor>(cache);
 
         let size = ctx.content_box_size();
         let (_, forward, backward) = self.visual_speed();
@@ -1591,10 +1596,11 @@ impl<T: Steppable> StepInput<T> {
         props: &mut PropertiesMut<'_>,
         scene: &mut Scene,
     ) {
-        let color_content = *props.get::<ContentColor>();
-        let color_backward = *props.get::<BackwardColor>();
-        let color_forward = *props.get::<ForwardColor>();
-        let color_heat = *props.get::<HeatColor>();
+        let cache = ctx.property_cache();
+        let color_content = *props.get::<ContentColor>(cache);
+        let color_backward = *props.get::<BackwardColor>(cache);
+        let color_forward = *props.get::<ForwardColor>(cache);
+        let color_heat = *props.get::<HeatColor>(cache);
 
         let size = ctx.content_box_size();
         let (speed, forward, backward) = self.visual_speed();

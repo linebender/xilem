@@ -130,7 +130,8 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
+        let cache = ctx.property_cache();
+        let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
         let header_x_padding_length = header_x_padding.dp(scale) * 2.;
@@ -214,7 +215,8 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
+        let cache = ctx.property_cache();
+        let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
         let separator_height =
@@ -286,8 +288,9 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
         let scale = 1.0;
 
         if let Some(y) = self.separator_line_y {
-            let border_width = *props.get::<BorderWidth>();
-            let border_color = *props.get::<BorderColor>();
+            let cache = ctx.property_cache();
+            let border_width = *props.get::<BorderWidth>(cache);
+            let border_color = *props.get::<BorderColor>(cache);
 
             let border_box = ctx.border_box();
 

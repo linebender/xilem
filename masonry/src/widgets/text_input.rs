@@ -309,7 +309,8 @@ impl Widget for TextInput {
         scene: &mut Scene,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
         paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);

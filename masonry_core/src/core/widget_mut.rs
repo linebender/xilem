@@ -81,7 +81,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// If the default property set has an entry for `P`, returns that entry.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get_prop<T: Property>(&mut self) -> &T {
-        self.ctx.properties.get::<T>()
+        self.ctx.properties.get::<T>(&mut self.ctx.widget_state.property_cache)
     }
 
     /// Sets property `T` to given value. Returns the previous value if `T` was already set locally.

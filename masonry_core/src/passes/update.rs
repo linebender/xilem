@@ -70,7 +70,6 @@ fn run_targeted_update_pass(
         let state = &mut node.item.state;
         let properties = &mut node.item.properties;
         let class_set = &node.item.class_set;
-        let cache = &mut node.item.property_cache;
         let stack = root
             .property_arena
             .get(state.property_stack_id, widget.type_id());
@@ -90,7 +89,6 @@ fn run_targeted_update_pass(
                 .for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
         pass_fn(widget, &mut ctx, &mut props);
 
@@ -118,7 +116,6 @@ fn run_single_update_pass(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let stack = root
         .property_arena
         .get(state.property_stack_id, widget.type_id());
@@ -138,7 +135,6 @@ fn run_single_update_pass(
             .for_widget(widget.type_id()),
         stack,
         class_set,
-        cache,
     };
     pass_fn(widget, &mut ctx, &mut props);
 
@@ -162,7 +158,6 @@ fn update_widget_tree(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let trace = global_state.trace.update_tree;
@@ -188,7 +183,6 @@ fn update_widget_tree(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::WidgetAdded);
         if trace {
@@ -317,7 +311,6 @@ fn update_disabled_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -341,7 +334,6 @@ fn update_disabled_for_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
@@ -405,7 +397,6 @@ fn update_stashed_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -429,7 +420,6 @@ fn update_stashed_for_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.is_stashed = stashed;
@@ -1068,7 +1058,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
                     .for_widget(widget.type_id()),
                 stack,
                 class_set: &root_node.item.class_set,
-                cache: &root_node.item.property_cache,
             },
             children,
             property_arena: &root.property_arena,
@@ -1109,7 +1098,6 @@ fn update_props_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let class_set = &mut node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     if !state.needs_update_props {
@@ -1121,14 +1109,15 @@ fn update_props_for_widget(
         class_diff.apply(class_set);
 
         // Check whether to update cache entries before applying the diff.
-        let reset_cache = cached_props_changed(&class_diff, cache);
+        let reset_cache = cached_props_changed(&class_diff, &state.property_cache);
 
         if reset_cache {
-            let mut new_entries = HashMap::with_capacity(cache.entries.len());
+            let old_entries = std::mem::take(&mut state.property_cache.entries);
+            let mut new_entries = HashMap::with_capacity(old_entries.len());
 
             // For now we just check the entire cache, which might be expensive
             // if a widget has a lot of properties.
-            for (type_id, index) in &cache.entries {
+            for (type_id, index) in &old_entries {
                 let new_index = stack.resolve(class_set, *type_id);
 
                 if new_index != *index || state.force_property_update {
@@ -1146,7 +1135,7 @@ fn update_props_for_widget(
                     new_entries.insert(*type_id, *index);
                 }
             }
-            cache.entries = new_entries;
+            state.property_cache.entries = new_entries;
         }
     }
 
@@ -1202,7 +1191,6 @@ fn update_fonts_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -1220,7 +1208,6 @@ fn update_fonts_for_widget(
         default_map: default_properties.for_widget(widget.type_id()),
         stack,
         class_set,
-        cache,
     };
     widget.update(&mut ctx, &mut props, &Update::FontsChanged);
 

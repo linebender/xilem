@@ -617,7 +617,8 @@ impl Widget for Divider {
         // TODO: Remove HACK: After scale factor rework this can be a simple 1.
         let one_dp = 1. / ctx.get_scale_factor();
 
-        let color = props.get::<ContentColor>();
+        let cache = ctx.property_cache();
+        let color = props.get::<ContentColor>(cache);
         let thickness = self.thickness.map(|t| t.dp(scale)).unwrap_or(one_dp);
 
         for line in &self.lines {

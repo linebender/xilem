@@ -21,7 +21,6 @@ fn update_anim_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.anim, state);
 
@@ -48,7 +47,6 @@ fn update_anim_for_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
         widget.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }

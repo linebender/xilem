@@ -6,8 +6,9 @@ use std::collections::{HashMap, HashSet};
 
 use crate::core::{Property, Selector};
 
-#[derive(Default, Debug)]
-pub(crate) struct PropertyCache {
+/// TODO - Doc
+#[derive(Clone, Default, Debug)]
+pub struct PropertyCache {
     /// Maps property type IDs to the index of the matching entry in the property stack, if any.
     pub(crate) entries: HashMap<TypeId, Option<usize>>,
     /// User-defined class strings that influenced at least one cached resolution.

@@ -97,7 +97,9 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     /// If the default property set has an entry for `P`, returns that entry.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get_prop<T: Property>(&self) -> &T {
-        self.ctx.properties.get::<T>()
+        // TODO
+        let cache = self.ctx.property_cache();
+        self.ctx.properties.get::<T>(cache)
     }
 
     /// Attempts to downcast to `WidgetRef` of concrete widget type.
@@ -127,7 +129,6 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let state = &node_ref.item.state;
                 let properties = &node_ref.item.properties;
                 let class_set = &node_ref.item.class_set;
-                let cache = &node_ref.item.property_cache;
                 let stack = self
                     .ctx
                     .property_arena
@@ -141,7 +142,6 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                         default_map: self.ctx.properties.default_map,
                         stack,
                         class_set,
-                        cache,
                     },
                     children,
                     property_arena: self.ctx.property_arena,

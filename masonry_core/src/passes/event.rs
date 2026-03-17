@@ -133,7 +133,6 @@ fn run_event_pass<E>(
                     .for_widget(widget.type_id()),
                 stack,
                 class_set: &node.item.class_set,
-                cache: &mut node.item.property_cache,
             };
             pass_fn(widget, &mut ctx, &mut props, event);
             is_handled = ctx.is_handled;
@@ -213,7 +212,6 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
                     .for_widget(layer.type_id()),
                 stack,
                 class_set: &layer_root.item.class_set,
-                cache: &mut layer_root.item.property_cache,
             };
 
             layer.capture_pointer_event(&mut ctx, &mut props, event);

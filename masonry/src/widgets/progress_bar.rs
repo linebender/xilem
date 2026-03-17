@@ -188,7 +188,8 @@ impl Widget for ProgressBar {
         scene: &mut Scene,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
         paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
@@ -197,16 +198,17 @@ impl Widget for ProgressBar {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
         let border_box = ctx.border_box();
-        let border_width = *props.get::<BorderWidth>();
-        let corner_radius = *props.get::<CornerRadius>();
-        let border_color = *props.get::<BorderColor>();
+        let cache = ctx.property_cache();
+        let border_width = *props.get::<BorderWidth>(cache);
+        let corner_radius = *props.get::<CornerRadius>(cache);
+        let border_color = *props.get::<BorderColor>(cache);
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
             // The bar width is without the borders.
             let bar_width = border_box.width() - 2. * border_width.width;
             if bar_width > 0. {
-                let bar_color = props.get::<BarColor>().0;
+                let bar_color = props.get::<BarColor>(cache).0;
                 // Paint with a gradient so we get a straight line slice of the rounded rect.
                 let gradient = Gradient::new_linear((0., 0.), (bar_width, 0.)).with_stops([
                     (0., bar_color),

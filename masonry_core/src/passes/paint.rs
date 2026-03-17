@@ -69,7 +69,6 @@ fn paint_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let trace = global_state.trace.paint;
@@ -99,22 +98,21 @@ fn paint_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            cache,
         };
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
         let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
 
-        if state.request_pre_paint {
+        if ctx.widget_state.request_pre_paint {
             pre_scene.reset();
             widget.pre_paint(&mut ctx, &mut props, pre_scene);
         }
-        if state.request_paint {
+        if ctx.widget_state.request_paint {
             scene.reset();
             widget.paint(&mut ctx, &mut props, scene);
         }
-        if state.request_post_paint {
+        if ctx.widget_state.request_post_paint {
             post_scene.reset();
             widget.post_paint(&mut ctx, &mut props, post_scene);
         }

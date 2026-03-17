@@ -226,7 +226,8 @@ impl Widget for ColorRectangle {
 #[expect(dead_code, reason = "example code")]
 impl ColorRectangle {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
-        let background = props.get::<Background>();
+        let cache = ctx.property_cache();
+        let background = props.get::<Background>(cache);
         let rect = ctx.content_box();
         scene.fill(
             Fill::NonZero,

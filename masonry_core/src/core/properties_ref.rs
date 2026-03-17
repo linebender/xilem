@@ -13,7 +13,6 @@ pub struct PropertiesRef<'a> {
     pub(crate) default_map: &'a AnyMap,
     pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
-    pub(crate) cache: &'a PropertyCache,
 }
 
 // TODO - Better document local vs default properties.
@@ -30,16 +29,14 @@ impl PropertiesRef<'_> {
     ///
     /// Checks local properties first, then the property stack (cache read only),
     /// then default properties, then [`Property::static_default()`].
-    pub fn get<P: Property>(&self) -> &P {
+    // TODO - Make mut
+    pub fn get<P: Property>(&self, cache: &PropertyCache) -> &P {
         // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
         // 2. Property stack (cache read only; linear scan on cache miss)
-        if let Some(p) = self
-            .stack
-            .resolve_cached::<P>(self.cache, self.class_set)
-        {
+        if let Some(p) = self.stack.resolve_cached::<P>(cache, self.class_set) {
             return p;
         }
         // 3. Default properties
