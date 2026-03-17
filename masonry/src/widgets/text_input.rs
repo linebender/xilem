@@ -185,7 +185,6 @@ impl Widget for TextInput {
                 } else {
                     ctx.add_class("#unfocused");
                 }
-                ctx.request_render();
             }
             _ => {}
         }

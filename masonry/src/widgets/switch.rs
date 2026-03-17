@@ -67,8 +67,6 @@ impl Switch {
         } else {
             this.ctx.remove_class("#toggled");
         }
-        // On state impacts appearance and accessibility node
-        this.ctx.request_render();
     }
 }
 
