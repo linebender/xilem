@@ -35,9 +35,7 @@ fn update_anim_for_widget(
     // set in response to `AnimFrame`.
     if state.request_anim {
         state.request_anim = false;
-        let stack = property_arena
-            .get(state.property_stack_id)
-            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
@@ -82,7 +80,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_anim_for_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
         &root.property_arena,
         root_node,
         elapsed_ns,

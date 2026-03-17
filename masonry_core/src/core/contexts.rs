@@ -268,10 +268,7 @@ impl MutateCtx<'_> {
             .expect("get_mut: child not found");
         let child_stack_id = node_mut.item.state.property_stack_id;
         let child_type_id = (*node_mut.item.widget).type_id();
-        let child_stack = self
-            .property_arena
-            .get(child_stack_id)
-            .unwrap_or_else(|| self.default_properties.stack_for_widget(child_type_id));
+        let child_stack = self.property_arena.get(child_stack_id, child_type_id);
         let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
@@ -352,8 +349,7 @@ impl<'w> QueryCtx<'w> {
         let child_type_id = (*child_node.item.widget).type_id();
         let child_stack = self
             .property_arena
-            .get(child_node.item.state.property_stack_id)
-            .unwrap_or_else(|| self.default_properties.stack_for_widget(child_type_id));
+            .get(child_node.item.state.property_stack_id, child_type_id);
         let child_ctx = QueryCtx {
             global_state: self.global_state,
             widget_state: &child_node.item.state,

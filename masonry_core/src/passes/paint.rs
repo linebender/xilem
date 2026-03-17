@@ -88,9 +88,7 @@ fn paint_widget(
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
 
-        let stack = property_arena
-            .get(state.property_stack_id)
-            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = PaintCtx {
             global_state,
             widget_state: state,
@@ -347,7 +345,7 @@ fn paint_layer(
 
     paint_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
         &root.property_arena,
         target_scene,
         scene_cache,

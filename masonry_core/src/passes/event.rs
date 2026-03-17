@@ -106,13 +106,12 @@ fn run_event_pass<E>(
             let widget_type_id = node.item.widget.type_id();
             let stack = root
                 .property_arena
-                .get(node.item.state.property_stack_id)
-                .unwrap_or_else(|| root.default_properties.stack_for_widget(widget_type_id));
+                .get(node.item.state.property_stack_id, widget_type_id);
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
                 widget_state: &mut node.item.state,
                 children: node.children.reborrow_mut(),
-                default_properties: &root.default_properties,
+                default_properties: &root.property_arena.default_properties,
                 property_arena: &root.property_arena,
                 target: original_target.unwrap(),
                 allow_pointer_capture,
@@ -129,7 +128,10 @@ fn run_event_pass<E>(
 
             let mut props = PropertiesMut {
                 local: &mut node.item.properties,
-                default_map: root.default_properties.for_widget(widget.type_id()),
+                default_map: root
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
                 stack,
                 class_set: &node.item.class_set,
                 selection: &mut node.item.property_selection,
@@ -194,13 +196,12 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         if let Some(layer) = layer_root.item.widget.as_layer() {
             let stack = root
                 .property_arena
-                .get(layer_root.item.state.property_stack_id)
-                .unwrap_or_else(|| root.default_properties.stack_for_widget(layer_type_id));
+                .get(layer_root.item.state.property_stack_id, layer_type_id);
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
                 widget_state: &mut layer_root.item.state,
                 children: layer_root.children.reborrow_mut(),
-                default_properties: &root.default_properties,
+                default_properties: &root.property_arena.default_properties,
                 property_arena: &root.property_arena,
                 target: layer_id,
                 allow_pointer_capture: false,
@@ -208,7 +209,10 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
             };
             let mut props = PropertiesMut {
                 local: &mut layer_root.item.properties,
-                default_map: root.default_properties.for_widget(layer.type_id()),
+                default_map: root
+                    .property_arena
+                    .default_properties
+                    .for_widget(layer.type_id()),
                 stack,
                 class_set: &layer_root.item.class_set,
                 selection: &mut layer_root.item.property_selection,

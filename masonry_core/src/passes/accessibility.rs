@@ -43,9 +43,7 @@ fn build_accessibility_tree(
             );
         }
 
-        let stack = property_arena
-            .get(state.property_stack_id)
-            .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = AccessCtx {
             global_state,
             widget_state: state,
@@ -175,7 +173,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
 
     build_accessibility_tree(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
         &root.property_arena,
         &mut tree_update,
         root_node,

@@ -68,9 +68,6 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// Default values that properties will have if not defined per-widget.
-    pub(crate) default_properties: Arc<DefaultProperties>,
-
     /// Property stacks available for widgets to reference.
     pub property_arena: PropertyArena,
 
@@ -334,7 +331,6 @@ impl RenderRoot {
             size_policy,
             size,
             last_mouse_pos: None,
-            default_properties,
             global_state: RenderRootState {
                 signal_sink: Box::new(signal_sink),
                 focused_widget: None,
@@ -372,7 +368,7 @@ impl RenderRoot {
                 scale_factor,
                 debug_paint,
             },
-            property_arena: PropertyArena::new(),
+            property_arena: PropertyArena::new(default_properties),
             widget_arena: WidgetArena {
                 nodes: TreeArena::new(),
             },
@@ -598,21 +594,23 @@ impl RenderRoot {
         let selection = &node_ref.item.property_selection;
         let stack = self
             .property_arena
-            .get(state.property_stack_id)
-            .unwrap_or_else(|| self.default_properties.stack_for_widget(widget.type_id()));
+            .get(state.property_stack_id, widget.type_id());
 
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
                 set: properties,
-                default_map: self.default_properties.for_widget(widget.type_id()),
+                default_map: self
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
                 stack,
                 class_set,
                 selection,
             },
             children,
-            default_properties: &self.default_properties,
+            default_properties: &self.property_arena.default_properties,
             property_arena: &self.property_arena,
         };
         Some(WidgetRef { ctx, widget })

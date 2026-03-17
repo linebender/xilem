@@ -96,7 +96,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     compose_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
         &root.property_arena,
         root_node,
         false,

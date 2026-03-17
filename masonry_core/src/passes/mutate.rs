@@ -25,8 +25,7 @@ pub(crate) fn mutate_widget<R>(
     let id = state.id;
     let stack = root
         .property_arena
-        .get(state.property_stack_id)
-        .unwrap_or_else(|| root.default_properties.stack_for_widget(widget.type_id()));
+        .get(state.property_stack_id, widget.type_id());
 
     let _span = info_span!("mutate_widget", name = widget.short_type_name()).entered();
 
@@ -42,14 +41,17 @@ pub(crate) fn mutate_widget<R>(
             widget_state: state,
             properties: PropertiesMut {
                 local: properties,
-                default_map: root.default_properties.for_widget(widget.type_id()),
+                default_map: root
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
                 stack,
                 class_set,
                 selection,
             },
             changed_properties,
             children,
-            default_properties: &root.default_properties,
+            default_properties: &root.property_arena.default_properties,
             property_arena: &root.property_arena,
         },
         widget,

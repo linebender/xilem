@@ -185,9 +185,7 @@ pub(crate) fn resolve_length(
     let class_set = &node.item.class_set;
     let selection = &node.item.property_selection;
     let widget = &mut *node.item.widget;
-    let stack = property_arena
-        .get(node.item.state.property_stack_id)
-        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+    let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
         set: &node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
@@ -275,9 +273,7 @@ pub(crate) fn resolve_size(
     let class_set = &node.item.class_set;
     let selection = &node.item.property_selection;
     let widget = &mut *node.item.widget;
-    let stack = property_arena
-        .get(node.item.state.property_stack_id)
-        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+    let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
         set: &node.item.properties,
         default_map: default_properties.for_widget(widget.type_id()),
@@ -411,9 +407,7 @@ pub(crate) fn run_layout_on(
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
 
-    let stack = property_arena
-        .get(state.property_stack_id)
-        .unwrap_or_else(|| default_properties.stack_for_widget(widget.type_id()));
+    let stack = property_arena.get(state.property_stack_id, widget.type_id());
     let mut props = PropertiesMut {
         local: properties,
         default_map: default_properties.for_widget(widget.type_id()),
@@ -623,7 +617,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let root_node_size = match root.size_policy {
         WindowSizePolicy::User => resolve_size(
             &mut root.global_state,
-            &root.default_properties,
+            &root.property_arena.default_properties,
             &root.property_arena,
             root_node.reborrow_mut(),
             SizeDef::fixed(window_size),
@@ -631,7 +625,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         ),
         WindowSizePolicy::Content => resolve_size(
             &mut root.global_state,
-            &root.default_properties,
+            &root.property_arena.default_properties,
             &root.property_arena,
             root_node.reborrow_mut(),
             SizeDef::MAX,
@@ -641,7 +635,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     run_layout_on(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
         &root.property_arena,
         root_node.reborrow_mut(),
         root_node_size,

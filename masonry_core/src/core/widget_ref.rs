@@ -131,12 +131,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let stack = self
                     .ctx
                     .property_arena
-                    .get(state.property_stack_id)
-                    .unwrap_or_else(|| {
-                        self.ctx
-                            .default_properties
-                            .stack_for_widget(widget.type_id())
-                    });
+                    .get(state.property_stack_id, widget.type_id());
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,
