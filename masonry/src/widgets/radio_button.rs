@@ -347,13 +347,9 @@ impl Widget for RadioButton {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        props.resolve::<BorderColor>();
-        props.resolve::<BorderWidth>();
-        props.resolve::<CheckmarkColor>();
-
-        let border_color = props.get_cached::<BorderColor>();
-        let border_width = props.get_cached::<BorderWidth>();
-        let brush = props.get_cached::<CheckmarkColor>();
+        let border_color = *props.get::<BorderColor>();
+        let border_width = *props.get::<BorderWidth>();
+        let brush = *props.get::<CheckmarkColor>();
 
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_size = Size::new(check_side, check_side);

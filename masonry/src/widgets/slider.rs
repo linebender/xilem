@@ -358,19 +358,11 @@ impl Widget for Slider {
         // Get parameters and resolve colors
         // TODO: Create a dedicated TrackColor property
 
-        // Phase 1: warm the stack cache for all properties we need
-        props.resolve::<Background>();
-        props.resolve::<BarColor>();
-        props.resolve::<ThumbColor>();
-        props.resolve::<TrackThickness>();
-        props.resolve::<ThumbRadius>();
-
-        // Phase 2: read via shared borrows (can be held simultaneously)
-        let track_color = props.get_cached::<Background>();
-        let active_track_color = props.get_cached::<BarColor>().0;
-        let thumb_color = props.get_cached::<ThumbColor>().0;
-        let track_thickness = props.get_cached::<TrackThickness>().0;
-        let base_thumb_radius = props.get_cached::<ThumbRadius>().0;
+        let active_track_color = props.get::<BarColor>().0;
+        let thumb_color = props.get::<ThumbColor>().0;
+        let track_thickness = props.get::<TrackThickness>().0;
+        let base_thumb_radius = props.get::<ThumbRadius>().0;
+        let track_color = props.get::<Background>();
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state

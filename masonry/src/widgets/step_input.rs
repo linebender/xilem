@@ -1520,13 +1520,9 @@ impl<T: Steppable> StepInput<T> {
         props: &mut PropertiesMut<'_>,
         scene: &mut Scene,
     ) {
-        props.resolve::<ContentColor>();
-        props.resolve::<BackwardColor>();
-        props.resolve::<ForwardColor>();
-
-        let color_content = props.get_cached::<ContentColor>();
-        let color_backward = props.get_cached::<BackwardColor>();
-        let color_forward = props.get_cached::<ForwardColor>();
+        let color_content = *props.get::<ContentColor>();
+        let color_backward = *props.get::<BackwardColor>();
+        let color_forward = *props.get::<ForwardColor>();
 
         let size = ctx.content_box_size();
         let (_, forward, backward) = self.visual_speed();
@@ -1595,15 +1591,10 @@ impl<T: Steppable> StepInput<T> {
         props: &mut PropertiesMut<'_>,
         scene: &mut Scene,
     ) {
-        props.resolve::<ContentColor>();
-        props.resolve::<BackwardColor>();
-        props.resolve::<ForwardColor>();
-        props.resolve::<HeatColor>();
-
-        let color_content = props.get_cached::<ContentColor>();
-        let color_backward = props.get_cached::<BackwardColor>();
-        let color_forward = props.get_cached::<ForwardColor>();
-        let color_heat = props.get_cached::<HeatColor>();
+        let color_content = *props.get::<ContentColor>();
+        let color_backward = *props.get::<BackwardColor>();
+        let color_forward = *props.get::<ForwardColor>();
+        let color_heat = *props.get::<HeatColor>();
 
         let size = ctx.content_box_size();
         let (speed, forward, backward) = self.visual_speed();
