@@ -7,9 +7,9 @@ use std::collections::{HashMap, HashSet};
 use crate::core::{Property, Selector};
 
 #[derive(Default, Debug)]
-pub(crate) struct PropertySelection {
+pub(crate) struct PropertyCache {
     /// Maps property type IDs to the index of the matching entry in the property stack, if any.
-    pub(crate) selected: HashMap<TypeId, Option<usize>>,
+    pub(crate) entries: HashMap<TypeId, Option<usize>>,
     /// User-defined class strings that influenced at least one cached resolution.
     pub(crate) relevant_classes: HashSet<String>,
     /// Which pseudo-class flags influenced at least one cached resolution.
@@ -19,7 +19,7 @@ pub(crate) struct PropertySelection {
     pub(crate) relevant_has_focus_target: bool,
 }
 
-impl PropertySelection {
+impl PropertyCache {
     /// Called by `PropertyStack::resolve_cached_mut` when a cache entry is written.
     pub(crate) fn extend_relevant(&mut self, selector: &Selector) {
         self.relevant_classes
@@ -31,6 +31,6 @@ impl PropertySelection {
     }
 
     pub(crate) fn is_cached<P: Property>(&self) -> bool {
-        self.selected.contains_key(&TypeId::of::<P>())
+        self.entries.contains_key(&TypeId::of::<P>())
     }
 }

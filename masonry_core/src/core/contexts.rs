@@ -16,9 +16,8 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PropertiesMut, PropertiesRef, PropertyArena, PropertySelection, PropertyStackId,
-    ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId, ResizeDirection,
+    Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -270,7 +269,7 @@ impl MutateCtx<'_> {
                 default_map: self.properties.default_map,
                 stack: child_stack,
                 class_set: &node_mut.item.class_set,
-                selection: &mut node_mut.item.property_selection,
+                cache: &mut node_mut.item.property_cache,
             },
             changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
@@ -347,7 +346,7 @@ impl<'w> QueryCtx<'w> {
                 default_map: self.properties.default_map,
                 stack: child_stack,
                 class_set: &child_node.item.class_set,
-                selection: &child_node.item.property_selection,
+                cache: &child_node.item.property_cache,
             },
             children: child_node.children,
             property_arena: self.property_arena,
@@ -2148,7 +2147,7 @@ impl RegisterCtx<'_> {
             properties,
             changed_properties: TypeSet::default(),
             class_set: ClassSet::default(),
-            property_selection: PropertySelection::default(),
+            property_cache: PropertyCache::default(),
         };
         self.children.insert(id, node);
     }

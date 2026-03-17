@@ -12,7 +12,7 @@ mod properties_mut;
 mod properties_ref;
 mod property;
 mod property_arena;
-mod property_selection;
+mod property_cache;
 mod property_set;
 mod property_stack;
 mod selector;
@@ -54,7 +54,7 @@ pub use ui_events::pointer::{
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
 pub(crate) use class_set::*;
-pub(crate) use property_selection::*;
+pub(crate) use property_cache::*;
 pub(crate) use widget_arena::*;
 pub(crate) use widget_state::*;
 

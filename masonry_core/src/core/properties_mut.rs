@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{ClassSet, Property, PropertySelection, PropertySet, PropertyStack};
+use crate::core::{ClassSet, Property, PropertyCache, PropertySet, PropertyStack};
 use crate::util::AnyMap;
 
 /// Mutable reference to a collection of [properties](Property) that a widget has access to.
@@ -12,7 +12,7 @@ pub struct PropertiesMut<'a> {
     pub(crate) default_map: &'a AnyMap,
     pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
-    pub(crate) selection: &'a mut PropertySelection,
+    pub(crate) cache: &'a mut PropertyCache,
 }
 
 // TODO - Better document local vs default properties.
@@ -37,7 +37,7 @@ impl PropertiesMut<'_> {
         // 2. Property stack (writes to cache and relevance tracking on miss)
         if let Some(p) = self
             .stack
-            .resolve_cached_mut::<P>(self.selection, self.class_set)
+            .resolve_cached_mut::<P>(self.cache, self.class_set)
         {
             return p;
         }
@@ -77,7 +77,7 @@ impl PropertiesMut<'_> {
     pub fn resolve<P: Property>(&mut self) {
         let _ = self
             .stack
-            .resolve_cached_mut::<P>(self.selection, self.class_set);
+            .resolve_cached_mut::<P>(self.cache, self.class_set);
     }
 
     /// Returns a shared reference to property `P` using the cached stack resolution.
@@ -93,7 +93,7 @@ impl PropertiesMut<'_> {
     /// For a single property lookup that does not need to be held alongside
     /// another, prefer [`get`](Self::get) directly.
     pub fn get_cached<P: Property>(&self) -> &P {
-        if !self.selection.is_cached::<P>() {
+        if !self.cache.is_cached::<P>() {
             debug_panic!(
                 "Property {} was not resolved before get_cached",
                 std::any::type_name::<P>()
@@ -103,11 +103,11 @@ impl PropertiesMut<'_> {
         if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
-        // 2. Property stack (reads from selection cache; linear scan as fallback
+        // 2. Property stack (reads from cache; linear scan as fallback
         //    if resolve was not called, but does not update the cache or relevance)
         if let Some(p) = self
             .stack
-            .resolve_cached::<P>(self.selection, self.class_set)
+            .resolve_cached::<P>(self.cache, self.class_set)
         {
             return p;
         }
@@ -153,7 +153,7 @@ impl PropertiesMut<'_> {
             default_map: self.default_map,
             stack: self.stack,
             class_set: self.class_set,
-            selection: &mut *self.selection,
+            cache: &mut *self.cache,
         }
     }
 }

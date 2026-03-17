@@ -127,7 +127,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let state = &node_ref.item.state;
                 let properties = &node_ref.item.properties;
                 let class_set = &node_ref.item.class_set;
-                let selection = &node_ref.item.property_selection;
+                let cache = &node_ref.item.property_cache;
                 let stack = self
                     .ctx
                     .property_arena
@@ -141,7 +141,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                         default_map: self.ctx.properties.default_map,
                         stack,
                         class_set,
-                        selection,
+                        cache,
                     },
                     children,
                     property_arena: self.ctx.property_arena,

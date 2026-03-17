@@ -182,7 +182,7 @@ pub(crate) fn resolve_length(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
-    let selection = &node.item.property_selection;
+    let cache = &node.item.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
@@ -192,7 +192,7 @@ pub(crate) fn resolve_length(
             .for_widget(widget.type_id()),
         stack,
         class_set,
-        selection,
+        cache,
     };
     let dims = props.get::<Dimensions>();
 
@@ -270,7 +270,7 @@ pub(crate) fn resolve_size(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
-    let selection = &node.item.property_selection;
+    let cache = &node.item.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
@@ -280,7 +280,7 @@ pub(crate) fn resolve_size(
             .for_widget(widget.type_id()),
         stack,
         class_set,
-        selection,
+        cache,
     };
     let dims = props.get::<Dimensions>();
 
@@ -379,7 +379,7 @@ pub(crate) fn run_layout_on(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
     let trace = global_state.trace.layout;
     let _span = enter_span_if(trace, state);
@@ -414,7 +414,7 @@ pub(crate) fn run_layout_on(
             .for_widget(widget.type_id()),
         stack,
         class_set,
-        selection,
+        cache,
     };
 
     // Warm the cache for properties read in this function.

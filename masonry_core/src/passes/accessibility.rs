@@ -26,7 +26,7 @@ fn build_accessibility_tree(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.access, state);
 
@@ -56,7 +56,7 @@ fn build_accessibility_tree(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
         widget.accessibility(&mut ctx, &mut props, &mut node);
 

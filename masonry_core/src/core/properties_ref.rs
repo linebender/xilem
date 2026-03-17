@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{ClassSet, Property, PropertySelection, PropertySet, PropertyStack};
+use crate::core::{ClassSet, Property, PropertyCache, PropertySet, PropertyStack};
 use crate::util::AnyMap;
 
 /// Reference to a collection of [properties](Property) that a widget has access to.
@@ -13,7 +13,7 @@ pub struct PropertiesRef<'a> {
     pub(crate) default_map: &'a AnyMap,
     pub(crate) stack: &'a PropertyStack,
     pub(crate) class_set: &'a ClassSet,
-    pub(crate) selection: &'a PropertySelection,
+    pub(crate) cache: &'a PropertyCache,
 }
 
 // TODO - Better document local vs default properties.
@@ -38,7 +38,7 @@ impl PropertiesRef<'_> {
         // 2. Property stack (cache read only; linear scan on cache miss)
         if let Some(p) = self
             .stack
-            .resolve_cached::<P>(self.selection, self.class_set)
+            .resolve_cached::<P>(self.cache, self.class_set)
         {
             return p;
         }

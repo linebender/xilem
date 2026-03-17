@@ -10,7 +10,7 @@ use ui_events::pointer::PointerType;
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     ClassSetDiff, CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut,
-    PropertiesRef, PropertyArena, PropertySelection, QueryCtx, RegisterCtx, TextEvent, Update,
+    PropertiesRef, PropertyArena, PropertyCache, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetArenaNode, WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
@@ -70,7 +70,7 @@ fn run_targeted_update_pass(
         let state = &mut node.item.state;
         let properties = &mut node.item.properties;
         let class_set = &node.item.class_set;
-        let selection = &mut node.item.property_selection;
+        let cache = &mut node.item.property_cache;
         let stack = root
             .property_arena
             .get(state.property_stack_id, widget.type_id());
@@ -90,7 +90,7 @@ fn run_targeted_update_pass(
                 .for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
         pass_fn(widget, &mut ctx, &mut props);
 
@@ -118,7 +118,7 @@ fn run_single_update_pass(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let stack = root
         .property_arena
         .get(state.property_stack_id, widget.type_id());
@@ -138,7 +138,7 @@ fn run_single_update_pass(
             .for_widget(widget.type_id()),
         stack,
         class_set,
-        selection,
+        cache,
     };
     pass_fn(widget, &mut ctx, &mut props);
 
@@ -162,7 +162,7 @@ fn update_widget_tree(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let trace = global_state.trace.update_tree;
@@ -188,7 +188,7 @@ fn update_widget_tree(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::WidgetAdded);
         if trace {
@@ -317,7 +317,7 @@ fn update_disabled_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -341,7 +341,7 @@ fn update_disabled_for_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
@@ -405,7 +405,7 @@ fn update_stashed_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -429,7 +429,7 @@ fn update_stashed_for_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.is_stashed = stashed;
@@ -1068,7 +1068,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
                     .for_widget(widget.type_id()),
                 stack,
                 class_set: &root_node.item.class_set,
-                selection: &root_node.item.property_selection,
+                cache: &root_node.item.property_cache,
             },
             children,
             property_arena: &root.property_arena,
@@ -1109,7 +1109,7 @@ fn update_props_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let class_set = &mut node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     if !state.needs_update_props {
@@ -1121,14 +1121,14 @@ fn update_props_for_widget(
         class_diff.apply(class_set);
 
         // Check whether to update cache entries before applying the diff.
-        let reset_cache = selected_props_changed(&class_diff, selection);
+        let reset_cache = cached_props_changed(&class_diff, cache);
 
         if reset_cache {
-            let mut new_selected = HashMap::with_capacity(selection.selected.len());
+            let mut new_entries = HashMap::with_capacity(cache.entries.len());
 
             // For now we just check the entire cache, which might be expensive
             // if a widget has a lot of properties.
-            for (type_id, index) in &selection.selected {
+            for (type_id, index) in &cache.entries {
                 let new_index = stack.resolve(class_set, *type_id);
 
                 if new_index != *index || state.force_property_update {
@@ -1143,10 +1143,10 @@ fn update_props_for_widget(
                     core_property_changed(&mut ctx, *type_id);
                     widget.property_changed(&mut ctx, *type_id);
                 } else {
-                    new_selected.insert(*type_id, *index);
+                    new_entries.insert(*type_id, *index);
                 }
             }
-            selection.selected = new_selected;
+            cache.entries = new_entries;
         }
     }
 
@@ -1161,19 +1161,19 @@ fn update_props_for_widget(
 }
 
 /// Returns `true` if any change in `diff` could affect a cached property resolution
-/// tracked in `selection`.
-fn selected_props_changed(diff: &ClassSetDiff, selection: &PropertySelection) -> bool {
-    if !diff.added.is_disjoint(&selection.relevant_classes) {
+/// tracked in `cache`.
+fn cached_props_changed(diff: &ClassSetDiff, cache: &PropertyCache) -> bool {
+    if !diff.added.is_disjoint(&cache.relevant_classes) {
         return true;
     }
-    if !diff.removed.is_disjoint(&selection.relevant_classes) {
+    if !diff.removed.is_disjoint(&cache.relevant_classes) {
         return true;
     }
 
-    (diff.is_hovered.is_some() && selection.relevant_is_hovered)
-        || (diff.is_active.is_some() && selection.relevant_is_active)
-        || (diff.is_disabled.is_some() && selection.relevant_is_disabled)
-        || (diff.has_focus_target.is_some() && selection.relevant_has_focus_target)
+    (diff.is_hovered.is_some() && cache.relevant_is_hovered)
+        || (diff.is_active.is_some() && cache.relevant_is_active)
+        || (diff.is_disabled.is_some() && cache.relevant_is_disabled)
+        || (diff.has_focus_target.is_some() && cache.relevant_has_focus_target)
 }
 
 pub(crate) fn run_update_props_pass(root: &mut RenderRoot) {
@@ -1202,7 +1202,7 @@ fn update_fonts_for_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -1220,7 +1220,7 @@ fn update_fonts_for_widget(
         default_map: default_properties.for_widget(widget.type_id()),
         stack,
         class_set,
-        selection,
+        cache,
     };
     widget.update(&mut ctx, &mut props, &Update::FontsChanged);
 

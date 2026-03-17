@@ -6,7 +6,7 @@ use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::core::{ClassSet, Property, PropertySelection, PropertySet, Selector};
+use crate::core::{ClassSet, Property, PropertyCache, PropertySet, Selector};
 
 /// A unique identifier for a single [`PropertyStack`].
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -77,18 +77,18 @@ impl PropertyStack {
 
     pub(crate) fn resolve_cached<P: Property>(
         &self,
-        selected: &PropertySelection,
+        cache: &PropertyCache,
         classes: &ClassSet,
     ) -> Option<&P> {
-        let index = selected
-            .selected
+        let index = cache
+            .entries
             .get(&TypeId::of::<P>())
             .copied()
             .unwrap_or_default();
         let index = index.or_else(|| self.resolve(classes, TypeId::of::<P>()))?;
 
         let Some(item) = self.stack[index].1.get::<P>() else {
-            debug_panic!("Invalid PropertySelection cache");
+            debug_panic!("Invalid PropertyCache");
             return None;
         };
         Some(item)
@@ -97,33 +97,33 @@ impl PropertyStack {
     // TODO - Refactor with resolve_cached? Overall this is ugly code.
     pub(crate) fn resolve_cached_mut<P: Property>(
         &self,
-        selected: &mut PropertySelection,
+        cache: &mut PropertyCache,
         classes: &ClassSet,
     ) -> Option<&P> {
-        if let Some(cached_index) = selected.selected.get(&TypeId::of::<P>()).copied() {
+        if let Some(cached_index) = cache.entries.get(&TypeId::of::<P>()).copied() {
             let Some(cached_index) = cached_index else {
                 // We've cached that there is no matching entry in the stack.
                 return None;
             };
             let Some(item) = self.stack[cached_index].1.get::<P>() else {
-                debug_panic!("Invalid PropertySelection cache");
+                debug_panic!("Invalid PropertyCache");
                 return None;
             };
             return Some(item);
         }
 
         for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
-            selected.extend_relevant(selector);
+            cache.extend_relevant(selector);
 
             if selector.matches(classes)
                 && let Some(item) = prop_set.map.get::<P>()
             {
-                selected.selected.insert(TypeId::of::<P>(), Some(i));
+                cache.entries.insert(TypeId::of::<P>(), Some(i));
                 return Some(item);
             }
         }
 
-        selected.selected.insert(TypeId::of::<P>(), None);
+        cache.entries.insert(TypeId::of::<P>(), None);
         None
     }
 }

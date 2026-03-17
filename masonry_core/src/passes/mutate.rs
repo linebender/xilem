@@ -21,7 +21,7 @@ pub(crate) fn mutate_widget<R>(
     let properties = &mut node.item.properties;
     let changed_properties = &mut node.item.changed_properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
     let stack = root
         .property_arena
@@ -47,7 +47,7 @@ pub(crate) fn mutate_widget<R>(
                     .for_widget(widget.type_id()),
                 stack,
                 class_set,
-                selection,
+                cache,
             },
             changed_properties,
             children,

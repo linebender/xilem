@@ -69,7 +69,7 @@ fn paint_widget(
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
     let class_set = &node.item.class_set;
-    let selection = &mut node.item.property_selection;
+    let cache = &mut node.item.property_cache;
     let id = state.id;
 
     let trace = global_state.trace.paint;
@@ -99,7 +99,7 @@ fn paint_widget(
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
-            selection,
+            cache,
         };
 
         // TODO - Reserve scene
