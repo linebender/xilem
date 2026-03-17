@@ -415,7 +415,7 @@ pub trait Widget: AsDynWidget + Any {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     );
 

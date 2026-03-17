@@ -10,7 +10,9 @@ use vello::kurbo::{Affine, Line, Rect, Stroke};
 use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
+use crate::core::{
+    DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{get_debug_color, stroke};
 
@@ -57,6 +59,7 @@ impl PaintResult {
 fn paint_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     complete_scene: &mut Scene,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -65,6 +68,7 @@ fn paint_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
 
     let trace = global_state.trace.paint;
@@ -83,29 +87,32 @@ fn paint_widget(
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
 
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = PaintCtx {
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
         };
         let props = PropertiesRef {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
         };
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
         let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
 
-        if state.request_pre_paint {
+        if ctx.widget_state.request_pre_paint {
             pre_scene.reset();
             widget.pre_paint(&mut ctx, &props, pre_scene);
         }
-        if state.request_paint {
+        if ctx.widget_state.request_paint {
             scene.reset();
             widget.paint(&mut ctx, &props, scene);
         }
-        if state.request_post_paint {
+        if ctx.widget_state.request_post_paint {
             post_scene.reset();
             widget.post_paint(&mut ctx, &props, post_scene);
         }
@@ -148,6 +155,7 @@ fn paint_widget(
         paint_widget(
             global_state,
             default_properties,
+            property_arena,
             complete_scene,
             scene_cache,
             node.reborrow_mut(),
@@ -335,7 +343,8 @@ fn paint_layer(
 
     paint_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
+        &root.property_arena,
         target_scene,
         scene_cache,
         layer_node,

@@ -6,7 +6,7 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{WidgetId, WidgetOptions};
+use crate::core::{ClassSetDiff, PropertyCache, PropertyStackId, WidgetId, WidgetOptions};
 use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
@@ -251,6 +251,15 @@ pub(crate) struct WidgetState {
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus_target: bool,
 
+    // --- PROPERTIES ---
+    /// The `PropertyStack` assigned to this widget, if any.
+    pub(crate) property_stack_id: Option<PropertyStackId>,
+    /// Pending class changes to apply during `run_update_props_pass`.
+    #[expect(dead_code, reason = "TODO - Future PR")]
+    pub(crate) class_diff: ClassSetDiff,
+    /// Cached property stack resolutions for this widget.
+    pub(crate) property_cache: PropertyCache,
+
     // --- DEBUG INFO ---
     /// The typename of the associated widget.
     ///
@@ -270,6 +279,7 @@ impl WidgetState {
         widget_name: &'static str,
         options: WidgetOptions,
         action_type: TypeId,
+        property_stack_id: Option<PropertyStackId>,
         #[cfg(debug_assertions)] action_type_name: &'static str,
     ) -> Self {
         Self {
@@ -326,6 +336,10 @@ impl WidgetState {
             has_active: false,
             is_active: false,
             has_focus_target: false,
+
+            property_stack_id,
+            class_diff: ClassSetDiff::default(),
+            property_cache: PropertyCache::default(),
 
             trace_span: Span::none(),
             #[cfg(debug_assertions)]
