@@ -52,9 +52,9 @@ impl PropertiesMut<'_> {
     /// Warms the [`PropertyStack`] cache for property `P`.
     ///
     /// Searches the stack for a matching entry and, if found, records it in
-    /// [`PropertySelection`] along with its relevance metadata. Subsequent
-    /// calls to [`get_cached`](Self::get_cached) will use the cached result
-    /// without requiring a mutable borrow.
+    /// a cached.
+    /// Subsequent calls to [`get_cached`](Self::get_cached) will use the
+    /// cached result without requiring a mutable borrow.
     ///
     /// **Call this before `get_cached`** for every property type that may be
     /// resolved from the stack. Properties found in the local [`PropertySet`]
