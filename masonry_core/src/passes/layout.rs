@@ -183,7 +183,7 @@ pub(crate) fn resolve_length(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
-    let cache = &node.item.state.property_cache;
+    let cache = &mut node.item.state.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
@@ -270,7 +270,7 @@ pub(crate) fn resolve_size(
 
     // Get the dimensions
     let class_set = &node.item.class_set;
-    let cache = &node.item.state.property_cache;
+    let cache = &mut node.item.state.property_cache;
     let widget = &mut *node.item.widget;
     let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {

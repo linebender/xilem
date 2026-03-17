@@ -29,8 +29,24 @@ impl PropertiesRef<'_> {
     ///
     /// Checks local properties first, then the property stack (cache read only),
     /// then default properties, then [`Property::static_default()`].
-    // TODO - Make mut
-    pub fn get<P: Property>(&self, cache: &PropertyCache) -> &P {
+    pub fn get<P: Property>(&self, cache: &mut PropertyCache) -> &P {
+        // 1. Local properties
+        if let Some(p) = self.local.map.get::<P>() {
+            return p;
+        }
+        // 2. Property stack (cache read only; linear scan on cache miss)
+        if let Some(p) = self.stack.resolve_cached_mut::<P>(cache, self.class_set) {
+            return p;
+        }
+        // 3. Default properties
+        if let Some(p) = self.default_map.get::<P>() {
+            return p;
+        }
+        // 4. Static default
+        P::static_default()
+    }
+
+    pub(crate) fn get_without_saving<P: Property>(&self, cache: &PropertyCache) -> &P {
         // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {
             return p;
