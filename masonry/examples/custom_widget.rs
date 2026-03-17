@@ -98,12 +98,7 @@ impl Widget for CustomWidget {
         }
     }
 
-    fn layout(
-        &mut self,
-        _layout_ctx: &mut LayoutCtx<'_>,
-        _props: &PropertiesRef<'_>,
-        _size: Size,
-    ) {
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
         // This method is a good place to calculate size-dependent values
     }
 

@@ -302,12 +302,7 @@ impl Widget for TextInput {
         }
     }
 
-    fn pre_paint(
-        &mut self,
-        ctx: &mut PaintCtx<'_>,
-        props: &PropertiesRef<'_>,
-        scene: &mut Scene,
-    ) {
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let bbox = ctx.border_box();
         let cache = ctx.property_cache();
         let p = PrePaintProps::fetch(props, cache);
@@ -317,13 +312,7 @@ impl Widget for TextInput {
         paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
     }
 
-    fn paint(
-        &mut self,
-        _ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
-        _scene: &mut Scene,
-    ) {
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

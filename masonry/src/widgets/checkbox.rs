@@ -250,12 +250,7 @@ impl Widget for Checkbox {
         ctx.derive_baselines(&self.label);
     }
 
-    fn pre_paint(
-        &mut self,
-        ctx: &mut PaintCtx<'_>,
-        props: &PropertiesRef<'_>,
-        scene: &mut Scene,
-    ) {
+    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let bbox = ctx.border_box();
         let cache = ctx.property_cache();
         let p = PrePaintProps::fetch(props, cache);

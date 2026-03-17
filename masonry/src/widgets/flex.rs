@@ -10,8 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
@@ -1213,13 +1213,7 @@ impl Widget for Flex {
         }
     }
 
-    fn paint(
-        &mut self,
-        _ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
-        _scene: &mut Scene,
-    ) {
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

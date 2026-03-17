@@ -6,8 +6,8 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx,
-    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LenReq, Length};

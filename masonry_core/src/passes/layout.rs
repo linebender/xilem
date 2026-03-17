@@ -13,8 +13,8 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
-    ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget,
-    WidgetArenaNode, WidgetState,
+    ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget, WidgetArenaNode,
+    WidgetState,
 };
 use crate::kurbo::{Axis, Insets, Point, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, MeasurementInputs, SizeDef};
