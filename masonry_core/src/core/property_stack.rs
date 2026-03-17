@@ -61,8 +61,8 @@ impl PropertyStack {
     /// Pushes a new entry onto the stack.
     ///
     /// The selector is used to determine whether the entry applies to a given widget based on its class set.
-    pub fn push(&mut self, selector: Selector, properties: PropertySet) {
-        self.stack.push((selector, properties));
+    pub fn push(&mut self, selector: Selector, properties: impl Into<PropertySet>) {
+        self.stack.push((selector, properties.into()));
     }
 
     pub(crate) fn resolve(&self, classes: &ClassSet, prop_type: TypeId) -> Option<usize> {
