@@ -11,7 +11,7 @@ use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
-    DefaultProperties, PaintCtx, PropertiesMut, PropertyArena, WidgetArenaNode, WidgetId,
+    DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
 };
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{get_debug_color, stroke};
@@ -93,7 +93,7 @@ fn paint_widget(
             widget_state: state,
             children: children.reborrow_mut(),
         };
-        let mut props = PropertiesMut {
+        let props = PropertiesRef {
             local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
@@ -106,15 +106,15 @@ fn paint_widget(
 
         if ctx.widget_state.request_pre_paint {
             pre_scene.reset();
-            widget.pre_paint(&mut ctx, &mut props, pre_scene);
+            widget.pre_paint(&mut ctx, &props, pre_scene);
         }
         if ctx.widget_state.request_paint {
             scene.reset();
-            widget.paint(&mut ctx, &mut props, scene);
+            widget.paint(&mut ctx, &props, scene);
         }
         if ctx.widget_state.request_post_paint {
             post_scene.reset();
-            widget.post_paint(&mut ctx, &mut props, post_scene);
+            widget.post_paint(&mut ctx, &props, post_scene);
         }
     }
 

@@ -358,7 +358,7 @@ pub trait Widget: AsDynWidget + Any {
     /// [`children_ids`]: Self::children_ids
     /// [`paint`]: Self::paint
     /// [`MinContent`]: crate::layout::Dim::MinContent
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
 
     /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}
@@ -372,7 +372,7 @@ pub trait Widget: AsDynWidget + Any {
     fn pre_paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         scene: &mut Scene,
     ) {
         pre_paint(ctx, props, scene);
@@ -382,7 +382,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This is called before the children are drawn.
     /// To draw on top of children, see [`Widget::post_paint`].
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
 
     /// Final paint method, which paints on top of the widget's children.
     ///
@@ -391,7 +391,7 @@ pub trait Widget: AsDynWidget + Any {
     fn post_paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         scene: &mut Scene,
     ) {
     }
@@ -411,7 +411,7 @@ pub trait Widget: AsDynWidget + Any {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     );
 

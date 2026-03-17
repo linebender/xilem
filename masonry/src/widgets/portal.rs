@@ -688,7 +688,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let auto_size = SizeDef::new(
             match self.constrain_horizontal {
                 true => LenDef::FitContent(size.width),
@@ -781,7 +781,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
     }
@@ -793,7 +793,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         node.set_clips_children();

@@ -280,7 +280,7 @@ impl Widget for TextInput {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         ctx.run_layout(&mut self.text, size);
 
         let child_origin = Point::ORIGIN;
@@ -305,7 +305,7 @@ impl Widget for TextInput {
     fn pre_paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         scene: &mut Scene,
     ) {
         let bbox = ctx.border_box();
@@ -320,7 +320,7 @@ impl Widget for TextInput {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
     }
@@ -332,7 +332,7 @@ impl Widget for TextInput {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         node.set_placeholder(self.placeholder_text.to_string());

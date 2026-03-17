@@ -131,7 +131,7 @@ impl Widget for OverlayBox {
         )
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
         ctx.place_child(&mut self.child, Point::ORIGIN);
@@ -140,7 +140,7 @@ impl Widget for OverlayBox {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
     }
@@ -152,7 +152,7 @@ impl Widget for OverlayBox {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {
     }

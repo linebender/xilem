@@ -9,8 +9,7 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
@@ -249,7 +248,7 @@ impl Widget for IndexedStack {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         // There's nothing to lay out if we don't have any children
         if self.children.is_empty() {
             return;
@@ -276,7 +275,7 @@ impl Widget for IndexedStack {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
     }
@@ -288,7 +287,7 @@ impl Widget for IndexedStack {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {
     }

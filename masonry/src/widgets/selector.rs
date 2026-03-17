@@ -260,7 +260,7 @@ impl Widget for Selector {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.child, child_size);
 
@@ -273,7 +273,7 @@ impl Widget for Selector {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
     }
@@ -285,7 +285,7 @@ impl Widget for Selector {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         node.add_action(accesskit::Action::Click);

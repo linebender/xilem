@@ -13,7 +13,7 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
-    ChildrenIds, LayoutCtx, MeasureCtx, PropertiesMut, PropertiesRef, PropertyArena, Widget,
+    ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget,
     WidgetArenaNode, WidgetState,
 };
 use crate::kurbo::{Axis, Insets, Point, Size};
@@ -405,7 +405,7 @@ pub(crate) fn run_layout_on(
     let scale = 1.0;
 
     let stack = property_arena.get(state.property_stack_id, widget.type_id());
-    let mut props = PropertiesMut {
+    let props = PropertiesRef {
         local: properties,
         default_map: property_arena
             .default_properties
@@ -491,7 +491,7 @@ pub(crate) fn run_layout_on(
     };
 
     // Run the widget's layout
-    widget.layout(&mut ctx, &mut props, content_box_size);
+    widget.layout(&mut ctx, &props, content_box_size);
 
     // Make sure the paint insets cover the shadow insets
     let shadow = props.get::<BoxShadow>(&mut state.property_cache);

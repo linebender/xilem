@@ -6,7 +6,7 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx, PropertiesMut,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx,
     PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Axis, Size};
@@ -105,7 +105,7 @@ impl Widget for Canvas {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         if self.size != size {
             self.size = size;
             ctx.submit_action::<Self::Action>(CanvasSizeChanged { size });
@@ -114,7 +114,7 @@ impl Widget for Canvas {
         ctx.set_clip_path(size.to_rect());
     }
 
-    fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         scene.append(&self.scene, None);
     }
 
@@ -125,7 +125,7 @@ impl Widget for Canvas {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         if let Some(alt_text) = &self.alt_text {

@@ -8,7 +8,7 @@ use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
-    AccessCtx, DefaultProperties, PropertiesMut, PropertyArena, Widget, WidgetArenaNode, WidgetId,
+    AccessCtx, DefaultProperties, PropertiesRef, PropertyArena, Widget, WidgetArenaNode, WidgetId,
 };
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -50,13 +50,13 @@ fn build_accessibility_tree(
             tree_update,
         };
         let mut node = build_access_node(widget, &mut ctx, scale_factor);
-        let mut props = PropertiesMut {
+        let props = PropertiesRef {
             local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
             stack,
             class_set,
         };
-        widget.accessibility(&mut ctx, &mut props, &mut node);
+        widget.accessibility(&mut ctx, &props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {

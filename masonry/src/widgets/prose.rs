@@ -152,7 +152,7 @@ impl Widget for Prose {
         ctx.redirect_measurement(&mut self.text, axis, cross_length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         ctx.run_layout(&mut self.text, size);
         ctx.place_child(&mut self.text, Point::ORIGIN);
         ctx.derive_baselines(&self.text);
@@ -168,7 +168,7 @@ impl Widget for Prose {
     fn paint(
         &mut self,
         _ctx: &mut PaintCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _scene: &mut Scene,
     ) {
         // All painting is handled by the child
@@ -181,7 +181,7 @@ impl Widget for Prose {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {
     }

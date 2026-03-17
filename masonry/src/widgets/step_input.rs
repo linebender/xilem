@@ -1387,7 +1387,7 @@ impl<T: Steppable> Widget for StepInput<T> {
         min_result.max(length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
         let Some(label) = self.label.as_mut() else {
             ctx.clear_baselines();
             return;
@@ -1427,7 +1427,7 @@ impl<T: Steppable> Widget for StepInput<T> {
         ctx.derive_baselines(label);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let cache = ctx.property_cache();
         match props.get::<StepInputStyle>(cache) {
             StepInputStyle::Basic => Self::paint_basic(self, ctx, props, scene),
@@ -1442,7 +1442,7 @@ impl<T: Steppable> Widget for StepInput<T> {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         // NOTE: Can't set numeric value/min/max/step because AccessKit only seems to support f64.
@@ -1521,7 +1521,7 @@ impl<T: Steppable> StepInput<T> {
     fn paint_basic(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         scene: &mut Scene,
     ) {
         let cache = ctx.property_cache();
@@ -1590,12 +1590,7 @@ impl<T: Steppable> StepInput<T> {
     }
 
     // Paint controls in the flow style.
-    fn paint_flow(
-        &mut self,
-        ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
-        scene: &mut Scene,
-    ) {
+    fn paint_flow(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let cache = ctx.property_cache();
         let color_content = *props.get::<ContentColor>(cache);
         let color_backward = *props.get::<BackwardColor>(cache);

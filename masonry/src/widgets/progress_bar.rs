@@ -171,7 +171,7 @@ impl Widget for ProgressBar {
         potential_length.max(label_length)
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(size), size.into());
         ctx.run_layout(&mut self.label, label_size);
 
@@ -184,7 +184,7 @@ impl Widget for ProgressBar {
     fn pre_paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        props: &PropertiesRef<'_>,
         scene: &mut Scene,
     ) {
         let bbox = ctx.border_box();
@@ -196,7 +196,7 @@ impl Widget for ProgressBar {
         // We need to delay painting the border until after we paint the filled bar area.
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_box = ctx.border_box();
         let cache = ctx.property_cache();
         let border_width = *props.get::<BorderWidth>(cache);
@@ -242,7 +242,7 @@ impl Widget for ProgressBar {
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         node.set_min_numeric_value(0.0);

@@ -553,7 +553,7 @@ impl Widget for Label {
         length as f64
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, size: Size) {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
@@ -593,7 +593,7 @@ impl Widget for Label {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
 
@@ -615,7 +615,7 @@ impl Widget for Label {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();

@@ -3,7 +3,7 @@
 
 use vello::Scene;
 
-use crate::core::{PaintCtx, PropertiesMut, PropertyCache};
+use crate::core::{PaintCtx, PropertiesRef, PropertyCache};
 use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::peniko::Fill;
 use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};
@@ -28,7 +28,7 @@ pub struct PrePaintProps<'a> {
 
 impl<'a> PrePaintProps<'a> {
     /// Returns common pre-paint properties based on widget state.
-    pub fn fetch(props: &'a PropertiesMut<'_>, cache: &mut PropertyCache) -> Self {
+    pub fn fetch(props: &'a PropertiesRef<'_>, cache: &mut PropertyCache) -> Self {
         let box_shadow = props.get::<BoxShadow>(cache);
         let background = props.get::<Background>(cache);
         let border_color = props.get::<BorderColor>(cache);
@@ -46,7 +46,7 @@ impl<'a> PrePaintProps<'a> {
 }
 
 /// Paints the widget's box shadow, background, and border.
-pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &mut PropertiesMut<'_>, scene: &mut Scene) {
+pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     let bbox = ctx.border_box();
     let cache = ctx.property_cache();
     let p = PrePaintProps::fetch(props, cache);
