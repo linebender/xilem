@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use tracing::warn;
+use tracing::debug;
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::{ActionCtx, ErasedAction, Handled, PropertiesMut, WidgetId};
@@ -60,7 +60,7 @@ pub(crate) fn run_action_pass(root: &mut RenderRoot) {
             // companion action for the app driver. Then the app driver expecting the companion
             // action to always follow the initial action. Partial propagation would break that
             // assumption in the rare cases where the initial action source has just been deleted.
-            warn!(
+            debug!(
                 "Aborting action {} propagation because the source widget {source} \
 				has been removed from the tree.",
                 action.type_name(),
