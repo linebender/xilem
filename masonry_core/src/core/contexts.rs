@@ -1037,13 +1037,6 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_border_box_size
     }
 
-    /// Returns whether the given child is [stashed].
-    ///
-    /// [stashed]: crate::doc::masonry_concepts#stashed
-    pub fn child_is_stashed(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
-        self.get_child_state(child).is_stashed
-    }
-
     /// Sets the widget's clip path in the widget's content-box coordinate space.
     ///
     /// A widget's clip path will have two effects:
@@ -1480,6 +1473,17 @@ impl_context_method!(
         /// [stashed]: crate::doc::masonry_concepts#stashed
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
+        }
+
+        /// Returns whether the given child is [stashed].
+        ///
+        /// The result of this function is not affected by `set_stashed` until the next
+        /// [`update_stashed`] pass.
+        ///
+        /// [stashed]: crate::doc::masonry_concepts#stashed
+        /// [`update_stashed`]: crate::doc::pass_system#update-passes
+        pub fn child_is_stashed(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
+            self.get_child_state(child).is_stashed
         }
     }
 );
