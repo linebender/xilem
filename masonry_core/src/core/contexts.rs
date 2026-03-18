@@ -360,8 +360,9 @@ impl MutateCtx<'_> {
 
     /// Sets which property stack this widget uses for property resolution.
     pub fn set_property_stack(&mut self, stack_id: PropertyStackId) {
+        self.widget_state.request_update_props = true;
         self.widget_state.needs_update_props = true;
-        self.widget_state.force_property_update = true;
+        self.widget_state.property_cache.invalidated = true;
         self.widget_state.property_stack_id = Some(stack_id);
     }
 }
@@ -1757,6 +1758,7 @@ impl_context_method!(
         /// Changes will be applied in the next update pass and may affect property resolution.
         pub fn add_class(&mut self, class: &str) {
             self.widget_state.class_diff.add(class);
+            self.widget_state.request_update_props = true;
             self.widget_state.needs_update_props = true;
         }
 
@@ -1765,6 +1767,7 @@ impl_context_method!(
         /// Changes will be applied in the next update pass and may affect property resolution.
         pub fn remove_class(&mut self, class: &str) {
             self.widget_state.class_diff.remove(class);
+            self.widget_state.request_update_props = true;
             self.widget_state.needs_update_props = true;
         }
     }

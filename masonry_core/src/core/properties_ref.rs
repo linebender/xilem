@@ -27,15 +27,15 @@ impl PropertiesRef<'_> {
 
     /// Returns value of property `P`.
     ///
-    /// Checks local properties first, then the property stack (cache read only),
+    /// Checks local properties first, then the property stack,
     /// then default properties, then [`Property::static_default()`].
     pub fn get<P: Property>(&self, cache: &mut PropertyCache) -> &P {
         // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
-        // 2. Property stack (cache read only; linear scan on cache miss)
-        if let Some(p) = self.stack.resolve_cached_mut::<P>(cache, self.class_set) {
+        // 2. Property stack (writes to cache on miss)
+        if let Some(p) = self.stack.resolve::<P>(cache, self.class_set) {
             return p;
         }
         // 3. Default properties
@@ -51,8 +51,11 @@ impl PropertiesRef<'_> {
         if let Some(p) = self.local.map.get::<P>() {
             return p;
         }
-        // 2. Property stack (cache read only; linear scan on cache miss)
-        if let Some(p) = self.stack.resolve_cached::<P>(cache, self.class_set) {
+        // 2. Property stack (reads from cache without writing on miss)
+        if let Some(p) = self
+            .stack
+            .resolve_without_saving::<P>(cache, self.class_set)
+        {
             return p;
         }
         // 3. Default properties

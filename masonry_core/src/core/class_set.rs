@@ -38,15 +38,6 @@ impl ClassSet {
 // ---
 
 impl ClassSetDiff {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.added.is_empty()
-            && self.removed.is_empty()
-            && self.is_hovered.is_none()
-            && self.is_active.is_none()
-            && self.is_disabled.is_none()
-            && self.has_focus_target.is_none()
-    }
-
     pub(crate) fn add(&mut self, class: &str) {
         self.removed.remove(class);
         self.added.insert(class.to_string());

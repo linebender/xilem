@@ -338,6 +338,7 @@ fn update_disabled_for_widget(
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
         state.class_diff.is_disabled = Some(disabled);
+        state.request_update_props = true;
         state.needs_update_props = true;
         state.needs_update_focusable = true;
         state.request_accessibility = true;
@@ -718,6 +719,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
                 if ctx.widget_state.has_focus_target != has_focused {
                     widget.update(ctx, props, &Update::ChildFocusChanged(has_focused));
                     ctx.widget_state.class_diff.has_focus_target = Some(has_focused);
+                    ctx.widget_state.request_update_props = true;
                     ctx.widget_state.needs_update_props = true;
                 }
                 ctx.widget_state.has_focus_target = has_focused;
@@ -918,12 +920,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = false;
             ctx.widget_state.class_diff.is_active = Some(false);
+            ctx.widget_state.request_update_props = true;
             ctx.widget_state.needs_update_props = true;
             widget.update(ctx, props, &Update::ActiveChanged(false));
         });
         run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
             ctx.widget_state.is_active = true;
             ctx.widget_state.class_diff.is_active = Some(true);
+            ctx.widget_state.request_update_props = true;
             ctx.widget_state.needs_update_props = true;
             widget.update(ctx, props, &Update::ActiveChanged(true));
         });
@@ -1017,12 +1021,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         run_single_update_pass(root, prev_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = false;
             ctx.widget_state.class_diff.is_hovered = Some(false);
+            ctx.widget_state.request_update_props = true;
             ctx.widget_state.needs_update_props = true;
             widget.update(ctx, props, &Update::HoveredChanged(false));
         });
         run_single_update_pass(root, next_hovered_widget, |widget, ctx, props| {
             ctx.widget_state.is_hovered = true;
             ctx.widget_state.class_diff.is_hovered = Some(true);
+            ctx.widget_state.request_update_props = true;
             ctx.widget_state.needs_update_props = true;
             widget.update(ctx, props, &Update::HoveredChanged(true));
         });
@@ -1104,7 +1110,7 @@ fn update_props_for_widget(
         return;
     }
 
-    if !state.class_diff.is_empty() || state.force_property_update {
+    if state.request_update_props {
         let class_diff = std::mem::take(&mut state.class_diff);
         class_diff.apply(class_set);
 
@@ -1118,9 +1124,9 @@ fn update_props_for_widget(
             // For now we just check the entire cache, which might be expensive
             // if a widget has a lot of properties.
             for (type_id, index) in &old_entries {
-                let new_index = stack.resolve(class_set, *type_id);
+                let new_index = stack.resolve_index(class_set, *type_id);
 
-                if new_index != *index || state.force_property_update {
+                if new_index != *index || state.property_cache.invalidated {
                     let mut ctx = UpdateCtx {
                         global_state,
                         widget_state: state,
@@ -1139,8 +1145,9 @@ fn update_props_for_widget(
         }
     }
 
+    state.request_update_props = false;
     state.needs_update_props = false;
-    state.force_property_update = false;
+    state.property_cache.invalidated = false;
 
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {

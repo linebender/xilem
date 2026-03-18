@@ -222,7 +222,9 @@ pub(crate) struct WidgetState {
     /// A focusable widget was added, removed, stashed, disabled, etc.
     pub(crate) needs_update_focusable: bool,
 
-    /// This widget or a descendant has pending class changes.
+    /// This widget has pending property changes.
+    pub(crate) request_update_props: bool,
+    /// This widget or a descendant has pending property changes.
     pub(crate) needs_update_props: bool,
 
     pub(crate) children_changed: bool,
@@ -259,8 +261,6 @@ pub(crate) struct WidgetState {
     pub(crate) property_stack_id: Option<PropertyStackId>,
     /// Pending class changes to apply during `run_update_props_pass`.
     pub(crate) class_diff: ClassSetDiff,
-    // TODO - Rename
-    pub(crate) force_property_update: bool,
     /// Cached property stack resolutions for this widget.
     pub(crate) property_cache: PropertyCache,
 
@@ -329,6 +329,7 @@ impl WidgetState {
             needs_update_stashed: true,
             descendant_is_focusable: false,
             needs_update_focusable: true,
+            request_update_props: false,
             needs_update_props: false,
             children_changed: true,
 
@@ -344,7 +345,6 @@ impl WidgetState {
 
             property_stack_id,
             class_diff: ClassSetDiff::default(),
-            force_property_update: false,
             property_cache: PropertyCache::default(),
 
             trace_span: Span::none(),

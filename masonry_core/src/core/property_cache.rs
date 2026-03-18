@@ -4,7 +4,7 @@
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
-use crate::core::{Property, Selector};
+use crate::core::Selector;
 
 /// TODO - Doc
 #[derive(Clone, Default, Debug)]
@@ -18,6 +18,8 @@ pub struct PropertyCache {
     pub(crate) relevant_is_active: bool,
     pub(crate) relevant_is_disabled: bool,
     pub(crate) relevant_has_focus_target: bool,
+    /// Whether the widget's property stack has changed.
+    pub(crate) invalidated: bool,
 }
 
 impl PropertyCache {
@@ -31,7 +33,11 @@ impl PropertyCache {
         self.relevant_has_focus_target |= selector.has_focus_target.is_some();
     }
 
-    pub(crate) fn is_cached<P: Property>(&self) -> bool {
-        self.entries.contains_key(&TypeId::of::<P>())
+    pub(crate) fn cached_index(&self, prop_type: TypeId) -> Option<Option<usize>> {
+        if self.invalidated {
+            None
+        } else {
+            self.entries.get(&prop_type).copied()
+        }
     }
 }

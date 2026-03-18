@@ -65,8 +65,20 @@ impl PropertyStack {
         self.stack.push((selector, properties.into()));
     }
 
-    pub(crate) fn resolve(&self, classes: &ClassSet, prop_type: TypeId) -> Option<usize> {
-        // Iter over items and indices
+    fn get_prop<P: Property>(&self, maybe_index: Option<usize>) -> Option<&P> {
+        let Some(index) = maybe_index else {
+            // We've cached/resolved that there is no matching entry in the stack.
+            return None;
+        };
+        let Some(item) = self.stack[index].1.get::<P>() else {
+            debug_panic!("Invalid PropertyStack index - probably a bug in PropertyCache logic");
+            return None;
+        };
+        Some(item)
+    }
+
+    pub(crate) fn resolve_index(&self, classes: &ClassSet, prop_type: TypeId) -> Option<usize> {
+        // Iterate from top to bottom to enable property shadowing.
         for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
             if selector.matches(classes) && prop_set.map.as_raw().contains_key(&prop_type) {
                 return Some(i);
@@ -75,43 +87,17 @@ impl PropertyStack {
         None
     }
 
-    pub(crate) fn resolve_cached<P: Property>(
-        &self,
-        cache: &PropertyCache,
-        classes: &ClassSet,
-    ) -> Option<&P> {
-        let index = cache
-            .entries
-            .get(&TypeId::of::<P>())
-            .copied()
-            .unwrap_or_default();
-        let index = index.or_else(|| self.resolve(classes, TypeId::of::<P>()))?;
-
-        let Some(item) = self.stack[index].1.get::<P>() else {
-            debug_panic!("Invalid PropertyCache");
-            return None;
-        };
-        Some(item)
-    }
-
-    // TODO - Refactor with resolve_cached? Overall this is ugly code.
-    pub(crate) fn resolve_cached_mut<P: Property>(
+    pub(crate) fn resolve<P: Property>(
         &self,
         cache: &mut PropertyCache,
         classes: &ClassSet,
     ) -> Option<&P> {
-        if let Some(cached_index) = cache.entries.get(&TypeId::of::<P>()).copied() {
-            let Some(cached_index) = cached_index else {
-                // We've cached that there is no matching entry in the stack.
-                return None;
-            };
-            let Some(item) = self.stack[cached_index].1.get::<P>() else {
-                debug_panic!("Invalid PropertyCache");
-                return None;
-            };
-            return Some(item);
+        // If cached, return cached result.
+        if let Some(cached_index) = cache.cached_index(TypeId::of::<P>()) {
+            return self.get_prop::<P>(cached_index);
         }
 
+        // Else, update cache and return result.
         for (i, (selector, prop_set)) in self.stack.iter().enumerate().rev() {
             cache.extend_relevant(selector);
 
@@ -125,5 +111,20 @@ impl PropertyStack {
 
         cache.entries.insert(TypeId::of::<P>(), None);
         None
+    }
+
+    pub(crate) fn resolve_without_saving<P: Property>(
+        &self,
+        cache: &PropertyCache,
+        classes: &ClassSet,
+    ) -> Option<&P> {
+        // If cached, return cached result.
+        if let Some(cached_index) = cache.cached_index(TypeId::of::<P>()) {
+            return self.get_prop::<P>(cached_index);
+        }
+
+        // Else, return result without updating cache.
+        let index = self.resolve_index(classes, TypeId::of::<P>());
+        self.get_prop::<P>(index)
     }
 }
