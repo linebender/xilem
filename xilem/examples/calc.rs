@@ -3,12 +3,14 @@
 
 //! A simple calculator example
 
+use masonry::core::{PropertyStack, Selector};
 use masonry::layout::{AsUnit, Length};
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::theme::default_property_set;
 use masonry::widgets::GridParams;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use xilem::style::Style;
+use xilem::style::{BorderColor, Style};
 use xilem::view::{
     FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, text_button,
 };
@@ -276,11 +278,6 @@ fn one_button(
     button(content, callback)
         .background_color(BLUE)
         .corner_radius(10.)
-        .border_color(Color::TRANSPARENT)
-
-    // FIXME before merging:
-    // Implement way to use conditional properties in Xilem
-    //.hovered_border_color(Color::WHITE)
 }
 
 /// Returns a button that triggers the calculator's operator handler,
@@ -303,7 +300,6 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     })
     .background_color(GRAY)
     .corner_radius(10.)
-    .border_color(Color::TRANSPARENT)
 }
 
 pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -315,6 +311,15 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
+    let mut default_properties = default_property_set();
+    let mut stack = PropertyStack::new();
+    stack.push(Selector::new(), BorderColor::new(Color::TRANSPARENT));
+    stack.push(
+        Selector::new().with_hovered(true),
+        BorderColor::new(Color::WHITE),
+    );
+    default_properties.insert_stack::<masonry::widgets::Button>(stack);
+
     let min_window_size = LogicalSize::new(200., 200.);
     let window_size = LogicalSize::new(400., 500.);
     let window_options = WindowOptions::new("Calculator").with_min_inner_size(min_window_size);
@@ -322,7 +327,8 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     // See https://github.com/rust-windowing/winit/issues/2308 for more details
     #[cfg(not(target_os = "ios"))]
     let window_options = window_options.with_initial_inner_size(window_size);
-    let app = Xilem::new_simple(data, app_logic, window_options);
+    let app = Xilem::new_simple(data, app_logic, window_options)
+        .with_default_properties(default_properties);
     app.run_in(event_loop)?;
     Ok(())
 }
