@@ -69,8 +69,8 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// Property stacks available for widgets to reference.
-    pub property_arena: PropertyArena,
+    /// Property data, including property stacks and per-widget-type default properties.
+    pub(crate) property_arena: PropertyArena,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
