@@ -246,25 +246,6 @@ impl_context_method!(
     }
 );
 
-impl_context_method!(
-    MutateCtx<'_>,
-    ActionCtx<'_>,
-    EventCtx<'_>,
-    UpdateCtx<'_>,
-    MeasureCtx<'_>,
-    LayoutCtx<'_>,
-    ComposeCtx<'_>,
-    PaintCtx<'_>,
-    AccessCtx<'_>,
-    RawCtx<'_>,
-    {
-        /// Returns a mutable reference to this widget's property cache.
-        pub fn property_cache(&mut self) -> &mut PropertyCache {
-            &mut self.widget_state.property_cache
-        }
-    }
-);
-
 impl QueryCtx<'_> {
     /// Returns a reference to this widget's property cache.
     pub fn property_cache(&self) -> &PropertyCache {

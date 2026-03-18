@@ -8,7 +8,6 @@ use crate::util::AnyMap;
 ///
 /// Used by the [`Widget`](crate::core::Widget) trait during rendering passes and in some search methods.
 #[derive(Clone, Copy)]
-#[expect(dead_code, reason = "TODO - Future PR")]
 pub struct PropertiesRef<'a> {
     pub(crate) local: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,
