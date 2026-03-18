@@ -143,6 +143,9 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
 
                 let mut length: f64 = 0.;
                 for child in children {
+                    if ctx.child_is_stashed(child) {
+                        continue;
+                    }
                     let child_length =
                         ctx.compute_length(child, auto_length, context_size, axis, cross_length);
                     length = length.max(child_length);
@@ -155,6 +158,9 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 let context_size = size.into();
 
                 for child in children.iter_mut() {
+                    if ctx.child_is_stashed(child) {
+                        continue;
+                    }
                     let child_size = ctx.compute_size(child, auto_size, context_size);
                     ctx.run_layout(child, child_size);
                     ctx.place_child(child, Point::ZERO);
