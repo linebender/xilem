@@ -64,7 +64,7 @@ pub struct ActionCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
     pub(crate) is_handled: bool,
 }
 

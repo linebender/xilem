@@ -21,18 +21,30 @@ fn handle_action(root: &mut RenderRoot, action: &ErasedAction, source: WidgetId)
 
         if !is_handled {
             let _span = enter_span(&node.item.state);
+
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+            let properties = &mut node.item.properties;
+            let stack = root
+                .property_arena
+                .get(state.property_stack_id, widget.type_id());
+            let class_set = &node.item.class_set;
+
             let mut ctx = ActionCtx {
                 global_state: &mut root.global_state,
                 widget_state: &mut node.item.state,
                 children: node.children.reborrow_mut(),
-                default_properties: &root.default_properties,
+                property_arena: &root.property_arena,
                 is_handled: false,
             };
-            let widget = &mut *node.item.widget;
-
             let mut props = PropertiesMut {
-                set: &mut node.item.properties,
-                default_map: root.default_properties.for_widget(widget.type_id()),
+                local: properties,
+                default_map: root
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
+                stack,
+                class_set,
             };
             widget.on_action(&mut ctx, &mut props, action, source);
             is_handled = ctx.is_handled;
