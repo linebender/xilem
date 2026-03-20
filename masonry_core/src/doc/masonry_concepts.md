@@ -14,6 +14,14 @@
 
 This section describes concepts mentioned by name elsewhere in the documentation and gives them a semi-formal definition for reference.
 
+## Classes
+
+Widgets can have an arbitrary numbers of text labels called "classes".
+You can think of them as similar to [CSS class attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/class).
+
+Classes are mostly used for [property selection](#properties).
+
+
 ## Widget status
 
 The notion of widget status is somewhat vague, but you can think of it as similar to [CSS pseudo-classes](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes).
@@ -150,10 +158,18 @@ What happens if the focus anchor is removed from the tree or stashed/disabled is
 This behavior exists so that when the user clicks somewhere and then presses `Tab`, the focused widget is more likely to be close to whatever the user clicked.
 
 
-## Properties / Props
+## Properties
 
-All widgets have associated data of arbitrary types called "properties".
+All widgets have associated data of arbitrary types called "properties" (sometimes calls "props" in internal code).
 These properties are mostly used for styling and event handling.
+
+Widgets have multiple layers of properties:
+
+- First, a set of local properties associated with a specific widget.
+- Then a "property stack" which is made of several layers, where each layer is a set of properties gates by a [`Selector`].
+- Then, default properties associated with each widget type.
+
+When code wants to access a widget's properties, a cascading process goes through these layers in turn and returns the first valid match.
 
 
 ## Box model
@@ -282,4 +298,5 @@ DPI-aware pixel snapping is a future feature.
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
 [`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event
+[`Selector`]: crate::core::Selector
 [`RenderRoot`]: crate::app::RenderRoot

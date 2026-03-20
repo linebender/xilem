@@ -39,6 +39,12 @@ use crate::properties::{
 ///
 /// This allows higher-level components to choose how the switch responds,
 /// and ensure that its value is based on their correct source of truth.
+///
+/// # Classes
+///
+/// When toggled, this widget will have the `#toggled` [class].
+///
+/// [class]: crate::doc::masonry_concepts#classes
 pub struct Switch {
     on: bool,
 }

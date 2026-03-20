@@ -31,6 +31,12 @@ use crate::widgets::{Label, TextArea};
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
 /// This is because `TextInput` largely serves as a wrapper around a [`TextArea`].
+///
+/// # Classes
+///
+/// When the window is not focused, this widget will have the `#unfocused` [class].
+///
+/// [class]: crate::doc::masonry_concepts#classes
 pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
 
