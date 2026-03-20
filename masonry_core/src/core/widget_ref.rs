@@ -126,16 +126,23 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                 let widget = &*node_ref.item.widget;
                 let state = &node_ref.item.state;
                 let properties = &node_ref.item.properties;
+                let class_set = &node_ref.item.class_set;
+                let stack = self
+                    .ctx
+                    .property_arena
+                    .get(state.property_stack_id, widget.type_id());
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,
                     widget_state: state,
                     properties: PropertiesRef {
-                        set: properties,
+                        local: properties,
                         default_map: self.ctx.properties.default_map,
+                        stack,
+                        class_set,
                     },
                     children,
-                    default_properties: self.ctx.default_properties,
+                    property_arena: self.ctx.property_arena,
                 };
 
                 WidgetRef { ctx, widget }

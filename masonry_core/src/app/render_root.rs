@@ -17,9 +17,9 @@ use vello::kurbo::{Point, Rect, Size};
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
-    TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
+    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::action::run_action_pass;
@@ -69,8 +69,8 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// Default values that properties will have if not defined per-widget.
-    pub(crate) default_properties: Arc<DefaultProperties>,
+    /// Property data, including property stacks and per-widget-type default properties.
+    pub(crate) property_arena: PropertyArena,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
@@ -335,7 +335,6 @@ impl RenderRoot {
             size_policy,
             size,
             last_mouse_pos: None,
-            default_properties,
             global_state: RenderRootState {
                 signal_sink: Box::new(signal_sink),
                 focused_widget: None,
@@ -374,6 +373,7 @@ impl RenderRoot {
                 scale_factor,
                 debug_paint,
             },
+            property_arena: PropertyArena::new(default_properties),
             widget_arena: WidgetArena {
                 nodes: TreeArena::new(),
             },
@@ -401,6 +401,11 @@ impl RenderRoot {
         root.run_rewrite_passes();
 
         root
+    }
+
+    /// Returns a mutable reference to the `PropertyArena`.
+    pub fn property_arena(&mut self) -> &mut PropertyArena {
+        &mut self.property_arena
     }
 
     pub(crate) fn root_id(&self) -> WidgetId {
@@ -590,16 +595,25 @@ impl RenderRoot {
         let widget = &*node_ref.item.widget;
         let state = &node_ref.item.state;
         let properties = &node_ref.item.properties;
+        let class_set = &node_ref.item.class_set;
+        let stack = self
+            .property_arena
+            .get(state.property_stack_id, widget.type_id());
 
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                set: properties,
-                default_map: self.default_properties.for_widget(widget.type_id()),
+                local: properties,
+                default_map: self
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
+                stack,
+                class_set,
             },
             children,
-            default_properties: &self.default_properties,
+            property_arena: &self.property_arena,
         };
         Some(WidgetRef { ctx, widget })
     }

@@ -1,16 +1,19 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Property, PropertySet};
+use crate::core::{ClassSet, Property, PropertySet, PropertyStack};
 use crate::util::AnyMap;
 
 /// Reference to a collection of [properties](Property) that a widget has access to.
 ///
 /// Used by the [`Widget`](crate::core::Widget) trait during rendering passes and in some search methods.
 #[derive(Clone, Copy)]
+#[expect(dead_code, reason = "TODO - Future PR")]
 pub struct PropertiesRef<'a> {
-    pub(crate) set: &'a PropertySet,
+    pub(crate) local: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,
+    pub(crate) stack: &'a PropertyStack,
+    pub(crate) class_set: &'a ClassSet,
 }
 
 // TODO - Better document local vs default properties.
@@ -20,7 +23,7 @@ impl PropertiesRef<'_> {
     ///
     /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
-        self.set.map.contains::<P>()
+        self.local.map.contains::<P>()
     }
 
     /// Returns value of property `P`.
@@ -29,7 +32,7 @@ impl PropertiesRef<'_> {
     /// If the default property map has an entry for `P`, returns its value.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get<P: Property>(&self) -> &P {
-        if let Some(p) = self.set.map.get::<P>() {
+        if let Some(p) = self.local.map.get::<P>() {
             p
         } else if let Some(p) = self.default_map.get::<P>() {
             p
@@ -44,7 +47,7 @@ impl PropertiesRef<'_> {
     /// If the widget has an explicit entry, or the default property map has an explicit entry,
     /// then this will return a value. Otherwise it will return `None`.
     pub fn get_defined<P: Property>(&self) -> Option<&P> {
-        self.set
+        self.local
             .map
             .get::<P>()
             .or_else(|| self.default_map.get::<P>())
@@ -52,6 +55,6 @@ impl PropertiesRef<'_> {
 
     /// Returns a reference to the local properties for direct access.
     pub fn local_properties(&self) -> &PropertySet {
-        self.set
+        self.local
     }
 }
