@@ -75,6 +75,7 @@
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(clippy::large_enum_variant, reason = "FIXME: NewWidget is too large")]
 
 pub use imaging;
 pub use peniko::color::palette;
