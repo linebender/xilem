@@ -75,7 +75,7 @@ pub enum WgpuLimits {
     /// Use `adapter.limits()` (maximum supported by the selected adapter).
     Adapter,
     /// Use the provided limits.
-    Custom(wgpu::Limits),
+    Custom(Box<wgpu::Limits>),
 }
 
 /// A trait for defining how your app interacts with the Masonry widget tree.
