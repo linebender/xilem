@@ -30,7 +30,11 @@ impl PropertyArena {
         id
     }
 
-    /// Retrieves a reference to a `PropertyStack` by its `PropertyStackId`, or `None` if not found.
+    /// Retrieves a reference to a `PropertyStack` by its `PropertyStackId`.
+    ///
+    /// If the `id` is `None` or not found in the arena, returns the default property stack for the given `widget_type` defined in [`DefaultProperties`].
+    ///
+    /// If no default property stack is defined for the `widget_type`, returns an empty `PropertyStack`.
     pub fn get(&self, id: Option<PropertyStackId>, widget_type: TypeId) -> &PropertyStack {
         if let Some(id) = id
             && let Some(stack) = self.arena.get(&id)
