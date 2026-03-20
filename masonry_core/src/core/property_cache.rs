@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::core::Selector;
 
-/// TODO - Doc
+/// Internal type used by Masonry to cache accesses to a widget's properties.
 #[derive(Clone, Default, Debug)]
 pub struct PropertyCache {
     /// Maps property type IDs to the index of the matching entry in the property stack, if any.
