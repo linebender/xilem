@@ -36,7 +36,7 @@ version = "0.4.0"
 
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.88"
+rust-version = "1.92"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 
@@ -53,7 +53,7 @@ tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
-vello = { version = "0.7.0", default-features = false, features = ["wgpu"] }
+vello = { version = "0.8.0", default-features = false, features = ["wgpu"] }
 kurbo = "0.13.0"
 parley = { version = "0.7.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.
