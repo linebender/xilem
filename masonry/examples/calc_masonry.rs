@@ -14,8 +14,8 @@
 use std::str::FromStr;
 
 use masonry::core::{
-    CollectionWidget, ErasedAction, NewWidget, Property, PropertySet, StyleProperty, Widget,
-    WidgetId,
+    CollectionWidget, DefaultProperties, ErasedAction, NewWidget, Property, PropertySet,
+    PropertyStack, Selector, StyleProperty, Widget, WidgetId,
 };
 use masonry::dpi::LogicalSize;
 use masonry::layout::AsUnit;
@@ -185,26 +185,15 @@ impl AppDriver for CalcState {
 // ---
 
 fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
-    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
-    //const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
-
     let button = Button::new(
         Label::new(label)
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
     );
+    let mut button = NewWidget::new_with_props(button, CalcAction::Op(op));
+    button.classes.insert("op_button".to_string());
 
-    NewWidget::new_with_props(
-        button,
-        PropertySet::new()
-            .with(Background::Color(BLUE))
-            // TODO - Move to new prop system
-            //.with(ActiveBackground(Background::Color(LIGHT_BLUE)))
-            //.with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
-            .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
-            .with(CalcAction::Op(op)),
-    )
+    button
 }
 
 fn op_button(op: char) -> NewWidget<Button> {
@@ -212,25 +201,16 @@ fn op_button(op: char) -> NewWidget<Button> {
 }
 
 fn digit_button(digit: u8) -> NewWidget<Button> {
-    const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
-    //const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
-
     let button = Button::new(
         Label::new(format!("{digit}"))
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
     );
 
-    NewWidget::new_with_props(
-        button,
-        PropertySet::new()
-            .with(Background::Color(GRAY))
-            //.with(ActiveBackground(Background::Color(LIGHT_GRAY)))
-            //.with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
-            .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
-            .with(CalcAction::Digit(digit)),
-    )
+    let mut button = NewWidget::new_with_props(button, CalcAction::Digit(digit));
+    button.classes.insert("digit_button".to_string());
+
+    button
 }
 
 /// Build the widget tree
@@ -281,6 +261,46 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     )
 }
 
+fn custom_property_set() -> DefaultProperties {
+    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
+    const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
+    const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
+    const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
+
+    let mut default_properties = default_property_set();
+
+    let mut stack = PropertyStack::new();
+    stack.push(
+        Selector::classes(&["op_button"]),
+        PropertySet::new()
+            .with(Background::Color(BLUE))
+            .with(BorderColor::new(Color::TRANSPARENT))
+            .with(BorderWidth::all(2.0)),
+    );
+    stack.push(
+        Selector::classes(&["op_button"]).with_active(true),
+        PropertySet::new().with(Background::Color(LIGHT_BLUE)),
+    );
+    stack.push(
+        Selector::classes(&["digit_button"]),
+        PropertySet::new()
+            .with(Background::Color(GRAY))
+            .with(BorderColor::new(Color::TRANSPARENT))
+            .with(BorderWidth::all(2.0)),
+    );
+    stack.push(
+        Selector::classes(&["digit_button"]).with_active(true),
+        PropertySet::new().with(Background::Color(LIGHT_GRAY)),
+    );
+    stack.push(
+        Selector::new().with_hovered(true),
+        PropertySet::new().with(BorderColor::new(Color::WHITE)),
+    );
+    default_properties.insert_stack::<Button>(stack);
+
+    default_properties
+}
+
 fn main() {
     let window_size = LogicalSize::new(223., 300.);
 
@@ -308,7 +328,7 @@ fn main() {
             build_calc().erased(),
         )],
         calc_state,
-        default_property_set(),
+        custom_property_set(),
     )
     .unwrap();
 }
@@ -323,7 +343,7 @@ mod tests {
     #[test]
     fn screenshot_test() {
         let mut harness = TestHarness::create_with(
-            default_property_set(),
+            custom_property_set(),
             build_calc(),
             TestHarnessParams::default(),
         );

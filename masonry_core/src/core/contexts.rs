@@ -2168,9 +2168,10 @@ impl RegisterCtx<'_> {
             id,
             options,
             properties,
+            property_stack_id,
+            classes,
             tag,
             action_type,
-            property_stack_id,
             #[cfg(debug_assertions)]
             action_type_name,
         }) = child.take_inner()
@@ -2209,7 +2210,10 @@ impl RegisterCtx<'_> {
             state,
             properties,
             changed_properties: TypeSet::default(),
-            class_set: ClassSet::default(),
+            class_set: ClassSet {
+                classes,
+                ..ClassSet::default()
+            },
         };
         self.children.insert(id, node);
     }
