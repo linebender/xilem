@@ -1744,20 +1744,22 @@ impl_context_method!(
             self.request_compose();
         }
 
-        // TODO - Document classes
-
-        /// Adds a string to this widget's class set.
+        /// Adds a string to this widget's [class set].
         ///
         /// Changes will be applied in the next update pass and may affect property resolution.
+        ///
+        /// [class]: crate::doc::masonry_concepts#classes
         pub fn add_class(&mut self, class: &str) {
             self.widget_state.class_diff.add(class);
             self.widget_state.request_update_props = true;
             self.widget_state.needs_update_props = true;
         }
 
-        /// Removes a string from this widget's class set.
+        /// Removes a string from this widget's [class set].
         ///
         /// Changes will be applied in the next update pass and may affect property resolution.
+        ///
+        /// [class]: crate::doc::masonry_concepts#classes
         pub fn remove_class(&mut self, class: &str) {
             self.widget_state.class_diff.remove(class);
             self.widget_state.request_update_props = true;

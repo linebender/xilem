@@ -160,7 +160,14 @@ It also update the pointer's icon depending on which widget it's hovering.
 
 #### "Update properties" pass
 
-TODO
+This pass is ran whenever a widget's properties need to be re-computed.
+
+Masonry's properties are computed, among other things, from a cascading stack of property sets with selectors that return whether a specific set of properties should be used based on classes and status flags.
+
+When the widget's classes and status flags that were used to make that decision change, the cascading process should be ran again.
+
+The "update properties" pass runs through every widget that needs recomputation, evicts the properties whose value changed from the property cache, and calls `Widget::property_changed` with the relevant properties to request the relevant changes.
+
 
 #### "Update fonts" pass
 
