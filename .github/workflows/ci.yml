@@ -8,7 +8,7 @@ env:
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.88"
+  RUST_MIN_VER: "1.92"
   # List of packages that can not target Wasm.
   NO_WASM_PKGS: "--exclude masonry_core --exclude masonry_testing --exclude masonry --exclude masonry_winit --exclude xilem --exclude xilem_masonry --exclude placehero"
   # Only some of our examples support Android (primarily due to extra required boilerplate).

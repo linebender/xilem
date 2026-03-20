@@ -42,7 +42,7 @@ See [Xilem][] or [Xilem Web][] instead.
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem Masonry has been verified to compile with **Rust 1.88** and later.
+This version of Xilem Masonry has been verified to compile with **Rust 1.92** and later.
 
 Future versions of Xilem Masonry might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
