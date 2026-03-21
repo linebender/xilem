@@ -11,11 +11,11 @@ use std::sync::Arc;
 use masonry::layout::{AsUnit, Length, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use tokio::sync::mpsc::UnboundedSender;
-use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
+use xilem::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use xilem::style::Style as _;
 use xilem::view::{
     FlexExt, FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose,

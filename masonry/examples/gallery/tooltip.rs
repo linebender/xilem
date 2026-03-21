@@ -3,9 +3,9 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::kurbo::Point;
 use masonry::layers::Tooltip;
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::vello::kurbo::Point;
 use masonry::widgets::{Button, Flex, Label};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};

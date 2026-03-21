@@ -171,6 +171,7 @@
 //!
 //! [masonry_winit]: https://crates.io/crates/masonry_winit
 //! [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
+//! [masonry_testing]: https://docs.rs/masonry_testing/latest/masonry_testing/
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 #![cfg_attr(
     not(docsrs),
@@ -217,11 +218,9 @@ pub mod theme;
 pub mod widgets;
 
 pub use accesskit;
-pub use parley::{Alignment as TextAlign, AlignmentOptions as TextAlignOptions};
-pub use vello::peniko::color::palette;
-pub use vello::{kurbo, peniko};
-pub use {dpi, parley, vello};
-
-pub use masonry_core::{app, core, layout, ui_events, util};
+pub use masonry_core::palette;
+pub use masonry_core::{app, core, kurbo, layout, peniko, ui_events, util};
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;
+pub use parley::{Alignment as TextAlign, AlignmentOptions as TextAlignOptions};
+pub use {dpi, parley, vello};

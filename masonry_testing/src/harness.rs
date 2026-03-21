@@ -30,9 +30,9 @@ use masonry_core::core::{
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
+use masonry_core::peniko::Fill;
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
-use masonry_core::vello::peniko::Fill;
 use masonry_core::vello::util::{RenderContext, block_on_wgpu};
 use masonry_core::vello::wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,

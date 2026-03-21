@@ -1,9 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use kurbo::Affine;
 use tracing::info_span;
 use tree_arena::ArenaMut;
-use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{ComposeCtx, PropertyArena, WidgetArenaNode};

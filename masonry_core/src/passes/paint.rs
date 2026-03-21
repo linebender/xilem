@@ -3,11 +3,11 @@
 
 use std::collections::HashMap;
 
+use kurbo::{Affine, Line, Rect, Stroke};
+use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Rect, Stroke};
-use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{

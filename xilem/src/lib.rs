@@ -154,6 +154,7 @@
 pub use masonry;
 pub use masonry::dpi;
 pub use masonry::palette;
+pub use masonry::{kurbo, peniko};
 pub use tokio;
 pub use vello;
 pub use winit;

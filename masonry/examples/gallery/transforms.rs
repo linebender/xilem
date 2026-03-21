@@ -5,11 +5,11 @@ use masonry::app::RenderRoot;
 use masonry::core::{
     NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
 };
+use masonry::kurbo::{Affine, Vec2};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, Padding};
-use masonry::vello::kurbo::{Affine, Vec2};
 use masonry::widgets::{Button, Flex, Label, SizedBox};
 
 use crate::demo::{CONTENT_GAP, DemoPage, SIDEBAR_GAP, ShellTags, wrap_in_shell};

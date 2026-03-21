@@ -3,8 +3,8 @@
 
 //! Events.
 
+use kurbo::Rect;
 use ui_events::keyboard::{Code, Key, KeyState, KeyboardEvent};
-use vello::kurbo::Rect;
 
 use crate::dpi::PhysicalSize;
 use crate::util::Duration;

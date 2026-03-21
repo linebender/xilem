@@ -5,9 +5,9 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
+use xilem::kurbo::{Affine, Circle, Size};
+use xilem::peniko::{Color, Fill};
 use xilem::vello::Scene;
-use xilem::vello::kurbo::{Affine, Circle, Size};
-use xilem::vello::peniko::{Color, Fill};
 use xilem::view::{canvas, text_button, zstack};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};

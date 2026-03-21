@@ -193,6 +193,6 @@ In general, `TestHarness` tries to implement methods matching every kind of beha
 
 Read the [`TestHarness`] documentation for a full overview of its API.
 
-[`TestHarness`]: crate::testing::TestHarness
+[`TestHarness`]: https://docs.rs/masonry_testing/latest/masonry_testing/struct.TestHarness.html
 [`WidgetRef`]: crate::core::WidgetRef
-[`assert_render_snapshot!`]: crate::testing::assert_render_snapshot
+[`assert_render_snapshot!`]: https://docs.rs/masonry_testing/latest/masonry_testing/macro.assert_render_snapshot.html

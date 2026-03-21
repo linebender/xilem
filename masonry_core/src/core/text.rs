@@ -31,10 +31,10 @@ pub type StyleProperty = parley::StyleProperty<'static, BrushIndex>;
 /// A set of styles specialised for use within Masonry.
 pub type StyleSet = parley::StyleSet<BrushIndex>;
 
+use kurbo::{Affine, Line, Stroke};
 use parley::{Layout, PositionedLayoutItem};
+use peniko::{Brush, Fill};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Stroke};
-use vello::peniko::{Brush, Fill};
 
 /// A function that renders laid out glyphs to a [`Scene`].
 ///

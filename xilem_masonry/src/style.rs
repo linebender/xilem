@@ -5,6 +5,7 @@
 
 use masonry::core::HasProperty;
 use masonry::layout::Dim;
+use masonry::peniko::Color;
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -13,7 +14,6 @@ pub use masonry::properties::{
 use masonry::properties::{
     ContentColor, Dimensions, DisabledContentColor, FocusedBorderColor, Gap, LineBreaking,
 };
-use vello::peniko::Color;
 
 use crate::WidgetView;
 use crate::view::Prop;

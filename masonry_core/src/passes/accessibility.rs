@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
+use kurbo::Rect;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{

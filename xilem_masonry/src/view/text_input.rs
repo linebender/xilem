@@ -4,12 +4,12 @@
 use masonry::core::{ArcStr, NewWidget, PropertySet};
 use masonry::parley::StyleProperty;
 use masonry::parley::style::{FontStack, FontWeight};
+use masonry::peniko::Color;
 use masonry::properties::{
     CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
 };
 use masonry::widgets::{self, TextAction};
-use vello::peniko::Color;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::view::Prop;
