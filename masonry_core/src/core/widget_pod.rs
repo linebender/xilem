@@ -3,7 +3,7 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::Affine;
+use kurbo::Affine;
 
 use crate::core::{PropertySet, PropertyStackId, Widget, WidgetId, WidgetTag, WidgetTagInner};
 

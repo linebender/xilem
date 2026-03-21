@@ -9,10 +9,9 @@ use masonry::core::{
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetPod,
 };
-use masonry::kurbo::{Point, Size};
+use masonry::kurbo::{Axis, Point, Size};
 use masonry::layout::LenReq;
 use vello::Scene;
-use vello::kurbo::Axis;
 
 use crate::core::Mut;
 use crate::core::one_of::OneOf;

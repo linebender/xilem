@@ -13,12 +13,12 @@ use std::time::Duration;
 use masonry::core::ArcStr;
 use masonry::layout::{AsUnit, Dim, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
-use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::palette::css::{BLACK, WHITE};
+use xilem::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use xilem::style::Style as _;
 use xilem::view::{
     ObjectFit, ZStackExt, flex_col, image, label, prose, sized_box, spinner, virtual_scroll, zstack,

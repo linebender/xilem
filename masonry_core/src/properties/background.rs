@@ -54,7 +54,7 @@ impl Background {
     /// CSS spec.
     ///
     /// (See [`Gradient::get_peniko_gradient_for_rect`])
-    pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> crate::peniko::Brush {
+    pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> peniko::Brush {
         match self {
             Self::Color(color) => (*color).into(),
             Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),

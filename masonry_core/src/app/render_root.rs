@@ -7,12 +7,12 @@ use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
+use kurbo::{Point, Rect, Size};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
-use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::layer_stack::LayerStack;
 use crate::core::{

@@ -3,8 +3,8 @@
 
 use std::ops::Deref;
 
+use kurbo::Point;
 use smallvec::SmallVec;
-use vello::kurbo::Point;
 
 use crate::core::{FromDynWidget, PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 

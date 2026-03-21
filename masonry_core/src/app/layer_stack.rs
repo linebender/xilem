@@ -4,9 +4,9 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use kurbo::{Axis, Point, Size};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,

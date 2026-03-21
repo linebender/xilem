@@ -9,7 +9,6 @@ use resvg::tiny_skia;
 use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::peniko::{ImageAlphaType, ImageData, ImageFormat};
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
@@ -17,7 +16,7 @@ use crate::core::{
 };
 use crate::kurbo::{Affine, Axis, Size};
 use crate::layout::LenReq;
-use crate::peniko::{BlendMode, Fill, ImageBrush};
+use crate::peniko::{BlendMode, Fill, ImageAlphaType, ImageBrush, ImageData, ImageFormat};
 use crate::properties::ObjectFit;
 
 // TODO: Make this a configurable option of the widget

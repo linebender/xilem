@@ -27,7 +27,9 @@ anymap3 = "1.0.1"
 anymore.workspace = true
 cursor-icon = "1.2.0"
 dpi.workspace = true
+kurbo.workspace = true
 parley.workspace = true
+peniko.workspace = true
 smallvec.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 tracing = { workspace = true, features = ["default"] }

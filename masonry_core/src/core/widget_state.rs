@@ -3,8 +3,8 @@
 
 use std::any::TypeId;
 
+use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use tracing::Span;
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::core::{ClassSetDiff, PropertyCache, PropertyStackId, WidgetId, WidgetOptions};
 use crate::layout::MeasurementCache;

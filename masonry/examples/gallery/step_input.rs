@@ -4,13 +4,13 @@
 use masonry::app::RenderRoot;
 use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag};
 use masonry::layout::AsUnit;
+use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{
     Background, BackwardColor, BorderColor, BorderWidth, ContentColor, CornerRadius, Dimensions,
     FocusedBorderColor, ForwardColor, HeatColor, HoveredBorderColor, StepInputStyle,
 };
 use masonry::widgets::{Button, Flex, Label, StepInput};
-use vello::peniko::color::AlphaColor;
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
 

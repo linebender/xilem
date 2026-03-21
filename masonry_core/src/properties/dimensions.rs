@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::Axis;
+use kurbo::Axis;
 
 use crate::{
     core::{HasProperty, Property, Widget},
