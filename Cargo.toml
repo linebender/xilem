@@ -58,7 +58,7 @@ kurbo = "0.13.0"
 parley = { version = "0.7.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.
 peniko = "0.6.0"
-winit = "0.30.12"
+winit = "0.30.13"
 tracing = { version = "0.1.44", default-features = false }
 tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"
@@ -68,10 +68,10 @@ ui-events-winit = { version = "0.3.0", default-features = false }
 smallvec = "1.15.1"
 hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
 dpi = "0.1.2"
-image = { version = "0.25.9", default-features = false }
+image = { version = "0.25.10", default-features = false }
 resvg = "0.47.0"
 web-time = "1.1.0"
-bitflags = "2.10.0"
+bitflags = "2.11.0"
 accesskit = "0.21.1"
 accesskit_winit = { version = "0.29.2", default-features = false, features = [
     "accesskit_unix",
@@ -79,7 +79,7 @@ accesskit_winit = { version = "0.29.2", default-features = false, features = [
     "rwh_06",
 ] }
 accesskit_consumer = "0.31.0"
-time = "0.3.45"
+time = "0.3.47"
 reqwest = { version = "0.12.28", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
