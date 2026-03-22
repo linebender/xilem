@@ -7,11 +7,10 @@ use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, FromDynWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Axis, Line, Point, Size};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
 use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
-use crate::util::stroke;
-use crate::vello::Scene;
 use crate::widgets::{DisclosureButton, Label};
 use crate::{accesskit, theme};
 
@@ -280,7 +279,12 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
         ctx.derive_baselines(&self.header_label);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -296,7 +300,9 @@ impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
                 let x1 = border_box.x0 + SEPARATOR_PAD.left * scale;
                 let x2 = border_box.x1 - SEPARATOR_PAD.right * scale;
                 let line = Line::new((x1, y), (x2, y));
-                stroke(scene, &line, border_color.color, border_width.width);
+                painter
+                    .stroke(line, &Stroke::new(border_width.width), border_color.color)
+                    .draw();
             }
         }
     }

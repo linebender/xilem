@@ -14,6 +14,7 @@ use crate::core::{
     MeasureCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::{LenDef, LenReq, SizeDef};
 use crate::util::debug_panic;
@@ -944,7 +945,7 @@ impl Widget for VirtualScroll {
         &mut self,
         _ctx: &mut PaintCtx<'_>,
         _props: &PropertiesRef<'_>,
-        _scene: &mut vello::Scene,
+        _painter: &mut Painter<'_>,
     ) {
         // We run these checks in `paint` as they are outside of the pass-based fixedpoint loop
         if !self.action_handled {

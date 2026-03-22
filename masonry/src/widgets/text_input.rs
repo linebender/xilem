@@ -5,7 +5,6 @@ use std::any::TypeId;
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::TextAlign;
 use crate::core::{
@@ -14,6 +13,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LayoutSize, LenReq};
 use crate::properties::{
@@ -301,7 +301,12 @@ impl Widget for TextInput {
         }
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let bbox = ctx.border_box();
         let mut p = PrePaintProps::fetch(ctx, props);
 
@@ -312,12 +317,24 @@ impl Widget for TextInput {
             p.border_color = &fb.0;
         }
 
-        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
-        paint_border(scene, bbox, p.border_color, p.border_width, p.corner_radius);
+        paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
+        paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
+        paint_border(
+            painter,
+            bbox,
+            p.border_color,
+            p.border_width,
+            p.corner_radius,
+        );
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

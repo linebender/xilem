@@ -12,6 +12,7 @@ use masonry::core::{
     NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet,
     RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
+use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size, Vec2};
 use masonry::layers::Tooltip;
 use masonry::layout::{AsUnit, LayoutSize, LenReq, SizeDef};
@@ -20,7 +21,6 @@ use masonry::peniko::Color;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
 use masonry::theme::default_property_set;
 use masonry::util::{Duration, Instant};
-use masonry::vello::Scene;
 use masonry::widgets::{Flex, Label, Selector};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -137,7 +137,13 @@ impl Widget for OverlayBox {
         ctx.place_child(&mut self.child, Point::ORIGIN);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

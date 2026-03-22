@@ -156,7 +156,6 @@ pub use masonry::dpi;
 pub use masonry::palette;
 pub use masonry::{kurbo, peniko};
 pub use tokio;
-pub use vello;
 pub use winit;
 pub use xilem_core as core;
 pub use xilem_masonry::style;

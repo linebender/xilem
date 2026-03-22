@@ -4,7 +4,7 @@
 use assert_matches::assert_matches;
 
 use crate::core::{NewWidget, PropertySet, Widget, WidgetTag};
-use crate::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
+use crate::kurbo::{Circle, Dashes, Point, Size, Stroke, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::Color;
@@ -13,7 +13,6 @@ use crate::properties::types::MainAxisAlignment;
 use crate::properties::{Background, Dimensions, Gap, Padding};
 use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::test_property_set;
-use crate::util::{fill, stroke};
 use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
 
 #[test]
@@ -88,11 +87,11 @@ fn paint_order() {
                 }
             })
             .paint_fn(|_, ctx, _, scene| {
-                fill(scene, &ctx.content_box(), Color::WHITE);
+                scene.fill(ctx.content_box(), Color::WHITE).draw();
             })
             .post_paint_fn(|_, ctx, _, scene| {
                 let rect = ctx.content_box().inset(-0.5);
-                stroke(scene, &rect, Color::BLACK, 1.0);
+                scene.stroke(rect, &Stroke::new(1.0), Color::BLACK).draw();
             }),
     );
     let grandparent = NewWidget::new(
@@ -128,16 +127,16 @@ fn paint_clipping() {
                 ctx.set_clip_path(size.to_rect());
             })
             .paint_fn(move |_, ctx, _, scene| {
-                fill(scene, &ctx.content_box(), Color::WHITE);
-                fill(scene, &circle, RED);
+                scene.fill(ctx.content_box(), Color::WHITE).draw();
+                scene.fill(circle, RED).draw();
             })
-            .post_paint_fn(move |_, _, _, scene| {
+            .post_paint_fn(move |_, _, _, painter| {
                 let style = Stroke {
                     width: 4.0,
                     dash_pattern: Dashes::from_slice(&[12.0, 12.0]),
                     ..Default::default()
                 };
-                scene.stroke(&style, Affine::IDENTITY, Color::BLACK, None, &circle);
+                painter.stroke(circle, &style, Color::BLACK).draw();
             }),
     );
     let parent = NewWidget::new(

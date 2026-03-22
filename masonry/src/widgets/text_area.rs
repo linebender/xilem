@@ -8,7 +8,6 @@ use accesskit::{Node, Role};
 use parley::PlainEditor;
 use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
@@ -17,9 +16,9 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
 use crate::layout::LenReq;
-use crate::peniko::Fill;
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
 };
@@ -985,7 +984,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         ctx.set_ime_area(self.ime_area());
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -1005,25 +1009,15 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 props.get::<SelectionColor>().color
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    selection_color,
-                    None,
-                    &bounding_box_to_rect(*rect),
-                );
+                let rect = bounding_box_to_rect(*rect);
+                painter.fill(rect, selection_color).draw();
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
                 && self.anim_cursor_visible
                 && ctx.is_window_focused()
             {
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    caret_color,
-                    None,
-                    &bounding_box_to_rect(cursor),
-                );
+                let rect = bounding_box_to_rect(cursor);
+                painter.fill(rect, caret_color).draw();
             };
         }
 
@@ -1036,7 +1030,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         };
 
         render_text(
-            scene,
+            painter,
             Affine::IDENTITY,
             layout,
             &[text_color.color.into()],

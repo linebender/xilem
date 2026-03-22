@@ -3,7 +3,8 @@
 
 use std::collections::HashMap;
 
-use kurbo::{Affine, Line, Stroke};
+use imaging_vello::VelloSceneSink;
+use kurbo::{Affine, Line, Rect, Stroke};
 use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -13,8 +14,9 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
     DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
 };
+use crate::imaging::{PaintSink, Painter};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::{get_debug_color, stroke};
+use crate::util::get_debug_color;
 
 /// A painted overlay layer, ready for compositing.
 ///
@@ -104,18 +106,47 @@ fn paint_widget(
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
         let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
+        let local_surface_clip = ctx
+            .widget_state
+            .window_transform
+            .inverse()
+            .transform_rect_bbox(ctx.widget_state.bounding_box);
+        let local_surface_clip =
+            if local_surface_clip.width() <= 0.0 || local_surface_clip.height() <= 0.0 {
+                Rect::from_origin_size(kurbo::Point::ZERO, ctx.widget_state.layout_border_box_size)
+            } else {
+                local_surface_clip
+            };
 
         if ctx.widget_state.request_pre_paint {
             pre_scene.reset();
-            widget.pre_paint(&mut ctx, &props, pre_scene);
+            let mut sink = VelloSceneSink::new(pre_scene, local_surface_clip);
+            let sink_dyn: &mut dyn PaintSink = &mut sink;
+            let mut painter = Painter::new(sink_dyn);
+            widget.pre_paint(&mut ctx, &props, &mut painter);
+            if let Err(err) = sink.finish() {
+                crate::debug_panic!("pre_paint failed for widget {id}: {err:?}");
+            }
         }
         if ctx.widget_state.request_paint {
             scene.reset();
-            widget.paint(&mut ctx, &props, scene);
+            let mut sink = VelloSceneSink::new(scene, local_surface_clip);
+            let sink_dyn: &mut dyn PaintSink = &mut sink;
+            let mut painter = Painter::new(sink_dyn);
+            widget.paint(&mut ctx, &props, &mut painter);
+            if let Err(err) = sink.finish() {
+                crate::debug_panic!("paint failed for widget {id}: {err:?}");
+            }
         }
         if ctx.widget_state.request_post_paint {
             post_scene.reset();
-            widget.post_paint(&mut ctx, &props, post_scene);
+            let mut sink = VelloSceneSink::new(post_scene, local_surface_clip);
+            let sink_dyn: &mut dyn PaintSink = &mut sink;
+            let mut painter = Painter::new(sink_dyn);
+            widget.post_paint(&mut ctx, &props, &mut painter);
+            if let Err(err) = sink.finish() {
+                crate::debug_panic!("post_paint failed for widget {id}: {err:?}");
+            }
         }
     }
 
@@ -171,7 +202,8 @@ fn paint_widget(
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
             let rect = state.bounding_box.inset(BORDER_WIDTH / -2.0);
-            stroke(complete_scene, &rect, color, BORDER_WIDTH);
+            let border_style = Stroke::new(BORDER_WIDTH);
+            complete_scene.stroke(&border_style, Affine::IDENTITY, color, None, &rect);
 
             // Draw the widget's explicit baselines
             let mut draw_baseline = |baseline| {

@@ -3,12 +3,12 @@
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, MutateCtx, PaintCtx, PropertiesRef,
     RegisterCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::imaging::{Painter, record::Scene};
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LenReq, Length};
 
@@ -18,8 +18,8 @@ const DEFAULT_LENGTH: Length = Length::const_px(100.);
 /// A widget allowing custom drawing.
 ///
 /// A canvas takes a painter callback; every time the canvas is repainted, that callback
-/// in run with a [`Scene`].
-/// That Scene is then used as the canvas' contents.
+/// is run with an `imaging` [`record::Scene`](Scene).
+/// That recording is then replayed as the canvas contents.
 #[derive(Default)]
 pub struct Canvas {
     alt_text: Option<ArcStr>,
@@ -59,7 +59,7 @@ impl Canvas {
         this: &mut WidgetMut<'_, Self>,
         f: impl FnOnce(&mut MutateCtx<'_>, &mut Scene, Size),
     ) {
-        this.widget.scene.reset();
+        this.widget.scene.clear();
         f(&mut this.ctx, &mut this.widget.scene, this.widget.size);
         this.ctx.request_render();
     }
@@ -114,8 +114,13 @@ impl Widget for Canvas {
         ctx.set_clip_path(size.to_rect());
     }
 
-    fn paint(&mut self, _: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        scene.append(&self.scene, None);
+    fn paint(
+        &mut self,
+        _: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
+        painter.replay(&self.scene);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -157,7 +162,7 @@ mod tests {
     use crate::parley::{
         Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
     };
-    use crate::peniko::{Color, Fill};
+    use crate::peniko::Color;
     use crate::testing::{TestHarness, TestHarnessParams};
 
     #[test]
@@ -172,6 +177,7 @@ mod tests {
 
         harness.edit_root_widget(|mut canvas| {
             Canvas::update_scene(&mut canvas, |_ctx, scene, size| {
+                let mut painter = Painter::new(scene);
                 let scale = Affine::scale_non_uniform(size.width, size.height);
                 let mut path = BezPath::new();
                 path.move_to((0.1, 0.1));
@@ -179,20 +185,10 @@ mod tests {
                 path.line_to((0.9, 0.1));
                 path.close_path();
                 path = scale * path;
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    Color::from_rgb8(100, 240, 150),
-                    None,
-                    &path,
-                );
-                scene.stroke(
-                    &Stroke::new(4.),
-                    Affine::IDENTITY,
-                    Color::from_rgb8(200, 140, 50),
-                    None,
-                    &path,
-                );
+                painter.fill(&path, Color::from_rgb8(100, 240, 150)).draw();
+                painter
+                    .stroke(&path, &Stroke::new(4.), Color::from_rgb8(200, 140, 50))
+                    .draw();
             });
         });
 
@@ -214,6 +210,7 @@ mod tests {
 
         harness.edit_root_widget(|mut canvas| {
             Canvas::update_scene(&mut canvas, |ctx, scene, size| {
+                let mut painter = Painter::new(scene);
                 let (fcx, lcx) = ctx.text_contexts();
                 let mut text_layout_builder = lcx.ranged_builder(fcx, "Canvas", 1., true);
                 text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
@@ -228,7 +225,7 @@ mod tests {
                     size.height / text_layout.height() as f64,
                 );
                 render_text(
-                    scene,
+                    &mut painter,
                     scale,
                     &text_layout,
                     &[Color::from_rgb8(100, 240, 150).into()],

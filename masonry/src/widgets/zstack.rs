@@ -4,12 +4,12 @@
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::trace_span;
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
     PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Rect, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
 
@@ -271,7 +271,13 @@ impl Widget for ZStack {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().map(|x| &mut x.widget) {

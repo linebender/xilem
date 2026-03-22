@@ -1,13 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A vello Scene can be used directly in Xilem.
+//! An `imaging` recording can be used directly in Xilem.
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use xilem::kurbo::{Affine, Circle, Size};
-use xilem::peniko::{Color, Fill};
-use xilem::vello::Scene;
+use xilem::kurbo::{Circle, Size};
+use xilem::masonry::imaging::{Painter, record::Scene};
+use xilem::peniko::Color;
 use xilem::view::{canvas, text_button, zstack};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -41,8 +41,9 @@ impl Circles {
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
         zstack((
             canvas(|state: &mut Self, _ctx, scene: &mut Scene, size: Size| {
+                let mut painter = Painter::new(scene);
                 for (circle, color) in &state.circles {
-                    scene.fill(Fill::NonZero, Affine::IDENTITY, *color, None, &circle);
+                    painter.fill(*circle, *color).draw();
                 }
                 state.current_canvas_size = size;
             }),

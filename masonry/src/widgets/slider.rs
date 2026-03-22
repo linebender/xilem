@@ -6,7 +6,6 @@ use std::any::TypeId;
 use accesskit::{ActionData, Node, Orientation, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
@@ -15,12 +14,11 @@ use crate::core::{
     PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, Property,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::{Axis, Circle, Point, Rect, Size};
+use crate::imaging::{Composite, GroupRef, Painter};
+use crate::kurbo::{Axis, Circle, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
-use crate::peniko::Fill;
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
-use crate::util::{fill, stroke};
 
 /// A widget that allows a user to select a value from a continuous range.
 ///
@@ -354,7 +352,12 @@ impl Widget for Slider {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // Get parameters and resolve colors
         // TODO: Create a dedicated TrackColor property
         let track_color = if let Some(b) = props.get_defined::<Background>() {
@@ -384,17 +387,17 @@ impl Widget for Slider {
         let track_start_x = thumb_radius;
         let track_width = (size.width - thumb_radius * 2.0).max(0.0);
         let track_y = (size.height - track_thickness) / 2.0;
+        let border_box = ctx.border_box();
 
         // Push semitransparent layer if disabled
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
-            scene.push_layer(
-                Fill::NonZero,
-                crate::peniko::Mix::Normal,
+            // Paint through a semitransparent isolated group when disabled.
+            painter.push_fill_clip(border_box);
+            painter.push_group(GroupRef::new().with_composite(Composite::new(
+                crate::peniko::BlendMode::default(),
                 DISABLED_ALPHA,
-                crate::kurbo::Affine::IDENTITY,
-                &ctx.border_box(),
-            );
+            )));
         }
 
         // Paint inactive track
@@ -404,11 +407,12 @@ impl Widget for Slider {
             track_start_x + track_width,
             track_y + track_thickness,
         );
-        fill(
-            scene,
-            &track_rect.to_rounded_rect(track_thickness / 2.0),
-            &track_color.get_peniko_brush_for_rect(track_rect),
-        );
+        painter
+            .fill(
+                track_rect.to_rounded_rect(track_thickness / 2.0),
+                &track_color.get_peniko_brush_for_rect(track_rect),
+            )
+            .draw();
 
         // Paint active track
         let progress = (self.value - self.min) / (self.max - self.min).max(f64::EPSILON);
@@ -420,11 +424,12 @@ impl Widget for Slider {
                 track_start_x + active_track_width,
                 track_y + track_thickness,
             );
-            fill(
-                scene,
-                &active_track_rect.to_rounded_rect(track_thickness / 2.0),
-                active_track_color,
-            );
+            painter
+                .fill(
+                    active_track_rect.to_rounded_rect(track_thickness / 2.0),
+                    active_track_color,
+                )
+                .draw();
         }
 
         // Paint thumb
@@ -432,22 +437,35 @@ impl Widget for Slider {
         let thumb_y = size.height / 2.0;
         let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
 
-        fill(scene, &thumb_circle, thumb_color);
-        stroke(scene, &thumb_circle, active_track_color, thumb_border_width);
+        painter.fill(thumb_circle, thumb_color).draw();
+        painter
+            .stroke(
+                thumb_circle,
+                &Stroke::new(thumb_border_width),
+                active_track_color,
+            )
+            .draw();
 
         // Paint focus ring
         if ctx.is_focus_target() && !ctx.is_disabled() {
             // TODO: Either stop painting the focus outside border-box bounds
             //       or correctly set paint insets in layout.
-            let focus_rect = ctx.border_box().inset(2.0);
+            let focus_rect = border_box.inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
-            stroke(scene, &focus_rect.to_rounded_rect(4.0), focus_color, 1.0);
+            painter
+                .stroke(
+                    focus_rect.to_rounded_rect(4.0),
+                    &Stroke::new(1.0),
+                    focus_color,
+                )
+                .draw();
         }
 
         // Pop the semitransparent layer
         if ctx.is_disabled() {
-            scene.pop_layer();
+            painter.pop_group();
+            painter.pop_clip();
         }
     }
 

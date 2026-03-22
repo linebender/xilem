@@ -7,7 +7,6 @@ use std::fmt::Debug;
 use accesskit::{Action, Node, Role};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::debug_panic;
-use vello::Scene;
 
 use crate::core::keyboard::{Code, Key, NamedKey};
 use crate::core::{
@@ -15,9 +14,10 @@ use crate::core::{
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, Property, PropertySet, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, BezPath, Cap, Line, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
-use crate::peniko::{Fill, Gradient};
+use crate::peniko::Gradient;
 use crate::properties::{
     BackwardColor, ContentColor, DisabledContentColor, ForwardColor, HeatColor, StepInputStyle,
 };
@@ -1447,10 +1447,15 @@ impl<T: Steppable> Widget for StepInput<T> {
         ctx.derive_baselines(label);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         match props.get::<StepInputStyle>() {
-            StepInputStyle::Basic => Self::paint_basic(self, ctx, props, scene),
-            StepInputStyle::Flow => Self::paint_flow(self, ctx, props, scene),
+            StepInputStyle::Basic => Self::paint_basic(self, ctx, props, painter),
+            StepInputStyle::Flow => Self::paint_flow(self, ctx, props, painter),
         }
     }
 
@@ -1541,7 +1546,7 @@ impl<T: Steppable> StepInput<T> {
         &mut self,
         ctx: &mut PaintCtx<'_>,
         props: &PropertiesRef<'_>,
-        scene: &mut Scene,
+        painter: &mut Painter<'_>,
     ) {
         let color_content = if ctx.is_disabled()
             && let Some(dc) = props.get_defined::<DisabledContentColor>()
@@ -1608,13 +1613,18 @@ impl<T: Steppable> StepInput<T> {
             end_cap: Cap::Butt,
             ..Default::default()
         };
-        scene.stroke(&style, Affine::IDENTITY, minus_color, None, &minus);
-        scene.stroke(&style, Affine::IDENTITY, plus_color, None, &plus_h);
-        scene.stroke(&style, Affine::IDENTITY, plus_color, None, &plus_v);
+        painter.stroke(minus, &style, *minus_color).draw();
+        painter.stroke(plus_h, &style, *plus_color).draw();
+        painter.stroke(plus_v, &style, *plus_color).draw();
     }
 
     // Paint controls in the flow style.
-    fn paint_flow(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint_flow(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let color_content = if ctx.is_disabled()
             && let Some(dc) = props.get_defined::<DisabledContentColor>()
         {
@@ -1780,7 +1790,6 @@ impl<T: Steppable> StepInput<T> {
                     (1., color_backward.0.with_alpha(style2_gradient_max)),
                 ])
             };
-
             // The backwards lines need to be reflected and shifted to the other side.
             let lines_affine = if backward {
                 Affine::reflect((0., 0.), (0., 1.))
@@ -1790,17 +1799,32 @@ impl<T: Steppable> StepInput<T> {
             };
 
             // Actually paint the lines.
-            scene.stroke(&style1, lines_affine, &style1_gradient, None, &line1);
-            scene.stroke(&style2, lines_affine, &style2_gradient, None, &line2);
-            scene.stroke(&style2, lines_affine, &style2_gradient, None, &line3);
-            scene.stroke(&style1, lines_affine, &style1_gradient, None, &line4);
+            painter
+                .stroke(line1, &style1, &style1_gradient)
+                .transform(lines_affine)
+                .draw();
+            painter
+                .stroke(line2, &style2, &style2_gradient)
+                .transform(lines_affine)
+                .draw();
+            painter
+                .stroke(line3, &style2, &style2_gradient)
+                .transform(lines_affine)
+                .draw();
+            painter
+                .stroke(line4, &style1, &style1_gradient)
+                .transform(lines_affine)
+                .draw();
         }
 
         // Paint the backward facing arrow
         if backward {
             // With a gradient if a slide is in progress
             let gradient = gradient.as_ref().unwrap();
-            scene.fill(Fill::NonZero, arrow_affine_backward, gradient, None, &arrow);
+            painter
+                .fill(&arrow, gradient)
+                .transform(arrow_affine_backward)
+                .draw();
         } else {
             // Otherwise with a solid color, potentially showing hover status if not sliding.
             let color = if !sliding && self.hover_backward && ctx.is_hovered() {
@@ -1808,14 +1832,20 @@ impl<T: Steppable> StepInput<T> {
             } else {
                 &color_content.color
             };
-            scene.fill(Fill::NonZero, arrow_affine_backward, color, None, &arrow);
+            painter
+                .fill(&arrow, *color)
+                .transform(arrow_affine_backward)
+                .draw();
         }
 
         // Paint the forward facing arrow
         if forward {
             // With a gradient if a slide is in progress
             let gradient = gradient.as_ref().unwrap();
-            scene.fill(Fill::NonZero, arrow_affine_forward, gradient, None, &arrow);
+            painter
+                .fill(&arrow, gradient)
+                .transform(arrow_affine_forward)
+                .draw();
         } else {
             // Otherwise with a solid color, potentially showing hover status if not sliding.
             let color = if !sliding && !self.hover_backward && ctx.is_hovered() {
@@ -1823,7 +1853,10 @@ impl<T: Steppable> StepInput<T> {
             } else {
                 &color_content.color
             };
-            scene.fill(Fill::NonZero, arrow_affine_forward, color, None, &arrow);
+            painter
+                .fill(&arrow, *color)
+                .transform(arrow_affine_forward)
+                .draw();
         }
     }
 }

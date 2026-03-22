@@ -1948,6 +1948,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
 
 [[package]]
+name = "imaging"
+version = "0.0.1"
+source = "git+https://github.com/forest-rs/imaging.git?rev=c44d2a9749bd21b544d547d3c7622ed17da0b62b#c44d2a9749bd21b544d547d3c7622ed17da0b62b"
+dependencies = [
+ "kurbo",
+ "peniko",
+]
+
+[[package]]
+name = "imaging_vello"
+version = "0.0.1"
+source = "git+https://github.com/forest-rs/imaging.git?rev=c44d2a9749bd21b544d547d3c7622ed17da0b62b#c44d2a9749bd21b544d547d3c7622ed17da0b62b"
+dependencies = [
+ "imaging",
+ "kurbo",
+ "peniko",
+ "pollster",
+ "vello",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2260,6 +2281,8 @@ dependencies = [
  "dpi",
  "float-cmp 0.10.0",
  "image",
+ "imaging",
+ "imaging_vello",
  "insta",
  "kurbo",
  "parley",
@@ -6128,7 +6151,6 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
- "vello",
  "winit",
  "xilem_core",
  "xilem_masonry",
@@ -6151,7 +6173,6 @@ dependencies = [
  "masonry",
  "tokio",
  "tracing",
- "vello",
  "xilem_core",
 ]
 

@@ -53,6 +53,8 @@ tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
+imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "c44d2a9749bd21b544d547d3c7622ed17da0b62b" }
+imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "c44d2a9749bd21b544d547d3c7622ed17da0b62b" }
 vello = { version = "0.8.0", default-features = false, features = ["wgpu"] }
 kurbo = "0.13.0"
 parley = { version = "0.7.0", features = ["accesskit"] }

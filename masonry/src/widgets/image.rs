@@ -5,16 +5,16 @@ use std::any::TypeId;
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut,
 };
-use crate::kurbo::{Affine, Axis, Size};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Size};
 use crate::layout::LenReq;
-use crate::peniko::{BlendMode, Fill, ImageBrush};
+use crate::peniko::ImageBrush;
 use crate::properties::ObjectFit;
 
 // TODO: Make this a configurable option of the widget.
@@ -171,7 +171,12 @@ impl Widget for Image {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let content_box = ctx.content_box();
         let object_fit = props.get::<ObjectFit>();
         // For drawing we want to scale the actual image data lengths, which means
@@ -182,15 +187,9 @@ impl Widget for Image {
         );
         let transform = object_fit.affine(content_box.size(), image_size);
 
-        scene.push_layer(
-            Fill::NonZero,
-            BlendMode::default(),
-            1.,
-            Affine::IDENTITY,
-            &content_box,
-        );
-        scene.draw_image(&self.image_data, transform);
-        scene.pop_layer();
+        painter.with_fill_clip(content_box, |painter| {
+            painter.draw_image(&self.image_data, transform);
+        });
     }
 
     fn accessibility_role(&self) -> Role {

@@ -4,7 +4,6 @@
 use accesskit::{ActionData, Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
@@ -13,11 +12,11 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Axis, Line, Point, Size};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Join, Line, Point, Size, Stroke};
 use crate::layout::{AsUnit, LayoutSize, LenReq, Length};
 use crate::peniko::Color;
 use crate::theme;
-use crate::util::{fill_color, stroke};
 
 /// The split point, specifying how the available space is divided between the two children.
 ///
@@ -300,7 +299,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         }
     }
 
-    fn paint_focus_bar(&mut self, ctx: &mut PaintCtx<'_>, scene: &mut Scene, scale: f64) {
+    fn paint_focus_bar(&mut self, ctx: &mut PaintCtx<'_>, scene: &mut Painter<'_>, scale: f64) {
         let length = ctx.content_box_size().get_coord(self.split_axis);
         let (edge1, edge2) = self.bar_edges(length, scale);
 
@@ -309,14 +308,15 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let rect = rect.inset(2.0 * scale);
 
         let focus_color = theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
+        let focus_stroke = Stroke::new(1.0 * scale).with_join(Join::Miter);
 
-        stroke(scene, &rect, focus_color, 1.0 * scale);
+        scene.stroke(rect, &focus_stroke, focus_color).draw();
     }
 
     fn paint_solid_bar(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        scene: &mut Scene,
+        scene: &mut Painter<'_>,
         scale: f64,
         color: Color,
     ) {
@@ -326,13 +326,13 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let mut rect = ctx.border_box();
         rect.set_coords(self.split_axis, edge1, edge2);
 
-        fill_color(scene, &rect, color);
+        scene.fill(rect, color).draw();
     }
 
     fn paint_stroked_bar(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        scene: &mut Scene,
+        scene: &mut Painter<'_>,
         scale: f64,
         color: Color,
     ) {
@@ -357,8 +357,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
         let (line1, line2) = (Line::new(line1_p1, line1_p2), Line::new(line2_p1, line2_p2));
 
-        stroke(scene, &line1, color, line_width);
-        stroke(scene, &line2, color, line_width);
+        let style = Stroke::new(line_width);
+        scene.stroke(line1, &style, color).draw();
+        scene.stroke(line2, &style, color).draw();
     }
 }
 
@@ -730,7 +731,12 @@ where
         ctx.place_child(&mut self.child2, child2_origin);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -738,13 +744,13 @@ where
         // TODO - Paint differently if the bar is draggable and hovered.
         let bar_color = self.bar_color(ctx);
         if self.solid {
-            self.paint_solid_bar(ctx, scene, scale, bar_color);
+            self.paint_solid_bar(ctx, painter, scale, bar_color);
         } else {
-            self.paint_stroked_bar(ctx, scene, scale, bar_color);
+            self.paint_stroked_bar(ctx, painter, scale, bar_color);
         }
 
         if ctx.is_focus_target() && self.draggable && !ctx.is_disabled() {
-            self.paint_focus_bar(ctx, scene, scale);
+            self.paint_focus_bar(ctx, painter, scale);
         }
         // TODO: Child painting should probably be clipped, in such a way that
         //       one child won't overflow across the split bar onto the other child.

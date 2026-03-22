@@ -8,14 +8,14 @@ use include_doc_path::include_doc_path;
 use masonry_core::debug_panic;
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget,
     WidgetId, WidgetPod,
 };
-use crate::kurbo::{Affine, Axis, Cap, Join, Line, Size, Stroke};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Cap, Join, Line, Size, Stroke};
 use crate::layout::LenReq;
 use crate::layout::{LayoutSize, Length, SizeDef, UnitPoint};
 use crate::properties::ContentColor;
@@ -609,7 +609,12 @@ impl Widget for Divider {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -629,7 +634,7 @@ impl Widget for Divider {
                 end_cap: self.end_cap,
                 ..Default::default()
             };
-            scene.stroke(&style, Affine::IDENTITY, color.color, None, &line.line);
+            painter.stroke(line.line, &style, color.color).draw();
         }
     }
 

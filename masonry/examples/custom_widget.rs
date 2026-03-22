@@ -14,14 +14,14 @@ use masonry::core::{
     NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetId,
 };
+use masonry::imaging::Painter;
 use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
 use masonry::layout::LenReq;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
-use masonry::peniko::{Color, Fill, ImageBrush, ImageFormat};
+use masonry::peniko::{Color, ImageBrush, ImageFormat};
 use masonry::peniko::{ImageAlphaType, ImageData};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
-use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions, palette};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -105,18 +105,17 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // Clear the whole widget with the color of your choice
         // (ctx.content_box_size() returns the size of the content rect we're painting in)
         let size = ctx.content_box_size();
         let rect = ctx.content_box();
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            palette::css::WHITE,
-            None,
-            &rect,
-        );
+        painter.fill(rect, palette::css::WHITE).draw();
 
         // Create an arbitrary bezier path
         let mut path = BezPath::new();
@@ -125,19 +124,15 @@ impl Widget for CustomWidget {
         // Create a color
         let stroke_color = Color::from_rgb8(0, 128, 0);
         // Stroke the path with thickness 5.0
-        scene.stroke(
-            &Stroke::new(5.0),
-            Affine::IDENTITY,
-            stroke_color,
-            None,
-            &path,
-        );
+        painter
+            .stroke(&path, &Stroke::new(5.0), stroke_color)
+            .draw();
 
         // Rectangles: the path for practical people
         let rect = Rect::from_origin_size((10.0, 10.0), (100.0, 100.0));
         // Note the Color:from_rgba8 which includes an alpha channel (7F in this case)
         let fill_color = Color::from_rgba8(0x00, 0x00, 0x00, 0x7F);
-        scene.fill(Fill::NonZero, Affine::IDENTITY, fill_color, None, &rect);
+        painter.fill(rect, fill_color).draw();
 
         // To render text, we first create a text layout builder and then set the text properties.
         let (fcx, lcx) = ctx.text_contexts();
@@ -154,7 +149,7 @@ impl Widget for CustomWidget {
 
         // We can pass a transform matrix to rotate the text we render
         masonry::core::render_text(
-            scene,
+            painter,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
             &[fill_color.into()],
@@ -171,7 +166,7 @@ impl Widget for CustomWidget {
             height: 256,
         });
         let transform = ObjectFit::Stretch.affine(size, Size::new(256., 256.));
-        scene.draw_image(&image_data, transform);
+        painter.draw_image(&image_data, transform);
     }
 
     fn accessibility_role(&self) -> Role {

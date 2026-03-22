@@ -11,13 +11,12 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetMut,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, BezPath, Join, Size, Stroke};
 use crate::layout::{LenReq, Length};
 use crate::palette::css::LIGHT_BLUE;
 use crate::peniko::BrushRef;
 use crate::properties::ContentColor;
-use crate::util::stroke;
-use crate::vello::Scene;
 
 // Default size is a square
 const DEFAULT_LENGTH: Length = Length::const_px(8.);
@@ -163,7 +162,12 @@ impl Widget for DisclosureButton {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -184,18 +188,21 @@ impl Widget for DisclosureButton {
             affine = affine.pre_rotate(FRAC_PI_2);
         }
 
-        scene.stroke(
-            &Stroke::new(2.0 * scale).with_join(Join::Miter),
-            affine,
-            BrushRef::Solid(button_color.color),
-            None,
-            &arrow,
-        );
+        painter
+            .stroke(
+                arrow,
+                &Stroke::new(2.0 * scale).with_join(Join::Miter),
+                button_color.color,
+            )
+            .transform(affine)
+            .draw();
 
         if ctx.is_focus_target() {
             // TODO: Perhaps change the color of the arrow instead?
             let rect = ctx.border_box().to_rounded_rect(2.0);
-            stroke(scene, &rect, BrushRef::Solid(LIGHT_BLUE), 1.0 * scale);
+            painter
+                .stroke(rect, &Stroke::new(1.0 * scale), BrushRef::Solid(LIGHT_BLUE))
+                .draw();
         }
     }
 

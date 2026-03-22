@@ -11,7 +11,6 @@ use kurbo::{Axis, Point, Size};
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
@@ -19,6 +18,7 @@ use crate::core::{
     PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
     pre_paint,
 };
+use crate::imaging::Painter;
 use crate::layout::LenReq;
 
 /// A unique identifier for a single [`Widget`].
@@ -383,21 +383,36 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
     /// and can paint things outside the clip.
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        pre_paint(ctx, props, scene);
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
+        pre_paint(ctx, props, painter);
     }
 
     /// Paints the widget's content.
     ///
     /// This is called before the children are drawn.
     /// To draw on top of children, see [`Widget::post_paint`].
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    );
 
     /// Final paint method, which paints on top of the widget's children.
     ///
     /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`],
     /// and can paint things outside the clip.
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn post_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
     }
 
     /// Returns what kind of "thing" the widget fundamentally is.

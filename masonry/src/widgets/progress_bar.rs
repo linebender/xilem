@@ -6,7 +6,6 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
@@ -14,12 +13,12 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, paint_background, paint_border,
     paint_box_shadow,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::peniko::{Color, Gradient};
 use crate::properties::{BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking};
 use crate::theme;
-use crate::util::fill;
 use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
@@ -181,16 +180,26 @@ impl Widget for ProgressBar {
         ctx.derive_baselines(&self.label);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(ctx, props);
 
-        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
+        paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
         // We need to delay painting the border until after we paint the filled bar area.
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let border_box = ctx.border_box();
         let border_width = props.get::<BorderWidth>();
         let corner_radius = props.get::<CornerRadius>();
@@ -215,11 +224,17 @@ impl Widget for ProgressBar {
                 // we'll need to create a special sans-border rect for this fill.
                 let bg_rect = border_width.bg_rect(border_box, corner_radius);
 
-                fill(scene, &bg_rect, &gradient);
+                painter.fill(bg_rect, &gradient).draw();
             }
         }
 
-        paint_border(scene, border_box, border_color, border_width, corner_radius);
+        paint_border(
+            painter,
+            border_box,
+            border_color,
+            border_width,
+            corner_radius,
+        );
     }
 
     fn accessibility_role(&self) -> Role {

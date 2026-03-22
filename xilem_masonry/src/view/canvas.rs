@@ -4,32 +4,29 @@
 use std::marker::PhantomData;
 
 use masonry::core::{ArcStr, MutateCtx};
+use masonry::imaging::record::Scene;
 use masonry::kurbo::Size;
 use masonry::widgets::{self, CanvasSizeChanged};
-use vello::Scene;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};
 
-/// Access a raw vello [`Scene`] within a canvas that fills its parent
+/// Access an `imaging` recording [`Scene`] within a canvas that fills its parent.
 ///
 /// # Example
 ///
 /// ```
 /// # use xilem_masonry as xilem;
-/// use xilem::{view::canvas, masonry::{palette, kurbo::{Rect, Size, Affine}, peniko::Fill, vello::Scene}};
+/// use xilem::{view::canvas, masonry::{palette, kurbo::{Rect, Size}, imaging::{Painter, record::Scene}}};
 /// # use xilem::WidgetView;
 ///
 /// # fn fill_canvas<State: 'static>() -> impl WidgetView<State> {
 /// let my_canvas = canvas(|_state: &mut State, _ctx, scene: &mut Scene, size: Size| {
+///     let mut painter = Painter::new(scene);
 ///     // Drawing a simple rectangle that fills the canvas.
-///     scene.fill(
-///         Fill::NonZero,
-///         Affine::IDENTITY,
-///         palette::css::AQUA,
-///         None,
-///         &Rect::new(0.0, 0.0, size.width, size.height),
-///     );
+///     painter
+///         .fill(Rect::new(0.0, 0.0, size.width, size.height), palette::css::AQUA)
+///         .draw();
 /// });
 /// # my_canvas
 /// # }
