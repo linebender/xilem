@@ -12,8 +12,8 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
     DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
 };
-use crate::imaging::{PaintSink, Painter};
 use crate::imaging::record::{Clip, Geometry, Scene, replay, replay_transformed};
+use crate::imaging::{PaintSink, Painter};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::get_debug_color;
 
