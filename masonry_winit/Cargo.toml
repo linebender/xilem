@@ -36,7 +36,7 @@ copypasta = "0.10.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # We need Metal to interact with CoreAnimation during window resizing.  
-wgpu = { version = "27.0.1", default-features = false, features = ["metal"] }
+wgpu = { version = "28.0.0", default-features = false, features = ["metal"] }
 
 [dev-dependencies]
 # We don't use the "workspace" dependency here, because this makes a loop in publishing.

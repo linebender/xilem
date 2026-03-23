@@ -222,20 +222,14 @@ impl RenderContext {
             return;
         }
 
-        // SAFETY: We only mutate a backend-specific flag on the Metal HAL surface when the
-        // runtime backend matches Metal. This mirrors the eframe/egui-wgpu fix.
-        //
-        // TODO: Update to new API once Vello is on v28 of WGPU
-        // https://github.com/linebender/xilem/pull/1551#issuecomment-3864370306
         #[allow(
             unsafe_code,
             reason = "We only mutate a backend-specific flag on the Metal HAL surface when the runtime backend matches Metal"
         )]
         unsafe {
             if let Some(hal_surface) = surface.surface.as_hal::<::wgpu::hal::api::Metal>() {
-                let raw =
-                    std::ptr::from_ref::<::wgpu::hal::metal::Surface>(&*hal_surface).cast_mut();
-                (*raw).present_with_transaction = resizing;
+                let guard = hal_surface.render_layer().lock();
+                guard.set_presents_with_transaction(resizing);
             }
         }
 
