@@ -13,5 +13,5 @@ repository.workspace = true
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.103"
-quote = "1.0.42"
+proc-macro2 = "1.0.106"
+quote = "1.0.45"

@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{NewWidget, StyleProperty, Widget};
+use masonry::kurbo::Cap;
 use masonry::layout::AsUnit;
 use masonry::palette;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{ContentColor, Dimensions};
 use masonry::widgets::{DashFit, Divider, Flex, Image, Label, Placement};
-use vello::kurbo::Cap;
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
 use crate::image::make_image_data;

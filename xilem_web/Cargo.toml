@@ -21,15 +21,15 @@ default = []
 intern_strings = ["wasm-bindgen/enable-interning"]
 
 [dependencies]
-futures-channel = "0.3.31"
-futures-util = "0.3.31"
+futures-channel = "0.3.32"
+futures-util = "0.3.32"
 peniko.workspace = true
-wasm-bindgen = "0.2.108"
-wasm-bindgen-futures = "0.4.58"
+wasm-bindgen = "0.2.114"
+wasm-bindgen-futures = "0.4.64"
 xilem_core = { workspace = true, features = ["kurbo"] }
 
 [dependencies.web-sys]
-version = "0.3.85"
+version = "0.3.91"
 features = [
     "console",
     "CssStyleDeclaration",

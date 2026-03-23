@@ -3,9 +3,9 @@
 
 //! Miscellaneous utility functions.
 
+use kurbo::{Affine, Join, Shape, Stroke};
+use peniko::{BrushRef, Color, Fill};
 use vello::Scene;
-use vello::kurbo::{Affine, Join, Shape, Stroke};
-use vello::peniko::{BrushRef, Color, Fill};
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
@@ -153,8 +153,8 @@ pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
 // ---
 
 /// Convert a 2d rectangle from Parley to one used for drawing in Vello and other maths.
-pub fn bounding_box_to_rect(bb: parley::BoundingBox) -> vello::kurbo::Rect {
-    vello::kurbo::Rect {
+pub fn bounding_box_to_rect(bb: parley::BoundingBox) -> kurbo::Rect {
+    kurbo::Rect {
         x0: bb.x0,
         y0: bb.y0,
         x1: bb.x1,

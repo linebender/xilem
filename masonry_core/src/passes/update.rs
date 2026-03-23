@@ -10,8 +10,8 @@ use ui_events::pointer::PointerType;
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode, WidgetId,
-    WidgetState,
+    PropertyArena, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaNode,
+    WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -68,17 +68,26 @@ fn run_targeted_update_pass(
         let widget = &mut *node.item.widget;
         let state = &mut node.item.state;
         let properties = &mut node.item.properties;
+        let class_set = &node.item.class_set;
+        let stack = root
+            .property_arena
+            .get(state.property_stack_id, widget.type_id());
 
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
             widget_state: state,
             children,
-            default_properties: &root.default_properties,
             ancestors: None,
+            property_arena: &root.property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
-            default_map: root.default_properties.for_widget(widget.type_id()),
+            local: properties,
+            default_map: root
+                .property_arena
+                .default_properties
+                .for_widget(widget.type_id()),
+            stack,
+            class_set,
         };
         pass_fn(widget, &mut ctx, &mut props);
 
@@ -105,17 +114,26 @@ fn run_single_update_pass(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
+    let stack = root
+        .property_arena
+        .get(state.property_stack_id, widget.type_id());
 
     let mut ctx = UpdateCtx {
         global_state: &mut root.global_state,
         widget_state: state,
         children,
-        default_properties: &root.default_properties,
         ancestors: None,
+        property_arena: &root.property_arena,
     };
     let mut props = PropertiesMut {
-        set: properties,
-        default_map: root.default_properties.for_widget(widget.type_id()),
+        local: properties,
+        default_map: root
+            .property_arena
+            .default_properties
+            .for_widget(widget.type_id()),
+        stack,
+        class_set,
     };
     pass_fn(widget, &mut ctx, &mut props);
 
@@ -130,6 +148,7 @@ fn run_single_update_pass(
 fn update_widget_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     ancestors: Option<&ParentLinkedList<'_>>,
 ) {
@@ -137,6 +156,7 @@ fn update_widget_tree(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
 
     let trace = global_state.trace.update_tree;
@@ -149,16 +169,19 @@ fn update_widget_tree(
     register_children(global_state, widget, state, children.reborrow_mut());
 
     if state.is_new {
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors,
+            property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
         };
         widget.update(&mut ctx, &mut props, &Update::WidgetAdded);
         if trace {
@@ -188,6 +211,7 @@ fn update_widget_tree(
         update_widget_tree(
             global_state,
             default_properties,
+            property_arena,
             node.reborrow_mut(),
             Some(&ancestors),
         );
@@ -262,7 +286,8 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_widget_tree(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
+        &root.property_arena,
         root_node,
         None,
     );
@@ -276,6 +301,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_disabled: bool,
 ) {
@@ -283,6 +309,7 @@ fn update_disabled_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -293,16 +320,19 @@ fn update_disabled_for_widget(
     }
 
     if disabled != state.is_disabled {
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors: None,
+            property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
@@ -321,6 +351,7 @@ fn update_disabled_for_widget(
         update_disabled_for_widget(
             global_state,
             default_properties,
+            property_arena,
             node.reborrow_mut(),
             disabled,
         );
@@ -339,7 +370,8 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_disabled_for_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
+        &root.property_arena,
         root_node,
         false,
     );
@@ -356,6 +388,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_stashed: bool,
 ) {
@@ -363,6 +396,7 @@ fn update_stashed_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -373,16 +407,19 @@ fn update_stashed_for_widget(
     }
 
     if stashed != state.is_stashed {
+        let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties,
             ancestors: None,
+            property_arena,
         };
         let mut props = PropertiesMut {
-            set: properties,
+            local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            stack,
+            class_set,
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.is_stashed = stashed;
@@ -407,6 +444,7 @@ fn update_stashed_for_widget(
         update_stashed_for_widget(
             global_state,
             default_properties,
+            property_arena,
             node.reborrow_mut(),
             stashed,
         );
@@ -420,7 +458,8 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_stashed_for_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena.default_properties,
+        &root.property_arena,
         root_node,
         false,
     );
@@ -1013,15 +1052,23 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         let state = &root_node.item.state;
         let properties = &root_node.item.properties;
 
+        let stack = root
+            .property_arena
+            .get(state.property_stack_id, widget.type_id());
         let ctx = QueryCtx {
             global_state: &root.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                set: properties,
-                default_map: root.default_properties.for_widget(widget.type_id()),
+                local: properties,
+                default_map: root
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
+                stack,
+                class_set: &root_node.item.class_set,
             },
             children,
-            default_properties: &root.default_properties,
+            property_arena: &root.property_arena,
         };
 
         if state.is_disabled {
@@ -1048,32 +1095,42 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 fn update_fonts_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
 ) {
     let mut children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
 
     let _span = enter_span(state);
 
+    let stack = property_arena.get(state.property_stack_id, widget.type_id());
     let mut ctx = UpdateCtx {
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
-        default_properties,
         ancestors: None,
+        property_arena,
     };
     let mut props = PropertiesMut {
-        set: properties,
+        local: properties,
         default_map: default_properties.for_widget(widget.type_id()),
+        stack,
+        class_set,
     };
     widget.update(&mut ctx, &mut props, &Update::FontsChanged);
 
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {
-        update_fonts_for_widget(global_state, default_properties, node.reborrow_mut());
+        update_fonts_for_widget(
+            global_state,
+            default_properties,
+            property_arena,
+            node.reborrow_mut(),
+        );
         parent_state.merge_up(&mut node.item.state);
     });
 }
@@ -1082,7 +1139,12 @@ pub(crate) fn run_update_fonts_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_fonts").entered();
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    update_fonts_for_widget(&mut root.global_state, &root.default_properties, root_node);
+    update_fonts_for_widget(
+        &mut root.global_state,
+        &root.property_arena.default_properties,
+        &root.property_arena,
+        root_node,
+    );
 }
 
 // ----------------

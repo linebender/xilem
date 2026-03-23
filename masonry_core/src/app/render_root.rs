@@ -7,21 +7,22 @@ use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
+use kurbo::{Point, Rect, Size};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
-use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
-    TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
+    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
+use crate::passes::action::run_action_pass;
 use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
 use crate::passes::event::{
@@ -68,8 +69,8 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// Default values that properties will have if not defined per-widget.
-    pub(crate) default_properties: Arc<DefaultProperties>,
+    /// Property data, including property stacks and per-widget-type default properties.
+    pub(crate) property_arena: PropertyArena,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
@@ -132,6 +133,9 @@ pub(crate) struct RenderRootState {
 
     /// List of callbacks that will run in the next `mutate` pass.
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
+
+    /// List of actions that will be handled in the next `action` pass.
+    pub(crate) actions: Vec<(ErasedAction, WidgetId)>,
 
     /// Whether an IME session is active.
     pub(crate) is_ime_active: bool,
@@ -331,7 +335,6 @@ impl RenderRoot {
             size_policy,
             size,
             last_mouse_pos: None,
-            default_properties,
             global_state: RenderRootState {
                 signal_sink: Box::new(signal_sink),
                 focused_widget: None,
@@ -354,6 +357,7 @@ impl RenderRoot {
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
+                actions: Vec::new(),
                 is_ime_active: false,
                 last_sent_ime_area: INVALID_IME_AREA,
                 scene_cache: HashMap::new(),
@@ -369,6 +373,7 @@ impl RenderRoot {
                 scale_factor,
                 debug_paint,
             },
+            property_arena: PropertyArena::new(default_properties),
             widget_arena: WidgetArena {
                 nodes: TreeArena::new(),
             },
@@ -396,6 +401,11 @@ impl RenderRoot {
         root.run_rewrite_passes();
 
         root
+    }
+
+    /// Returns a mutable reference to the `PropertyArena`.
+    pub fn property_arena(&mut self) -> &mut PropertyArena {
+        &mut self.property_arena
     }
 
     pub(crate) fn root_id(&self) -> WidgetId {
@@ -585,16 +595,25 @@ impl RenderRoot {
         let widget = &*node_ref.item.widget;
         let state = &node_ref.item.state;
         let properties = &node_ref.item.properties;
+        let class_set = &node_ref.item.class_set;
+        let stack = self
+            .property_arena
+            .get(state.property_stack_id, widget.type_id());
 
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state: state,
             properties: PropertiesRef {
-                set: properties,
-                default_map: self.default_properties.for_widget(widget.type_id()),
+                local: properties,
+                default_map: self
+                    .property_arena
+                    .default_properties
+                    .for_widget(widget.type_id()),
+                stack,
+                class_set,
             },
             children,
-            default_properties: &self.default_properties,
+            property_arena: &self.property_arena,
         };
         Some(WidgetRef { ctx, widget })
     }
@@ -766,6 +785,7 @@ impl RenderRoot {
             // Calling a run_xxx_pass should always be very fast if the pass doesn't need to do anything.
 
             run_mutate_pass(self);
+            run_action_pass(self);
             run_update_widget_tree_pass(self);
             run_update_disabled_pass(self);
             run_update_stashed_pass(self);
@@ -960,6 +980,7 @@ impl RenderRootState {
         self.needs_pointer_pass
             || self.focused_widget != self.next_focused_widget
             || !self.mutate_callbacks.is_empty()
+            || !self.actions.is_empty()
     }
 }
 

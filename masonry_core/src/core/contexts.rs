@@ -15,9 +15,9 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, ResizeDirection, Widget,
+    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -56,7 +56,16 @@ pub struct MutateCtx<'a> {
     pub(crate) properties: PropertiesMut<'a>,
     pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
+}
+
+/// A context provided to the [`Widget::on_action`] method.
+pub struct ActionCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) property_arena: &'a PropertyArena,
+    pub(crate) is_handled: bool,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -68,7 +77,7 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) properties: PropertiesRef<'a>,
     pub(crate) children: ArenaRefList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
 }
 
 /// A context given when calling another context's `get_raw_mut()` method.
@@ -77,7 +86,7 @@ pub struct RawCtx<'a> {
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
 }
 
 /// A context provided to event-handling [`Widget`] methods.
@@ -85,7 +94,7 @@ pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -104,8 +113,8 @@ pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) ancestors: Option<&'a ParentLinkedList<'a>>,
+    pub(crate) property_arena: &'a PropertyArena,
 }
 
 /// A context provided to [`Widget::measure`] methods.
@@ -113,7 +122,7 @@ pub struct MeasureCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
     pub(crate) auto_length: LenDef,
     pub(crate) context_size: LayoutSize,
     pub(crate) cache_result: bool,
@@ -124,7 +133,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
 }
 
 /// A context provided to the [`Widget::compose`] method.
@@ -132,20 +141,20 @@ pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) default_properties: &'a DefaultProperties,
+    pub(crate) property_arena: &'a PropertyArena,
 }
 
 /// A context passed to [`Widget::paint`] method.
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
 }
 
 /// A context passed to [`Widget::accessibility`] method.
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) tree_update: &'a mut TreeUpdate,
 }
@@ -154,6 +163,7 @@ pub struct AccessCtx<'a> {
 // Methods for all context types
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
@@ -217,8 +227,28 @@ impl_context_method!(
     }
 );
 
+// TODO - Merge into other block?
 impl_context_method!(
     MutateCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    MeasureCtx<'_>,
+    LayoutCtx<'_>,
+    ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    RawCtx<'_>,
+    {
+        /// Returns a mutable reference to this widget's property cache.
+        pub fn property_cache(&mut self) -> &mut PropertyCache {
+            &mut self.widget_state.property_cache
+        }
+    }
+);
+
+impl_context_method!(
+    MutateCtx<'_>,
+    ActionCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
     MeasureCtx<'_>,
@@ -257,17 +287,22 @@ impl MutateCtx<'_> {
             .children
             .item_mut(child.id())
             .expect("get_mut: child not found");
+        let child_stack_id = node_mut.item.state.property_stack_id;
+        let child_type_id = (*node_mut.item.widget).type_id();
+        let child_stack = self.property_arena.get(child_stack_id, child_type_id);
         let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: &mut node_mut.item.state,
             properties: PropertiesMut {
-                set: &mut node_mut.item.properties,
+                local: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
+                stack: child_stack,
+                class_set: &node_mut.item.class_set,
             },
             changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
-            default_properties: self.default_properties,
+            property_arena: self.property_arena,
         };
         WidgetMut {
             ctx: child_ctx,
@@ -283,10 +318,15 @@ impl MutateCtx<'_> {
             // It will still be called when the original borrow is dropped.
             parent_widget_state: None,
             widget_state: self.widget_state,
-            properties: self.properties.reborrow_mut(),
+            properties: PropertiesMut {
+                local: &mut *self.properties.local,
+                default_map: self.properties.default_map,
+                stack: self.properties.stack,
+                class_set: self.properties.class_set,
+            },
             changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
-            default_properties: self.default_properties,
+            property_arena: self.property_arena,
         }
     }
 
@@ -295,8 +335,8 @@ impl MutateCtx<'_> {
             global_state: self.global_state,
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
-            default_properties: self.default_properties,
             ancestors: None,
+            property_arena: self.property_arena,
         }
     }
 
@@ -321,15 +361,21 @@ impl<'w> QueryCtx<'w> {
             .children
             .into_item(child)
             .expect("get_mut: child not found");
+        let child_type_id = (*child_node.item.widget).type_id();
+        let child_stack = self
+            .property_arena
+            .get(child_node.item.state.property_stack_id, child_type_id);
         let child_ctx = QueryCtx {
             global_state: self.global_state,
             widget_state: &child_node.item.state,
             properties: PropertiesRef {
-                set: &child_node.item.properties,
+                local: &child_node.item.properties,
                 default_map: self.properties.default_map,
+                stack: child_stack,
+                class_set: &child_node.item.class_set,
             },
             children: child_node.children,
-            default_properties: self.default_properties,
+            property_arena: self.property_arena,
         };
         WidgetRef {
             ctx: child_ctx,
@@ -341,6 +387,7 @@ impl<'w> QueryCtx<'w> {
 // Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
     MeasureCtx<'_>,
@@ -431,6 +478,25 @@ impl EventCtx<'_> {
         self.global_state.needs_pointer_pass = true;
     }
 
+    /// The widget originally targeted by the event.
+    ///
+    /// This will be different from [`widget_id`](Self::widget_id) during event bubbling.
+    pub fn target(&self) -> WidgetId {
+        self.target
+    }
+
+    /// Converts the given position from the window's coordinate space
+    /// to this widget's content-box coordinate space.
+    pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
+        // TODO: Remove this .to_logical() conversion when scale refactor work happens.
+        //       https://github.com/linebender/xilem/issues/1264
+        let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
+        self.to_local(Point { x, y })
+    }
+}
+
+// Methods shared by event and action handling.
+impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
     /// Sends a signal to parent widgets to scroll this widget's border-box into view.
     pub fn request_scroll_to_this(&mut self) {
         let rect = self.widget_state.border_box_size().to_rect();
@@ -460,13 +526,6 @@ impl EventCtx<'_> {
     /// Determines whether the event has been handled.
     pub fn is_handled(&self) -> bool {
         self.is_handled
-    }
-
-    /// The widget originally targeted by the event.
-    ///
-    /// This will be different from [`widget_id`](Self::widget_id) during event bubbling.
-    pub fn target(&self) -> WidgetId {
-        self.target
     }
 
     /// Requests [text focus].
@@ -511,16 +570,7 @@ impl EventCtx<'_> {
             );
         }
     }
-
-    /// Converts the given position from the window's coordinate space
-    /// to this widget's content-box coordinate space.
-    pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
-        // TODO: Remove this .to_logical() conversion when scale refactor work happens.
-        //       https://github.com/linebender/xilem/issues/1264
-        let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
-        self.to_local(Point { x, y })
-    }
-}
+});
 
 // --- MARK: ACCESSIBILITY
 impl AccessCtx<'_> {
@@ -596,7 +646,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
         let node = self.children.item_mut(id).unwrap();
         resolve_length(
             self.global_state,
-            self.default_properties,
+            self.property_arena,
             node,
             auto_length,
             context_size,
@@ -785,7 +835,7 @@ impl LayoutCtx<'_> {
         let node = self.children.item_mut(id).unwrap();
         resolve_size(
             self.global_state,
-            self.default_properties,
+            self.property_arena,
             node,
             auto_size,
             context_size,
@@ -816,12 +866,7 @@ impl LayoutCtx<'_> {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
 
-        run_layout_on(
-            self.global_state,
-            self.default_properties,
-            node,
-            chosen_size,
-        );
+        run_layout_on(self.global_state, self.property_arena, node, chosen_size);
 
         let state_mut = &mut self.children.item_mut(id).unwrap().item.state;
         self.widget_state.merge_up(state_mut);
@@ -1157,6 +1202,7 @@ impl ComposeCtx<'_> {
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
@@ -1326,6 +1372,7 @@ impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
 // Access status information (hovered/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     QueryCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
@@ -1474,202 +1521,221 @@ impl_context_method!(
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }
+
+        /// Returns whether the given child is [stashed].
+        ///
+        /// The result of this function is not affected by `set_stashed` until the next
+        /// [`update_stashed`] pass.
+        ///
+        /// [stashed]: crate::doc::masonry_concepts#stashed
+        /// [`update_stashed`]: crate::doc::pass_system#update-passes
+        pub fn child_is_stashed(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
+            self.get_child_state(child).is_stashed
+        }
     }
 );
 
 // --- MARK: UPDATE FLAGS
-impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
-    /// Requests a [`paint`](crate::core::Widget::paint) and an
-    /// [`accessibility`](crate::core::Widget::accessibility) pass.
-    pub fn request_render(&mut self) {
-        trace!("request_render");
-        self.widget_state.request_pre_paint = true;
-        self.widget_state.request_paint = true;
-        self.widget_state.request_post_paint = true;
-        self.widget_state.needs_paint = true;
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.request_accessibility = true;
-    }
-
-    /// Requests a paint pass for the [`pre_paint`](crate::core::Widget::pre_paint) method.
-    pub fn request_pre_paint(&mut self) {
-        trace!("request_pre_paint");
-        self.widget_state.request_pre_paint = true;
-        self.widget_state.needs_paint = true;
-    }
-
-    /// Requests a paint pass, specifically for the [`paint`] method.
-    ///
-    /// Unlike [`request_render`], this does not request an [`accessibility`] pass
-    /// or a call to [`pre_paint`] or [`post_paint`].
-    ///
-    /// Use `request_render` unless you're sure those aren't needed.
-    ///
-    /// [`paint`]: crate::core::Widget::paint
-    /// [`request_render`]: Self::request_render
-    /// [`accessibility`]: crate::core::Widget::accessibility
-    /// [`pre_paint`]: crate::core::Widget::post_paint
-    /// [`post_paint`]: crate::core::Widget::post_paint
-    pub fn request_paint_only(&mut self) {
-        trace!("request_paint_only");
-        self.widget_state.request_paint = true;
-        self.widget_state.needs_paint = true;
-    }
-
-    /// Requests a paint pass for the [`post_paint`](crate::core::Widget::post_paint) method.
-    pub fn request_post_paint(&mut self) {
-        trace!("request_post_paint");
-        self.widget_state.request_post_paint = true;
-        self.widget_state.needs_paint = true;
-    }
-
-    /// Requests an [`accessibility`](crate::core::Widget::accessibility) pass.
-    ///
-    /// This doesn't request a [`paint`](crate::core::Widget::paint) pass.
-    /// If you want to request both an accessibility pass and a paint pass,
-    /// use [`request_render`](Self::request_render).
-    pub fn request_accessibility_update(&mut self) {
-        trace!("request_accessibility_update");
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.request_accessibility = true;
-    }
-
-    /// Requests a [`layout`] pass.
-    ///
-    /// Call this method if the widget has changed in a way that requires a layout pass.
-    ///
-    /// [`layout`]: crate::core::Widget::layout
-    pub fn request_layout(&mut self) {
-        trace!("request_layout");
-        self.widget_state.request_layout = true;
-        self.widget_state.set_needs_layout(true);
-    }
-
-    // TODO - Document better
-    /// Requests a [`compose`] pass.
-    ///
-    /// The compose pass is often cheaper than the layout pass,
-    /// because it can only transform individual widgets' position.
-    ///
-    /// [`compose`]: crate::core::Widget::compose
-    pub fn request_compose(&mut self) {
-        trace!("request_compose");
-        self.widget_state.needs_compose = true;
-        self.widget_state.request_compose = true;
-    }
-
-    /// Requests an animation frame.
-    pub fn request_anim_frame(&mut self) {
-        trace!("request_anim_frame");
-        self.widget_state.request_anim = true;
-        self.widget_state.needs_anim = true;
-    }
-
-    /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
-    ///
-    /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
-    /// move, because the nature of the widget has changed somehow.
-    pub fn request_cursor_icon_change(&mut self) {
-        trace!("request_cursor_icon_change");
-        self.global_state.needs_pointer_pass = true;
-    }
-
-    /// Indicates that your children have changed.
-    ///
-    /// Widgets must call this method after adding a new child.
-    ///
-    /// This method will also call [`request_layout`](Self::request_layout).
-    pub fn children_changed(&mut self) {
-        trace!("children_changed");
-        self.widget_state.children_changed = true;
-        self.widget_state.needs_update_focusable = true;
-        self.request_layout();
-    }
-
-    /// Indicates that a child is about to be removed from the tree.
-    ///
-    /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
-    /// pass them to this method.
-    ///
-    /// This method will also call [`children_changed`](Self::children_changed).
-    pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
-        fn remove_node(
-            global_state: &mut RenderRootState,
-            parent_state: &mut WidgetState,
-            node: ArenaMut<'_, WidgetArenaNode>,
-        ) {
-            let mut children = node.children;
-            let widget = &mut *node.item.widget;
-            let state = &mut node.item.state;
-
-            // TODO - Send event to widget
-
-            let parent_name = widget.short_type_name();
-            let parent_id = state.id;
-            for child_id in widget.children_ids() {
-                let Some(node) = children.item_mut(child_id) else {
-                    panic!(
-                        "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
-                    );
-                };
-
-                remove_node(global_state, state, node);
-            }
-
-            // If we remove the focus anchor, its parent becomes the anchor.
-            if global_state.focus_anchor == Some(state.id) {
-                global_state.focus_anchor = Some(parent_state.id);
-            }
-
-            global_state.scene_cache.remove(&state.id);
-
-            if let Some(layers) = global_state.attached_layers.remove(&state.id) {
-                for (_, layer_id) in layers {
-                    global_state.emit_signal(RenderRootSignal::RemoveLayer(layer_id));
-                }
-            }
+impl_context_method!(
+    MutateCtx<'_>,
+    ActionCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    RawCtx<'_>,
+    {
+        /// Requests a [`paint`](crate::core::Widget::paint) and an
+        /// [`accessibility`](crate::core::Widget::accessibility) pass.
+        pub fn request_render(&mut self) {
+            trace!("request_render");
+            self.widget_state.request_pre_paint = true;
+            self.widget_state.request_paint = true;
+            self.widget_state.request_post_paint = true;
+            self.widget_state.needs_paint = true;
+            self.widget_state.needs_accessibility = true;
+            self.widget_state.request_accessibility = true;
         }
 
-        let id = child.id();
-        let node = self
-            .children
-            .item_mut(id)
-            .expect("remove_child: child not found");
-        remove_node(self.global_state, self.widget_state, node);
+        /// Requests a paint pass for the [`pre_paint`](crate::core::Widget::pre_paint) method.
+        pub fn request_pre_paint(&mut self) {
+            trace!("request_pre_paint");
+            self.widget_state.request_pre_paint = true;
+            self.widget_state.needs_paint = true;
+        }
 
-        let _ = self.children.remove(id).unwrap();
+        /// Requests a paint pass, specifically for the [`paint`] method.
+        ///
+        /// Unlike [`request_render`], this does not request an [`accessibility`] pass
+        /// or a call to [`pre_paint`] or [`post_paint`].
+        ///
+        /// Use `request_render` unless you're sure those aren't needed.
+        ///
+        /// [`paint`]: crate::core::Widget::paint
+        /// [`request_render`]: Self::request_render
+        /// [`accessibility`]: crate::core::Widget::accessibility
+        /// [`pre_paint`]: crate::core::Widget::post_paint
+        /// [`post_paint`]: crate::core::Widget::post_paint
+        pub fn request_paint_only(&mut self) {
+            trace!("request_paint_only");
+            self.widget_state.request_paint = true;
+            self.widget_state.needs_paint = true;
+        }
 
-        self.children_changed();
+        /// Requests a paint pass for the [`post_paint`](crate::core::Widget::post_paint) method.
+        pub fn request_post_paint(&mut self) {
+            trace!("request_post_paint");
+            self.widget_state.request_post_paint = true;
+            self.widget_state.needs_paint = true;
+        }
+
+        /// Requests an [`accessibility`](crate::core::Widget::accessibility) pass.
+        ///
+        /// This doesn't request a [`paint`](crate::core::Widget::paint) pass.
+        /// If you want to request both an accessibility pass and a paint pass,
+        /// use [`request_render`](Self::request_render).
+        pub fn request_accessibility_update(&mut self) {
+            trace!("request_accessibility_update");
+            self.widget_state.needs_accessibility = true;
+            self.widget_state.request_accessibility = true;
+        }
+
+        /// Requests a [`layout`] pass.
+        ///
+        /// Call this method if the widget has changed in a way that requires a layout pass.
+        ///
+        /// [`layout`]: crate::core::Widget::layout
+        pub fn request_layout(&mut self) {
+            trace!("request_layout");
+            self.widget_state.request_layout = true;
+            self.widget_state.set_needs_layout(true);
+        }
+
+        // TODO - Document better
+        /// Requests a [`compose`] pass.
+        ///
+        /// The compose pass is often cheaper than the layout pass,
+        /// because it can only transform individual widgets' position.
+        ///
+        /// [`compose`]: crate::core::Widget::compose
+        pub fn request_compose(&mut self) {
+            trace!("request_compose");
+            self.widget_state.needs_compose = true;
+            self.widget_state.request_compose = true;
+        }
+
+        /// Requests an animation frame.
+        pub fn request_anim_frame(&mut self) {
+            trace!("request_anim_frame");
+            self.widget_state.request_anim = true;
+            self.widget_state.needs_anim = true;
+        }
+
+        /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
+        ///
+        /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
+        /// move, because the nature of the widget has changed somehow.
+        pub fn request_cursor_icon_change(&mut self) {
+            trace!("request_cursor_icon_change");
+            self.global_state.needs_pointer_pass = true;
+        }
+
+        /// Indicates that your children have changed.
+        ///
+        /// Widgets must call this method after adding a new child.
+        ///
+        /// This method will also call [`request_layout`](Self::request_layout).
+        pub fn children_changed(&mut self) {
+            trace!("children_changed");
+            self.widget_state.children_changed = true;
+            self.widget_state.needs_update_focusable = true;
+            self.request_layout();
+        }
+
+        /// Indicates that a child is about to be removed from the tree.
+        ///
+        /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
+        /// pass them to this method.
+        ///
+        /// This method will also call [`children_changed`](Self::children_changed).
+        pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
+            fn remove_node(
+                global_state: &mut RenderRootState,
+                parent_state: &mut WidgetState,
+                node: ArenaMut<'_, WidgetArenaNode>,
+            ) {
+                let mut children = node.children;
+                let widget = &mut *node.item.widget;
+                let state = &mut node.item.state;
+
+                // TODO - Send event to widget
+
+                let parent_name = widget.short_type_name();
+                let parent_id = state.id;
+                for child_id in widget.children_ids() {
+                    let Some(node) = children.item_mut(child_id) else {
+                        panic!(
+                            "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
+                        );
+                    };
+
+                    remove_node(global_state, state, node);
+                }
+
+                // If we remove the focus anchor, its parent becomes the anchor.
+                if global_state.focus_anchor == Some(state.id) {
+                    global_state.focus_anchor = Some(parent_state.id);
+                }
+
+                global_state.scene_cache.remove(&state.id);
+
+                if let Some(layers) = global_state.attached_layers.remove(&state.id) {
+                    for (_, layer_id) in layers {
+                        global_state.emit_signal(RenderRootSignal::RemoveLayer(layer_id));
+                    }
+                }
+            }
+
+            let id = child.id();
+            let node = self
+                .children
+                .item_mut(id)
+                .expect("remove_child: child not found");
+            remove_node(self.global_state, self.widget_state, node);
+
+            let _ = self.children.remove(id).unwrap();
+
+            self.children_changed();
+        }
+
+        /// Sets the disabled state for this widget.
+        ///
+        /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
+        /// still be disabled by an ancestor. See [`is_disabled`] for more information.
+        ///
+        /// [`is_disabled`]: EventCtx::is_disabled
+        pub fn set_disabled(&mut self, disabled: bool) {
+            self.widget_state.needs_update_disabled = true;
+            self.widget_state.is_explicitly_disabled = disabled;
+        }
+
+        /// Sets the local transform for this widget.
+        ///
+        /// This maps this widget's border-box coordinate space
+        /// to the parent's border-box coordinate space.
+        ///
+        /// It behaves similarly as CSS transforms.
+        pub fn set_transform(&mut self, transform: Affine) {
+            self.widget_state.transform = transform;
+            self.widget_state.transform_changed = true;
+            self.request_compose();
+        }
     }
-
-    /// Sets the disabled state for this widget.
-    ///
-    /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
-    /// still be disabled by an ancestor. See [`is_disabled`] for more information.
-    ///
-    /// [`is_disabled`]: EventCtx::is_disabled
-    pub fn set_disabled(&mut self, disabled: bool) {
-        self.widget_state.needs_update_disabled = true;
-        self.widget_state.is_explicitly_disabled = disabled;
-    }
-
-    /// Sets the local transform for this widget.
-    ///
-    /// This maps this widget's border-box coordinate space
-    /// to the parent's border-box coordinate space.
-    ///
-    /// It behaves similarly as CSS transforms.
-    pub fn set_transform(&mut self, transform: Affine) {
-        self.widget_state.transform = transform;
-        self.widget_state.transform_changed = true;
-        self.request_compose();
-    }
-});
+);
 
 // --- MARK: OTHER METHODS
 // Methods on mutable context types
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
     MeasureCtx<'_>,
@@ -1755,7 +1821,7 @@ impl_context_method!(
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
-                default_properties: self.default_properties,
+                property_arena: self.property_arena,
             };
 
             let widget = Child::from_dyn(&*node_mut.item.widget).unwrap();
@@ -1789,7 +1855,7 @@ impl_context_method!(
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
-                default_properties: self.default_properties,
+                property_arena: self.property_arena,
             };
 
             let widget = Child::from_dyn_mut(&mut *node_mut.item.widget).unwrap();
@@ -1821,10 +1887,9 @@ impl_context_method!(
                 );
                 return;
             }
-            self.global_state.emit_signal(RenderRootSignal::Action(
-                Box::new(action),
-                self.widget_state.id,
-            ));
+            self.global_state
+                .actions
+                .push((Box::new(action), self.widget_state.id));
         }
 
         /// Submits a type-erased action.
@@ -1837,7 +1902,8 @@ impl_context_method!(
         pub fn submit_untyped_action(&mut self, action: ErasedAction) {
             trace!("submit_untyped_action");
             self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+                .actions
+                .push((action, self.widget_state.id));
         }
 
         /// Sets the IME cursor area in the widget's content-box coordinate space.
@@ -2067,6 +2133,7 @@ impl RegisterCtx<'_> {
             properties,
             tag,
             action_type,
+            property_stack_id,
             #[cfg(debug_assertions)]
             action_type_name,
         }) = child.take_inner()
@@ -2084,6 +2151,7 @@ impl RegisterCtx<'_> {
             widget.short_type_name(),
             options,
             action_type,
+            property_stack_id,
             #[cfg(debug_assertions)]
             action_type_name,
         );
@@ -2104,6 +2172,7 @@ impl RegisterCtx<'_> {
             state,
             properties,
             changed_properties: TypeSet::default(),
+            class_set: ClassSet::default(),
         };
         self.children.insert(id, node);
     }

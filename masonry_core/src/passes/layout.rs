@@ -13,7 +13,7 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
-    ChildrenIds, DefaultProperties, LayoutCtx, MeasureCtx, PropertiesRef, Widget, WidgetArenaNode,
+    ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget, WidgetArenaNode,
     WidgetState,
 };
 use crate::kurbo::{Axis, Insets, Point, Size};
@@ -35,10 +35,6 @@ use crate::util::Sanitize;
 /// `cross_length`, if present, must be [sanitized] and in device pixels.
 ///
 /// [sanitized]: Sanitize
-#[expect(
-    clippy::trivially_copy_pass_by_ref,
-    reason = "Widget::measure takes props by ref"
-)]
 fn measure_border_box(
     widget: &mut dyn Widget,
     ctx: &mut MeasureCtx<'_>,
@@ -87,10 +83,6 @@ fn measure_border_box(
 ///
 /// [sanitized]: Sanitize
 /// [`measure`]: Widget::measure
-#[expect(
-    clippy::trivially_copy_pass_by_ref,
-    reason = "Widget::measure takes props by ref"
-)]
 fn resolve_len_def(
     widget: &mut dyn Widget,
     ctx: &mut MeasureCtx<'_>,
@@ -171,7 +163,7 @@ fn resolve_len_def(
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_length(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     auto_length: LenDef,
     context_size: LayoutSize,
@@ -189,10 +181,16 @@ pub(crate) fn resolve_length(
     // LayoutSize encapsulates sanitization already.
 
     // Get the dimensions
+    let class_set = &node.item.class_set;
     let widget = &mut *node.item.widget;
+    let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
-        set: &mut node.item.properties,
-        default_map: default_properties.for_widget(widget.type_id()),
+        local: &node.item.properties,
+        default_map: property_arena
+            .default_properties
+            .for_widget(widget.type_id()),
+        stack,
+        class_set,
     };
     let dims = props.get::<Dimensions>();
 
@@ -214,7 +212,7 @@ pub(crate) fn resolve_length(
         global_state,
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
-        default_properties,
+        property_arena,
         auto_length,
         context_size,
         cache_result: true,
@@ -253,7 +251,7 @@ pub(crate) fn resolve_length(
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_size(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     auto_size: SizeDef,
     context_size: LayoutSize,
@@ -269,10 +267,16 @@ pub(crate) fn resolve_size(
     let (inline, block) = (Axis::Horizontal, Axis::Vertical);
 
     // Get the dimensions
+    let class_set = &node.item.class_set;
     let widget = &mut *node.item.widget;
+    let stack = property_arena.get(node.item.state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
-        set: &mut node.item.properties,
-        default_map: default_properties.for_widget(widget.type_id()),
+        local: &node.item.properties,
+        default_map: property_arena
+            .default_properties
+            .for_widget(widget.type_id()),
+        stack,
+        class_set,
     };
     let dims = props.get::<Dimensions>();
 
@@ -305,7 +309,7 @@ pub(crate) fn resolve_size(
         global_state,
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
-        default_properties,
+        property_arena,
         auto_length: inline_auto,
         context_size,
         cache_result: true,
@@ -356,7 +360,7 @@ pub(crate) fn resolve_size(
 /// [`Widget::layout`]: crate::core::Widget::layout
 pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     chosen_size: Size,
 ) {
@@ -370,6 +374,7 @@ pub(crate) fn run_layout_on(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let class_set = &node.item.class_set;
     let id = state.id;
     let trace = global_state.trace.layout;
     let _span = enter_span_if(trace, state);
@@ -396,9 +401,14 @@ pub(crate) fn run_layout_on(
     //       https://github.com/linebender/xilem/issues/1264
     let scale = 1.0;
 
+    let stack = property_arena.get(state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
-        set: properties,
-        default_map: default_properties.for_widget(widget.type_id()),
+        local: properties,
+        default_map: property_arena
+            .default_properties
+            .for_widget(widget.type_id()),
+        stack,
+        class_set,
     };
 
     let border_width = props.get::<BorderWidth>();
@@ -474,7 +484,7 @@ pub(crate) fn run_layout_on(
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
-        default_properties,
+        property_arena,
     };
 
     // Run the widget's layout
@@ -596,14 +606,14 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let root_node_size = match root.size_policy {
         WindowSizePolicy::User => resolve_size(
             &mut root.global_state,
-            &root.default_properties,
+            &root.property_arena,
             root_node.reborrow_mut(),
             SizeDef::fixed(window_size),
             window_size.into(),
         ),
         WindowSizePolicy::Content => resolve_size(
             &mut root.global_state,
-            &root.default_properties,
+            &root.property_arena,
             root_node.reborrow_mut(),
             SizeDef::MAX,
             LayoutSize::NONE,
@@ -612,7 +622,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     run_layout_on(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena,
         root_node.reborrow_mut(),
         root_node_size,
     );

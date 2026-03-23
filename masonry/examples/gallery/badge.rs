@@ -3,12 +3,12 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::kurbo::Vec2;
 use masonry::layout::Length;
 use masonry::parley::style::FontWeight;
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use masonry::vello::kurbo::Vec2;
 use masonry::widgets::{
     Align, Badge, BadgeCountOverflow, BadgePlacement, Badged, Button, Flex, Label, SizedBox,
 };

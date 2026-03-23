@@ -13,6 +13,7 @@ use tree_arena::{ArenaMut, ArenaMutList};
 use crate::core::{Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;
+pub(crate) mod action;
 pub(crate) mod anim;
 pub(crate) mod compose;
 pub(crate) mod event;

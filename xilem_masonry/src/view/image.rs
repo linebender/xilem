@@ -4,8 +4,8 @@
 //! The bitmap image widget.
 
 use masonry::core::ArcStr;
+use masonry::peniko::ImageBrush;
 use masonry::widgets;
-use vello::peniko::ImageBrush;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::view::Prop;

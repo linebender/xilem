@@ -1,18 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use kurbo::Affine;
 use tracing::info_span;
 use tree_arena::ArenaMut;
-use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, DefaultProperties, WidgetArenaNode};
+use crate::core::{ComposeCtx, PropertyArena, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
 fn compose_widget(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
+    property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_transformed: bool,
     parent_window_transform: Affine,
@@ -44,7 +44,7 @@ fn compose_widget(
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
-        default_properties,
+        property_arena,
     };
     if ctx.widget_state.request_compose {
         widget.compose(&mut ctx);
@@ -64,7 +64,7 @@ fn compose_widget(
     recurse_on_children(id, widget, children, |mut node| {
         compose_widget(
             global_state,
-            default_properties,
+            property_arena,
             node.reborrow_mut(),
             transformed,
             parent_transform,
@@ -93,7 +93,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     compose_widget(
         &mut root.global_state,
-        &root.default_properties,
+        &root.property_arena,
         root_node,
         false,
         Affine::IDENTITY,

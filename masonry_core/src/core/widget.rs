@@ -7,16 +7,17 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::{Node, Role};
+use kurbo::{Axis, Point, Size};
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Axis, Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ComposeCtx, CursorIcon, EventCtx, Layer, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, PropertySet, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
+    AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
+    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
+    pre_paint,
 };
 use crate::layout::LenReq;
 
@@ -211,6 +212,19 @@ pub trait Widget: AsDynWidget + Any {
     ) {
     }
 
+    /// Handles an `action` from a `source` widget deeper in the tree.
+    ///
+    /// If the action isn't marked as handled then it will bubble up the widget tree
+    /// and eventually to the app driver.
+    fn on_action(
+        &mut self,
+        ctx: &mut ActionCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        action: &ErasedAction,
+        source: WidgetId,
+    ) {
+    }
+
     // TODO - Reorder methods to match 02_implementing_widget.md
 
     /// Registers child widgets with Masonry.
@@ -401,7 +415,7 @@ pub trait Widget: AsDynWidget + Any {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     );
 

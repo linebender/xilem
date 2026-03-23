@@ -76,10 +76,6 @@ impl Switch {
     /// Calculates the track dimensions based on properties.
     ///
     /// Returns `(track_width, track_height)`.
-    #[expect(
-        clippy::trivially_copy_pass_by_ref,
-        reason = "PropertiesRef is given to Widget as a ref"
-    )]
     fn track_dimensions(props: &PropertiesRef<'_>, scale: f64) -> (f64, f64) {
         let track_thickness = props.get::<TrackThickness>().0 * scale;
         let thumb_radius = props.get::<ThumbRadius>().0 * scale;

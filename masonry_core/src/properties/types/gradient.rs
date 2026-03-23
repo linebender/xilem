@@ -13,7 +13,7 @@ use crate::peniko::{
 
 /// Properties for the supported [`Gradient`] types.
 ///
-/// This mirrors [`peniko::GradientKind`](crate::peniko::GradientKind),
+/// This mirrors [`peniko::GradientKind`],
 /// but uses a layout-invariant representation: instead of saying
 /// "The gradient goes from point A to point B", we declare things like
 /// "The gradient has angle X", and A and B are computed dynamically from widget layout.
@@ -62,7 +62,7 @@ pub enum GradientShape {
 
 /// Definition of a gradient that transitions between two or more colors.
 ///
-/// This mirrors [`peniko::Gradient`](crate::peniko::Gradient),
+/// This mirrors [`peniko::Gradient`],
 /// but uses a layout-invariant representation: instead of saying
 /// "The gradient goes from point A to point B", we declare things like
 /// "The gradient has angle X", and A and B and computed dynamically from widget layout.
@@ -218,8 +218,8 @@ impl Gradient {
     /// Returns gradient brush covering the given Rect.
     ///
     /// This matches the CSS spec for [`linear-gradient()`](https://drafts.csswg.org/css-images-3/#linear-gradient-syntax).
-    pub fn get_peniko_gradient_for_rect(&self, rect: Rect) -> crate::peniko::Gradient {
-        crate::peniko::Gradient {
+    pub fn get_peniko_gradient_for_rect(&self, rect: Rect) -> peniko::Gradient {
+        peniko::Gradient {
             kind: self.shape.get_peniko_kind_for_rect(rect),
             extend: self.extend,
             interpolation_cs: self.interpolation_cs,
@@ -238,7 +238,7 @@ impl GradientShape {
     /// Returns gradient coordinates for a gradient covering the given Rect.
     ///
     /// This matches the CSS spec for [`linear-gradient()`](https://drafts.csswg.org/css-images-3/#linear-gradient-syntax).
-    pub fn get_peniko_kind_for_rect(&self, rect: Rect) -> crate::peniko::GradientKind {
+    pub fn get_peniko_kind_for_rect(&self, rect: Rect) -> peniko::GradientKind {
         match self {
             Self::Linear { angle } => Self::get_peniko_linear_for_rect(*angle, rect),
             Self::Radial { center, shape } => {
@@ -252,7 +252,7 @@ impl GradientShape {
         }
     }
 
-    fn get_peniko_linear_for_rect(angle: f64, rect: Rect) -> crate::peniko::GradientKind {
+    fn get_peniko_linear_for_rect(angle: f64, rect: Rect) -> peniko::GradientKind {
         // The CSS spec gives this formula for the gradient line length:
         // `abs(W * sin(A)) + abs(H * cos(A))`
         // https://drafts.csswg.org/css-images-3/#linear-gradient-syntax
@@ -276,7 +276,7 @@ impl GradientShape {
         center: UnitPoint,
         shape: RadialGradientShape,
         rect: Rect,
-    ) -> crate::peniko::GradientKind {
+    ) -> peniko::GradientKind {
         let center = center.resolve(rect);
         let radius = Self::get_gradient_radius(rect, center, shape);
 
@@ -327,7 +327,7 @@ impl GradientShape {
         start_angle: f64,
         end_angle: f64,
         rect: Rect,
-    ) -> crate::peniko::GradientKind {
+    ) -> peniko::GradientKind {
         let center = center.resolve(rect);
 
         // TODO: We'd like to write:

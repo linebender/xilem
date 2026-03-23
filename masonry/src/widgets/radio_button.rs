@@ -377,14 +377,6 @@ impl Widget for RadioButton {
             border_width.width,
         );
 
-        // Paint the radio button box background and border
-        stroke(
-            scene,
-            &border_circle,
-            border_color.color,
-            border_width.width,
-        );
-
         // Paint the checkmark if checked
         if self.selected {
             let brush = if ctx.is_disabled()

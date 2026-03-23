@@ -673,7 +673,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     #[doc(hidden)]
     pub fn realloc_inner_storage(&mut self) {
         // By doubling the required capacity (plus a small constant for small capacities),
-        // we hopefully guarantee that a reallocation will happen no matter the original capabity.
+        // we hopefully guarantee that a reallocation will happen no matter the original capacity.
         let capacity = self.parent_arena.items.capacity();
         let capacity = std::hint::black_box(capacity);
         self.parent_arena.items.reserve(capacity + 32);

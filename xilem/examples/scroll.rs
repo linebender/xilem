@@ -4,8 +4,8 @@
 //! An example showcasing the capabilities of the Portal widget.
 
 use masonry::layout::AsUnit;
-use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
+use xilem::peniko::color::AlphaColor;
 use xilem::style::Style;
 use xilem::view::{
     CrossAxisAlignment, GridExt, MainAxisAlignment, flex_col, flex_row, grid, label, portal,

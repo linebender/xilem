@@ -6,9 +6,9 @@
 use std::time::Duration;
 
 use masonry::layout::{Dim, Length};
-use vello::kurbo::{Axis, Size};
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
+use xilem::kurbo::{Axis, Size};
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{

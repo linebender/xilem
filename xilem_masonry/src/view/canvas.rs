@@ -4,9 +4,9 @@
 use std::marker::PhantomData;
 
 use masonry::core::{ArcStr, MutateCtx};
+use masonry::kurbo::Size;
 use masonry::widgets::{self, CanvasSizeChanged};
 use vello::Scene;
-use vello::kurbo::Size;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx};

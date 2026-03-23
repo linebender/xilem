@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::{Axis, Size};
+use kurbo::{Axis, Size};
 
 use crate::layout::LenDef;
 use crate::util::Sanitize;

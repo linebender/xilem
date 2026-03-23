@@ -200,6 +200,7 @@ If you want to use your own subscriber, simply set it before starting masonry - 
 
 [masonry_winit]: https://crates.io/crates/masonry_winit
 [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
+[masonry_testing]: https://docs.rs/masonry_testing/latest/masonry_testing/
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme end -->
@@ -207,7 +208,7 @@ If you want to use your own subscriber, simply set it before starting masonry - 
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Masonry has been verified to compile with **Rust 1.88** and later.
+This version of Masonry has been verified to compile with **Rust 1.92** and later.
 
 Future versions of Masonry might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

@@ -289,7 +289,7 @@ impl RenderContext {
         let required_limits = match &self.requested_limits {
             WgpuLimits::Default => wgpu::Limits::default(),
             WgpuLimits::Adapter => adapter.limits(),
-            WgpuLimits::Custom(limits) => limits.clone(),
+            WgpuLimits::Custom(limits) => *limits.clone(),
         };
 
         let requested_features = wgpu::Features::CLEAR_TEXTURE | self.requested_features;
