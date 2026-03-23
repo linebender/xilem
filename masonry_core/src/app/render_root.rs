@@ -12,7 +12,6 @@ use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, 
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
-use vello::Scene;
 
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
@@ -21,6 +20,7 @@ use crate::core::{
     ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
+use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::action::run_action_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -561,7 +561,7 @@ impl RenderRoot {
 
     /// Redraws the window.
     ///
-    /// Returns an update to the accessibility tree and a Vello scene representing
+    /// Returns an update to the accessibility tree and retained `imaging` scenes representing
     /// the widget tree's current state.
     pub fn redraw(&mut self) -> (PaintResult, Option<TreeUpdate>) {
         self.run_rewrite_passes();

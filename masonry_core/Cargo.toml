@@ -28,7 +28,6 @@ anymore.workspace = true
 cursor-icon = "1.2.0"
 dpi.workspace = true
 imaging.workspace = true
-imaging_vello.workspace = true
 kurbo.workspace = true
 parley.workspace = true
 peniko.workspace = true

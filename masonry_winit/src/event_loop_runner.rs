@@ -9,12 +9,13 @@ use std::sync::{Arc, mpsc};
 use accesskit_winit::Adapter;
 use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
+use imaging_vello::VelloSceneSink;
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
     DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WindowEvent,
 };
-use masonry_core::kurbo::Affine;
+use masonry_core::kurbo::{Affine, Rect};
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
 use masonry_core::vello::{
@@ -686,10 +687,14 @@ impl MasonryState<'_> {
         self.last_anim = animation_continues.then_some(now);
 
         let (paint_result, tree_update) = window.render_root.redraw();
-        // Recomposite all layers into a single scene for Vello.
-        // All layer scenes use window-space transforms, so identity compositing
-        // produces identical visual output to the previous single-scene approach.
-        let scene = paint_result.composite();
+        let mut scene = Scene::new();
+        let bounds = Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
+        let mut sink = VelloSceneSink::new(&mut scene, bounds);
+        paint_result.replay_into(&mut sink);
+        if let Err(err) = sink.finish() {
+            tracing::error!("Couldn't translate retained imaging scene for Vello: {err:?}");
+            return;
+        }
         Self::render(
             surface,
             window,

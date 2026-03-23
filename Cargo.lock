@@ -2282,7 +2282,6 @@ dependencies = [
  "float-cmp 0.10.0",
  "image",
  "imaging",
- "imaging_vello",
  "insta",
  "kurbo",
  "parley",
@@ -2310,6 +2309,7 @@ dependencies = [
  "assert_matches",
  "futures-intrusive",
  "image",
+ "imaging_vello",
  "masonry_core",
  "oxipng",
  "pollster",
@@ -2323,6 +2323,7 @@ version = "0.4.0"
 dependencies = [
  "accesskit_winit",
  "copypasta",
+ "imaging_vello",
  "masonry",
  "masonry_core",
  "pollster",

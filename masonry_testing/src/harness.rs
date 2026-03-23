@@ -13,6 +13,7 @@ use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
+use imaging_vello::VelloSceneSink;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -490,7 +491,6 @@ impl<W: Widget> TestHarness<W> {
     // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
         let (paint_result, tree_update) = self.render_root.redraw();
-        let contents_scene = paint_result.composite();
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -508,6 +508,13 @@ impl<W: Widget> TestHarness<W> {
         let device_handle = &mut context.devices[device_id];
         let device = &device_handle.device;
         let queue = &device_handle.queue;
+        let size = self.render_root.size();
+        let mut contents_scene = Scene::new();
+        let bounds = Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
+        let mut sink = VelloSceneSink::new(&mut contents_scene, bounds);
+        paint_result.replay_into(&mut sink);
+        sink.finish()
+            .expect("translate retained imaging scene for Vello");
 
         let mut renderer = self.vello_renderer.take().unwrap_or_else(|| {
             vello::Renderer::new(
