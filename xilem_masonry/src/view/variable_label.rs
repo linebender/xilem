@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::ArcStr;
-use masonry::parley::style::{FontStack, FontWeight};
+use masonry::parley::style::{FontFamily, FontWeight};
 use masonry::properties::Dimensions;
 use masonry::widgets;
 
@@ -50,14 +50,14 @@ impl VariableLabel {
         self
     }
 
-    /// Set the [font stack](FontStack) this label will use.
+    /// Set the [font family](FontFamily) this label will use.
     ///
-    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// A font family allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
     ///
-    /// This should be a font stack with variable font support,
+    /// This should be a font family with variable font support,
     /// although non-variable fonts will work, just without the smooth animation support.
-    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+    pub fn font(mut self, font: impl Into<FontFamily<'static>>) -> Self {
         self.label = self.label.font(font);
         self
     }

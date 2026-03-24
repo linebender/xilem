@@ -8,7 +8,9 @@ use std::sync::Arc;
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use kurbo::{Point, Rect, Size};
-use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
+use parley::fontique::{
+    Blob, Collection, CollectionOptions, FallbackKey, FamilyId, FontInfo, Script, SourceCache,
+};
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
@@ -391,10 +393,11 @@ impl RenderRoot {
                 .register_fonts(test_font_data, None);
             // Make sure that all of these fonts are in the fallback chain for the Latin script.
             // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
+            let key = FallbackKey::new(Script::from_bytes(*b"Latn"), None);
             root.global_state
                 .font_context
                 .collection
-                .append_fallbacks(*b"Latn", families.iter().map(|(family, _)| *family));
+                .append_fallbacks(key, families.iter().map(|(family, _)| *family));
         }
 
         // We run a set of passes to initialize the widget tree
@@ -532,7 +535,7 @@ impl RenderRoot {
     /// Handles an accesskit event.
     pub fn handle_access_event(&mut self, event: ActionRequest) {
         let _span = info_span!("access_event");
-        let Ok(id) = event.target.0.try_into() else {
+        let Ok(id) = event.target_node.0.try_into() else {
             warn!("Received ActionRequest with id 0. This shouldn't be possible.");
             return;
         };

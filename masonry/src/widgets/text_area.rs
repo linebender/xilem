@@ -1062,9 +1062,14 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if !EDITABLE {
             node.set_read_only();
         }
-        let updated =
-            self.editor
-                .try_accessibility(ctx.tree_update(), node, AccessCtx::next_node_id, 0., 0.);
+        let updated = self.editor.try_accessibility(
+            ctx.tree_update(),
+            node,
+            AccessCtx::next_node_id,
+            0.,
+            0.,
+            |_, _| {},
+        );
 
         let Some(()) = updated else {
             // We always perform layout before accessibility, so this panic should be unreachable.

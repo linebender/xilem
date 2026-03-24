@@ -65,10 +65,11 @@ fn access_node_children() {
     };
 
     let parent_node = harness.access_node(parent_node_id).unwrap();
-    assert_eq!(
+    /* assert_eq!(
         Vec::<NodeId>::from_iter(parent_node.child_ids()),
         vec![id_1, id_2, id_3]
-    );
+    ); */
+    todo!("{parent_node:?}");
 
     // We stash a child
     harness.edit_widget(parent_tag, |mut parent| {
@@ -79,8 +80,9 @@ fn access_node_children() {
 
     // Stash child is not included
     let parent_node = harness.access_node(parent_node_id).unwrap();
-    assert_eq!(
+    /* assert_eq!(
         Vec::<NodeId>::from_iter(parent_node.child_ids()),
         vec![id_1, id_3]
-    );
+    ); */
+    todo!("{parent_node:?}");
 }

@@ -640,6 +640,7 @@ impl Widget for Label {
             AccessCtx::next_node_id,
             text_origin_in_border_box_space.x,
             text_origin_in_border_box_space.y,
+            |_, _| {},
         );
     }
 
@@ -659,8 +660,8 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
+    use parley::{FontFamilyName, style::GenericFamily};
 
     use super::*;
     use crate::core::{NewWidget, PropertySet};
@@ -685,7 +686,9 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_style(FontFamily::Generic(GenericFamily::Monospace))
+            .with_style(FontFamily::Single(FontFamilyName::Generic(
+                GenericFamily::Monospace,
+            )))
             .with_style(StyleProperty::FontSize(20.0))
             .with_text_alignment(TextAlign::Center)
             .with_props(
@@ -798,7 +801,9 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_style(FontFamily::Generic(GenericFamily::Monospace))
+                .with_style(FontFamily::Single(FontFamilyName::Generic(
+                    GenericFamily::Monospace,
+                )))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_text_alignment(TextAlign::Center)
                 .with_props(
@@ -825,7 +830,10 @@ mod tests {
                 label.insert_prop(ContentColor::new(ACCENT_COLOR));
                 label.insert_prop(LineBreaking::WordWrap);
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
-                Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
+                Label::insert_style(
+                    &mut label,
+                    FontFamily::Single(FontFamilyName::Generic(GenericFamily::Monospace)),
+                );
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_text_alignment(&mut label, TextAlign::Center);
             });

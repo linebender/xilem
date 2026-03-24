@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, NewWidget, PropertySet};
 use masonry::parley::StyleProperty;
-use masonry::parley::style::{FontStack, FontWeight};
+use masonry::parley::style::{FontFamily, FontWeight};
 use masonry::peniko::Color;
 use masonry::properties::{
     CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
@@ -92,7 +92,7 @@ where
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
-        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        font: FontFamily::List(std::borrow::Cow::Borrowed(&[])),
         insert_newline: InsertNewline::default(),
         disabled: false,
         // Since we don't support setting the word wrapping, we can default to
@@ -113,7 +113,7 @@ pub struct TextInput<State: 'static, Action> {
     text_alignment: TextAlign,
     text_size: f32,
     weight: FontWeight,
-    font: FontStack<'static>,
+    font: FontFamily<'static>,
     insert_newline: InsertNewline,
     disabled: bool,
     clip: bool,
@@ -191,11 +191,11 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
         self
     }
 
-    /// Set the [font stack](FontStack) this label will use.
+    /// Set the [font family](FontFamily) this label will use.
     ///
-    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// A font family allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
-    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+    pub fn font(mut self, font: impl Into<FontFamily<'static>>) -> Self {
         self.font = font.into();
         self
     }
@@ -256,7 +256,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             .with_insert_newline(self.insert_newline)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
-            .with_style(StyleProperty::FontStack(self.font.clone()));
+            .with_style(StyleProperty::FontFamily(self.font.clone()));
 
         // TODO - Replace this with properties on the TextInput view
         // once we implement property inheritance or something like it.
@@ -347,7 +347,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         if prev.font != self.font {
             widgets::TextArea::insert_style(
                 &mut text_area,
-                StyleProperty::FontStack(self.font.clone()),
+                StyleProperty::FontFamily(self.font.clone()),
             );
         }
         if prev.insert_newline != self.insert_newline {
