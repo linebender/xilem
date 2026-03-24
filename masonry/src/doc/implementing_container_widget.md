@@ -278,7 +278,7 @@ use masonry::core::{
     AccessCtx, AccessEvent, EventCtx, NoAction, PaintCtx, PointerEvent, PropertiesRef, TextEvent,
     Update, UpdateCtx,
 };
-use masonry::vello::Scene;
+use masonry::imaging::Painter;
 
 impl Widget for VerticalStack {
     type Action = NoAction;
@@ -292,7 +292,13 @@ impl Widget for VerticalStack {
 
     // ...
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

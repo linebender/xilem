@@ -81,21 +81,23 @@ With that in mind, let's rewrite our `ColorRectangle` widget to use properties:
 ```rust,ignore
 // ...
 use masonry::properties::Background;
+use masonry::imaging::Painter;
 // ...
 
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let background = props.get::<Background>();
-        let rect = ctx.size().to_rect();
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            &background.get_peniko_brush_for_rect(rect),
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        let rect = ctx.content_box();
+        painter
+            .fill(rect, &background.get_peniko_brush_for_rect(rect))
+            .draw();
     }
 
     // ...
