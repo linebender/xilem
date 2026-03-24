@@ -1950,7 +1950,7 @@ checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
 [[package]]
 name = "imaging"
 version = "0.0.1"
-source = "git+https://github.com/forest-rs/imaging.git?rev=58c71b4b235a70a88536247839d50fb9caa013a9#58c71b4b235a70a88536247839d50fb9caa013a9"
+source = "git+https://github.com/forest-rs/imaging.git?rev=850af057d4c56cf644f37aaa644c7814a7a03a4b#850af057d4c56cf644f37aaa644c7814a7a03a4b"
 dependencies = [
  "kurbo",
  "peniko",
@@ -1959,7 +1959,7 @@ dependencies = [
 [[package]]
 name = "imaging_vello"
 version = "0.0.1"
-source = "git+https://github.com/forest-rs/imaging.git?rev=58c71b4b235a70a88536247839d50fb9caa013a9#58c71b4b235a70a88536247839d50fb9caa013a9"
+source = "git+https://github.com/forest-rs/imaging.git?rev=850af057d4c56cf644f37aaa644c7814a7a03a4b#850af057d4c56cf644f37aaa644c7814a7a03a4b"
 dependencies = [
  "imaging",
  "kurbo",
