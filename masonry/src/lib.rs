@@ -218,6 +218,7 @@ pub mod theme;
 pub mod widgets;
 
 pub use accesskit;
+pub use masonry_core::imaging;
 pub use masonry_core::palette;
 pub use masonry_core::{app, core, kurbo, layout, peniko, ui_events, util};
 #[cfg(any(feature = "testing", test))]

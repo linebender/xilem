@@ -3,12 +3,12 @@
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::LenReq;
 
@@ -104,7 +104,13 @@ impl Widget for Passthrough {
         ctx.derive_baselines(&self.inner);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

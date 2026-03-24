@@ -9,9 +9,9 @@ use masonry::core::{
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetPod,
 };
+use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size};
 use masonry::layout::LenReq;
-use vello::Scene;
 
 use crate::core::Mut;
 use crate::core::one_of::OneOf;
@@ -312,7 +312,13 @@ impl<
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

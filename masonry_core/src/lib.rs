@@ -77,6 +77,7 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
+pub use imaging;
 pub use peniko::color::palette;
 pub use {accesskit, anymore, dpi, parley, ui_events, vello};
 pub use {kurbo, peniko};

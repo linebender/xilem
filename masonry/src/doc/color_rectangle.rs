@@ -29,9 +29,7 @@ use masonry::layout::LenReq;
 // ---
 use masonry::accesskit::{Node, Role};
 use masonry::core::{AccessCtx, PaintCtx};
-use masonry::kurbo::Affine;
-use masonry::peniko::Fill;
-use masonry::vello::Scene;
+use masonry::imaging::Painter;
 // ---
 use masonry::core::WidgetId;
 use tracing::{Span, trace_span};
@@ -152,15 +150,14 @@ impl Widget for ColorRectangle {
     // ---
 
     #[cfg(false)] // We show two `paint` implementations; check that both parse.
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let rect = ctx.size().to_rect();
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            self.color,
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        painter.fill(rect, self.color).draw();
     }
 
     fn accessibility_role(&self) -> Role {
@@ -194,20 +191,19 @@ impl Widget for ColorRectangle {
     // Second implementation from "Creating a new widget" tutorial.
     // We use these methods in the trait, so that hovering is detected in our unit tests.
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
             Color::WHITE
         } else {
             self.color
         };
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            color,
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        painter.fill(rect, color).draw();
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -225,16 +221,17 @@ impl Widget for ColorRectangle {
 // Implementation from "Reading widget properties" tutorial.
 #[expect(dead_code, reason = "example code")]
 impl ColorRectangle {
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let background = props.get::<Background>();
         let rect = ctx.content_box();
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            &background.get_peniko_brush_for_rect(rect),
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        painter
+            .fill(rect, &background.get_peniko_brush_for_rect(rect))
+            .draw();
     }
 }
 

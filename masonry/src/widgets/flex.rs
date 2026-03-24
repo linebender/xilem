@@ -6,13 +6,13 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
     NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length};
 use crate::properties::Gap;
@@ -1211,7 +1211,13 @@ impl Widget for Flex {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -1243,10 +1249,9 @@ impl Widget for Flex {
 mod tests {
     use super::*;
     use crate::core::{WidgetOptions, WidgetTag};
-    use crate::kurbo::{Affine, Cap, Line, Stroke};
+    use crate::kurbo::{Cap, Line, Stroke};
     use crate::layout::AsUnit;
     use crate::palette;
-    use crate::peniko::Fill;
     use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
     use crate::testing::{ModularWidget, TestHarness, assert_debug_panics, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
@@ -1748,8 +1753,8 @@ mod tests {
                         (border_box.x1, s.ascent + 0.5),
                     );
 
-                    scene.fill(Fill::NonZero, Affine::IDENTITY, bg_color, None, &border_box);
-                    scene.stroke(&style, Affine::IDENTITY, line_color, None, &line);
+                    scene.fill(border_box, bg_color).draw();
+                    scene.stroke(line, &style, line_color).draw();
                 })
                 .with_auto_id()
         };

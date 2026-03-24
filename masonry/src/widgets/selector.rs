@@ -3,7 +3,6 @@
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
@@ -11,6 +10,7 @@ use crate::core::{
     PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size, Vec2};
 use crate::layers::SelectorMenu;
 use crate::layout::{LayoutSize, LenReq, SizeDef};
@@ -270,7 +270,13 @@ impl Widget for Selector {
         ctx.derive_baselines(&self.child);
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::ComboBox

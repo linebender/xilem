@@ -19,9 +19,9 @@ use masonry_core::core::{
     Layer, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
     PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
+use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::LenReq;
-use masonry_core::vello::Scene;
 
 // TODO - Re-enable doc test.
 // Doc test is currently disabled because it depends on a parent crate.
@@ -247,19 +247,34 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.compose(ctx);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         self.recording.push(Record::PrePaint);
-        self.child.pre_paint(ctx, props, scene);
+        self.child.pre_paint(ctx, props, painter);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         self.recording.push(Record::Paint);
-        self.child.paint(ctx, props, scene);
+        self.child.paint(ctx, props, painter);
     }
 
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn post_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         self.recording.push(Record::PostPaint);
-        self.child.post_paint(ctx, props, scene);
+        self.child.post_paint(ctx, props, painter);
     }
 
     fn accessibility_role(&self) -> Role {

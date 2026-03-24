@@ -9,13 +9,13 @@ use include_doc_path::include_doc_path;
 use parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, BrushIndex, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::LenReq;
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking};
@@ -593,7 +593,12 @@ impl Widget for Label {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let text_color = if ctx.is_disabled()
             && let Some(dc) = props.get_defined::<DisabledContentColor>()
         {
@@ -605,7 +610,7 @@ impl Widget for Label {
         let layout = &self.layouts[self.active_layout];
 
         render_text(
-            scene,
+            painter,
             Affine::IDENTITY,
             &layout.layout,
             &[text_color.color.into()],

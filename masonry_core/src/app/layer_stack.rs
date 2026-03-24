@@ -6,12 +6,12 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use kurbo::{Axis, Point, Size};
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
     RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::imaging::Painter;
 use crate::layout::{LenReq, SizeDef};
 
 /// A widget representing the top-level stack of visible layers owned by [`RenderRoot`](crate::app::RenderRoot).
@@ -213,7 +213,13 @@ impl Widget for LayerStack {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _painter: &mut Painter<'_>,
+    ) {
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer

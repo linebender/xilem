@@ -6,7 +6,6 @@ use std::any::TypeId;
 use accesskit::{Node, Role, Toggled};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::Key;
 use crate::core::{
@@ -14,14 +13,14 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::kurbo::{Axis, Circle, Point, Rect, Size};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Circle, Join, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
     FocusedBorderColor, HoveredBorderColor, ThumbColor, ThumbRadius, ToggledBackground,
     TrackThickness,
 };
-use crate::util::{fill, stroke};
 
 /// A switch switch that can be turned on or off.
 ///
@@ -210,12 +209,17 @@ impl Widget for Switch {
         &mut self,
         _ctx: &mut PaintCtx<'_>,
         _props: &PropertiesRef<'_>,
-        _scene: &mut Scene,
+        _painter: &mut Painter<'_>,
     ) {
         // TODO: Make Switch painting work with generic shadow/background/border
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -260,7 +264,7 @@ impl Widget for Switch {
         let track_corner_radius = corner_radius.min(track_height / 2.0);
         let track_rounded = track_rect.to_rounded_rect(track_corner_radius);
         let brush = track_bg.get_peniko_brush_for_rect(track_rect);
-        fill(scene, &track_rounded, &brush);
+        painter.fill(track_rounded, &brush).draw();
 
         // Determine border color
         let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
@@ -274,7 +278,11 @@ impl Widget for Switch {
 
         // Paint track border
         if border_width > 0.0 {
-            stroke(scene, &track_rounded, border_color.color, border_width);
+            // Use miter joins so a zero-radius track keeps square corners.
+            let stroke = Stroke::new(border_width).with_join(Join::Miter);
+            painter
+                .stroke(track_rounded, &stroke, border_color.color)
+                .draw();
         }
 
         // Calculate thumb position (centered vertically, left/right based on state)
@@ -294,7 +302,7 @@ impl Widget for Switch {
         } else {
             thumb_color
         };
-        fill(scene, &thumb_circle, thumb_brush);
+        painter.fill(thumb_circle, thumb_brush).draw();
     }
 
     fn accessibility_role(&self) -> Role {

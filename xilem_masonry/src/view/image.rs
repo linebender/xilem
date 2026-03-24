@@ -20,7 +20,7 @@ pub use masonry::properties::ObjectFit;
 ///
 /// Corresponds to the [`Image`](widgets::Image) widget.
 ///
-/// It is not currently supported to use a GPU-resident [texture](vello::wgpu::Texture) in this widget.
+/// It is not currently supported to use a GPU-resident texture in this widget.
 /// See [#vello > vello adding wgpu texture buffers to scene](https://xi.zulipchat.com/#narrow/channel/197075-vello/topic/vello.20adding.20wgpu.20texture.20buffers.20to.20scene/with/456486490)
 /// for discussion.
 pub fn image(image: impl Into<ImageBrush>) -> Image {

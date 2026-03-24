@@ -7,7 +7,6 @@ use accesskit::{Node, Role, Toggled};
 use include_doc_path::include_doc_path;
 use masonry_core::debug_panic;
 use tracing::{Span, trace, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
@@ -15,14 +14,14 @@ use crate::core::{
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, keyboard::Key,
     paint_background, paint_box_shadow,
 };
-use crate::kurbo::{Affine, Axis, Cap, Circle, Dashes, Join, Point, Size, Stroke};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Cap, Circle, Dashes, Join, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor,
     FocusedBorderColor, HoveredBorderColor,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
 use crate::widgets::{Label, RadioGroup};
 
 /// A radio button that can be toggled.
@@ -304,12 +303,17 @@ impl Widget for RadioButton {
         ctx.derive_baselines(&self.label);
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let bbox = ctx.border_box();
         let p = PrePaintProps::fetch(ctx, props);
 
-        paint_box_shadow(scene, bbox, p.box_shadow, p.corner_radius);
-        paint_background(scene, bbox, p.background, p.border_width, p.corner_radius);
+        paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
+        paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
 
         // Paint focus indicator around the entire widget (box + label)
         if ctx.is_focus_target() || ctx.is_hovered() {
@@ -331,18 +335,19 @@ impl Widget for RadioButton {
                 dash_offset: 0.0,
             };
             let focus_path = focus_rect.to_rounded_rect(focus_radius);
-            scene.stroke(
-                &focus_stroke,
-                Affine::IDENTITY,
-                focus_color,
-                None,
-                &focus_path,
-            );
+            painter
+                .stroke(focus_path, &focus_stroke, focus_color)
+                .draw();
         }
         // Skip painting the regular border while the check border uses that property
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
@@ -370,12 +375,10 @@ impl Widget for RadioButton {
         };
 
         // Paint the radio button border
-        stroke(
-            scene,
-            &border_circle,
-            border_color.color,
-            border_width.width,
-        );
+        let border_stroke = Stroke::new(border_width.width);
+        painter
+            .stroke(border_circle, &border_stroke, border_color.color)
+            .draw();
 
         // Paint the checkmark if checked
         if self.selected {
@@ -389,7 +392,7 @@ impl Widget for RadioButton {
 
             // TODO: Create a prop for ellipse size. Default: 50% of border size
             let check_circle = Circle::new(check_size.to_rect().center(), check_side * 0.25);
-            fill(scene, &check_circle, brush.color);
+            painter.fill(check_circle, brush.color).draw();
         }
     }
 

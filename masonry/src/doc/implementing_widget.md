@@ -37,7 +37,7 @@ trait Widget {
     fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> f64;
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, painter: &mut Painter<'_>);
     fn accessibility_role(&self) -> Role;
     fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, props: &PropertiesRef<'_>, node: &mut Node);
 
@@ -217,23 +217,20 @@ Next we write our render methods:
 // ...
 use masonry::accesskit::{Node, Role};
 use masonry::core::{AccessCtx, PaintCtx, PropertiesRef};
-use masonry::kurbo::Affine;
-use masonry::peniko::Fill;
-use masonry::vello::Scene;
+use masonry::imaging::Painter;
 // ...
 
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let rect = ctx.content_box();
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            self.color,
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        painter.fill(rect, self.color).draw();
     }
 
     fn accessibility_role(&self) -> Role {
@@ -253,7 +250,7 @@ impl Widget for ColorRectangle {
 }
 ```
 
-In our `paint` method, we're given a [`vello::Scene`] and paint a rectangle into it.
+In our `paint` method, we're given a [`Painter`](crate::imaging::Painter) and paint a rectangle into it.
 
 We use `ctx.content_box()` to get a rectangle that precisely covers the content area of our widget.
 
@@ -368,20 +365,19 @@ First, we update our paint method:
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
             Color::WHITE
         } else {
             self.color
         };
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            color,
-            Some(Affine::IDENTITY),
-            &rect,
-        );
+        painter.fill(rect, color).draw();
     }
 
     // ...
@@ -483,7 +479,7 @@ The next one is about creating a container widgets, and the complications it add
 [`Widget`]: crate::core::Widget
 [`WidgetMut`]: crate::core::WidgetMut
 [`PaintCtx::content_box()`]: crate::core::PaintCtx::content_box
-[`vello::Scene`]: vello::Scene
+[`Painter`]: crate::imaging::Painter
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_base_layer()`]: crate::app::RenderRoot::edit_base_layer
 [`RenderRoot::edit_layer()`]: crate::app::RenderRoot::edit_layer

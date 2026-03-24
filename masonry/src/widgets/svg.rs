@@ -8,15 +8,15 @@ use masonry_core::core::Property;
 use resvg::tiny_skia;
 use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Size};
 use crate::layout::LenReq;
-use crate::peniko::{BlendMode, Fill, ImageAlphaType, ImageBrush, ImageData, ImageFormat};
+use crate::peniko::{ImageAlphaType, ImageBrush, ImageData, ImageFormat};
 use crate::properties::ObjectFit;
 
 // TODO: Make this a configurable option of the widget
@@ -168,7 +168,12 @@ impl Widget for Svg {
         self.rasterized = None;
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let content_box = ctx.content_box();
 
         // NOTE: Ideally we would translate the SVG tree into scene draw calls.
@@ -214,15 +219,9 @@ impl Widget for Svg {
 
         let image = self.rasterized.as_ref().unwrap();
 
-        scene.push_layer(
-            Fill::NonZero,
-            BlendMode::default(),
-            1.,
-            Affine::IDENTITY,
-            &content_box,
-        );
-        scene.draw_image(image, Affine::IDENTITY);
-        scene.pop_layer();
+        painter.with_fill_clip(content_box, |painter| {
+            painter.draw_image(image, Affine::IDENTITY);
+        });
     }
 
     fn accessibility_role(&self) -> Role {

@@ -10,9 +10,9 @@ use masonry_core::core::{
     PropertiesRef, PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
 };
+use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
 use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
-use masonry_core::vello::Scene;
 use tracing::trace_span;
 
 pub(crate) type PointerEventFn<S> =
@@ -32,7 +32,8 @@ pub(crate) type MeasureFn<S> =
     dyn FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64;
 pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size);
 pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
-pub(crate) type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
+pub(crate) type PaintFn<S> =
+    dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Painter<'_>);
 pub(crate) type RoleFn<S> = dyn Fn(&S) -> Role;
 pub(crate) type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node);
 pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
@@ -318,7 +319,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::pre_paint`]
     pub fn pre_paint_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Painter<'_>) + 'static,
     ) -> Self {
         self.pre_paint = Some(Box::new(f));
         self
@@ -327,7 +328,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::paint`]
     pub fn paint_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Painter<'_>) + 'static,
     ) -> Self {
         self.paint = Some(Box::new(f));
         self
@@ -336,7 +337,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::post_paint`]
     pub fn post_paint_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Painter<'_>) + 'static,
     ) -> Self {
         self.post_paint = Some(Box::new(f));
         self
@@ -488,23 +489,38 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn pre_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         if let Some(f) = self.pre_paint.as_mut() {
-            f(&mut self.state, ctx, props, scene);
+            f(&mut self.state, ctx, props, painter);
         } else {
-            pre_paint(ctx, props, scene);
+            pre_paint(ctx, props, painter);
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         if let Some(f) = self.paint.as_mut() {
-            f(&mut self.state, ctx, props, scene);
+            f(&mut self.state, ctx, props, painter);
         }
     }
 
-    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn post_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         if let Some(f) = self.post_paint.as_mut() {
-            f(&mut self.state, ctx, props, scene);
+            f(&mut self.state, ctx, props, painter);
         }
     }
 

@@ -22,7 +22,6 @@ default = ["masonry/default"]
 xilem_core.workspace = true
 masonry.workspace = true
 tracing.workspace = true
-vello.workspace = true
 tokio = { version = "1.50.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [lints]

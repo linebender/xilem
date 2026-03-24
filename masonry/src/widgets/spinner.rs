@@ -7,13 +7,13 @@ use std::f64::consts::PI;
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
 };
-use crate::kurbo::{Affine, Axis, Cap, Line, Point, Size, Stroke, Vec2};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Cap, Line, Point, Size, Stroke, Vec2};
 use crate::layout::LenReq;
 use crate::properties::ContentColor;
 use crate::theme;
@@ -105,7 +105,12 @@ impl Widget for Spinner {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let color = props.get::<ContentColor>();
 
         let t = self.t;
@@ -122,13 +127,13 @@ impl Widget for Spinner {
             let ambit_end = center + (20.0 * scale_factor * angle);
             let color = color.color.multiply_alpha(fade as f32);
 
-            scene.stroke(
-                &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
-                Affine::IDENTITY,
-                color,
-                None,
-                &Line::new(ambit_start, ambit_end),
-            );
+            painter
+                .stroke(
+                    Line::new(ambit_start, ambit_end),
+                    &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
+                    color,
+                )
+                .draw();
         }
     }
 

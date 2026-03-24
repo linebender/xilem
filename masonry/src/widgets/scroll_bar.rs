@@ -4,7 +4,6 @@
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
-use vello::Scene;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
@@ -12,10 +11,10 @@ use crate::core::{
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::{Axis, Point, Rect, Size};
+use crate::imaging::Painter;
+use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
 use crate::theme;
-use crate::util::{fill_color, stroke};
 
 // TODO
 // - Fade scrollbars? Find out how Linux/macOS/Windows do it
@@ -375,7 +374,12 @@ impl Widget for ScrollBar {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -388,13 +392,14 @@ impl Widget for ScrollBar {
             .inset((-inset_x, -inset_y))
             .to_rounded_rect(radius);
 
-        fill_color(scene, &cursor_rect, theme::SCROLLBAR_COLOR);
-        stroke(
-            scene,
-            &cursor_rect,
-            theme::SCROLLBAR_BORDER_COLOR,
-            edge_width,
-        );
+        painter.fill(cursor_rect, theme::SCROLLBAR_COLOR).draw();
+        painter
+            .stroke(
+                cursor_rect,
+                &Stroke::new(edge_width),
+                theme::SCROLLBAR_BORDER_COLOR,
+            )
+            .draw();
     }
 
     fn accessibility_role(&self) -> Role {

@@ -3,9 +3,7 @@
 
 //! Miscellaneous utility functions.
 
-use kurbo::{Affine, Join, Shape, Stroke};
-use peniko::{BrushRef, Color, Fill};
-use vello::Scene;
+use peniko::Color;
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
@@ -113,44 +111,6 @@ pub(crate) type TypeSet = std::collections::HashSet<
     std::any::TypeId,
     std::hash::BuildHasherDefault<anymap3::TypeIdHasher>,
 >;
-
-// --- MARK: PAINT HELPERS
-
-#[expect(
-    single_use_lifetimes,
-    reason = "Anonymous lifetimes in `impl Trait` are unstable, see https://github.com/rust-lang/rust/issues/129255"
-)]
-/// Helper function for [`Scene::stroke`].
-pub fn stroke<'b>(
-    scene: &mut Scene,
-    path: &impl Shape,
-    brush: impl Into<BrushRef<'b>>,
-    stroke_width: f64,
-) {
-    // Using Join::Miter avoids rounding corners when a widget has a wide border.
-    let style = Stroke {
-        width: stroke_width,
-        join: Join::Miter,
-        ..Default::default()
-    };
-    scene.stroke(&style, Affine::IDENTITY, brush, None, path);
-}
-
-#[expect(
-    single_use_lifetimes,
-    reason = "Anonymous lifetimes in `impl Trait` are unstable, see https://github.com/rust-lang/rust/issues/129255"
-)]
-/// Helper function for [`Scene::fill`].
-pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<'b>>) {
-    scene.fill(Fill::NonZero, Affine::IDENTITY, brush, None, path);
-}
-
-/// Helper function for [`Scene::fill`] with a uniform color as the brush.
-pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
-    scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
-}
-
-// ---
 
 /// Convert a 2d rectangle from Parley to one used for drawing in Vello and other maths.
 pub fn bounding_box_to_rect(bb: parley::BoundingBox) -> kurbo::Rect {

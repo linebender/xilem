@@ -7,21 +7,22 @@ use kurbo::{Affine, Line, Stroke};
 use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::Scene;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{
     DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
 };
+use crate::imaging::record::{Clip, Geometry, Scene, replay, replay_transformed};
+use crate::imaging::{PaintSink, Painter};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::{get_debug_color, stroke};
+use crate::util::get_debug_color;
 
 /// A painted overlay layer, ready for compositing.
 ///
-/// The scene is in the layer's local coordinate space. To composite into
+/// The retained `imaging` scene is in the layer's local coordinate space. To composite into
 /// window space, apply the layer's [`transform`](Self::transform).
 pub struct PaintedLayer {
-    /// The rendered scene for this layer, in the layer's local coordinate space.
+    /// The retained `imaging` scene for this layer, in the layer's local coordinate space.
     pub scene: Scene,
     /// Transform from layer-local space to window space.
     ///
@@ -32,26 +33,30 @@ pub struct PaintedLayer {
     pub root_id: WidgetId,
 }
 
-/// Result of the paint pass — one scene per layer.
+/// Result of the paint pass — one retained `imaging` scene per layer.
 ///
 /// The base layer contains the main application content in window coordinate space.
 /// Overlay layers contain tooltips, menus, and other popups in layer-local coordinate
 /// space, ordered from bottom to top (painter's order).
 pub struct PaintResult {
-    /// The base layer scene (main application content) in window coordinate space.
+    /// The base retained `imaging` scene (main application content) in window coordinate space.
     pub base: Scene,
     /// Overlay layer scenes in z-order (bottom to top), each in layer-local coordinates.
     pub overlays: Vec<PaintedLayer>,
 }
 
 impl PaintResult {
-    /// Recomposite all layers into a single scene in window coordinate space.
-    pub fn composite(&self) -> Scene {
-        let mut scene = self.base.clone();
+    /// Replay all layers into a sink in window coordinate space.
+    ///
+    /// This is the backend-agnostic way to consume Masonry's retained paint output.
+    pub fn replay_into<S>(&self, sink: &mut S)
+    where
+        S: PaintSink + ?Sized,
+    {
+        replay(&self.base, sink);
         for layer in &self.overlays {
-            scene.append(&layer.scene, Some(layer.transform));
+            replay_transformed(&layer.scene, sink, layer.transform);
         }
-        scene
     }
 }
 
@@ -104,18 +109,23 @@ fn paint_widget(
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
         let (pre_scene, scene, post_scene) = scene_cache.entry(id).or_default();
-
         if ctx.widget_state.request_pre_paint {
-            pre_scene.reset();
-            widget.pre_paint(&mut ctx, &props, pre_scene);
+            pre_scene.clear();
+            let sink_dyn: &mut dyn PaintSink = pre_scene;
+            let mut painter = Painter::new(sink_dyn);
+            widget.pre_paint(&mut ctx, &props, &mut painter);
         }
         if ctx.widget_state.request_paint {
-            scene.reset();
-            widget.paint(&mut ctx, &props, scene);
+            scene.clear();
+            let sink_dyn: &mut dyn PaintSink = scene;
+            let mut painter = Painter::new(sink_dyn);
+            widget.paint(&mut ctx, &props, &mut painter);
         }
         if ctx.widget_state.request_post_paint {
-            post_scene.reset();
-            widget.post_paint(&mut ctx, &props, post_scene);
+            post_scene.clear();
+            let sink_dyn: &mut dyn PaintSink = post_scene;
+            let mut painter = Painter::new(sink_dyn);
+            widget.post_paint(&mut ctx, &props, &mut painter);
         }
     }
 
@@ -136,14 +146,18 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append(pre_scene, Some(content_box_to_layer_transform));
+        complete_scene.append_transformed(pre_scene, content_box_to_layer_transform);
 
         if let Some(clip) = state.clip_path {
             // The clip path is stored in border-box space, so need to use that transform.
-            complete_scene.push_clip_layer(Fill::NonZero, border_box_to_layer_transform, &clip);
+            complete_scene.push_clip(Clip::Fill {
+                transform: border_box_to_layer_transform,
+                shape: Geometry::Rect(clip),
+                fill_rule: Fill::NonZero,
+            });
         }
 
-        complete_scene.append(scene, Some(content_box_to_layer_transform));
+        complete_scene.append_transformed(scene, content_box_to_layer_transform);
     }
 
     let parent_state = &mut *state;
@@ -171,19 +185,18 @@ fn paint_widget(
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
             let rect = state.bounding_box.inset(BORDER_WIDTH / -2.0);
-            stroke(complete_scene, &rect, color, BORDER_WIDTH);
+            let border_style = Stroke::new(BORDER_WIDTH);
+            let mut painter = Painter::new(&mut *complete_scene);
+            painter.stroke(rect, &border_style, color).draw();
 
             // Draw the widget's explicit baselines
             let mut draw_baseline = |baseline| {
                 let line = Line::new((0., baseline), (state.end_point.x, baseline));
                 let baseline_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
-                complete_scene.stroke(
-                    &baseline_style,
-                    border_box_to_layer_transform,
-                    color,
-                    None,
-                    &line,
-                );
+                painter
+                    .stroke(line, &baseline_style, color)
+                    .transform(border_box_to_layer_transform)
+                    .draw();
             };
             if !state.first_baseline.is_nan() {
                 draw_baseline(state.first_baseline);
@@ -194,7 +207,7 @@ fn paint_widget(
         }
 
         if has_clip {
-            complete_scene.pop_layer();
+            complete_scene.pop_clip();
         }
 
         let Some((_, _, post_scene)) = &mut scene_cache.get(&id) else {
@@ -204,7 +217,7 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append(post_scene, Some(content_box_to_layer_transform));
+        complete_scene.append_transformed(post_scene, content_box_to_layer_transform);
     }
 }
 
@@ -284,30 +297,20 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
 
         // Draw the hover rect in the owning layer's scene.
         if layer_root == layer_ids[0] {
-            base_scene.fill(
-                Fill::NonZero,
-                border_box_to_layer_transform,
-                HOVER_FILL_COLOR,
-                None,
-                &rect,
-            );
+            Painter::new(&mut base_scene)
+                .fill(rect, HOVER_FILL_COLOR)
+                .transform(border_box_to_layer_transform)
+                .draw();
         } else if let Some(layer) = overlays.iter_mut().find(|l| l.root_id == layer_root) {
-            layer.scene.fill(
-                Fill::NonZero,
-                border_box_to_layer_transform,
-                HOVER_FILL_COLOR,
-                None,
-                &rect,
-            );
+            Painter::new(&mut layer.scene)
+                .fill(rect, HOVER_FILL_COLOR)
+                .transform(border_box_to_layer_transform)
+                .draw();
         } else {
-            // Fallback: draw in base scene.
-            base_scene.fill(
-                Fill::NonZero,
-                border_box_to_layer_transform,
-                HOVER_FILL_COLOR,
-                None,
-                &rect,
-            );
+            Painter::new(&mut base_scene)
+                .fill(rect, HOVER_FILL_COLOR)
+                .transform(border_box_to_layer_transform)
+                .draw();
         }
     }
 
