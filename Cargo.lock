@@ -2302,6 +2302,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "masonry_screen_reader"
+version = "0.1.0"
+dependencies = [
+ "accesskit",
+ "accesskit_consumer",
+]
+
+[[package]]
 name = "masonry_testing"
 version = "0.4.0"
 dependencies = [
@@ -2326,6 +2334,7 @@ dependencies = [
  "imaging_vello",
  "masonry",
  "masonry_core",
+ "masonry_screen_reader",
  "pollster",
  "tracing",
  "tracing-tracy",
