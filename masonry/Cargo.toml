@@ -34,6 +34,7 @@ include_doc_path.workspace = true
 resvg.workspace = true
 
 [dev-dependencies]
+accesskit_consumer.workspace = true
 assert_matches = "1.5.0"
 divan.workspace = true
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }

@@ -14,7 +14,7 @@ use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -1056,15 +1056,29 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         if !EDITABLE {
             node.set_read_only();
         }
-        let updated =
-            self.editor
-                .try_accessibility(ctx.tree_update(), node, AccessCtx::next_node_id, 0., 0.);
+
+        let text_color = if ctx.is_disabled()
+            && let Some(dc) = props.get_defined::<DisabledContentColor>()
+        {
+            &dc.0
+        } else {
+            props.get::<ContentColor>()
+        };
+
+        let updated = self.editor.try_accessibility(
+            ctx.tree_update(),
+            node,
+            AccessCtx::next_node_id,
+            0.,
+            0.,
+            |node, style| set_accesskit_brush_properties(node, style, &[text_color.color.into()]),
+        );
 
         let Some(()) = updated else {
             // We always perform layout before accessibility, so this panic should be unreachable.

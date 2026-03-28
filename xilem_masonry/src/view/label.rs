@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, StyleProperty};
-use masonry::parley::style::{FontStack, FontWeight};
-use masonry::parley::{FontFamily, GenericFamily, LineHeight};
+use masonry::parley::style::FontWeight;
+use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, LineHeight};
 use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -39,7 +39,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         weight: FontWeight::NORMAL,
         enable_hinting: true,
         line_height: LineHeight::default(),
-        font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
+        font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
     }
 }
 
@@ -54,7 +54,7 @@ pub struct Label {
     weight: FontWeight,
     enable_hinting: bool,
     line_height: LineHeight,
-    font: FontStack<'static>,
+    font: FontFamily<'static>,
     // TODO: add more attributes of `masonry::widgets::Label`
 }
 
@@ -90,11 +90,11 @@ impl Label {
         self
     }
 
-    /// Set the [font stack](FontStack) this label will use.
+    /// Set the [font family](FontFamily) this label will use.
     ///
-    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// A font family allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
-    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+    pub fn font(mut self, font: impl Into<FontFamily<'static>>) -> Self {
         self.font = font.into();
         self
     }
@@ -121,7 +121,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::LineHeight(self.line_height))
-                .with_style(StyleProperty::FontStack(self.font.clone()))
+                .with_style(StyleProperty::FontFamily(self.font.clone()))
                 .with_hint(self.enable_hinting),
         );
         (pod, ())
@@ -151,7 +151,10 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
             widgets::Label::insert_style(&mut element, StyleProperty::LineHeight(self.line_height));
         }
         if prev.font != self.font {
-            widgets::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
+            widgets::Label::insert_style(
+                &mut element,
+                StyleProperty::FontFamily(self.font.clone()),
+            );
         }
         if prev.enable_hinting != self.enable_hinting {
             widgets::Label::set_hint(&mut element, self.enable_hinting);
