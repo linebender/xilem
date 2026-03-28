@@ -133,18 +133,22 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Sets a style property for the new text area.
     ///
-    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
-    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
-    /// and [variable font parameters](parley::StyleProperty::FontVariations).
-    /// The styles inserted here apply to the entire text; we currently do not
-    /// support inline rich text.
+    /// Style properties set by this method include [text size], [font family], [font weight],
+    /// and [variable font parameters]. The styles inserted here apply to the entire text;
+    /// we currently do not support inline rich text.
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`] is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
-    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
-    /// instead overwrites any previous font stack.
+    /// This is also not additive for [font family],
+    /// and instead overwrites any previous font stack.
     ///
     /// To set a style property on an active text area, use [`insert_style`](Self::insert_style).
+    ///
+    /// [text size]: parley::StyleProperty::FontSize
+    /// [font family]: parley::StyleProperty::FontFamily
+    /// [font weight]: parley::StyleProperty::FontWeight
+    /// [variable font parameters]: parley::StyleProperty::FontVariations
+    /// [`StyleProperty::Brush`]: parley::StyleProperty::Brush
     #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
@@ -261,18 +265,22 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Sets font styling for an active text area.
     ///
-    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
-    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
-    /// and [variable font parameters](parley::StyleProperty::FontVariations).
-    /// The styles inserted here apply to the entire text; we currently do not
-    /// support inline rich text.
+    /// Style properties set by this method include [text size], [font family], [font weight],
+    /// and [variable font parameters]. The styles inserted here apply to the entire text;
+    /// we currently do not support inline rich text.
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`] is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
-    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
-    /// instead overwrites any previous font stack.
+    /// This is also not additive for [font family],
+    /// and instead overwrites any previous font stack.
     ///
     /// This is the runtime equivalent of [`with_style`](Self::with_style).
+    ///
+    /// [text size](parley::StyleProperty::FontSize)
+    /// [font family](parley::StyleProperty::FontFamily)
+    /// [font weight](parley::StyleProperty::FontWeight)
+    /// [variable font parameters](parley::StyleProperty::FontVariations)
+    /// [`StyleProperty::Brush`](parley::StyleProperty::Brush)
     #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
