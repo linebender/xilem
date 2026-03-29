@@ -24,10 +24,10 @@ use masonry_core::app::{
 };
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use masonry_core::core::{
-    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
-    Modifiers, NewWidget, PointerButton, PointerButtonEvent, PointerEvent, PointerId, PointerInfo,
-    PointerScrollEvent, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget,
-    WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
+    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, KeyboardEvent, Modifiers,
+    NewWidget, PointerButton, PointerButtonEvent, PointerEvent, PointerId, PointerInfo,
+    PointerScrollEvent, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent,
+    TextInputEvent, Widget, WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
@@ -812,13 +812,13 @@ impl<W: Widget> TestHarness<W> {
         });
     }
 
-    // TODO - Handle complicated IME
+    // TODO - Handle complicated text input
     // TODO - Mock Winit keyboard events
     /// Sends a [`TextEvent`] for each character in the given string.
     pub fn keyboard_type_chars(&mut self, text: &str) {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
-            let event = TextEvent::Ime(Ime::Commit(c.to_string()));
+            let event = TextEvent::TextInput(TextInputEvent::insert(c));
             self.render_root.handle_text_event(event);
         }
         self.process_signals();

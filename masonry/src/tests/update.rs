@@ -11,12 +11,13 @@ use masonry_testing::{
 
 use crate::core::pointer::{PointerButton, PointerEvent};
 use crate::core::{
-    CursorIcon, Ime, NewWidget, PropertySet, TextEvent, Update, Widget, WidgetId, WidgetPod,
-    WidgetTag,
+    CursorIcon, Handled, NewWidget, PropertySet, TextCursorAnchor, TextCursorOffset,
+    TextCursorPlacement, TextDeleteSurroundingEvent, TextEvent, TextInputAction, TextInputEvent,
+    TextInsertEvent, TextTargetRange, Update, Widget, WidgetId, WidgetPod, WidgetTag,
 };
 use crate::layout::Length;
 use crate::theme::test_property_set;
-use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
+use crate::widgets::{Button, Flex, InsertNewline, Label, SizedBox, TextAction, TextArea};
 
 // TREE
 
@@ -496,14 +497,184 @@ fn ime_commit() {
 
     harness.focus_on(Some(textbox_id));
 
-    harness.process_text_event(TextEvent::Ime(Ime::Commit("New Text".to_string())));
+    harness.process_text_event(TextEvent::TextInput(TextInputEvent::insert("New Text")));
     assert_eq!(harness.get_widget(textbox_tag).text(), "New Text");
 
-    harness.process_text_event(TextEvent::Ime(Ime::Commit(" and more".to_string())));
+    harness.process_text_event(TextEvent::TextInput(TextInputEvent::insert(" and more")));
     assert_eq!(harness.get_widget(textbox_tag).text(), "New Text and more");
 
     let ime_area_size = harness.ime_rect().1;
     assert!(ime_area_size.width > 0. && ime_area_size.height > 0.);
+}
+
+#[test]
+fn text_input_insert_replacement_range() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable("hello"), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    let handled = harness.process_text_event(TextEvent::TextInput(TextInputEvent::replace(
+        "i",
+        TextTargetRange::utf8_bytes(1, 4),
+    )));
+
+    assert_eq!(handled, Handled::Yes);
+    assert_eq!(harness.get_widget(textbox_tag).text(), "hio");
+}
+
+#[test]
+fn text_input_delete_surrounding_utf8() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable("abcdef"), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::set_selection(
+            TextTargetRange::utf8_bytes(3, 3),
+        ))),
+        Handled::Yes
+    );
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(
+            TextInputEvent::delete_surrounding_utf8(1, 2),
+        )),
+        Handled::Yes
+    );
+
+    assert_eq!(harness.get_widget(textbox_tag).text(), "abf");
+}
+
+#[test]
+fn text_input_set_selection_replaces_selected_text() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable("hello"), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::set_selection(
+            TextTargetRange::utf8_bytes(1, 4),
+        ))),
+        Handled::Yes
+    );
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::insert("i"))),
+        Handled::Yes
+    );
+
+    assert_eq!(harness.get_widget(textbox_tag).text(), "hio");
+}
+
+#[test]
+fn text_input_action_newline_inserts_when_enabled() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(
+        TextArea::new_editable("hello").with_insert_newline(InsertNewline::OnEnter),
+        textbox_tag,
+    );
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::action(
+            TextInputAction::Newline,
+        ))),
+        Handled::Yes
+    );
+
+    let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
+    assert_eq!(widget_id, textbox_id);
+    assert_eq!(action, TextAction::Changed("\nhello".to_string()));
+    assert_eq!(harness.get_widget(textbox_tag).text(), "\nhello");
+}
+
+#[test]
+fn text_input_actions_submit_entered() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable("query"), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    for action in [
+        TextInputAction::Done,
+        TextInputAction::Search,
+        TextInputAction::Send,
+    ] {
+        assert_eq!(
+            harness.process_text_event(TextEvent::TextInput(TextInputEvent::action(action))),
+            Handled::Yes
+        );
+        let (emitted, widget_id) = harness.pop_action::<TextAction>().unwrap();
+        assert_eq!(widget_id, textbox_id);
+        assert_eq!(emitted, TextAction::Entered("query".to_string()));
+    }
+}
+
+#[test]
+fn text_input_non_utf8_delete_surrounding_is_unhandled() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable("abcdef"), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::set_selection(
+            TextTargetRange::utf8_bytes(3, 3),
+        ))),
+        Handled::Yes
+    );
+
+    let handled = harness.process_text_event(TextEvent::TextInput(
+        TextInputEvent::DeleteSurrounding(TextDeleteSurroundingEvent::utf16_code_units(1, 1)),
+    ));
+
+    assert_eq!(handled, Handled::No);
+    assert_eq!(harness.get_widget(textbox_tag).text(), "abcdef");
+}
+
+#[test]
+fn text_input_cursor_placement_is_currently_ignored() {
+    let textbox_tag = WidgetTag::named("textbox");
+    let textbox = NewWidget::new_with_tag(TextArea::new_editable(""), textbox_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), textbox);
+    let textbox_id = harness.get_widget(textbox_tag).id();
+    harness.focus_on(Some(textbox_id));
+
+    let placement = TextCursorPlacement::Offset(TextCursorOffset::utf8_bytes(
+        0,
+        TextCursorAnchor::InsertedTextStart,
+    ));
+
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::Insert(
+            TextInsertEvent::new("ab").with_cursor_placement(placement),
+        ))),
+        Handled::Yes
+    );
+    assert_eq!(
+        harness.process_text_event(TextEvent::TextInput(TextInputEvent::Insert(
+            TextInsertEvent::new("X"),
+        ))),
+        Handled::Yes
+    );
+
+    // If cursor placement were applied, the follow-up insert would land before "ab".
+    assert_eq!(harness.get_widget(textbox_tag).text(), "abX");
 }
 
 #[test]
@@ -543,7 +714,10 @@ fn ime_start_stop() {
 
     let records = harness.take_records_of(textbox_tag);
     assert_any(records, |r| {
-        matches!(r, Record::TextEvent(TextEvent::Ime(Ime::Disabled)))
+        matches!(
+            r,
+            Record::TextEvent(TextEvent::TextInput(TextInputEvent::CompositionEnd))
+        )
     });
 
     assert!(!harness.has_ime_session());

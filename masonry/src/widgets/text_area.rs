@@ -3,6 +3,7 @@
 
 use std::any::TypeId;
 use std::mem::Discriminant;
+use std::num::NonZeroUsize;
 
 use accesskit::{Node, Role};
 use parley::PlainEditor;
@@ -11,10 +12,11 @@ use tracing::{Span, trace_span};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
-    MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CompositionState, CursorIcon, EventCtx,
+    LayoutCtx, MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent,
+    PointerUpdate, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
+    TextInputAction, TextInputEvent, TextRangeEncoding, TextTargetRange, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, render_text,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -44,6 +46,12 @@ use crate::{TextAlign, theme};
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
 /// In particular, this has consequences when the text alignment is set.
+///
+/// Text input currently passes through this widget as a temporary adapter layer over
+/// `PlainEditor`. The common `ui-events` text-input cases are supported, but richer Android-style
+/// semantics are still incomplete here:
+/// non-UTF-8 `DeleteSurrounding` requests are unhandled, `cursor_placement` metadata is ignored,
+/// and some composing-region behavior remains provisional until Parley grows direct support.
 // TODO: RichTextInput 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
@@ -254,6 +262,31 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             "TextArea::ime_area should only be called when the editor layout is available"
         );
         bounding_box_to_rect(self.editor.ime_cursor_area())
+    }
+
+    fn should_insert_newline(&self, shift: bool) -> bool {
+        match self.insert_newline {
+            InsertNewline::OnEnter => true,
+            InsertNewline::OnShiftEnter => shift,
+            InsertNewline::Never => false,
+        }
+    }
+
+    fn document_range_to_byte_range(
+        &self,
+        range: TextTargetRange,
+    ) -> Option<std::ops::Range<usize>> {
+        range.to_range_in(&self.text().to_string())
+    }
+
+    fn composition_selection(state: &CompositionState) -> Option<(usize, usize)> {
+        state.selection.map(|selection| {
+            (
+                usize::try_from(selection.start)
+                    .expect("composition selection start exceeds usize"),
+                usize::try_from(selection.end).expect("composition selection end exceeds usize"),
+            )
+        })
     }
 }
 
@@ -687,12 +720,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         edited = true;
                     }
                     Key::Named(NamedKey::Enter) => {
-                        let insert_newline = match self.insert_newline {
-                            InsertNewline::OnEnter => true,
-                            InsertNewline::OnShiftEnter => shift,
-                            InsertNewline::Never => false,
-                        };
-                        if insert_newline {
+                        if self.should_insert_newline(shift) {
                             let (fctx, lctx) = ctx.text_contexts();
                             self.editor
                                 .driver(fctx, lctx)
@@ -742,43 +770,141 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.request_paint_only();
             }
 
-            TextEvent::Ime(e) => {
-                // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
+            TextEvent::TextInput(input) => {
+                // This is a temporary adapter layer until PlainEditor can apply richer text-input
+                // events directly.
                 let (fctx, lctx) = ctx.text_contexts();
+                let mut text_changed = false;
+                let mut handled = true;
 
-                // Whether the returned text has changed.
-                // We don't send a TextChanged when the preedit changes
-                let mut edited = false;
-                match e {
-                    Ime::Disabled => {
-                        self.editor.driver(fctx, lctx).clear_compose();
-                    }
-                    Ime::Preedit(text, cursor) => {
-                        if text.is_empty() {
-                            self.editor.driver(fctx, lctx).clear_compose();
-                        } else {
-                            self.editor.driver(fctx, lctx).set_compose(text, *cursor);
-                            edited = true;
+                match input {
+                    TextInputEvent::Insert(insert) if EDITABLE => {
+                        if let Some(range) = insert
+                            .replacement_range
+                            .and_then(|range| self.document_range_to_byte_range(range))
+                        {
+                            self.editor
+                                .driver(fctx, lctx)
+                                .select_byte_range(range.start, range.end);
                         }
-                    }
-                    Ime::Commit(text) => {
                         self.editor
                             .driver(fctx, lctx)
-                            .insert_or_replace_selection(text);
-                        edited = true;
+                            .insert_or_replace_selection(&insert.text);
+                        // TODO: Apply `cursor_placement` once PlainEditor can express it directly.
+                        text_changed = true;
                     }
-                    Ime::Enabled => {}
+                    TextInputEvent::DeleteBackward if EDITABLE => {
+                        self.editor.driver(fctx, lctx).backdelete();
+                        text_changed = true;
+                    }
+                    TextInputEvent::DeleteForward if EDITABLE => {
+                        self.editor.driver(fctx, lctx).delete();
+                        text_changed = true;
+                    }
+                    TextInputEvent::DeleteSurrounding(delete) if EDITABLE => {
+                        if delete.encoding == TextRangeEncoding::Utf8Bytes {
+                            let mut driver = self.editor.driver(fctx, lctx);
+                            if let Some(before) = NonZeroUsize::new(
+                                usize::try_from(delete.before_length)
+                                    .expect("delete before length exceeds usize"),
+                            ) {
+                                driver.delete_bytes_before_selection(before);
+                            }
+                            if let Some(after) = NonZeroUsize::new(
+                                usize::try_from(delete.after_length)
+                                    .expect("delete after length exceeds usize"),
+                            ) {
+                                driver.delete_bytes_after_selection(after);
+                            }
+                            text_changed = delete.before_length != 0 || delete.after_length != 0;
+                        } else {
+                            handled = false;
+                        }
+                    }
+                    TextInputEvent::SetSelection(range) => {
+                        if let Some(range) = self.document_range_to_byte_range(*range) {
+                            self.editor
+                                .driver(fctx, lctx)
+                                .select_byte_range(range.start, range.end);
+                        } else {
+                            handled = false;
+                        }
+                    }
+                    TextInputEvent::SetComposingRegion(range) => {
+                        if let Some(range) = self.document_range_to_byte_range(*range) {
+                            self.editor
+                                .driver(fctx, lctx)
+                                .set_compose_byte_range(range.start, range.end);
+                        } else {
+                            handled = false;
+                        }
+                    }
+                    TextInputEvent::CompositionUpdate(state) => {
+                        if state.text.is_empty() {
+                            self.editor.driver(fctx, lctx).clear_compose();
+                        } else {
+                            if !self.editor.is_composing()
+                                && let Some(range) = state
+                                    .replacement_range
+                                    .and_then(|range| self.document_range_to_byte_range(range))
+                            {
+                                self.editor
+                                    .driver(fctx, lctx)
+                                    .select_byte_range(range.start, range.end);
+                            }
+                            self.editor
+                                .driver(fctx, lctx)
+                                .set_compose(&state.text, Self::composition_selection(state));
+                            // TODO: Apply `cursor_placement` once PlainEditor can express it directly.
+                        }
+                    }
+                    TextInputEvent::CompositionEnd => {
+                        self.editor.driver(fctx, lctx).clear_compose();
+                    }
+                    TextInputEvent::Action(TextInputAction::Done)
+                    | TextInputEvent::Action(TextInputAction::Go)
+                    | TextInputEvent::Action(TextInputAction::Search)
+                    | TextInputEvent::Action(TextInputAction::Send) => {
+                        ctx.submit_action::<Self::Action>(TextAction::Entered(
+                            self.text().to_string(),
+                        ));
+                    }
+                    TextInputEvent::Action(TextInputAction::Newline) if EDITABLE => {
+                        if self.should_insert_newline(false) {
+                            self.editor
+                                .driver(fctx, lctx)
+                                .insert_or_replace_selection("\n");
+                            text_changed = true;
+                        } else {
+                            ctx.submit_action::<Self::Action>(TextAction::Entered(
+                                self.text().to_string(),
+                            ));
+                        }
+                    }
+                    TextInputEvent::Action(TextInputAction::Next)
+                    | TextInputEvent::Action(TextInputAction::Previous) => {
+                        handled = false;
+                    }
+                    _ => {
+                        handled = false;
+                    }
+                }
+
+                if !handled {
+                    return;
                 }
 
                 ctx.set_handled();
-                if edited {
-                    let text = self.text().into_iter().collect();
-                    ctx.submit_action::<Self::Action>(TextAction::Changed(text));
-                }
-
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
-                    ctx.request_layout();
+                    if text_changed {
+                        let text = self.text().into_iter().collect();
+                        ctx.submit_action::<Self::Action>(TextAction::Changed(text));
+                        ctx.request_layout();
+                    } else {
+                        ctx.request_render();
+                        ctx.set_ime_area(self.ime_area());
+                    }
                     self.rendered_generation = new_generation;
                 }
             }
@@ -1110,7 +1236,7 @@ mod tests {
     use masonry_testing::TestHarnessParams;
 
     use super::*;
-    use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet};
+    use crate::core::{Handled, KeyboardEvent, Modifiers, NewWidget, PropertySet, TextRange};
     use crate::kurbo::Size;
     use crate::palette;
     use crate::testing::TestHarness;
@@ -1292,5 +1418,49 @@ mod tests {
                 assert_eq!(text, "\nhello world");
             }
         }
+    }
+
+    #[test]
+    fn set_composing_region_marks_existing_document_range() {
+        let area = NewWidget::new(TextArea::new_editable("hello"));
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let text_id = harness.root_id();
+
+        harness.focus_on(Some(text_id));
+        assert_eq!(
+            harness.process_text_event(TextEvent::TextInput(TextInputEvent::SetComposingRegion(
+                TextTargetRange::utf8_bytes(1, 4),
+            ))),
+            Handled::Yes
+        );
+
+        let area = harness.root_widget();
+        assert_eq!(area.editor.raw_text(), "hello");
+        assert_eq!(area.editor.raw_compose().clone(), Some(1..4));
+        assert_eq!(area.text().to_string(), "ho");
+    }
+
+    #[test]
+    fn composition_update_replacement_range_sets_compose_and_selection() {
+        let area = NewWidget::new(TextArea::new_editable("wxyz"));
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let text_id = harness.root_id();
+
+        harness.focus_on(Some(text_id));
+        assert_eq!(
+            harness.process_text_event(TextEvent::TextInput(TextInputEvent::CompositionUpdate(
+                CompositionState::new("ab")
+                    .with_selection(TextRange::new(1, 2))
+                    .with_replacement_range(TextTargetRange::utf8_bytes(1, 3)),
+            ))),
+            Handled::Yes
+        );
+
+        let area = harness.root_widget();
+        assert!(area.editor.is_composing());
+        assert_eq!(area.editor.raw_text(), "wabz");
+        assert_eq!(area.editor.raw_compose().clone(), Some(1..3));
+        assert_eq!(area.editor.raw_selection().text_range(), 2..3);
+        assert_eq!(area.text().to_string(), "wz");
     }
 }

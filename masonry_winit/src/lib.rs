@@ -101,7 +101,5 @@ pub mod app {
         Window, run, run_with,
     };
 
-    pub(crate) use super::convert_winit_event::{
-        masonry_resize_direction_to_winit, winit_ime_to_masonry,
-    };
+    pub(crate) use super::convert_winit_event::masonry_resize_direction_to_winit;
 }

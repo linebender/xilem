@@ -16,7 +16,7 @@ use tree_arena::{ArenaMut, TreeArena};
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
+    Handled, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
     ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
@@ -170,6 +170,12 @@ pub(crate) struct RenderRootState {
 
     /// Whether to paint widget's bounding boxes and other visual helpers.
     pub(crate) debug_paint: bool,
+}
+
+impl RenderRootState {
+    pub(crate) fn reset_ime_area_tracking(&mut self) {
+        self.last_sent_ime_area = INVALID_IME_AREA;
+    }
 }
 
 pub(crate) struct MutateCallback {
@@ -518,12 +524,6 @@ impl RenderRoot {
         let _span = info_span!("text_event");
         let handled = run_on_text_event_pass(self, &event);
         run_update_focus_pass(self);
-
-        if matches!(event, TextEvent::Ime(Ime::Enabled)) {
-            // Reset the last sent IME area, as the platform reset the IME state and may have
-            // forgotten it.
-            self.global_state.last_sent_ime_area = INVALID_IME_AREA;
-        }
         self.run_rewrite_passes();
 
         handled

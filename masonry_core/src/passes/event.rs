@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::{info_span, trace};
+use ui_events::text::TextInputEvent;
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, Handled, Ime, PointerButtonEvent, PointerEvent, PointerGestureEvent,
+    AccessEvent, EventCtx, Handled, PointerButtonEvent, PointerEvent, PointerGestureEvent,
     PointerInfo, PointerScrollEvent, PointerType, PointerUpdate, PropertiesMut, TextEvent, Widget,
     WidgetId,
 };
@@ -303,7 +304,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
     });
 
-    let skip_if_disabled = !matches!(event, TextEvent::Ime(Ime::Disabled));
+    let skip_if_disabled = !matches!(event, TextEvent::TextInput(TextInputEvent::CompositionEnd));
     let mut handled = run_event_pass(
         root,
         target,
