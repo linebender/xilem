@@ -650,10 +650,11 @@ impl<W: Widget> TestHarness<W> {
         let mut node_id = self.access_tree.state().root_id();
         #[expect(
             unsafe_code,
-            reason = "No public API exists for modifying/creating a NodeId"
+            reason = "No public API exists for modifying/creating a accesskit_consumer::NodeId"
         )]
         // SAFETY: This hack isn't safe as there is no memory layout guarantee.
         //         Remove when a public API becomes available.
+        //         https://github.com/AccessKit/accesskit/issues/701
         unsafe {
             let p = &mut node_id as *mut accesskit_consumer::NodeId as *mut u64;
             core::ptr::write_unaligned(p, id.to_raw());
