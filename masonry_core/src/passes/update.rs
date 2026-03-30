@@ -1112,7 +1112,7 @@ fn update_props_for_widget(
 
     if state.request_update_props {
         let class_diff = std::mem::take(&mut state.class_diff);
-        class_diff.apply(class_set);
+        class_set.apply(&class_diff);
 
         // Check whether to update cache entries before applying the diff.
         let reset_cache = cached_props_changed(&class_diff, &state.property_cache);

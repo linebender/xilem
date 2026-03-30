@@ -33,6 +33,27 @@ impl ClassSet {
     pub(crate) fn add_class(&mut self, class: &str) {
         self.classes.insert(class.to_string());
     }
+
+    pub(crate) fn apply(&mut self, diff: &ClassSetDiff) {
+        for class in &diff.added {
+            self.add_class(class);
+        }
+        for class in &diff.removed {
+            self.classes.remove(class);
+        }
+        if let Some(v) = diff.is_hovered {
+            self.is_hovered = v;
+        }
+        if let Some(v) = diff.is_active {
+            self.is_active = v;
+        }
+        if let Some(v) = diff.is_disabled {
+            self.is_disabled = v;
+        }
+        if let Some(v) = diff.has_focus_target {
+            self.has_focus_target = v;
+        }
+    }
 }
 
 // ---
@@ -46,26 +67,5 @@ impl ClassSetDiff {
     pub(crate) fn remove(&mut self, class: &str) {
         self.added.remove(class);
         self.removed.insert(class.to_string());
-    }
-
-    pub(crate) fn apply(&self, class_set: &mut ClassSet) {
-        for class in &self.added {
-            class_set.add_class(class);
-        }
-        for class in &self.removed {
-            class_set.classes.remove(class);
-        }
-        if let Some(v) = self.is_hovered {
-            class_set.is_hovered = v;
-        }
-        if let Some(v) = self.is_active {
-            class_set.is_active = v;
-        }
-        if let Some(v) = self.is_disabled {
-            class_set.is_disabled = v;
-        }
-        if let Some(v) = self.has_focus_target {
-            class_set.has_focus_target = v;
-        }
     }
 }
