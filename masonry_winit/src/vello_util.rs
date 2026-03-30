@@ -3,15 +3,15 @@
 
 //! Simple helpers for managing wgpu state and surfaces.
 //!
-//! This module is based on [`vello::util`](masonry_core::vello::util) module
-//! with modifications for transparent surfaces.
+//! This module is based on [`vello::util`] module with modifications
+//! for transparent surfaces.
 
-use masonry_core::vello::Error;
-use masonry_core::vello::wgpu::{self, MemoryBudgetThresholds, MemoryHints};
-use wgpu::util::{TextureBlitter, TextureBlitterBuilder};
-use wgpu::{
-    BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance, PresentMode,
-    Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView,
+use vello::Error;
+use vello::wgpu::util::{TextureBlitter, TextureBlitterBuilder};
+use vello::wgpu::{
+    self, BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance,
+    MemoryBudgetThresholds, MemoryHints, PresentMode, Surface, SurfaceConfiguration, Texture,
+    TextureFormat, TextureUsages, TextureView,
 };
 
 use crate::app_driver::WgpuLimits;

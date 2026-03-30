@@ -16,6 +16,13 @@ use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use imaging_vello::VelloSceneSink;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
+use vello::Scene;
+use vello::util::{RenderContext, block_on_wgpu};
+use vello::wgpu::{
+    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
+    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
+    TextureUsages, TextureViewDescriptor,
+};
 
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
@@ -34,13 +41,6 @@ use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
 use masonry_core::peniko::Fill;
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
-use masonry_core::vello::util::{RenderContext, block_on_wgpu};
-use masonry_core::vello::wgpu::{
-    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
-    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
-    TextureUsages, TextureViewDescriptor,
-};
-use masonry_core::vello::{self, Scene};
 
 use crate::screenshots::get_image_diff;
 use crate::{Record, Recorder};

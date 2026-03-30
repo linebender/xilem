@@ -40,11 +40,10 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [xilem_core]: https://docs.rs/xilem_core/latest/xilem_core
 [xilem_examples]: ./examples/
 
+[imaging]: https://crates.io/crates/imaging
 [masonry_winit]: https://crates.io/crates/masonry_winit
 [masonry]: https://crates.io/crates/masonry
 [Parley]: https://crates.io/crates/parley
-[Vello]: https://crates.io/crates/vello
-[wgpu]: https://crates.io/crates/wgpu
 [winit]: https://crates.io/crates/winit
 
 <!-- markdownlint-disable MD053 -->
@@ -59,8 +58,7 @@ was presented at the RustNL conference in 2024, and gives a video introduction t
 Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
 Masonry itself is built on top of a wide array of foundational Rust UI projects:
 
-* Rendering is provided by [Vello], a high performance GPU compute-centric 2D renderer.
-* GPU compute infrastructure is provided by [wgpu].
+* Rendering is provided by [Imaging][imaging], an interface to multiple high performance 2D renderers.
 * Text layout is provided by [Parley].
 * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
 * Window handling is provided by [Winit][].
@@ -160,9 +158,8 @@ The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/fe
 
 [accesskit_docs]: masonry::accesskit
 [Parley]: masonry::parley
-[Vello]: masonry::vello
+[imaging]: masonry::imaging
 [winit]: masonry_winit::winit
-[wgpu]: masonry::vello::wgpu
 
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
