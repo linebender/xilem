@@ -333,10 +333,6 @@ pub fn default_property_set() -> DefaultProperties {
             Background::Color(ZYNC_700),
         );
         stack.push(
-            Selector::new().with_disabled(true),
-            Background::Color(Color::BLACK),
-        );
-        stack.push(
             Selector::new().with_hovered(true),
             BorderColor { color: ZYNC_500 },
         );
@@ -346,9 +342,10 @@ pub fn default_property_set() -> DefaultProperties {
         );
         stack.push(
             Selector::new().with_disabled(true),
-            CheckmarkColor {
-                color: DISABLED_TEXT_COLOR,
-            },
+            (
+                CheckmarkColor::new(DISABLED_TEXT_COLOR),
+                Background::Color(Color::BLACK),
+            ),
         );
         properties.insert_stack::<RadioButton>(stack);
     }
@@ -398,11 +395,10 @@ fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
         let mut stack = PropertyStack::new();
         stack.push(
             Selector::new().with_disabled(true),
-            ContentColor::new(DISABLED_TEXT_COLOR),
-        );
-        stack.push(
-            Selector::new().with_disabled(true),
-            Background::Color(Color::BLACK),
+            (
+                ContentColor::new(DISABLED_TEXT_COLOR),
+                Background::Color(Color::BLACK),
+            ),
         );
         stack.push(
             Selector::new().with_hovered(true),
