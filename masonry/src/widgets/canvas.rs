@@ -160,7 +160,7 @@ mod tests {
     use crate::core::{DefaultProperties, PropertySet, render_text};
     use crate::kurbo::{Affine, BezPath, Stroke};
     use crate::parley::{
-        Alignment, AlignmentOptions, FontFamily, FontStack, GenericFamily, StyleProperty,
+        Alignment, AlignmentOptions, FontFamily, FontFamilyName, GenericFamily, StyleProperty,
     };
     use crate::peniko::Color;
     use crate::testing::{TestHarness, TestHarnessParams};
@@ -213,8 +213,8 @@ mod tests {
                 let mut painter = Painter::new(scene);
                 let (fcx, lcx) = ctx.text_contexts();
                 let mut text_layout_builder = lcx.ranged_builder(fcx, "Canvas", 1., true);
-                text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
-                    FontFamily::Generic(GenericFamily::Serif),
+                text_layout_builder.push_default(StyleProperty::FontFamily(FontFamily::Single(
+                    FontFamilyName::Generic(GenericFamily::Serif),
                 )));
                 text_layout_builder.push_default(StyleProperty::FontSize(size.height as f32));
                 let mut text_layout = text_layout_builder.build("Canvas");

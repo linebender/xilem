@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::ActionRequest;
+use accesskit::{ActionRequest, TreeId};
 use assert_matches::assert_matches;
 use dpi::PhysicalPosition;
 
@@ -633,7 +633,8 @@ fn access_event_bubbling() {
     // Send random event
     harness.process_access_event(ActionRequest {
         action: accesskit::Action::Click,
-        target: target_id.into(),
+        target_tree: TreeId::ROOT,
+        target_node: target_id.into(),
         data: None,
     });
 
@@ -671,7 +672,8 @@ fn accessibility_focus() {
     // Send focus event
     harness.process_access_event(ActionRequest {
         action: accesskit::Action::Focus,
-        target: child_3_id.into(),
+        target_tree: TreeId::ROOT,
+        target_node: child_3_id.into(),
         data: None,
     });
     assert_eq!(harness.focused_widget_id(), Some(child_3_id));
@@ -679,7 +681,8 @@ fn accessibility_focus() {
     // Send blur event with incorrect id
     harness.process_access_event(ActionRequest {
         action: accesskit::Action::Blur,
-        target: child_2_id.into(),
+        target_tree: TreeId::ROOT,
+        target_node: child_2_id.into(),
         data: None,
     });
     assert_eq!(harness.focused_widget_id(), Some(child_3_id));
@@ -687,7 +690,8 @@ fn accessibility_focus() {
     // Send blur event with correct id
     harness.process_access_event(ActionRequest {
         action: accesskit::Action::Blur,
-        target: child_3_id.into(),
+        target_tree: TreeId::ROOT,
+        target_node: child_3_id.into(),
         data: None,
     });
     assert_eq!(harness.focused_widget_id(), None);

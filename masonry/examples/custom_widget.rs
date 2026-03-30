@@ -17,7 +17,7 @@ use masonry::core::{
 use masonry::imaging::Painter;
 use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
 use masonry::layout::LenReq;
-use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
+use masonry::parley::style::{FontFamily, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, ImageBrush, ImageFormat};
 use masonry::peniko::{ImageAlphaType, ImageData};
 use masonry::properties::ObjectFit;
@@ -25,6 +25,7 @@ use masonry::theme::default_property_set;
 use masonry::{TextAlign, TextAlignOptions, palette};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
+use parley::FontFamilyName;
 use tracing::{Span, trace_span};
 
 struct Driver;
@@ -138,8 +139,8 @@ impl Widget for CustomWidget {
         let (fcx, lcx) = ctx.text_contexts();
         let mut text_layout_builder = lcx.ranged_builder(fcx, &self.0, 1.0, true);
 
-        text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
-            FontFamily::Generic(GenericFamily::Serif),
+        text_layout_builder.push_default(StyleProperty::FontFamily(FontFamily::Single(
+            FontFamilyName::Generic(GenericFamily::Serif),
         )));
         text_layout_builder.push_default(StyleProperty::FontSize(24.0));
 

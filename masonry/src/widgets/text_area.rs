@@ -14,7 +14,7 @@ use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -133,18 +133,22 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Sets a style property for the new text area.
     ///
-    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
-    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
-    /// and [variable font parameters](parley::StyleProperty::FontVariations).
-    /// The styles inserted here apply to the entire text; we currently do not
-    /// support inline rich text.
+    /// Style properties set by this method include [text size], [font family], [font weight],
+    /// and [variable font parameters]. The styles inserted here apply to the entire text;
+    /// we currently do not support inline rich text.
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`] is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
-    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
-    /// instead overwrites any previous font stack.
+    /// This is also not additive for [font family],
+    /// and instead overwrites any previous font stack.
     ///
     /// To set a style property on an active text area, use [`insert_style`](Self::insert_style).
+    ///
+    /// [text size]: parley::StyleProperty::FontSize
+    /// [font family]: parley::StyleProperty::FontFamily
+    /// [font weight]: parley::StyleProperty::FontWeight
+    /// [variable font parameters]: parley::StyleProperty::FontVariations
+    /// [`StyleProperty::Brush`]: parley::StyleProperty::Brush
     #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
@@ -261,18 +265,22 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Sets font styling for an active text area.
     ///
-    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
-    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
-    /// and [variable font parameters](parley::StyleProperty::FontVariations).
-    /// The styles inserted here apply to the entire text; we currently do not
-    /// support inline rich text.
+    /// Style properties set by this method include [text size], [font family], [font weight],
+    /// and [variable font parameters]. The styles inserted here apply to the entire text;
+    /// we currently do not support inline rich text.
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`] is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
-    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
-    /// instead overwrites any previous font stack.
+    /// This is also not additive for [font family],
+    /// and instead overwrites any previous font stack.
     ///
     /// This is the runtime equivalent of [`with_style`](Self::with_style).
+    ///
+    /// [text size](parley::StyleProperty::FontSize)
+    /// [font family](parley::StyleProperty::FontFamily)
+    /// [font weight](parley::StyleProperty::FontWeight)
+    /// [variable font parameters](parley::StyleProperty::FontVariations)
+    /// [`StyleProperty::Brush`](parley::StyleProperty::Brush)
     #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
@@ -1056,15 +1064,29 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
         if !EDITABLE {
             node.set_read_only();
         }
-        let updated =
-            self.editor
-                .try_accessibility(ctx.tree_update(), node, AccessCtx::next_node_id, 0., 0.);
+
+        let text_color = if ctx.is_disabled()
+            && let Some(dc) = props.get_defined::<DisabledContentColor>()
+        {
+            &dc.0
+        } else {
+            props.get::<ContentColor>()
+        };
+
+        let updated = self.editor.try_accessibility(
+            ctx.tree_update(),
+            node,
+            AccessCtx::next_node_id,
+            0.,
+            0.,
+            |node, style| set_accesskit_brush_properties(node, style, &[text_color.color.into()]),
+        );
 
         let Some(()) = updated else {
             // We always perform layout before accessibility, so this panic should be unreachable.

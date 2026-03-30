@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::NodeId;
+use accesskit_consumer::NodeId;
 use assert_matches::assert_matches;
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
@@ -66,8 +66,8 @@ fn access_node_children() {
 
     let parent_node = harness.access_node(parent_node_id).unwrap();
     assert_eq!(
-        Vec::<NodeId>::from_iter(parent_node.child_ids()),
-        vec![id_1, id_2, id_3]
+        Vec::<u64>::from_iter(parent_node.child_ids().map(node_local_id_to_u64)),
+        vec![id_1.to_raw(), id_2.to_raw(), id_3.to_raw()]
     );
 
     // We stash a child
@@ -80,7 +80,12 @@ fn access_node_children() {
     // Stash child is not included
     let parent_node = harness.access_node(parent_node_id).unwrap();
     assert_eq!(
-        Vec::<NodeId>::from_iter(parent_node.child_ids()),
-        vec![id_1, id_3]
+        Vec::<u64>::from_iter(parent_node.child_ids().map(node_local_id_to_u64)),
+        vec![id_1.to_raw(), id_3.to_raw()]
     );
+}
+
+fn node_local_id_to_u64(node_id: NodeId) -> u64 {
+    let node_id: u128 = node_id.into();
+    (node_id >> 64) as u64
 }

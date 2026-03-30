@@ -4,8 +4,8 @@
 use std::marker::PhantomData;
 
 use masonry::core::{ArcStr, NewWidget};
-use masonry::parley::StyleProperty;
-use masonry::parley::style::{FontStack, FontWeight};
+use masonry::parley::style::FontWeight;
+use masonry::parley::{FontFamily, StyleProperty};
 use masonry::widgets::{self, CheckboxToggled};
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -44,7 +44,7 @@ where
         checked,
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
-        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        font: FontFamily::List(std::borrow::Cow::Borrowed(&[])),
         disabled: false,
         phantom: PhantomData,
     }
@@ -60,7 +60,7 @@ pub struct Checkbox<State, Action, F> {
     callback: F,
     text_size: f32,
     weight: FontWeight,
-    font: FontStack<'static>,
+    font: FontFamily<'static>,
     disabled: bool,
     phantom: PhantomData<fn(State) -> Action>,
 }
@@ -79,11 +79,11 @@ impl<State, Action, F> Checkbox<State, Action, F> {
         self
     }
 
-    /// Set the [font stack](FontStack) the checkbox label will use.
+    /// Set the [font family](FontFamily) the checkbox label will use.
     ///
-    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// A font family allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
-    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+    pub fn font(mut self, font: impl Into<FontFamily<'static>>) -> Self {
         self.font = font.into();
         self
     }
@@ -109,7 +109,7 @@ where
         let label = widgets::Label::new(self.label.clone())
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
-            .with_style(StyleProperty::FontStack(self.font.clone()));
+            .with_style(StyleProperty::FontFamily(self.font.clone()));
 
         let element = ctx.with_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Checkbox::from_label(
@@ -148,7 +148,7 @@ where
             widgets::Label::insert_style(&mut label, StyleProperty::FontWeight(self.weight));
         }
         if prev.font != self.font {
-            widgets::Label::insert_style(&mut label, StyleProperty::FontStack(self.font.clone()));
+            widgets::Label::insert_style(&mut label, StyleProperty::FontFamily(self.font.clone()));
         }
     }
 
