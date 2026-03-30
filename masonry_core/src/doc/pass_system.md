@@ -110,7 +110,7 @@ For instance, if a user presses `Tab` and text focus moves to the next widget, M
 #### "Update tree" pass
 
 The `update_widget_tree` pass is a special case.
-It is ran when new widgets are added to the tree, or existing widgets are removed.
+It is run when new widgets are added to the tree, or existing widgets are removed.
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the [`WidgetAdded`] event on new widgets.
 
@@ -118,13 +118,13 @@ It will call the `register_children()` widget method on container widgets whose 
 
 #### "Update disabled" pass
 
-This pass is ran when widgets are [disabled] or enabled.
+This pass is run when widgets are [disabled] or enabled.
 
 It takes care of propagating disabled flags so that, if a widget is marked as disabled, all its children will be disabled as well.
 
 #### "Update stashed" pass
 
-This pass is ran when widgets are [stashed] or un-stashed.
+This pass is run when widgets are [stashed] or un-stashed.
 
 It's very similar to the "update disabled" pass, and takes care of propagating stashed flags.
 
