@@ -22,7 +22,7 @@
 //!
 //! Masonry is built on top of:
 //!
-//! - [Vello][vello] and [wgpu][vello::wgpu] for 2D graphics.
+//! - [Imaging][imaging] (by default [Vello][vello] and [wgpu][wgpu] for 2D graphics.
 //! - [Parley][parley] for the text stack.
 //! - [AccessKit][accesskit] for plugging into accessibility APIs.
 //!
@@ -154,7 +154,7 @@
 //! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 //!
 //! - `default`: Enables the default features of [Masonry Core][masonry_core], [Masonry Testing][masonry_testing]
-//!   (if enabled via the `testing` feature), and [Vello][vello].
+//!   (if enabled via the `testing` feature).
 //! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 //!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 //! - `testing`: Re-exports the test harness from [Masonry Testing][masonry_testing].
@@ -173,6 +173,8 @@
 //! [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 //! [masonry_testing]: https://docs.rs/masonry_testing/latest/masonry_testing/
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
+//! [vello]: https://crates.io/crates/vello
+//! [wgpu]: https://crates.io/crates/wgpu
 #![cfg_attr(
     not(docsrs),
     doc = "\n**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
@@ -224,4 +226,4 @@ pub use masonry_core::{app, core, kurbo, layout, peniko, ui_events, util};
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;
 pub use parley::{Alignment as TextAlign, AlignmentOptions as TextAlignOptions};
-pub use {dpi, parley, vello};
+pub use {dpi, parley};

@@ -23,10 +23,9 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
 [accesskit]: https://crates.io/crates/accesskit
+[imaging]: https://crates.io/crates/imaging
 [parley]: https://crates.io/crates/parley
 [tracing]: https://crates.io/crates/tracing
-[vello::wgpu]: https://crates.io/crates/wgpu
-[vello]: https://crates.io/crates/vello
 
 <!-- It would be nice if we could use something like ../masonry_core/README.md, etc. I don't think that would work as expected on crates.io, though -->
 [masonry_core]: https://crates.io/crates/masonry_core
@@ -53,7 +52,7 @@ It *is* opinionated about its internals: things like text focus, pointer interac
 
 Masonry is built on top of:
 
-- [Vello][vello] and [wgpu][vello::wgpu] for 2D graphics.
+- [Imaging][imaging] (by default [Vello][vello] and [wgpu][wgpu] for 2D graphics.
 - [Parley][parley] for the text stack.
 - [AccessKit][accesskit] for plugging into accessibility APIs.
 
@@ -183,7 +182,7 @@ Running this will open a window that looks like this:
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
 - `default`: Enables the default features of [Masonry Core][masonry_core], [Masonry Testing][masonry_testing]
-  (if enabled via the `testing` feature), and [Vello][vello].
+  (if enabled via the `testing` feature).
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 - `testing`: Re-exports the test harness from [Masonry Testing][masonry_testing].
@@ -202,6 +201,8 @@ If you want to use your own subscriber, simply set it before starting masonry - 
 [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 [masonry_testing]: https://docs.rs/masonry_testing/latest/masonry_testing/
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
+[vello]: https://crates.io/crates/vello
+[wgpu]: https://crates.io/crates/wgpu
 
 <!-- cargo-rdme end -->
 <!-- markdownlint-enable MD053 -->

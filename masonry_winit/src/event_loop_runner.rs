@@ -18,11 +18,9 @@ use masonry_core::core::{
 use masonry_core::kurbo::{Affine, Rect};
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
-use masonry_core::vello::{
-    AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu,
-};
 use tracing::{info, info_span, trace};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
+use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;

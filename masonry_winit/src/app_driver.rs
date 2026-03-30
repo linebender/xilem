@@ -9,8 +9,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
 use masonry_core::peniko::ImageData;
-use masonry_core::vello::wgpu;
 use tracing::field::DisplayValue;
+use vello::wgpu;
 use winit::event_loop::ActiveEventLoop;
 
 use crate::app::MasonryState;
@@ -182,7 +182,7 @@ impl DriverCtx<'_, '_> {
     ///
     /// ## When does this take effect?
     ///
-    /// The underlying Vello [`Renderer`](masonry_core::vello::Renderer) is created lazily during
+    /// The underlying Vello [`Renderer`](vello::Renderer) is created lazily during
     /// rendering. If you call this method before the renderer exists, Masonry will store the
     /// override and apply it automatically once a renderer has been created.
     ///

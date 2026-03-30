@@ -22,7 +22,7 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 [ui_events]: https://crates.io/crates/ui-events
-[vello]: https://crates.io/crates/vello
+[imaging]: https://crates.io/crates/imaging
 [accesskit]: https://crates.io/crates/accesskit
 
 [core::Widget::Action]: https://docs.rs/masonry_core/latest/masonry_core/core/widget/trait.Widget.html#associatedtype.Action
@@ -45,7 +45,7 @@ Masonry Core provides:
 - [`Widget`][core::Widget], the trait for GUI widgets in Masonry.
 - Event handling and bubbling, using types from [`ui-events`][ui_events] for interoperability.
 - Communication between parent and child widgets for layout.
-- Compositing of widget's content (to be rendered using [Vello][vello]).
+- Compositing of widget's content (to be rendered using [Imaging][imaging]).
 - Creation of accessibility trees using [Accesskit][accesskit].
 - APIs for widget manipulation (such as [`WidgetMut`][core::WidgetMut]).
 - The [`Action`][core::Widget::Action] mechanism by which widgets send events to the application.
@@ -72,7 +72,6 @@ not aware of any projects using Masonry Core as described in this paragraph.
 
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
-- `default`: Enables the default features of [Vello][vello].
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 

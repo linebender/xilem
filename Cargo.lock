@@ -2265,7 +2265,6 @@ dependencies = [
  "resvg",
  "smallvec",
  "tracing",
- "vello",
 ]
 
 [[package]]
@@ -2297,7 +2296,6 @@ dependencies = [
  "tracing_android_trace",
  "tree_arena",
  "ui-events",
- "vello",
  "web-time",
 ]
 
@@ -2315,6 +2313,7 @@ dependencies = [
  "pollster",
  "profiling",
  "tracing",
+ "vello",
 ]
 
 [[package]]
@@ -2330,6 +2329,7 @@ dependencies = [
  "tracing",
  "tracing-tracy",
  "ui-events-winit",
+ "vello",
  "wgpu",
  "wgpu-profiler",
  "winit",
