@@ -1157,8 +1157,11 @@ fn update_props_for_widget(
 }
 
 /// Returns `true` if any change in `diff` could affect a cached property resolution
-/// tracked in `cache`.
+/// tracked in `cache`, or if the cache was invalidated.
 fn cached_props_changed(diff: &ClassSetDiff, cache: &PropertyCache) -> bool {
+    if cache.invalidated {
+        return true;
+    }
     if !diff.added.is_disjoint(&cache.relevant_classes) {
         return true;
     }

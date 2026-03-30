@@ -168,6 +168,22 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         self
     }
 
+    /// Adds [class] to this widget.
+    ///
+    /// [class]: crate::doc::masonry_concepts#classes
+    pub fn with_class(mut self, class: &str) -> Self {
+        self.classes.insert(class.to_string());
+        self
+    }
+
+    /// Adds [classes] to this widget.
+    ///
+    /// [classes]: crate::doc::masonry_concepts#classes
+    pub fn with_classes(mut self, classes: impl IntoIterator<Item = String>) -> Self {
+        self.classes.extend(classes);
+        self
+    }
+
     /// Creates a `WidgetPod` which will be added to the widget tree.
     pub fn to_pod(self) -> WidgetPod<W> {
         WidgetPod {

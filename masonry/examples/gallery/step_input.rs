@@ -3,8 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    NewWidget, PropertySet, PropertyStack, Selector, StyleProperty, Widget, WidgetId,
-    WidgetOptions, WidgetTag,
+    NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
 };
 use masonry::layout::AsUnit;
 use masonry::peniko::color::AlphaColor;
@@ -13,6 +12,7 @@ use masonry::properties::{
     Background, BackwardColor, BorderColor, BorderWidth, ContentColor, CornerRadius, Dimensions,
     ForwardColor, HeatColor, StepInputStyle,
 };
+use masonry::theme::DISABLED_TEXT_COLOR;
 use masonry::widgets::{Button, Flex, Label, StepInput};
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
@@ -70,18 +70,36 @@ impl DemoPage for StepInputDemo {
 
         stack.push(
             Selector::new(),
-            PropertySet::one(BorderColor::new(AlphaColor::from_rgba8(
-                0xf2, 0xf4, 0xf8, 0x7f,
-            ))),
+            (BorderWidth::all(2.), CornerRadius::all(20.)),
+        );
+
+        stack.push(
+            Selector::new(),
+            (
+                Background::Color(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
+                ContentColor::new(AlphaColor::from_rgb8(0x3e, 0x4b, 0x6c)),
+                BackwardColor::new(AlphaColor::from_rgb8(0xab, 0x24, 0x24)),
+                ForwardColor::new(AlphaColor::from_rgb8(0x0b, 0x67, 0x43)),
+                HeatColor::new(AlphaColor::from_rgb8(0xff, 0x6c, 0x00)),
+                BorderColor::new(AlphaColor::from_rgba8(0xf2, 0xf4, 0xf8, 0x7f)),
+            ),
         );
         stack.push(
-            Selector::new().with_hovered(true),
-            PropertySet::one(BorderColor::new(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8))),
+            Selector::new().with_disabled(false).with_hovered(true),
+            BorderColor::new(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
         );
         stack.push(
-            Selector::new().with_focused(true),
-            PropertySet::one(BorderColor::new(AlphaColor::from_rgb8(0x28, 0x8c, 0xd9))),
+            Selector::new().with_disabled(false).with_focused(true),
+            BorderColor::new(AlphaColor::from_rgb8(0x28, 0x8c, 0xd9)),
         );
+        stack.push(
+            Selector::new().with_disabled(true),
+            (
+                ContentColor::new(DISABLED_TEXT_COLOR),
+                Background::Color(AlphaColor::from_rgb8(0x00, 0x00, 0x00)),
+            ),
+        );
+
         let id = render_root.property_arena().insert(stack);
         render_root.edit_widget_with_tag(self.tag_custom, |mut widget| {
             widget.ctx.set_property_stack(id);
@@ -229,17 +247,9 @@ impl DemoPage for StepInputDemo {
                             StepInput::new(u16::MAX / 2, 1, 0, u16::MAX),
                             Some(self.tag_custom),
                             WidgetOptions::default(),
-                            (
-                                StepInputStyle::Flow,
-                                CornerRadius::all(20.),
-                                Background::Color(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
-                                ContentColor::new(AlphaColor::from_rgb8(0x3e, 0x4b, 0x6c)),
-                                BackwardColor::new(AlphaColor::from_rgb8(0xab, 0x24, 0x24)),
-                                ForwardColor::new(AlphaColor::from_rgb8(0x0b, 0x67, 0x43)),
-                                HeatColor::new(AlphaColor::from_rgb8(0xff, 0x6c, 0x00)),
-                                BorderWidth::all(2.),
-                            ),
-                        ),
+                            StepInputStyle::Flow,
+                        )
+                        .with_class("custom"),
                         1.,
                     )
                     .with_auto_id(),
