@@ -141,7 +141,7 @@ This pass updates thing that need to change as a result of [text focus] having c
 
 It updates focus-related flags and sends [`FocusChanged`] and [`ChildFocusChanged`] events.
 
-It updates IME status and may send [`Ime::Disabled`] events to a widget and [`StartIme`] / [`EndIme`] signals to the platform.
+It updates IME status and may send [`TextInputEvent::CompositionEnd`] events to a widget and [`StartIme`] / [`EndIme`] signals to the platform.
 
 #### "Update scroll" pass
 
@@ -243,7 +243,7 @@ They can access the layout of children if they have already been laid out.
 [`RegisterCtx`]: crate::core::RegisterCtx
 [`QueryCtx`]: crate::core::QueryCtx
 [`WidgetAdded`]: crate::core::Update::WidgetAdded
-[`Ime::Disabled`]: crate::core::Ime::Disabled
+[`TextInputEvent::CompositionEnd`]: crate::core::TextInputEvent::CompositionEnd
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged
 [`ChildHoveredChanged`]: crate::core::Update::ChildHoveredChanged

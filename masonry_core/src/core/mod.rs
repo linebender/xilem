@@ -52,6 +52,11 @@ pub use ui_events::pointer::{
     PointerButton, PointerButtonEvent, PointerEvent, PointerGesture, PointerGestureEvent,
     PointerId, PointerInfo, PointerScrollEvent, PointerState, PointerType, PointerUpdate,
 };
+pub use ui_events::text::{
+    CompositionState, TextCursorAnchor, TextCursorOffset, TextCursorPlacement,
+    TextDeleteSurroundingEvent, TextInputAction, TextInputEvent, TextInsertEvent, TextRange,
+    TextRangeEncoding, TextTargetRange,
+};
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
 pub(crate) use class_set::*;

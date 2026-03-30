@@ -107,7 +107,7 @@ A disabled widget is one which is made non-interactive, and should affect the st
 
 For an example the decrease button of a counter of type `usize` should be disabled if the value is `0`.
 
-A disabled widget cannot have active status, cannot get or keep text focus, and cannot get text events (except [`Ime::Disabled`]).
+A disabled widget cannot have active status, cannot get or keep text focus, and cannot get text events (except [`TextInputEvent::CompositionEnd`]).
 It cannot get pointer events (except [`PointerEvent::Cancel`]) or have hovered status either.
 Its pointer icon will be the default one.
 
@@ -277,7 +277,7 @@ DPI-aware pixel snapping is a future feature.
 
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
 [`PointerEvent::Cancel`]: ui_events::pointer::PointerEvent::Cancel
-[`Ime::Disabled`]: crate::core::Ime::Disabled
+[`TextInputEvent::CompositionEnd`]: crate::core::TextInputEvent::CompositionEnd
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus

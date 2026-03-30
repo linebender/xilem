@@ -32,7 +32,6 @@ use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as Handle
 
 use crate::app::{
     AppDriver, DriverCtx, WgpuContext, WgpuLimits, masonry_resize_direction_to_winit,
-    winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
 use crate::vello_util::{RenderContext, RenderSurface};
@@ -927,6 +926,11 @@ impl MasonryState<'_> {
                 WindowEventTranslation::Pointer(p) => {
                     window.render_root.handle_pointer_event(p);
                 }
+                WindowEventTranslation::Text(t) => {
+                    window
+                        .render_root
+                        .handle_text_event(TextEvent::TextInput(t));
+                }
             }
         }
 
@@ -970,10 +974,6 @@ impl MasonryState<'_> {
                 window
                     .render_root
                     .handle_window_event(WindowEvent::Resize(size));
-            }
-            WinitWindowEvent::Ime(ime) => {
-                let ime = winit_ime_to_masonry(ime);
-                window.render_root.handle_text_event(TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
                 window

@@ -65,8 +65,10 @@ tracing = { version = "0.1.44", default-features = false }
 tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"
 # Remove "std" when that's fixed upstream
-ui-events = { version = "0.3.0", default-features = false, features = ["kurbo"] }
-ui-events-winit = { version = "0.3.0", default-features = false }
+ui-events = { git = "https://github.com/endoli/ui-events.git", rev = "5e840f0e39b412573aaec8debadd4be81c17d823", package = "ui-events", default-features = false, features = [
+    "kurbo",
+] }
+ui-events-winit = { git = "https://github.com/endoli/ui-events.git", rev = "5e840f0e39b412573aaec8debadd4be81c17d823", package = "ui-events-winit", default-features = false }
 smallvec = "1.15.1"
 hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher"] }
 dpi = "0.1.2"
