@@ -14,7 +14,7 @@ pub(crate) struct ClassSet {
 }
 
 /// A series of changes that need to be applied to a [`ClassSet`] during the next
-/// update_props pass
+/// update_props pass.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ClassSetDiff {
     // TODO - Use Hashmap of enums instead?

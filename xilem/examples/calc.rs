@@ -311,6 +311,7 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
+    // TODO - Find a more ergonomic way to express this in Xilem.
     let mut default_properties = default_property_set();
     let mut stack = PropertyStack::new();
     stack.push(Selector::new(), BorderColor::new(Color::TRANSPARENT));

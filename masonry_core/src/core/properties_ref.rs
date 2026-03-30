@@ -46,6 +46,9 @@ impl PropertiesRef<'_> {
         P::static_default()
     }
 
+    /// Returns value of property `P`, without updating the cache.
+    ///
+    /// Useful for cases where you don't have mutable access to the [`PropertyCache`].
     pub(crate) fn get_without_saving<P: Property>(&self, cache: &PropertyCache) -> &P {
         // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {

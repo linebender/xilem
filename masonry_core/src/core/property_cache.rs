@@ -33,6 +33,10 @@ impl PropertyCache {
         self.relevant_has_focus_target |= selector.has_focus_target.is_some();
     }
 
+    // Returns:
+    // - None if prop_type wasn't cached (or the cache was invalidated).
+    // - Some(None) if prop_type was cached as not found.
+    // - Some(Some(idx)) if prop_type was cached as found in layer idx.
     pub(crate) fn cached_index(&self, prop_type: TypeId) -> Option<Option<usize>> {
         if self.invalidated {
             None

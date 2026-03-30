@@ -166,7 +166,7 @@ These properties are mostly used for styling and event handling.
 Widgets have multiple layers of properties:
 
 - First, a set of local properties associated with a specific widget.
-- Then a "property stack" which is made of several layers, where each layer is a set of properties gates by a [`Selector`].
+- Then a "property stack" which is made of several layers, where each layer is a set of properties gated by a [`Selector`].
 - Then, default properties associated with each widget type.
 
 When code wants to access a widget's properties, a cascading process goes through these layers in turn and returns the first valid match.

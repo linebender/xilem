@@ -67,7 +67,7 @@ impl PropertiesMut<'_> {
         self.local.map.remove::<P>()
     }
 
-    /// Returns a reference to the local properties for direct access.
+    /// Returns a mutable reference to the local properties for direct access.
     pub fn local_properties(&mut self) -> &mut PropertySet {
         self.local
     }
