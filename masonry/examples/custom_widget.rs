@@ -17,6 +17,7 @@ use masonry::core::{
 use masonry::imaging::Painter;
 use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
 use masonry::layout::LenReq;
+use masonry::parley::FontFamilyName;
 use masonry::parley::style::{FontFamily, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, ImageBrush, ImageFormat};
 use masonry::peniko::{ImageAlphaType, ImageData};
@@ -25,7 +26,6 @@ use masonry::theme::default_property_set;
 use masonry::{TextAlign, TextAlignOptions, palette};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
-use parley::FontFamilyName;
 use tracing::{Span, trace_span};
 
 struct Driver;

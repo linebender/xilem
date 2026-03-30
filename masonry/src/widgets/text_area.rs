@@ -5,8 +5,6 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, Role};
-use parley::PlainEditor;
-use parley::editing::{Generation, SplitString};
 use tracing::{Span, trace_span};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
@@ -19,6 +17,8 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
 use crate::layout::LenReq;
+use crate::parley::PlainEditor;
+use crate::parley::editing::{Generation, SplitString};
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
 };
@@ -92,7 +92,7 @@ impl TextArea<true> {
     ///
     /// Useful for creating a styled [`TextInput`](super::TextInput).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
-    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn new_editable(text: &str) -> Self {
         Self::new(text)
     }
@@ -103,7 +103,7 @@ impl TextArea<false> {
     ///
     /// Useful for creating a styled [`Prose`](super::Prose).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
-    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn new_immutable(text: &str) -> Self {
         Self::new(text)
     }
@@ -113,7 +113,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Creates a new `TextArea` with the given text and default settings.
     ///
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
-    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn new(text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         default_text_styles(editor.edit_styles());
@@ -144,11 +144,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// To set a style property on an active text area, use [`insert_style`](Self::insert_style).
     ///
-    /// [text size]: parley::StyleProperty::FontSize
-    /// [font family]: parley::StyleProperty::FontFamily
-    /// [font weight]: parley::StyleProperty::FontWeight
-    /// [variable font parameters]: parley::StyleProperty::FontVariations
-    /// [`StyleProperty::Brush`]: parley::StyleProperty::Brush
+    /// [text size]: crate::parley::StyleProperty::FontSize
+    /// [font family]: crate::parley::StyleProperty::FontFamily
+    /// [font weight]: crate::parley::StyleProperty::FontWeight
+    /// [variable font parameters]: crate::parley::StyleProperty::FontVariations
+    /// [`StyleProperty::Brush`]: crate::parley::StyleProperty::Brush
     #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
@@ -276,11 +276,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// This is the runtime equivalent of [`with_style`](Self::with_style).
     ///
-    /// [text size](parley::StyleProperty::FontSize)
-    /// [font family](parley::StyleProperty::FontFamily)
-    /// [font weight](parley::StyleProperty::FontWeight)
-    /// [variable font parameters](parley::StyleProperty::FontVariations)
-    /// [`StyleProperty::Brush`](parley::StyleProperty::Brush)
+    /// [text size]: crate::parley::StyleProperty::FontSize
+    /// [font family]: crate::parley::StyleProperty::FontFamily
+    /// [font weight]: crate::parley::StyleProperty::FontWeight
+    /// [variable font parameters]: crate::parley::StyleProperty::FontVariations
+    /// [`StyleProperty::Brush`]: crate::parley::StyleProperty::Brush
     #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
@@ -297,7 +297,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.editor.edit_styles().retain(f);
 
@@ -313,7 +313,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// the desired property and passing it to [`core::mem::discriminant`].
     /// Getting this discriminant is usually possible in a `const` context.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn remove_style(
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,

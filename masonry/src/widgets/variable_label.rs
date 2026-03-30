@@ -4,7 +4,6 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use parley::style::FontWeight;
 use tracing::{Span, trace_span};
 
 use crate::core::{
@@ -15,6 +14,7 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::LenReq;
+use crate::parley::style::FontWeight;
 use crate::widgets::Label;
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
@@ -116,7 +116,7 @@ impl AnimationStatus {
     }
 }
 
-/// A widget displaying non-editable text, with a variable [weight](parley::style::FontWeight).
+/// A widget displaying non-editable text, with a variable [weight](crate::parley::style::FontWeight).
 ///
 /// Ensure that `VariableLabel` has [`Dimensions`] set via props
 /// either to [`Dimensions::fixed`] or [`Dimensions::MAX`].

@@ -3,7 +3,6 @@
 
 use accesskit::{ActionRequest, TreeId};
 use assert_matches::assert_matches;
-use dpi::PhysicalPosition;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
@@ -11,6 +10,7 @@ use crate::core::{
     AccessEvent, NewWidget, PointerButtonEvent, PointerId, PointerState, PointerUpdate, TextEvent,
     Update, Widget, WidgetId, WidgetTag,
 };
+use crate::dpi::PhysicalPosition;
 use crate::kurbo::Point;
 use crate::layout::AsUnit;
 use crate::testing::{
