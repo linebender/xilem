@@ -6,14 +6,13 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use dpi::PhysicalPosition;
-
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent, LayoutCtx,
     MeasureCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
+use crate::dpi::PhysicalPosition;
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size, Vec2};
 use crate::layout::{LenDef, LenReq, SizeDef};
@@ -1078,12 +1077,10 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
-    use kurbo::{Size, Vec2};
-    use parley::StyleProperty;
-
     use super::opt_iter_difference;
     use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
-    use crate::kurbo;
+    use crate::kurbo::{Size, Vec2};
+    use crate::parley::StyleProperty;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};

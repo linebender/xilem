@@ -4,7 +4,6 @@
 use std::ops::Range;
 
 use accesskit::{Node, Role};
-use dpi::PhysicalPosition;
 use tracing::{Span, trace_span};
 
 use crate::core::{
@@ -13,6 +12,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
@@ -426,7 +426,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     y: portal_size.height * scale_factor,
                 };
                 let delta_px = delta.to_pixel_delta(line_px, page_px);
-                let dpi::LogicalPosition { x, y } = delta_px.to_logical::<f64>(scale_factor);
+                let LogicalPosition { x, y } = delta_px.to_logical::<f64>(scale_factor);
                 let mut delta = -Vec2 { x, y };
 
                 // Ignore scroll deltas in directions that are constrained

@@ -203,13 +203,12 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use parley::StyleProperty;
-
     use super::*;
     use crate::TextAlign;
     use crate::core::PropertySet;
     use crate::kurbo::Size;
     use crate::layout::AsUnit;
+    use crate::parley::StyleProperty;
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};

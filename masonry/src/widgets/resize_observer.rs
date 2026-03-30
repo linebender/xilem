@@ -170,10 +170,10 @@ impl Widget for ResizeObserver {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use dpi::PhysicalSize;
     use masonry_testing::TestHarness;
 
     use crate::core::{NewWidget, Widget, WidgetTag, WindowEvent};
+    use crate::dpi::PhysicalSize;
     use crate::kurbo::Size;
     use crate::layout::AsUnit;
     use crate::properties::Dimensions;

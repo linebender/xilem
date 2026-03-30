@@ -6,7 +6,6 @@ use std::mem::Discriminant;
 
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
-use parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 
@@ -18,6 +17,7 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::LenReq;
+use crate::parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use crate::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
@@ -176,7 +176,7 @@ impl Label {
     /// Creates a new label with the given text.
     ///
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
-    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
         let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
         default_text_styles(&mut styles);
@@ -194,7 +194,7 @@ impl Label {
 
     /// Sets a style property for the new label.
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`](crate::parley::StyleProperty::Brush) is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
@@ -271,7 +271,7 @@ impl Label {
     // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
     /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
-    /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
+    /// Setting [`StyleProperty::Brush`](crate::parley::StyleProperty::Brush) is not supported.
     /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
@@ -289,7 +289,7 @@ impl Label {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.styles.retain(f);
 
@@ -306,7 +306,7 @@ impl Label {
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
     ///
-    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
+    /// Of note, behaviour is unspecified for unsetting the [`FontSize`](crate::parley::StyleProperty::FontSize).
     pub fn remove_style(
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
@@ -668,12 +668,11 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use parley::style::GenericFamily;
-    use parley::{FontFamily, FontFamilyName, StyleProperty};
-
     use super::*;
     use crate::core::{NewWidget, PropertySet};
     use crate::layout::{AsUnit, Dim};
+    use crate::parley::style::GenericFamily;
+    use crate::parley::{FontFamily, FontFamilyName, StyleProperty};
     use crate::properties::Dimensions;
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;

@@ -23,10 +23,8 @@ testing = ["dep:masonry_testing"]
 
 [dependencies]
 accesskit.workspace = true
-dpi.workspace = true
 masonry_core.workspace = true
 masonry_testing = { workspace = true, optional = true }
-parley.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 include_doc_path.workspace = true

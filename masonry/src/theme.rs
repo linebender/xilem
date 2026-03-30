@@ -5,11 +5,10 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
-use parley::{GenericFamily, LineHeight};
-
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::layout::Length;
 use crate::palette::css::DIM_GRAY;
+use crate::parley::{GenericFamily, LineHeight};
 use crate::peniko::Color;
 
 // We use glob imports here to avoid frequent merge conflicts.
