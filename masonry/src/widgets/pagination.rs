@@ -154,7 +154,7 @@ impl Pagination {
 
 // --- MARK: METHODS
 impl Pagination {
-    /// Returns the list of page indicies that the pagination buttons are associated with.
+    /// Returns the list of page indices that the pagination buttons are associated with.
     fn derive_button_pages(&self) -> Vec<usize> {
         let button_count = self.page_count.min(self.buttons_total as usize);
         let mut button_pages = Vec::new();
@@ -194,7 +194,7 @@ impl Pagination {
             }
         }
 
-        // Make sure the chosen page indicies are in ascending order.
+        // Make sure the chosen page indices are in ascending order.
         button_pages.sort();
 
         button_pages
@@ -202,7 +202,7 @@ impl Pagination {
 
     /// Synchronizes all the child button widgets with the provided `button_pages`.
     fn sync_buttons<Ctx: SyncCtx>(&mut self, ctx: &mut Ctx) {
-        // Derive the currently active page indicies for buttons.
+        // Derive the currently active page indices for buttons.
         let button_pages = self.derive_button_pages();
 
         // Remove any excess buttons that were created before the total limit was reduced.
@@ -484,76 +484,76 @@ mod tests {
 
     #[test]
     fn button_pages() {
-        let pn = Pagination::new(0);
-        assert_eq!(pn.derive_button_pages(), vec![]);
+        let pg = Pagination::new(0);
+        assert_eq!(pg.derive_button_pages(), vec![]);
 
-        let pn = Pagination::new(1);
-        assert_eq!(pn.derive_button_pages(), vec![0]);
+        let pg = Pagination::new(1);
+        assert_eq!(pg.derive_button_pages(), vec![0]);
 
-        let pn = Pagination::new(2);
-        assert_eq!(pn.derive_button_pages(), vec![0, 1]);
+        let pg = Pagination::new(2);
+        assert_eq!(pg.derive_button_pages(), vec![0, 1]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(0)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![]);
+        assert_eq!(pg.derive_button_pages(), vec![]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(1)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![5]);
+        assert_eq!(pg.derive_button_pages(), vec![5]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(2)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![0, 5]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 5]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(3)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![0, 5, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 5, 9]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(5)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![0, 4, 5, 6, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 4, 5, 6, 9]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(5)
             .buttons_start(2)
             .buttons_end(2)
             .active_page(5);
-        assert_eq!(pn.derive_button_pages(), vec![0, 1, 5, 8, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 1, 5, 8, 9]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(5)
             .buttons_start(0)
             .buttons_end(2)
             .active_page(3);
-        assert_eq!(pn.derive_button_pages(), vec![2, 3, 4, 8, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![2, 3, 4, 8, 9]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(5)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(9);
-        assert_eq!(pn.derive_button_pages(), vec![0, 6, 7, 8, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 6, 7, 8, 9]);
 
-        let pn = Pagination::new(10)
+        let pg = Pagination::new(10)
             .buttons_total(20)
             .buttons_start(1)
             .buttons_end(1)
             .active_page(9);
-        assert_eq!(pn.derive_button_pages(), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(pg.derive_button_pages(), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }
