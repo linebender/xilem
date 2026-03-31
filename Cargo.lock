@@ -6054,6 +6054,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
+ "usvg",
  "winit",
  "xilem_core",
  "xilem_masonry",
@@ -6076,6 +6077,7 @@ dependencies = [
  "masonry",
  "tokio",
  "tracing",
+ "usvg",
  "xilem_core",
 ]
 

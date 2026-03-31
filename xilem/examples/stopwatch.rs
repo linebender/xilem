@@ -4,6 +4,7 @@
 //! A stopwatch to display elapsed time.
 
 use std::ops::{Add, Sub};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
@@ -12,11 +13,26 @@ use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
+use usvg::Tree;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{FlexSequence, FlexSpacer, flex_col, flex_row, label, task, text_button};
+use xilem::style::Style;
+use xilem::view::{FlexSequence, FlexSpacer, flex_col, flex_row, label, svg, task, text_button};
 use xilem::{WidgetView, WindowOptions, Xilem};
+
+const STOPWATCH_SVG: &str = r#"
+<svg xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="rgb(255, 255, 255)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+        <circle cx="12" cy="13" r="7"/>
+        <path d="M12 13l3-2M9 2h6M12 6V4M17 8l1-1"/>
+</svg>
+"#;
 
 /// The state of the entire application.
 ///
@@ -37,6 +53,8 @@ struct Stopwatch {
     completed_lap_splits: Vec<Duration>,
     /// The duration of the main timer when the split was started.
     split_start_time: Duration,
+    /// The SVG stopwatch icon.
+    tree: Arc<Tree>,
 }
 
 impl Stopwatch {
@@ -110,7 +128,12 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     fork(
         flex_col((
             FlexSpacer::Fixed(5.px()),
-            label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
+            flex_row((
+                svg(data.tree.clone()).dims((75.px(), 75.px())),
+                label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Center)
+            .cross_axis_alignment(CrossAxisAlignment::Center),
             flex_row((lap_reset_button(data), start_stop_button(data)))
                 .main_axis_alignment(MainAxisAlignment::Center),
             FlexSpacer::Fixed(1.px()),
@@ -198,6 +221,7 @@ fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> 
 }
 
 pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+    let tree = Tree::from_str(STOPWATCH_SVG, &usvg::Options::default()).unwrap();
     let mut data = Stopwatch {
         active: false,
         added_duration: Duration::ZERO,
@@ -206,6 +230,7 @@ pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         displayed_error: "".into(),
         completed_lap_splits: Vec::new(),
         split_start_time: Duration::ZERO,
+        tree: Arc::new(tree),
     };
     data.update_display();
 
