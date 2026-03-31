@@ -9,8 +9,8 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, MainAxisAlignment, checkbox, flex_col, flex_row, indexed_stack, progress_bar,
-    sized_box, text_button,
+    FlexSpacer, MainAxisAlignment, checkbox, collapse_panel, flex_col, flex_row, indexed_stack,
+    label, progress_bar, sized_box, text_button,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
@@ -24,6 +24,7 @@ struct WidgetGallery {
     tab: GalleryTab,
     progress: Option<f64>,
     checked: bool,
+    collapsed: bool,
 }
 
 #[repr(usize)]
@@ -31,6 +32,7 @@ struct WidgetGallery {
 enum GalleryTab {
     Progress = 0,
     Checkbox,
+    CollapsePanel,
 }
 
 fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
@@ -60,6 +62,14 @@ fn checkbox_view(data: bool) -> impl WidgetView<bool> {
     })
 }
 
+fn collapse_panel_view(_data: bool) -> impl WidgetView<bool> {
+    // TODO: Actually use data when CollapsePanel gets action support for collapse changes
+    collapse_panel(
+        label("Click the arrow to expand"),
+        label("Here's the secret message"),
+    )
+}
+
 /// Wrap `inner` in a box with a border
 fn border_box<State: 'static, Action: 'static>(
     inner: impl WidgetView<State, Action>,
@@ -87,6 +97,10 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
                     data.tab = GalleryTab::Checkbox;
                 })
                 .disabled(data.tab == GalleryTab::Checkbox),
+                text_button("CollapsePanel", |data: &mut WidgetGallery| {
+                    data.tab = GalleryTab::CollapsePanel;
+                })
+                .disabled(data.tab == GalleryTab::CollapsePanel),
             ))
             .main_axis_alignment(MainAxisAlignment::Center),
             indexed_stack((
@@ -97,6 +111,10 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
                 lens(
                     |checked: &mut bool| border_box(checkbox_view(*checked)),
                     |data: &mut WidgetGallery| &mut data.checked,
+                ),
+                lens(
+                    |collapsed: &mut bool| border_box(collapse_panel_view(*collapsed)),
+                    |data: &mut WidgetGallery| &mut data.collapsed,
                 ),
             ))
             .active(data.tab as usize),
@@ -112,6 +130,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         tab: GalleryTab::Progress,
         progress: Some(0.5),
         checked: false,
+        collapsed: true,
     };
 
     // Instantiate and run the UI using the passed event loop.
