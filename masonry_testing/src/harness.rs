@@ -7,22 +7,14 @@ use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufReader, Cursor};
 use std::marker::PhantomData;
-use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use imaging_vello::VelloSceneSink;
+use imaging_vello::VelloRenderer;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
-use vello::Scene;
-use vello::util::{RenderContext, block_on_wgpu};
-use vello::wgpu::{
-    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
-    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
-    TextureUsages, TextureViewDescriptor,
-};
 
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
@@ -37,8 +29,9 @@ use masonry_core::core::{
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
+use masonry_core::imaging::Painter;
+use masonry_core::imaging::record::{Scene, replay_transformed};
 use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
-use masonry_core::peniko::Fill;
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
 
@@ -137,8 +130,8 @@ pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: accesskit_consumer::Tree,
-    render_context: Option<RenderContext>,
-    vello_renderer: Option<vello::Renderer>,
+    renderer: Option<VelloRenderer>,
+    renderer_size: Option<(u16, u16)>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     root_padding: u32,
@@ -360,8 +353,8 @@ impl<W: Widget> TestHarness<W> {
                 },
             ),
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
-            render_context: None,
-            vello_renderer: None,
+            renderer: None,
+            renderer_size: None,
             mouse_state,
             window_size,
             background_color: params.background_color,
@@ -499,145 +492,53 @@ impl<W: Widget> TestHarness<W> {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
 
-        let mut context = self
-            .render_context
-            .take()
-            .unwrap_or_else(RenderContext::new);
+        let (width, height) = padded_dimensions(self.window_size, self.root_padding);
+        let width_u16 = u16::try_from(width).expect("screenshot width exceeds renderer limit");
+        let height_u16 = u16::try_from(height).expect("screenshot height exceeds renderer limit");
 
-        let device_id =
-            pollster::block_on(context.device(None)).expect("No compatible device found");
-        let device_handle = &mut context.devices[device_id];
-        let device = &device_handle.device;
-        let queue = &device_handle.queue;
-        let size = self.render_root.size();
-        let mut contents_scene = Scene::new();
-        let bounds = Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
-        let mut sink = VelloSceneSink::new(&mut contents_scene, bounds);
-        paint_result.replay_into(&mut sink);
-        sink.finish()
-            .expect("translate retained imaging scene for Vello");
-
-        let mut renderer = self.vello_renderer.take().unwrap_or_else(|| {
-            vello::Renderer::new(
-                device,
-                vello::RendererOptions {
-                    // TODO - Examine this value
-                    use_cpu: true,
-                    num_init_threads: NonZeroUsize::new(1),
-                    // TODO - Examine this value
-                    antialiasing_support: vello::AaSupport::area_only(),
-                    ..Default::default()
-                },
-            )
-            .expect("Got non-Send/Sync error from creating renderer")
-        });
-
-        let (width, height) = (self.window_size.width, self.window_size.height);
-
-        let padding = self.root_padding;
-        // Avoid having a zero-sized image
-        let width = width.max(1) + padding * 2;
-        let height = height.max(1) + padding * 2;
-
-        let render_params = vello::RenderParams {
-            base_color: self.background_color,
-            width,
-            height,
-            antialiasing_method: vello::AaConfig::Area,
-        };
-
-        let size = Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-        let target = device.create_texture(&TextureDescriptor {
-            label: Some("Target texture"),
-            size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Rgba8Unorm,
-            usage: TextureUsages::STORAGE_BINDING | TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
-        let view = target.create_view(&TextureViewDescriptor::default());
-
-        let scene = if padding != 0 {
-            let mut scene = Scene::new();
-            // 25% opacity of 50% grey provides a border of where the actual widget content is.
-            // Alternatively, maybe we should use a stronger color here?
-            let padding_color = Color::from_rgba8(127, 127, 127, 64);
-            // We draw the border first, so that any content is above the background color.
-            for [x0, y0, x1, y1] in [
-                [0, 0, padding, height],                              // Left edge
-                [width - padding, 0, width, height],                  // Right edge
-                [padding, 0, width - padding, padding],               // Top edge
-                [padding, height - padding, width - padding, height], // Bottom edge
-            ] {
-                scene.fill(
-                    Fill::EvenOdd,
-                    Affine::IDENTITY,
-                    padding_color,
-                    None,
-                    &Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
-                );
-            }
-            scene.append(
-                &contents_scene,
-                Some(Affine::translate((padding as f64, padding as f64))),
-            );
-            scene
-        } else {
-            contents_scene
-        };
-        renderer
-            .render_to_texture(device, queue, &scene, &view, &render_params)
-            .expect("Got non-Send/Sync error from rendering");
-        let padded_byte_width = (width * 4).next_multiple_of(256);
-        let buffer_size = padded_byte_width as u64 * height as u64;
-        let buffer = device.create_buffer(&BufferDescriptor {
-            label: Some("val"),
-            size: buffer_size,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor {
-            label: Some("Copy out buffer"),
-        });
-        encoder.copy_texture_to_buffer(
-            target.as_image_copy(),
-            TexelCopyBufferInfo {
-                buffer: &buffer,
-                layout: TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(padded_byte_width),
-                    rows_per_image: None,
-                },
-            },
-            size,
-        );
-
-        queue.submit([encoder.finish()]);
-        let buf_slice = buffer.slice(..);
-
-        let (sender, receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        buf_slice.map_async(MapMode::Read, move |v| sender.send(v).unwrap());
-        let recv_result = block_on_wgpu(device, receiver.receive()).expect("channel was closed");
-        recv_result.expect("failed to map buffer");
-
-        let data = buf_slice.get_mapped_range();
-        let mut result_unpadded =
-            Vec::<u8>::with_capacity((width * height * 4).try_into().unwrap());
-        for row in 0..height {
-            let start = (row * padded_byte_width).try_into().unwrap();
-            result_unpadded.extend(&data[start..start + (width * 4) as usize]);
+        if self.renderer_size != Some((width_u16, height_u16)) {
+            self.renderer = Some(VelloRenderer::new(width_u16, height_u16));
+            self.renderer_size = Some((width_u16, height_u16));
         }
 
-        self.render_context = Some(context);
-        self.vello_renderer = Some(renderer);
+        let renderer = self.renderer.as_mut().unwrap();
+        let mut scene = Scene::new();
+        {
+            let mut painter = Painter::new(&mut scene);
+            painter.fill_rect(
+                Rect::new(0.0, 0.0, f64::from(width), f64::from(height)),
+                self.background_color,
+            );
 
-        RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
+            if self.root_padding != 0 {
+                // 25% opacity of 50% grey provides a border of where the actual widget content is.
+                // Alternatively, maybe we should use a stronger color here?
+                let padding_color = Color::from_rgba8(127, 127, 127, 64);
+                // We draw the border first, so that any content is above the background color.
+                for [x0, y0, x1, y1] in padding_rects(width, height, self.root_padding) {
+                    painter.fill_rect(
+                        Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
+                        padding_color,
+                    );
+                }
+            }
+        }
+
+        let padding_transform =
+            Affine::translate((self.root_padding as f64, self.root_padding as f64));
+        replay_transformed(&paint_result.base, &mut scene, padding_transform);
+        for layer in &paint_result.overlays {
+            replay_transformed(
+                &layer.scene,
+                &mut scene,
+                padding_transform * layer.transform,
+            );
+        }
+
+        let rgba = renderer
+            .render_scene_rgba8(&scene)
+            .expect("render retained imaging scene for Vello");
+        RgbaImage::from_vec(width, height, rgba).expect("failed to create image")
     }
 
     /// Returns a reference to the current state of the accessibility tree.
@@ -1250,6 +1151,22 @@ impl<W: Widget> TestHarness<W> {
             }
         }
     }
+}
+
+fn padded_dimensions(window_size: PhysicalSize<u32>, root_padding: u32) -> (u32, u32) {
+    // Avoid having a zero-sized image.
+    let width = window_size.width.max(1) + root_padding * 2;
+    let height = window_size.height.max(1) + root_padding * 2;
+    (width, height)
+}
+
+fn padding_rects(width: u32, height: u32, padding: u32) -> [[u32; 4]; 4] {
+    [
+        [0, 0, padding, height],                              // Left edge
+        [width - padding, 0, width, height],                  // Right edge
+        [padding, 0, width - padding, padding],               // Top edge
+        [padding, height - padding, width - padding, height], // Bottom edge
+    ]
 }
 
 struct NoOpTreeChangeHandler;

@@ -2333,10 +2333,8 @@ dependencies = [
  "imaging_vello",
  "masonry_core",
  "oxipng",
- "pollster",
  "profiling",
  "tracing",
- "vello",
 ]
 
 [[package]]

@@ -16,7 +16,7 @@ default-target = "x86_64-unknown-linux-gnu"
 targets = []
 
 [features]
-default = ["vello/default"]
+default = []
 
 [dependencies]
 accesskit_consumer.workspace = true
@@ -25,9 +25,7 @@ image = { workspace = true, features = ["png"] }
 imaging_vello.workspace = true
 masonry_core.workspace = true
 oxipng = { version = "9.1.5", default-features = false }
-pollster = "0.4.0"
 tracing = { workspace = true, features = ["default"] }
-vello.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"
