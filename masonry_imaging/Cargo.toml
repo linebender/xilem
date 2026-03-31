@@ -1,0 +1,40 @@
+[package]
+name = "masonry_imaging"
+version.workspace = true # We mimic Xilem's version
+description = "Backend adapters for rendering Masonry retained imaging scenes."
+keywords = ["gui", "ui", "toolkit"]
+categories = ["gui", "internationalization", "accessibility"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+
+[features]
+default = ["imaging_vello"]
+imaging_vello = ["dep:imaging_vello", "dep:vello"]
+imaging_vello_hybrid = ["dep:imaging_vello_hybrid"]
+imaging_vello_cpu = ["dep:imaging_vello_cpu"]
+imaging_skia = ["dep:imaging_skia"]
+
+[dependencies]
+imaging.workspace = true
+imaging_vello = { workspace = true, optional = true }
+imaging_vello_hybrid = { workspace = true, optional = true }
+imaging_vello_cpu = { workspace = true, optional = true }
+kurbo.workspace = true
+peniko.workspace = true
+wgpu.workspace = true
+vello = { workspace = true, optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+imaging_skia = { workspace = true, optional = true }
+
+[lints]
+workspace = true

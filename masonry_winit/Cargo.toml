@@ -18,11 +18,15 @@ targets = []
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
-default = ["vello/default"]
+default = ["imaging_vello"]
+imaging_vello = ["masonry_imaging/imaging_vello"]
+imaging_vello_hybrid = ["masonry_imaging/imaging_vello_hybrid"]
+imaging_skia = ["masonry_imaging/imaging_skia"]
 # Enables tracing using tracy if the default Masonry tracing is used.
 # https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
 tracy = [
     "dep:tracing-tracy",
+    "dep:vello",
     "dep:wgpu-profiler",
     "wgpu-profiler/tracy",
     "masonry_core/tracy",
@@ -37,14 +41,15 @@ tracing-tracy = { version = "0.11.4", optional = true }
 ui-events-winit.workspace = true
 pollster = "0.4.0"
 accesskit_winit.workspace = true
-imaging_vello.workspace = true
-vello.workspace = true
+masonry_imaging = { workspace = true, default-features = false }
+vello = { workspace = true, optional = true }
+wgpu.workspace = true
 wgpu-profiler = { optional = true, version = "0.26.0", default-features = false }
 copypasta = "0.10.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-# We need Metal to interact with CoreAnimation during window resizing.  
-wgpu = { version = "28.0.0", default-features = false, features = ["metal"] }
+# We need Metal to interact with CoreAnimation during window resizing.
+wgpu = { workspace = true, features = ["metal"] }
 
 [dev-dependencies]
 # We don't use the "workspace" dependency here, because this makes a loop in publishing.

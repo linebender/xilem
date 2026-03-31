@@ -86,6 +86,9 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 
+#[cfg(feature = "tracy")]
+use vello as _;
+
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;

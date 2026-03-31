@@ -6,15 +6,33 @@
 //! This module is based on [`vello::util`] module with modifications
 //! for transparent surfaces.
 
-use vello::Error;
-use vello::wgpu::util::{TextureBlitter, TextureBlitterBuilder};
-use vello::wgpu::{
+use wgpu::util::{TextureBlitter, TextureBlitterBuilder};
+use wgpu::{
     self, BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance,
     MemoryBudgetThresholds, MemoryHints, PresentMode, Surface, SurfaceConfiguration, Texture,
     TextureFormat, TextureUsages, TextureView,
 };
 
 use crate::app_driver::WgpuLimits;
+
+#[derive(Debug)]
+pub(crate) enum RenderSurfaceError {
+    CreateSurface(wgpu::CreateSurfaceError),
+    NoCompatibleDevice,
+    UnsupportedSurfaceFormat,
+}
+
+impl core::fmt::Display for RenderSurfaceError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::CreateSurface(err) => write!(f, "creating surface failed: {err}"),
+            Self::NoCompatibleDevice => write!(f, "no compatible WGPU device found"),
+            Self::UnsupportedSurfaceFormat => write!(f, "unsupported surface format"),
+        }
+    }
+}
+
+impl std::error::Error for RenderSurfaceError {}
 
 /// Simple render context that maintains wgpu state for rendering the pipeline.
 pub(crate) struct RenderContext {
@@ -93,9 +111,11 @@ impl RenderContext {
         width: u32,
         height: u32,
         present_mode: PresentMode,
-    ) -> Result<RenderSurface<'w>, Error> {
+    ) -> Result<RenderSurface<'w>, RenderSurfaceError> {
         self.create_render_surface(
-            self.instance.create_surface(window.into())?,
+            self.instance
+                .create_surface(window.into())
+                .map_err(RenderSurfaceError::CreateSurface)?,
             width,
             height,
             present_mode,
@@ -110,11 +130,11 @@ impl RenderContext {
         width: u32,
         height: u32,
         present_mode: PresentMode,
-    ) -> Result<RenderSurface<'w>, Error> {
+    ) -> Result<RenderSurface<'w>, RenderSurfaceError> {
         let dev_id = self
             .device(Some(&surface))
             .await
-            .ok_or(Error::NoCompatibleDevice)?;
+            .ok_or(RenderSurfaceError::NoCompatibleDevice)?;
 
         let device_handle = &self.devices[dev_id];
         let capabilities = surface.get_capabilities(&device_handle.adapter);
@@ -122,7 +142,7 @@ impl RenderContext {
             .formats
             .into_iter()
             .find(|it| matches!(it, TextureFormat::Rgba8Unorm | TextureFormat::Bgra8Unorm))
-            .ok_or(Error::UnsupportedSurfaceFormat)?;
+            .ok_or(RenderSurfaceError::UnsupportedSurfaceFormat)?;
 
         const PREMUL_BLEND_STATE: BlendState = BlendState {
             alpha: BlendComponent::REPLACE,
@@ -314,10 +334,12 @@ impl RenderContext {
     }
 }
 
-/// Vello uses a compute shader to render to the provided texture, which means that it can't bind the surface
-/// texture in most cases.
+/// Masonry renders into an intermediate texture because surface textures are not suitable for all
+/// backend paths directly.
 ///
-/// Because of this, we need to create an "intermediate" texture which we render to, and then blit to the surface.
+/// The Vello path needs storage binding for compute-based rendering, while the Vello Hybrid path
+/// renders through a color attachment. We therefore provision one intermediate texture that
+/// supports both backends and then blit to the surface.
 fn create_targets(width: u32, height: u32, device: &Device) -> (Texture, TextureView) {
     let target_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: None,
@@ -329,7 +351,10 @@ fn create_targets(width: u32, height: u32, device: &Device) -> (Texture, Texture
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        usage: TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING,
+        usage: TextureUsages::STORAGE_BINDING
+            | TextureUsages::TEXTURE_BINDING
+            | TextureUsages::COPY_DST
+            | TextureUsages::RENDER_ATTACHMENT,
         format: TextureFormat::Rgba8Unorm,
         view_formats: &[],
     });

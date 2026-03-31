@@ -17,14 +17,20 @@ default-target = "x86_64-unknown-linux-gnu"
 targets = []
 
 [features]
-default = ["masonry_core/default", "masonry_testing?/default"]
+default = ["masonry_core/default", "imaging_vello"]
+imaging_vello = ["masonry_testing?/imaging_vello", "masonry_winit/imaging_vello"]
+imaging_vello_hybrid = [
+    "masonry_testing?/imaging_vello_hybrid",
+    "masonry_winit/imaging_vello_hybrid",
+]
+imaging_skia = ["masonry_testing?/imaging_skia", "masonry_winit/imaging_skia"]
 tracy = ["masonry_core/tracy"]
 testing = ["dep:masonry_testing"]
 
 [dependencies]
 accesskit.workspace = true
 masonry_core.workspace = true
-masonry_testing = { workspace = true, optional = true }
+masonry_testing = { workspace = true, optional = true, default-features = false }
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 include_doc_path.workspace = true
@@ -37,8 +43,8 @@ divan.workspace = true
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.46.3" }
-masonry_testing = { workspace = true, features = ["default"] }
-masonry_winit = { workspace = true, features = ["default"] }
+masonry_testing = { workspace = true, default-features = false }
+masonry_winit = { workspace = true, default-features = false }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.17", features = ["profile-with-tracing"] }
