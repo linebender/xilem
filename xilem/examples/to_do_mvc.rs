@@ -3,12 +3,15 @@
 
 //! A to-do-list app, loosely inspired by todomvc.
 
+use masonry::layout::AsUnit;
+use masonry::widgets::DashFit;
+use xilem::kurbo::Axis;
 use xilem::masonry::layout::Length;
 use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, MainAxisAlignment, button, checkbox, flex_col, flex_row, label,
-    text_button, text_input,
+    FlexExt, FlexSpacer, MainAxisAlignment, button, checkbox, divider, divider_h, flex_col,
+    flex_row, label, text_button, text_input,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
@@ -121,9 +124,14 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         header_text,
         FlexSpacer::Fixed(DEFAULT_GAP),
         input_line,
-        FlexSpacer::Fixed(DEFAULT_GAP),
+        divider(Axis::Horizontal, label("Tasks")),
         tasks,
-        FlexSpacer::Fixed(DEFAULT_GAP),
+        FlexSpacer::Fixed(3.px()),
+        divider_h()
+            .thickness(2.px())
+            .dash_fit(DashFit::Stretch)
+            .dash_pattern(&[5.px(), 5.px()]),
+        FlexSpacer::Fixed(3.px()),
         footer,
     ))
     .gap(Length::px(4.))

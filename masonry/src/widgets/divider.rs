@@ -12,7 +12,7 @@ use tracing::{Span, trace_span};
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget,
-    WidgetId, WidgetPod,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Cap, Join, Line, Size, Stroke};
@@ -59,7 +59,7 @@ pub struct Divider {
 /// Describes the strategy how to display a dashed divider.
 ///
 /// It has no effect on a solid line divider.
-#[derive(Default, Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug, PartialEq)]
 pub enum DashFit {
     /// Clip the end edge.
     ///
@@ -119,7 +119,7 @@ pub enum DashFit {
 }
 
 /// Describes the strategy where to place the divider's content.
-#[derive(Default, Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug, PartialEq)]
 pub enum Placement {
     /// Place the content at the start.
     ///
@@ -296,6 +296,136 @@ impl Divider {
     pub fn pad(mut self, pad: Length) -> Self {
         self.pad = pad;
         self
+    }
+}
+
+// --- MARK: WIDGETMUT
+impl Divider {
+    /// Sets the direction `axis`.
+    pub fn set_direction(this: &mut WidgetMut<'_, Self>, axis: Axis) {
+        this.widget.axis = axis;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the line `thickness`.
+    pub fn set_thickness(this: &mut WidgetMut<'_, Self>, thickness: Length) {
+        this.widget.thickness = Some(thickness);
+        this.ctx.request_layout();
+    }
+
+    /// Sets the line thickness to hairline, i.e. 1 device pixel.
+    pub fn set_hairline(this: &mut WidgetMut<'_, Self>) {
+        this.widget.thickness = None;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the `dash_fit`.
+    pub fn set_dash_fit(this: &mut WidgetMut<'_, Self>, dash_fit: DashFit) {
+        this.widget.dash_fit = dash_fit;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the `dash_pattern`.
+    ///
+    /// See [`dash_pattern`] for more details.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `dash_pattern` contains an uneven number of entries of 3 or more
+    /// and debug assertions are enabled.
+    ///
+    /// [`dash_pattern`]: Self::dash_pattern
+    pub fn set_dash_pattern(this: &mut WidgetMut<'_, Self>, dash_pattern: &[Length]) {
+        let mut dash_pattern = SmallVec::from_slice(dash_pattern);
+        // Paint code assumes an even number for simplicity of implementation.
+        let len = dash_pattern.len();
+        if len == 1 {
+            dash_pattern.push(dash_pattern[0]);
+        } else if len > 0 && !len.is_multiple_of(2) {
+            debug_panic!(
+                "The divider dash pattern must have an even number of lengths. Received {len}"
+            );
+            dash_pattern.pop();
+        }
+        this.widget.dash_pattern = dash_pattern;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the `cap` used both for start and end.
+    ///
+    /// Use [`set_start_cap`] or [`set_end_cap`] to set different edge caps.
+    ///
+    /// Defaults to [`Cap::Butt`].
+    ///
+    /// [`set_start_cap`]: Self::set_start_cap
+    /// [`set_end_cap`]: Self::set_end_cap
+    pub fn set_cap(this: &mut WidgetMut<'_, Self>, cap: Cap) {
+        this.widget.start_cap = cap;
+        this.widget.end_cap = cap;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the starting `cap`.
+    ///
+    /// Use [`set_cap`] to set the cap for both the start and the end.
+    ///
+    /// Defaults to [`Cap::Butt`].
+    ///
+    /// [`set_cap`]: Self::set_cap
+    pub fn set_start_cap(this: &mut WidgetMut<'_, Self>, cap: Cap) {
+        this.widget.start_cap = cap;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the ending `cap`.
+    ///
+    /// Use [`set_cap`] to set the cap for both the start and the end.
+    ///
+    /// Defaults to [`Cap::Butt`].
+    ///
+    /// [`set_cap`]: Self::set_cap
+    pub fn set_end_cap(this: &mut WidgetMut<'_, Self>, cap: Cap) {
+        this.widget.end_cap = cap;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the content `placement`.
+    ///
+    /// Defaults to [`Placement::Center`].
+    pub fn set_placement(this: &mut WidgetMut<'_, Self>, placement: Placement) {
+        this.widget.placement = placement;
+        this.ctx.request_layout();
+    }
+
+    /// Sets the `content`.
+    pub fn set_content(this: &mut WidgetMut<'_, Self>, content: NewWidget<impl Widget + ?Sized>) {
+        if let Some(old_content) = this.widget.content.replace(content.erased().to_pod()) {
+            this.ctx.remove_child(old_content);
+        }
+        this.ctx.children_changed();
+    }
+
+    /// Removes any existing content.
+    pub fn remove_content(this: &mut WidgetMut<'_, Self>) {
+        if let Some(old_content) = this.widget.content.take() {
+            this.ctx.remove_child(old_content);
+        }
+    }
+
+    /// Sets the `pad`.
+    ///
+    /// This `pad` determines the amount of space between the divider line and the content.
+    /// It does nothing when there is no content.
+    ///
+    /// The default value is 5px.
+    pub fn set_pad(this: &mut WidgetMut<'_, Self>, pad: Length) {
+        this.widget.pad = pad;
+        this.ctx.request_layout();
+    }
+
+    /// Returns a mutable reference to the content widget.
+    pub fn content_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
+        this.widget.content.as_mut().map(|c| this.ctx.get_mut(c))
     }
 }
 
