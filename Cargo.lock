@@ -6074,6 +6074,7 @@ name = "xilem_masonry"
 version = "0.4.0"
 dependencies = [
  "masonry",
+ "smallvec",
  "tokio",
  "tracing",
  "xilem_core",
