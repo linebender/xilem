@@ -4,8 +4,8 @@
 use std::any::TypeId;
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, FromDynWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Line, Point, Size, Stroke};
@@ -25,34 +25,42 @@ const SEPARATOR_PAD: Padding = Padding {
 };
 
 /// A collapsible panel with a header that contains a child widget.
-pub struct CollapsePanel<W: Widget + ?Sized> {
+pub struct CollapsePanel {
     disclosure_button: WidgetPod<DisclosureButton>,
     header_label: WidgetPod<Label>,
     /// The y location of the separator line.
     ///
     /// If it's [`None`], no line will be rendered.
     separator_line_y: Option<f64>,
-    child: WidgetPod<W>,
+    child: WidgetPod<dyn Widget>,
 }
 
-impl<W: Widget + ?Sized> CollapsePanel<W> {
+impl CollapsePanel {
     /// Create a new [`CollapsePanel`] with a header text and a child widget.
-    pub fn new(collapse: bool, header_text: impl Into<ArcStr>, child: NewWidget<W>) -> Self {
+    pub fn new(
+        collapse: bool,
+        header_text: impl Into<ArcStr>,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) -> Self {
         Self {
             disclosure_button: Self::disclosure_button(collapse),
             header_label: WidgetPod::new(Label::new(header_text)),
             separator_line_y: None,
-            child: child.to_pod(),
+            child: child.erased().to_pod(),
         }
     }
 
     /// Create a new [`CollapsePanel`] with a header label widget and a child widget.
-    pub fn from_label(collapse: bool, header_label: NewWidget<Label>, child: NewWidget<W>) -> Self {
+    pub fn from_label(
+        collapse: bool,
+        header_label: NewWidget<Label>,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) -> Self {
         Self {
             disclosure_button: Self::disclosure_button(collapse),
             header_label: header_label.to_pod(),
             separator_line_y: None,
-            child: child.to_pod(),
+            child: child.erased().to_pod(),
         }
     }
 
@@ -67,11 +75,13 @@ impl<W: Widget + ?Sized> CollapsePanel<W> {
 }
 
 // --- MARK: WIDGETMUT
-impl<W: Widget + FromDynWidget + ?Sized> CollapsePanel<W> {
+impl CollapsePanel {
     /// Set the child widget.
-    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<W>) {
-        this.ctx
-            .remove_child(std::mem::replace(&mut this.widget.child, child.to_pod()));
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+        this.ctx.remove_child(std::mem::replace(
+            &mut this.widget.child,
+            child.erased().to_pod(),
+        ));
     }
 
     /// Set whether or not the panel is collapsed.
@@ -100,13 +110,13 @@ impl<W: Widget + FromDynWidget + ?Sized> CollapsePanel<W> {
     }
 
     /// Get a mutable reference to the child.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 }
 
 // --- MARK: IMPL WIDGET
-impl<W: Widget + ?Sized> Widget for CollapsePanel<W> {
+impl Widget for CollapsePanel {
     type Action = NoAction;
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
