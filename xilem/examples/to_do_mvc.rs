@@ -3,11 +3,10 @@
 
 //! A to-do-list app, loosely inspired by todomvc.
 
-use masonry::layout::AsUnit;
-use masonry::widgets::DashFit;
 use xilem::kurbo::Axis;
-use xilem::masonry::layout::Length;
+use xilem::masonry::layout::{AsUnit, Length};
 use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
+use xilem::masonry::widgets::DashFit;
 use xilem::style::Style as _;
 use xilem::view::{
     FlexExt, FlexSpacer, MainAxisAlignment, button, checkbox, divider, divider_h, flex_col,
