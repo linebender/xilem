@@ -264,7 +264,7 @@ impl<State: 'static, Action: 'static, V: WidgetView<State, Action>> View<State, 
                 });
             }
             (Some(_prev_content), None) => {
-                widgets::Divider::remove_content(&mut element);
+                widgets::Divider::clear_content(&mut element);
                 *view_state = None;
             }
             (None, Some(content)) => {

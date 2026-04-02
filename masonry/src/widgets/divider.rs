@@ -406,7 +406,7 @@ impl Divider {
     }
 
     /// Removes any existing content.
-    pub fn remove_content(this: &mut WidgetMut<'_, Self>) {
+    pub fn clear_content(this: &mut WidgetMut<'_, Self>) {
         if let Some(old_content) = this.widget.content.take() {
             this.ctx.remove_child(old_content);
         }
