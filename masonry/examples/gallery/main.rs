@@ -17,6 +17,7 @@ mod demo;
 mod divider;
 mod image;
 mod kitchen_sink;
+mod pagination;
 mod progress;
 mod radio_buttons;
 mod slider;
@@ -36,7 +37,7 @@ use masonry::properties::Padding;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
-    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal,
+    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, PageChanged, Portal,
     RadioButtonSelected, SizedBox, Step, SwitchToggled,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -192,6 +193,26 @@ impl AppDriver for Driver {
             Err(action) => action,
         };
 
+        // Page changes.
+        let action = match action.downcast::<PageChanged>() {
+            Ok(page_changed) => {
+                let value = page_changed.0;
+                let handled = {
+                    let render_root = ctx.render_root(window_id);
+                    self.demos
+                        .iter_mut()
+                        .any(|demo| demo.on_page_change(render_root, widget_id, value))
+                };
+
+                if handled {
+                    return;
+                }
+
+                return;
+            }
+            Err(action) => action,
+        };
+
         // Steps.
         let action = match action.downcast::<Step<isize>>() {
             Ok(step) => {
@@ -276,6 +297,7 @@ fn build_demos() -> Vec<Box<dyn DemoPage>> {
         Box::new(divider::DividerDemo::new(new_demo_shell_tags())),
         Box::new(image::ImageDemo::new(new_demo_shell_tags())),
         Box::new(kitchen_sink::KitchenSinkDemo::new(new_demo_shell_tags())),
+        Box::new(pagination::PaginationDemo::new(new_demo_shell_tags())),
         Box::new(progress::ProgressDemo::new(new_demo_shell_tags())),
         Box::new(radio_buttons::RadioButtonsDemo::new(new_demo_shell_tags())),
         Box::new(slider::SliderDemo::new(new_demo_shell_tags())),

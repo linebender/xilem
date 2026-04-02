@@ -46,6 +46,15 @@ pub(crate) trait DemoPage {
         false
     }
 
+    fn on_page_change(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _widget_id: WidgetId,
+        _page_idx: usize,
+    ) -> bool {
+        false
+    }
+
     fn on_slider_value(
         &mut self,
         _render_root: &mut RenderRoot,

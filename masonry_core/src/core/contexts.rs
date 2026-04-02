@@ -230,6 +230,7 @@ impl_context_method!(
 // TODO - Merge into other block?
 impl_context_method!(
     MutateCtx<'_>,
+    ActionCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
     MeasureCtx<'_>,
