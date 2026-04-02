@@ -72,6 +72,7 @@ hashbrown = { version = "0.16.1", default-features = false, features = ["default
 dpi = "0.1.2"
 image = { version = "0.25.10", default-features = false }
 resvg = "0.47.0"
+usvg = "0.47.0"
 web-time = "1.1.0"
 bitflags = "2.11.0"
 accesskit = "0.24.0"

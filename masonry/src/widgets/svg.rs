@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::TypeId;
+use std::sync::Arc;
 
 use accesskit::{Node, Role};
-use masonry_core::core::Property;
 use resvg::tiny_skia;
 use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
 
 use crate::core::{
     AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Size};
@@ -34,7 +35,7 @@ const SVG_SCALE: f64 = 1.0;
 ///
 /// You can change the sizing of the SVG with the [`ObjectFit`] property.
 pub struct Svg {
-    tree: Tree,
+    tree: Arc<Tree>,
     rasterized: Option<ImageBrush>,
     decorative: bool,
     alt_text: Option<ArcStr>,
@@ -46,7 +47,7 @@ impl Svg {
     ///
     /// By default, the SVG will be scaled to fully fit within the container.
     /// ([`ObjectFit::Contain`]).
-    pub fn new(tree: Tree) -> Self {
+    pub fn new(tree: Arc<Tree>) -> Self {
         Self {
             tree,
             rasterized: None,
@@ -81,7 +82,7 @@ impl Svg {
 // --- MARK: WIDGETMUT
 impl Svg {
     /// Sets a new inner SVG.
-    pub fn set_tree(this: &mut WidgetMut<'_, Self>, tree: Tree) {
+    pub fn set_tree(this: &mut WidgetMut<'_, Self>, tree: Arc<Tree>) {
         this.widget.tree = tree;
         this.ctx.request_layout();
     }
@@ -269,7 +270,7 @@ mod tests {
     fn empty_tree() {
         let xml = r#"<svg xmlns="http://www.w3.org/2000/svg"/>"#;
         let tree = Tree::from_str(xml, &usvg::Options::default()).unwrap();
-        let svg = Svg::new(tree).with_auto_id();
+        let svg = Svg::new(Arc::new(tree)).with_auto_id();
         let mut harness = TestHarness::create(test_property_set(), svg);
         let _ = harness.render();
     }
@@ -343,7 +344,7 @@ mod tests {
         };
 
         let tree = Tree::from_str(xml, &opts).unwrap();
-        let svg = Svg::new(tree).with_auto_id();
+        let svg = Svg::new(Arc::new(tree)).with_auto_id();
 
         let window_size = Size::new(852., 320.);
         let mut harness = TestHarness::create_with_size(test_property_set(), svg, window_size);

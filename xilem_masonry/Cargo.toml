@@ -24,6 +24,7 @@ masonry.workspace = true
 smallvec.workspace = true
 tracing.workspace = true
 tokio = { version = "1.50.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+usvg.workspace = true
 
 [lints]
 workspace = true

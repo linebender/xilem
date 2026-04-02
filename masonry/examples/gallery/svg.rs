@@ -1,6 +1,8 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
 use masonry::core::{NewWidget, StyleProperty, Widget};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Svg};
@@ -8,10 +10,10 @@ use resvg::usvg::{self, Tree};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
-fn tiger() -> Tree {
+fn tiger() -> Arc<Tree> {
     let svg_bytes = include_bytes!("../assets/tiger.svg");
     let opts = usvg::Options::default();
-    Tree::from_data(svg_bytes, &opts).unwrap()
+    Arc::new(Tree::from_data(svg_bytes, &opts).unwrap())
 }
 
 pub(crate) struct SvgDemo {
