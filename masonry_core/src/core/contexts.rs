@@ -16,8 +16,8 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, ResizeDirection, Widget,
-    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId, ResizeDirection,
+    Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
@@ -246,6 +246,13 @@ impl_context_method!(
     }
 );
 
+impl QueryCtx<'_> {
+    /// Returns a reference to this widget's property cache.
+    pub fn property_cache(&self) -> &PropertyCache {
+        &self.widget_state.property_cache
+    }
+}
+
 impl_context_method!(
     MutateCtx<'_>,
     ActionCtx<'_>,
@@ -349,6 +356,14 @@ impl MutateCtx<'_> {
     /// [local transform]: Self::transform
     pub fn transform_has_changed(&self) -> bool {
         self.widget_state.transform_changed
+    }
+
+    /// Sets which property stack this widget uses for property resolution.
+    pub fn set_property_stack(&mut self, stack_id: PropertyStackId) {
+        self.widget_state.request_update_props = true;
+        self.widget_state.needs_update_props = true;
+        self.widget_state.property_cache.invalidated = true;
+        self.widget_state.property_stack_id = Some(stack_id);
     }
 }
 
@@ -1728,6 +1743,28 @@ impl_context_method!(
             self.widget_state.transform_changed = true;
             self.request_compose();
         }
+
+        /// Adds a string to this widget's [class set].
+        ///
+        /// Changes will be applied in the next update pass and may affect property resolution.
+        ///
+        /// [class]: crate::doc::masonry_concepts#classes
+        pub fn add_class(&mut self, class: &str) {
+            self.widget_state.class_diff.add(class);
+            self.widget_state.request_update_props = true;
+            self.widget_state.needs_update_props = true;
+        }
+
+        /// Removes a string from this widget's [class set].
+        ///
+        /// Changes will be applied in the next update pass and may affect property resolution.
+        ///
+        /// [class]: crate::doc::masonry_concepts#classes
+        pub fn remove_class(&mut self, class: &str) {
+            self.widget_state.class_diff.remove(class);
+            self.widget_state.request_update_props = true;
+            self.widget_state.needs_update_props = true;
+        }
     }
 );
 
@@ -2131,9 +2168,10 @@ impl RegisterCtx<'_> {
             id,
             options,
             properties,
+            property_stack_id,
+            classes,
             tag,
             action_type,
-            property_stack_id,
             #[cfg(debug_assertions)]
             action_type_name,
         }) = child.take_inner()
@@ -2172,7 +2210,10 @@ impl RegisterCtx<'_> {
             state,
             properties,
             changed_properties: TypeSet::default(),
-            class_set: ClassSet::default(),
+            class_set: ClassSet {
+                classes,
+                ..ClassSet::default()
+            },
         };
         self.children.insert(id, node);
     }

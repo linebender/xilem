@@ -28,6 +28,7 @@ doc-valid-idents = [
     "update_anim",
     "update_stashed",
     "update_widget_tree",
+    "update_props",
     "on_access_event",
     "on_text_event",
     "on_pointer_event",

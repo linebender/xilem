@@ -35,7 +35,7 @@ use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::{PaintResult, run_paint_pass};
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
-    run_update_fonts_pass, run_update_pointer_pass, run_update_scroll_pass,
+    run_update_fonts_pass, run_update_pointer_pass, run_update_props_pass, run_update_scroll_pass,
     run_update_stashed_pass, run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
@@ -804,6 +804,7 @@ impl RenderRoot {
             run_update_scroll_pass(self);
             run_compose_pass(self);
             run_update_pointer_pass(self);
+            run_update_props_pass(self);
 
             if !self.needs_rewrite_passes() {
                 break;

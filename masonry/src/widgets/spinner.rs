@@ -111,7 +111,8 @@ impl Widget for Spinner {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        let color = props.get::<ContentColor>();
+        let cache = ctx.property_cache();
+        let color = props.get::<ContentColor>(cache);
 
         let t = self.t;
         let size = ctx.content_box_size();

@@ -8,12 +8,9 @@ use masonry::layout::Dim;
 use masonry::peniko::Color;
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, HoveredBorderColor, Padding,
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
 };
-use masonry::properties::{
-    ContentColor, Dimensions, DisabledContentColor, FocusedBorderColor, Gap, LineBreaking,
-};
+use masonry::properties::{ContentColor, Dimensions, Gap, LineBreaking};
 
 use crate::WidgetView;
 use crate::view::Prop;
@@ -65,16 +62,6 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
         self.prop(ContentColor { color })
     }
 
-    /// Sets the element's content color when disabled.
-    ///
-    /// "Content color" usually means text or text decorations.
-    fn disabled_color(self, color: Color) -> Prop<DisabledContentColor, Self, State, Action>
-    where
-        Self::Widget: HasProperty<DisabledContentColor>,
-    {
-        self.prop(DisabledContentColor(ContentColor { color }))
-    }
-
     /// Sets the element's background to a color/gradient.
     fn background(self, background: impl Into<Background>) -> Prop<Background, Self, State, Action>
     where
@@ -99,69 +86,6 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
         self.prop(Background::Gradient(gradient))
     }
 
-    /// Sets the element's background when pressed to a color/gradient.
-    fn active_background(
-        self,
-        background: impl Into<Background>,
-    ) -> Prop<ActiveBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<ActiveBackground>,
-    {
-        self.prop(ActiveBackground(background.into()))
-    }
-
-    /// Sets the element's background when pressed to a color.
-    fn active_background_color(self, color: Color) -> Prop<ActiveBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<ActiveBackground>,
-    {
-        self.prop(ActiveBackground(Background::Color(color)))
-    }
-
-    /// Sets the element's background when pressed to a gradient.
-    fn active_background_gradient(
-        self,
-        gradient: Gradient,
-    ) -> Prop<ActiveBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<ActiveBackground>,
-    {
-        self.prop(ActiveBackground(Background::Gradient(gradient)))
-    }
-
-    /// Sets the element's background when disabled to a color/gradient.
-    fn disabled_background(
-        self,
-        background: impl Into<Background>,
-    ) -> Prop<DisabledBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<DisabledBackground>,
-    {
-        self.prop(DisabledBackground(background.into()))
-    }
-
-    /// Sets the element's background when disabled to a color.
-    fn disabled_background_color(
-        self,
-        color: Color,
-    ) -> Prop<DisabledBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<DisabledBackground>,
-    {
-        self.prop(DisabledBackground(Background::Color(color)))
-    }
-
-    /// Sets the element's background when disabled to a gradient.
-    fn disabled_background_gradient(
-        self,
-        gradient: Gradient,
-    ) -> Prop<DisabledBackground, Self, State, Action>
-    where
-        Self::Widget: HasProperty<DisabledBackground>,
-    {
-        self.prop(DisabledBackground(Background::Gradient(gradient)))
-    }
-
     /// Sets the element's border color and width.
     fn border(
         self,
@@ -180,22 +104,6 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
         Self::Widget: HasProperty<BorderColor>,
     {
         self.prop(BorderColor { color })
-    }
-
-    /// Sets the element's border color when hovered.
-    fn hovered_border_color(self, color: Color) -> Prop<HoveredBorderColor, Self, State, Action>
-    where
-        Self::Widget: HasProperty<HoveredBorderColor>,
-    {
-        self.prop(HoveredBorderColor(BorderColor { color }))
-    }
-
-    /// Sets the element's border color when focused.
-    fn focused_border_color(self, color: Color) -> Prop<FocusedBorderColor, Self, State, Action>
-    where
-        Self::Widget: HasProperty<FocusedBorderColor>,
-    {
-        self.prop(FocusedBorderColor(BorderColor { color }))
     }
 
     /// Sets the element's border width.

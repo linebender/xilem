@@ -227,7 +227,8 @@ impl ColorRectangle {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        let background = props.get::<Background>();
+        let cache = ctx.property_cache();
+        let background = props.get::<Background>(cache);
         let rect = ctx.content_box();
         painter
             .fill(rect, &background.get_peniko_brush_for_rect(rect))

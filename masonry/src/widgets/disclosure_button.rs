@@ -171,7 +171,8 @@ impl Widget for DisclosureButton {
         // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
-        let button_color = props.get::<ContentColor>();
+        let cache = ctx.property_cache();
+        let button_color = props.get::<ContentColor>(cache);
 
         let size = ctx.content_box_size();
         let half_size = size * 0.5;

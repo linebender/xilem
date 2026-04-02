@@ -231,8 +231,9 @@ impl Widget for SizedBox {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let border = props.get::<BorderWidth>();
-        let padding = props.get::<Padding>();
+        let cache = ctx.property_cache();
+        let border = props.get::<BorderWidth>(cache);
+        let padding = props.get::<Padding>(cache);
 
         let border_length = border.length(axis).dp(scale);
         let padding_length = padding.length(axis).dp(scale);

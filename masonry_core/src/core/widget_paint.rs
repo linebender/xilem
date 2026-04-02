@@ -1,13 +1,10 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{PaintCtx, PropertiesRef};
+use crate::core::{PaintCtx, PropertiesRef, PropertyCache};
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Join, Rect, Stroke};
-use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, FocusedBorderColor, HoveredBorderColor,
-};
+use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};
 
 /// References to common pre-paint properties.
 pub struct PrePaintProps<'a> {
@@ -29,32 +26,12 @@ pub struct PrePaintProps<'a> {
 
 impl<'a> PrePaintProps<'a> {
     /// Returns common pre-paint properties based on widget state.
-    pub fn fetch(ctx: &mut PaintCtx<'_>, props: &'a PropertiesRef<'_>) -> Self {
-        let box_shadow = props.get::<BoxShadow>();
-        let background = if ctx.is_disabled()
-            && let Some(db) = props.get_defined::<DisabledBackground>()
-        {
-            &db.0
-        } else if ctx.is_active()
-            && let Some(ab) = props.get_defined::<ActiveBackground>()
-        {
-            &ab.0
-        } else {
-            props.get::<Background>()
-        };
-        let border_color = if ctx.is_focus_target()
-            && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if ctx.is_hovered()
-            && let Some(hb) = props.get_defined::<HoveredBorderColor>()
-        {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
-        let border_width = props.get::<BorderWidth>();
-        let corner_radius = props.get::<CornerRadius>();
+    pub fn fetch(props: &'a PropertiesRef<'_>, cache: &mut PropertyCache) -> Self {
+        let box_shadow = props.get::<BoxShadow>(cache);
+        let background = props.get::<Background>(cache);
+        let border_color = props.get::<BorderColor>(cache);
+        let border_width = props.get::<BorderWidth>(cache);
+        let corner_radius = props.get::<CornerRadius>(cache);
 
         Self {
             box_shadow,
@@ -69,7 +46,8 @@ impl<'a> PrePaintProps<'a> {
 /// Paints the widget's box shadow, background, and border.
 pub fn pre_paint(ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, painter: &mut Painter<'_>) {
     let bbox = ctx.border_box();
-    let p = PrePaintProps::fetch(ctx, props);
+    let cache = ctx.property_cache();
+    let p = PrePaintProps::fetch(props, cache);
 
     paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
     paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);

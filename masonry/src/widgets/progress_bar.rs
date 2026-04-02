@@ -187,7 +187,8 @@ impl Widget for ProgressBar {
         painter: &mut Painter<'_>,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(ctx, props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
         paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
@@ -201,16 +202,17 @@ impl Widget for ProgressBar {
         painter: &mut Painter<'_>,
     ) {
         let border_box = ctx.border_box();
-        let border_width = props.get::<BorderWidth>();
-        let corner_radius = props.get::<CornerRadius>();
-        let border_color = props.get::<BorderColor>();
+        let cache = ctx.property_cache();
+        let border_width = *props.get::<BorderWidth>(cache);
+        let corner_radius = *props.get::<CornerRadius>(cache);
+        let border_color = *props.get::<BorderColor>(cache);
 
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
             // The bar width is without the borders.
             let bar_width = border_box.width() - 2. * border_width.width;
             if bar_width > 0. {
-                let bar_color = props.get::<BarColor>().0;
+                let bar_color = props.get::<BarColor>(cache).0;
                 // Paint with a gradient so we get a straight line slice of the rounded rect.
                 let gradient = Gradient::new_linear((0., 0.), (bar_width, 0.)).with_stops([
                     (0., bar_color),
@@ -222,7 +224,7 @@ impl Widget for ProgressBar {
                 // Currently bg_rect() gives a rect without borders, so we can use it.
                 // However in the future when bg_rect() gets expanded to include borders,
                 // we'll need to create a special sans-border rect for this fill.
-                let bg_rect = border_width.bg_rect(border_box, corner_radius);
+                let bg_rect = border_width.bg_rect(border_box, &corner_radius);
 
                 painter.fill(bg_rect, &gradient).draw();
             }
@@ -231,9 +233,9 @@ impl Widget for ProgressBar {
         paint_border(
             painter,
             border_box,
-            border_color,
-            border_width,
-            corner_radius,
+            &border_color,
+            &border_width,
+            &corner_radius,
         );
     }
 

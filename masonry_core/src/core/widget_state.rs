@@ -222,6 +222,11 @@ pub(crate) struct WidgetState {
     /// A focusable widget was added, removed, stashed, disabled, etc.
     pub(crate) needs_update_focusable: bool,
 
+    /// This widget has pending property changes.
+    pub(crate) request_update_props: bool,
+    /// This widget or a descendant has pending property changes.
+    pub(crate) needs_update_props: bool,
+
     pub(crate) children_changed: bool,
 
     // --- STATUS ---
@@ -255,7 +260,6 @@ pub(crate) struct WidgetState {
     /// The `PropertyStack` assigned to this widget, if any.
     pub(crate) property_stack_id: Option<PropertyStackId>,
     /// Pending class changes to apply during `run_update_props_pass`.
-    #[expect(dead_code, reason = "TODO - Future PR")]
     pub(crate) class_diff: ClassSetDiff,
     /// Cached property stack resolutions for this widget.
     pub(crate) property_cache: PropertyCache,
@@ -325,6 +329,8 @@ impl WidgetState {
             needs_update_stashed: true,
             descendant_is_focusable: false,
             needs_update_focusable: true,
+            request_update_props: false,
+            needs_update_props: false,
             children_changed: true,
 
             is_explicitly_disabled: options.disabled,
@@ -369,7 +375,10 @@ impl WidgetState {
         self.children_changed |= child_state.children_changed;
         self.needs_update_focusable |= child_state.needs_update_focusable;
         self.needs_update_stashed |= child_state.needs_update_stashed;
+        self.needs_update_props |= child_state.needs_update_props;
     }
+
+    // TODO: Add WidgetState::add_diff method that merges a ClassSetDiff into the WidgetState's class_diff.
 
     /// Returns `true` if this widget or a descendant explicitly requested layout.
     pub(crate) fn needs_layout(&self) -> bool {
@@ -484,5 +493,6 @@ impl WidgetState {
             || self.needs_update_stashed
             || self.needs_update_focusable
             || self.children_changed
+            || self.needs_update_props
     }
 }

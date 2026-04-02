@@ -10,8 +10,6 @@ use crate::properties::types::Gradient;
 // to BackgroundImage to match CSS spec.
 
 // Every widget has a background.
-impl<W: Widget> HasProperty<DisabledBackground> for W {}
-impl<W: Widget> HasProperty<ActiveBackground> for W {}
 impl<W: Widget> HasProperty<Background> for W {}
 
 /// The background color/gradient of a widget.
@@ -21,14 +19,6 @@ pub enum Background {
     Color(AlphaColor<Srgb>),
     Gradient(Gradient),
 }
-
-/// The background color/gradient a widget takes when the user is clicking or otherwise using it.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ActiveBackground(pub Background);
-
-/// The background color/gradient a widget takes when disabled.
-#[derive(Clone, Debug, PartialEq)]
-pub struct DisabledBackground(pub Background);
 
 // ---
 
@@ -72,40 +62,6 @@ impl Background {
             }
             Self::Gradient(_) => true,
         }
-    }
-}
-
-// ---
-
-impl Property for ActiveBackground {
-    fn static_default() -> &'static Self {
-        // This matches the CSS default.
-        const DEFAULT: ActiveBackground =
-            ActiveBackground(Background::Color(AlphaColor::TRANSPARENT));
-        &DEFAULT
-    }
-}
-
-impl Default for ActiveBackground {
-    fn default() -> Self {
-        Self::static_default().clone()
-    }
-}
-
-// ---
-
-impl Property for DisabledBackground {
-    fn static_default() -> &'static Self {
-        // This matches the CSS default.
-        const DEFAULT: DisabledBackground =
-            DisabledBackground(Background::Color(AlphaColor::TRANSPARENT));
-        &DEFAULT
-    }
-}
-
-impl Default for DisabledBackground {
-    fn default() -> Self {
-        Self::static_default().clone()
     }
 }
 

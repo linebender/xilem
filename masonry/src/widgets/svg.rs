@@ -148,7 +148,7 @@ impl Widget for Svg {
 
     fn measure(
         &mut self,
-        _ctx: &mut MeasureCtx<'_>,
+        ctx: &mut MeasureCtx<'_>,
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
@@ -158,7 +158,8 @@ impl Widget for Svg {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let object_fit = props.get::<ObjectFit>();
+        let cache = ctx.property_cache();
+        let object_fit = props.get::<ObjectFit>(cache);
         let preferred_size = self.preferred_size(scale);
 
         object_fit.measure(axis, len_req, cross_length, preferred_size)
@@ -187,7 +188,8 @@ impl Widget for Svg {
             }
             let mut pixmap = tiny_skia::Pixmap::new(pixmap_width, pixmap_height).unwrap();
 
-            let object_fit = props.get::<ObjectFit>();
+            let cache = ctx.property_cache();
+            let object_fit = props.get::<ObjectFit>(cache);
 
             // For drawing we want to scale the actual SVG data lengths, which means
             // we need to avoid using Svg::preferred_size which does not match the data.

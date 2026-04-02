@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
+use std::{any::TypeId, collections::HashSet};
 
 use kurbo::Affine;
 
@@ -40,6 +40,8 @@ pub struct NewWidget<W: ?Sized> {
     pub properties: PropertySet,
     /// The id of the cascading stack of properties that will be applied to this widget, if any.
     pub property_stack_id: Option<PropertyStackId>,
+    /// The classes the widget will be created with.
+    pub classes: HashSet<String>,
 
     pub(crate) tag: Option<WidgetTagInner>,
 }
@@ -51,6 +53,7 @@ impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
             .field("id", &self.id)
             .field("options", &self.options)
             .field("tag", &self.tag)
+            .field("classes", &self.classes)
             .finish_non_exhaustive()
     }
 }
@@ -110,8 +113,9 @@ impl<W: Widget> NewWidget<W> {
             action_type_name: std::any::type_name::<W::Action>(),
             options,
             properties: props.into(),
-            tag: tag.map(|tag| tag.inner),
             property_stack_id: None,
+            classes: HashSet::new(),
+            tag: tag.map(|tag| tag.inner),
         }
     }
 
@@ -152,14 +156,31 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             action_type_name: self.action_type_name,
             options: self.options,
             properties: self.properties,
-            tag: self.tag,
             property_stack_id: self.property_stack_id,
+            tag: self.tag,
+            classes: self.classes,
         }
     }
 
     /// Assigns a [`PropertyStack`](crate::core::PropertyStack) to this widget.
     pub fn with_property_stack(mut self, id: PropertyStackId) -> Self {
         self.property_stack_id = Some(id);
+        self
+    }
+
+    /// Adds [class] to this widget.
+    ///
+    /// [class]: crate::doc::masonry_concepts#classes
+    pub fn with_class(mut self, class: &str) -> Self {
+        self.classes.insert(class.to_string());
+        self
+    }
+
+    /// Adds [classes] to this widget.
+    ///
+    /// [classes]: crate::doc::masonry_concepts#classes
+    pub fn with_classes(mut self, classes: impl IntoIterator<Item = String>) -> Self {
+        self.classes.extend(classes);
         self
     }
 

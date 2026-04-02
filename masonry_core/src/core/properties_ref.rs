@@ -1,14 +1,13 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{ClassSet, Property, PropertySet, PropertyStack};
+use crate::core::{ClassSet, Property, PropertyCache, PropertySet, PropertyStack};
 use crate::util::AnyMap;
 
 /// Reference to a collection of [properties](Property) that a widget has access to.
 ///
 /// Used by the [`Widget`](crate::core::Widget) trait during rendering passes and in some search methods.
 #[derive(Clone, Copy)]
-#[expect(dead_code, reason = "TODO - Future PR")]
 pub struct PropertiesRef<'a> {
     pub(crate) local: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,
@@ -28,29 +27,46 @@ impl PropertiesRef<'_> {
 
     /// Returns value of property `P`.
     ///
-    /// If the widget has an entry for `P`, returns its value.
-    /// If the default property map has an entry for `P`, returns its value.
-    /// Otherwise returns [`Property::static_default()`].
-    pub fn get<P: Property>(&self) -> &P {
+    /// Checks local properties first, then the property stack,
+    /// then default properties, then [`Property::static_default()`].
+    pub fn get<P: Property>(&self, cache: &mut PropertyCache) -> &P {
+        // 1. Local properties
         if let Some(p) = self.local.map.get::<P>() {
-            p
-        } else if let Some(p) = self.default_map.get::<P>() {
-            p
-        } else {
-            P::static_default()
+            return p;
         }
+        // 2. Property stack (writes to cache on miss)
+        if let Some(p) = self.stack.resolve::<P>(cache, self.class_set) {
+            return p;
+        }
+        // 3. Default properties
+        if let Some(p) = self.default_map.get::<P>() {
+            return p;
+        }
+        // 4. Static default
+        P::static_default()
     }
 
-    // TODO - Remove this once cascading properties are implemented.
-    /// Returns the defined value of property `P`.
+    /// Returns value of property `P`, without updating the cache.
     ///
-    /// If the widget has an explicit entry, or the default property map has an explicit entry,
-    /// then this will return a value. Otherwise it will return `None`.
-    pub fn get_defined<P: Property>(&self) -> Option<&P> {
-        self.local
-            .map
-            .get::<P>()
-            .or_else(|| self.default_map.get::<P>())
+    /// Useful for cases where you don't have mutable access to the [`PropertyCache`].
+    pub(crate) fn get_without_saving<P: Property>(&self, cache: &PropertyCache) -> &P {
+        // 1. Local properties
+        if let Some(p) = self.local.map.get::<P>() {
+            return p;
+        }
+        // 2. Property stack (reads from cache without writing on miss)
+        if let Some(p) = self
+            .stack
+            .resolve_without_saving::<P>(cache, self.class_set)
+        {
+            return p;
+        }
+        // 3. Default properties
+        if let Some(p) = self.default_map.get::<P>() {
+            return p;
+        }
+        // 4. Static default
+        P::static_default()
     }
 
     /// Returns a reference to the local properties for direct access.

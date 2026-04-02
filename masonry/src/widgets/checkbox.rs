@@ -19,7 +19,6 @@ use crate::kurbo::{Axis, BezPath, Cap, Dashes, Join, Point, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, SizeDef};
 use crate::properties::{
     BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, CornerRadius,
-    DisabledCheckmarkColor, FocusedBorderColor, HoveredBorderColor,
 };
 use crate::theme;
 use crate::widgets::Label;
@@ -87,7 +86,6 @@ impl Checkbox {
 }
 
 impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
-impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
 impl HasProperty<CheckmarkColor> for Checkbox {}
 
 /// The action type emitted by [`Checkbox`] when it is activated.
@@ -178,10 +176,7 @@ impl Widget for Checkbox {
         }
         if CornerRadius::matches(property_type)
             || BorderColor::matches(property_type)
-            || FocusedBorderColor::matches(property_type)
-            || HoveredBorderColor::matches(property_type)
             || CheckmarkStrokeWidth::matches(property_type)
-            || DisabledCheckmarkColor::matches(property_type)
             || CheckmarkColor::matches(property_type)
         {
             ctx.request_paint_only();
@@ -261,7 +256,8 @@ impl Widget for Checkbox {
         painter: &mut Painter<'_>,
     ) {
         let bbox = ctx.border_box();
-        let p = PrePaintProps::fetch(ctx, props);
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
 
         paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
         paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
@@ -303,25 +299,16 @@ impl Widget for Checkbox {
         //       https://github.com/linebender/xilem/issues/1264
         let scale = 1.0;
 
-        let is_focused = ctx.is_focus_target();
-        let is_hovered = ctx.is_hovered();
-
         let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
         let check_size = Size::new(check_side, check_side);
 
-        let border_width = props.get::<BorderWidth>();
-        let border_radius = props.get::<CornerRadius>();
+        let cache = ctx.property_cache();
+        let border_width = *props.get::<BorderWidth>(cache);
+        let border_radius = *props.get::<CornerRadius>(cache);
 
-        let border_rect = border_width.border_rect(check_size.to_rect(), border_radius);
+        let border_rect = border_width.border_rect(check_size.to_rect(), &border_radius);
 
-        let border_color = if is_focused && let Some(fb) = props.get_defined::<FocusedBorderColor>()
-        {
-            &fb.0
-        } else if is_hovered && let Some(hb) = props.get_defined::<HoveredBorderColor>() {
-            &hb.0
-        } else {
-            props.get::<BorderColor>()
-        };
+        let border_color = *props.get::<BorderColor>(cache);
 
         // Paint the checkbox box border
         let border_stroke = Stroke::new(border_width.width).with_join(Join::Miter);
@@ -331,14 +318,8 @@ impl Widget for Checkbox {
 
         // Paint the checkmark if checked
         if self.checked {
-            let checkmark_width = props.get::<CheckmarkStrokeWidth>();
-            let brush = if ctx.is_disabled()
-                && let Some(dc) = props.get_defined::<DisabledCheckmarkColor>()
-            {
-                &dc.0
-            } else {
-                props.get::<CheckmarkColor>()
-            };
+            let checkmark_width = *props.get::<CheckmarkStrokeWidth>(cache);
+            let brush = *props.get::<CheckmarkColor>(cache);
 
             let mut path = BezPath::new();
             path.move_to((4.0, 9.0));

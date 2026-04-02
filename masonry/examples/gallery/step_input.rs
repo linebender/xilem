@@ -2,14 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag};
+use masonry::core::{
+    NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
+};
 use masonry::layout::AsUnit;
 use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{
     Background, BackwardColor, BorderColor, BorderWidth, ContentColor, CornerRadius, Dimensions,
-    FocusedBorderColor, ForwardColor, HeatColor, HoveredBorderColor, StepInputStyle,
+    ForwardColor, HeatColor, StepInputStyle,
 };
+use masonry::theme::DISABLED_TEXT_COLOR;
 use masonry::widgets::{Button, Flex, Label, StepInput};
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
@@ -19,9 +22,11 @@ const BALANCE_TOTAL: isize = 50_000;
 pub(crate) struct StepInputDemo {
     shell: ShellTags,
 
+    initialized: bool,
     tag_balance: WidgetTag<Button>,
     tag_left: WidgetTag<StepInput<isize>>,
     tag_right: WidgetTag<StepInput<isize>>,
+    tag_custom: WidgetTag<StepInput<u16>>,
 }
 
 impl StepInputDemo {
@@ -29,11 +34,14 @@ impl StepInputDemo {
         let tag_balance = WidgetTag::unique();
         let tag_left = WidgetTag::unique();
         let tag_right = WidgetTag::unique();
+        let tag_custom = WidgetTag::unique();
         Self {
             shell,
+            initialized: false,
             tag_balance,
             tag_left,
             tag_right,
+            tag_custom,
         }
     }
 }
@@ -51,6 +59,53 @@ impl DemoPage for StepInputDemo {
 
     fn shell_tags(&self) -> ShellTags {
         self.shell
+    }
+
+    fn on_selected(&mut self, render_root: &mut RenderRoot) {
+        if self.initialized {
+            return;
+        }
+
+        let mut stack = PropertyStack::new();
+
+        stack.push(
+            Selector::new(),
+            (BorderWidth::all(2.), CornerRadius::all(20.)),
+        );
+
+        stack.push(
+            Selector::new(),
+            (
+                Background::Color(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
+                ContentColor::new(AlphaColor::from_rgb8(0x3e, 0x4b, 0x6c)),
+                BackwardColor::new(AlphaColor::from_rgb8(0xab, 0x24, 0x24)),
+                ForwardColor::new(AlphaColor::from_rgb8(0x0b, 0x67, 0x43)),
+                HeatColor::new(AlphaColor::from_rgb8(0xff, 0x6c, 0x00)),
+                BorderColor::new(AlphaColor::from_rgba8(0xf2, 0xf4, 0xf8, 0x7f)),
+            ),
+        );
+        stack.push(
+            Selector::new().with_disabled(false).with_hovered(true),
+            BorderColor::new(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
+        );
+        stack.push(
+            Selector::new().with_disabled(false).with_focused(true),
+            BorderColor::new(AlphaColor::from_rgb8(0x28, 0x8c, 0xd9)),
+        );
+        stack.push(
+            Selector::new().with_disabled(true),
+            (
+                ContentColor::new(DISABLED_TEXT_COLOR),
+                Background::Color(AlphaColor::from_rgb8(0x00, 0x00, 0x00)),
+            ),
+        );
+
+        let id = render_root.property_arena().insert(stack);
+        render_root.edit_widget_with_tag(self.tag_custom, |mut widget| {
+            widget.ctx.set_property_stack(id);
+        });
+
+        self.initialized = true;
     }
 
     fn on_button_press(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId) -> bool {
@@ -188,23 +243,13 @@ impl DemoPage for StepInputDemo {
                 Flex::row()
                     .with_fixed(desc("Visuals can be customized"))
                     .with(
-                        StepInput::new(u16::MAX / 2, 1, 0, u16::MAX).with_props((
+                        NewWidget::new_with(
+                            StepInput::new(u16::MAX / 2, 1, 0, u16::MAX),
+                            Some(self.tag_custom),
+                            WidgetOptions::default(),
                             StepInputStyle::Flow,
-                            CornerRadius::all(20.),
-                            Background::Color(AlphaColor::from_rgb8(0xf2, 0xf4, 0xf8)),
-                            ContentColor::new(AlphaColor::from_rgb8(0x3e, 0x4b, 0x6c)),
-                            BackwardColor::new(AlphaColor::from_rgb8(0xab, 0x24, 0x24)),
-                            ForwardColor::new(AlphaColor::from_rgb8(0x0b, 0x67, 0x43)),
-                            HeatColor::new(AlphaColor::from_rgb8(0xff, 0x6c, 0x00)),
-                            BorderWidth::all(2.),
-                            BorderColor::new(AlphaColor::from_rgba8(0xf2, 0xf4, 0xf8, 0x7f)),
-                            HoveredBorderColor(BorderColor::new(AlphaColor::from_rgb8(
-                                0xf2, 0xf4, 0xf8,
-                            ))),
-                            FocusedBorderColor(BorderColor::new(AlphaColor::from_rgb8(
-                                0x28, 0x8c, 0xd9,
-                            ))),
-                        )),
+                        )
+                        .with_class("custom"),
                         1.,
                     )
                     .with_auto_id(),
