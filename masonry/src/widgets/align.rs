@@ -210,7 +210,7 @@ impl Widget for Align {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{WidgetOptions, WidgetTag};
+    use crate::core::WidgetTag;
     use crate::layout::AsUnit;
     use crate::palette;
     use crate::peniko::color::AlphaColor;
@@ -254,16 +254,13 @@ mod tests {
             Dimensions::fixed(100.px(), 100.px()),
             Background::Color(AlphaColor::from_rgba8(127, 0, 0, 127)),
         ));
-        let align = NewWidget::new_with(
-            Align::new(UnitPoint::CENTER, child),
-            Some(align_tag),
-            WidgetOptions::default(),
-            (
+        let align = NewWidget::new(Align::new(UnitPoint::CENTER, child))
+            .with_tag(align_tag)
+            .with_props((
                 Dimensions::fixed(50.px(), 50.px()),
                 BorderWidth::all(2.),
                 BorderColor::new(palette::css::BLACK),
-            ),
-        );
+            ));
         let root = Align::centered(align).with_auto_id();
 
         let window_size = Size::new(200.0, 200.0);

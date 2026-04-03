@@ -243,7 +243,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         }
 
         let text_input =
-            widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
+            widgets::TextInput::from_text_area(NewWidget::new(text_area).with_props(props))
                 .with_text_alignment(self.text_alignment)
                 .with_clip(self.clip)
                 .with_placeholder(self.placeholder.clone());

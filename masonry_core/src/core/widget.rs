@@ -38,7 +38,7 @@ use crate::layout::LenReq;
 ///
 /// You can't create a widget with a pre-allocated `WidgetId`.
 /// If you want to create a widget in a way that lets you refer to it later,
-/// see [`NewWidget::new_with_tag`](crate::core::NewWidget::new_with_tag).
+/// see [`NewWidget::with_tag`](crate::core::NewWidget::with_tag).
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct WidgetId(pub(crate) NonZeroU64);
 
@@ -584,7 +584,7 @@ pub trait Widget: AsDynWidget + Any {
     where
         Self: Sized,
     {
-        NewWidget::new_with_props(self, props)
+        NewWidget::new(self).with_props(props)
     }
 }
 

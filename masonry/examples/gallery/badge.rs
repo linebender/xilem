@@ -83,13 +83,11 @@ impl DemoPage for BadgeDemo {
 
         let new_badge = Badge::with_text("New");
 
-        let beta_badge = NewWidget::new_with_props(
-            Badge::with_text("Beta"),
+        let beta_badge = NewWidget::new(Badge::with_text("Beta")).with_props(
             PropertySet::new().with(Background::Color(Color::from_rgb8(0xd9, 0x77, 0x06))),
         );
 
-        let outline_badge = NewWidget::new_with_props(
-            Badge::with_text("99+"),
+        let outline_badge = NewWidget::new(Badge::with_text("99+")).with_props(
             PropertySet::new()
                 .with(Background::Color(Color::TRANSPARENT))
                 .with(BorderWidth { width: 1.0 })
@@ -122,24 +120,24 @@ impl DemoPage for BadgeDemo {
         .with_badge_offset(Vec2::new(2.0, -2.0))
         .with_auto_id();
 
-        let interactive_inbox = NewWidget::new_with_tag(
+        let interactive_inbox = NewWidget::new(
             Badged::new_optional(
                 Button::with_text("Interactive inbox").with_auto_id(),
                 Self::make_count_badge(self.count),
             )
             .with_badge_placement(BadgePlacement::TopRight)
             .with_badge_offset(Vec2::new(2.0, -2.0)),
-            self.inbox_badged,
-        );
+        )
+        .with_tag(self.inbox_badged);
 
-        let decrement_btn = NewWidget::new_with_tag(Button::with_text("−"), self.decrement_btn);
-        let increment_btn = NewWidget::new_with_tag(Button::with_text("+"), self.increment_btn);
-        let count_label = NewWidget::new_with_tag(
+        let decrement_btn = NewWidget::new(Button::with_text("−")).with_tag(self.decrement_btn);
+        let increment_btn = NewWidget::new(Button::with_text("+")).with_tag(self.increment_btn);
+        let count_label = NewWidget::new(
             Label::new(format!("count: {}", self.count)).with_style(StyleProperty::FontSize(13.0)),
-            self.count_label,
-        );
+        )
+        .with_tag(self.count_label);
 
-        let avatar = NewWidget::new_with_props(
+        let avatar = NewWidget::new(
             SizedBox::new(
                 Align::centered(
                     Label::new("AB")
@@ -150,18 +148,20 @@ impl DemoPage for BadgeDemo {
                 .with_auto_id(),
             )
             .size(Length::const_px(72.0), Length::const_px(72.0)),
+        )
+        .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x3f, 0x3f, 0x46)))
                 .with(CornerRadius { radius: 999.0 })
                 .with(Padding::all(0.0)),
         );
 
-        let online_dot = NewWidget::new_with_props(
-            Badge::new(
-                SizedBox::empty()
-                    .size(Length::const_px(10.0), Length::const_px(10.0))
-                    .with_auto_id(),
-            ),
+        let online_dot = NewWidget::new(Badge::new(
+            SizedBox::empty()
+                .size(Length::const_px(10.0), Length::const_px(10.0))
+                .with_auto_id(),
+        ))
+        .with_props(
             PropertySet::new()
                 .with(Padding::all(0.0))
                 .with(CornerRadius { radius: 999.0 })

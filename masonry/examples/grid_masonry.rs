@@ -70,7 +70,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
     let props = PropertySet::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
         .with(BorderWidth::all(1.0));
-    let label = SizedBox::new(NewWidget::new_with_props(label, props));
+    let label = SizedBox::new(NewWidget::new(label).with_props(props));
 
     let button_inputs = vec![
         GridParams {
@@ -125,10 +125,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
         main_widget = main_widget.with(button.with_auto_id(), button_input);
     }
 
-    NewWidget::new_with_props(
-        main_widget,
-        PropertySet::one(Gap::new(Length::px(grid_gap))),
-    )
+    NewWidget::new(main_widget).with_props(PropertySet::one(Gap::new(Length::px(grid_gap))))
 }
 
 fn main() {

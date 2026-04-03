@@ -336,19 +336,17 @@ mod tests {
 
         let widget = ZStack::new()
             .with(
-                NewWidget::new_with_props(
+                NewWidget::new(
                     SizedBox::new(Label::new("Background").with_auto_id())
                         .width(200.px())
                         .height(100.px()),
-                    bg_props,
-                ),
+                )
+                .with_props(bg_props),
                 ChildAlignment::ParentAligned,
             )
             .with(
-                NewWidget::new_with_props(
-                    SizedBox::new(Label::new("Foreground").with_auto_id()),
-                    fg_props,
-                ),
+                NewWidget::new(SizedBox::new(Label::new("Foreground").with_auto_id()))
+                    .with_props(fg_props),
                 ChildAlignment::ParentAligned,
             )
             .with_auto_id();

@@ -46,10 +46,12 @@ impl DemoPage for RadioButtonsDemo {
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(NewWidget::new_with_tag(
-                Label::new("No button selected").with_style(StyleProperty::FontSize(13.0)),
-                self.state_label,
-            ))
+            .with_fixed(
+                NewWidget::new(
+                    Label::new("No button selected").with_style(StyleProperty::FontSize(13.0)),
+                )
+                .with_tag(self.state_label),
+            )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(NewWidget::new(group));
 

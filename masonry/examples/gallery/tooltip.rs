@@ -34,7 +34,7 @@ impl DemoPage for TooltipDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let show = NewWidget::new_with_tag(Button::with_text("Show tooltip"), self.show_btn);
+        let show = NewWidget::new(Button::with_text("Show tooltip")).with_tag(self.show_btn);
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)

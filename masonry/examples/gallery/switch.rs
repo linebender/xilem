@@ -34,14 +34,14 @@ impl DemoPage for SwitchDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let switch = NewWidget::new_with_tag(Switch::new(false), self.switch);
+        let switch = NewWidget::new(Switch::new(false)).with_tag(self.switch);
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(NewWidget::new_with_tag(
-                Label::new("On: false").with_style(StyleProperty::FontSize(13.0)),
-                self.state_label,
-            ))
+            .with_fixed(
+                NewWidget::new(Label::new("On: false").with_style(StyleProperty::FontSize(13.0)))
+                    .with_tag(self.state_label),
+            )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(switch);
 

@@ -173,17 +173,15 @@ fn main() {
         .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
 
     let overlayer = || {
-        let tooltip = NewWidget::new_with_props(
-            Tooltip::new(NewWidget::new_with_props(
-                Label::new("Tooltip!!!"),
-                PropertySet::one(ContentColor::new(Color::BLACK)),
-            )),
-            PropertySet::from((
-                BorderWidth::all(1.),
-                BorderColor::new(Color::BLACK),
-                Background::Color(Color::WHITE),
-            )),
-        )
+        let tooltip = NewWidget::new(Tooltip::new(
+            NewWidget::new(Label::new("Tooltip!!!"))
+                .with_props(PropertySet::one(ContentColor::new(Color::BLACK))),
+        ))
+        .with_props(PropertySet::from((
+            BorderWidth::all(1.),
+            BorderColor::new(Color::BLACK),
+            Background::Color(Color::WHITE),
+        )))
         .erased();
         (tooltip, LayerType::Tooltip("Tooltip!!!".to_string()))
     };

@@ -591,6 +591,6 @@ impl<S: 'static> Widget for ModularWidget<S> {
     where
         Self: Sized,
     {
-        NewWidget::new_with_props(self, props)
+        NewWidget::new(self).with_props(props)
     }
 }

@@ -20,7 +20,7 @@ fn request_compose() {
 
     let child_tag = WidgetTag::named("child");
     let parent_tag = WidgetTag::named("parent");
-    let child = NewWidget::new_with_tag(SizedBox::empty().record(), child_tag);
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(child_tag);
 
     let child = ChildAndPos {
         child: child.erased().to_pod(),
@@ -42,7 +42,7 @@ fn request_compose() {
             ctx.register_child(&mut state.child);
         })
         .children_fn(|state| ChildrenIds::from_slice(&[state.child.id()]));
-    let parent = NewWidget::new_with_tag(parent.record(), parent_tag);
+    let parent = NewWidget::new(parent.record()).with_tag(parent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), parent);
     harness.flush_records_of(parent_tag);
@@ -81,7 +81,7 @@ fn request_compose() {
 #[test]
 fn scroll_pixel_snap() {
     let child_tag = WidgetTag::named("child");
-    let child = NewWidget::new_with_tag(SizedBox::empty(), child_tag);
+    let child = NewWidget::new(SizedBox::empty()).with_tag(child_tag);
 
     let parent = ModularWidget::new_parent(child)
         .compose_fn(|state, ctx| {

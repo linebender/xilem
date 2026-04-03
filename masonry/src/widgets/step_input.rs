@@ -1838,7 +1838,7 @@ mod tests {
     use std::fmt::Display;
 
     use super::*;
-    use crate::core::{NewWidget, PropertySet, WidgetOptions, WidgetTag};
+    use crate::core::{NewWidget, PropertySet, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::types::CrossAxisAlignment;
     use crate::properties::{Dimensions, Padding};
@@ -2384,12 +2384,9 @@ mod tests {
     #[test]
     fn speed_lines() {
         let si = |tag| {
-            NewWidget::new_with(
-                StepInput::new(5000, 1, 0, usize::MAX),
-                Some(tag),
-                WidgetOptions::default(),
-                (StepInputStyle::Flow, Dimensions::fixed(250.px(), 85.px())),
-            )
+            NewWidget::new(StepInput::new(5000, 1, 0, usize::MAX))
+                .with_tag(tag)
+                .with_props((StepInputStyle::Flow, Dimensions::fixed(250.px(), 85.px())))
         };
 
         let tag_backward = WidgetTag::unique();

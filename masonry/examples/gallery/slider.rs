@@ -35,14 +35,16 @@ impl DemoPage for SliderDemo {
 
     fn build(&self) -> NewWidget<dyn Widget> {
         let slider =
-            NewWidget::new_with_tag(Slider::new(-1.0, 1.0, 0.0).with_step(0.001), self.slider);
+            NewWidget::new(Slider::new(-1.0, 1.0, 0.0).with_step(0.001)).with_tag(self.slider);
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(NewWidget::new_with_tag(
-                Label::new("Value: 0.000").with_style(StyleProperty::FontSize(13.0)),
-                self.value_label,
-            ))
+            .with_fixed(
+                NewWidget::new(
+                    Label::new("Value: 0.000").with_style(StyleProperty::FontSize(13.0)),
+                )
+                .with_tag(self.value_label),
+            )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(slider);
 

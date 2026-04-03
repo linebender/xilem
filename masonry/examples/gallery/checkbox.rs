@@ -34,14 +34,16 @@ impl DemoPage for CheckboxDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let checkbox = NewWidget::new_with_tag(Checkbox::new(false, "Check me"), self.checkbox);
+        let checkbox = NewWidget::new(Checkbox::new(false, "Check me")).with_tag(self.checkbox);
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(NewWidget::new_with_tag(
-                Label::new("Checked: false").with_style(StyleProperty::FontSize(13.0)),
-                self.state_label,
-            ))
+            .with_fixed(
+                NewWidget::new(
+                    Label::new("Checked: false").with_style(StyleProperty::FontSize(13.0)),
+                )
+                .with_tag(self.state_label),
+            )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(checkbox);
 

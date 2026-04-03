@@ -859,8 +859,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::WidgetTag;
     use crate::core::keyboard::{Key, NamedKey};
-    use crate::core::{WidgetOptions, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::Dimensions;
     use crate::testing::{ModularWidget, TestHarness, assert_render_snapshot};
@@ -872,12 +872,9 @@ mod tests {
         top_pad: f64,
         tag: Option<WidgetTag<Button>>,
     ) -> NewWidget<ModularWidget<WidgetPod<Button>>> {
-        let btn = NewWidget::new_with(
-            Button::with_text(text),
-            tag,
-            WidgetOptions::default(),
-            Dimensions::fixed(70.px(), 40.px()),
-        );
+        let btn = NewWidget::new(Button::with_text(text))
+            .with_tag(tag.unwrap_or_else(WidgetTag::unique))
+            .with_props(Dimensions::fixed(70.px(), 40.px()));
 
         ModularWidget::new_parent(btn)
             .measure_fn(move |child, ctx, _props, axis, len_req, cross_length| {
@@ -951,10 +948,7 @@ mod tests {
         let widget = Portal::new(
             Flex::column()
                 .with_fixed_spacer(500.px())
-                .with_fixed(NewWidget::new_with_tag(
-                    Button::with_text("Fully visible"),
-                    button_tag,
-                ))
+                .with_fixed(NewWidget::new(Button::with_text("Fully visible")).with_tag(button_tag))
                 .with_fixed_spacer(500.px())
                 .with_auto_id(),
         )
@@ -972,7 +966,7 @@ mod tests {
     fn portal_accessibility_node_exposes_scroll() {
         let portal_tag = WidgetTag::named("portal");
         let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
-        let portal = NewWidget::new_with_tag(Portal::new(content), portal_tag);
+        let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));
@@ -1006,7 +1000,7 @@ mod tests {
     fn portal_keyboard_scroll_updates_access_tree() {
         let portal_tag = WidgetTag::named("portal");
         let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
-        let portal = NewWidget::new_with_tag(Portal::new(content), portal_tag);
+        let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));

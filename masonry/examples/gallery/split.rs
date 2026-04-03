@@ -29,23 +29,23 @@ impl DemoPage for SplitDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let left = NewWidget::new_with_props(
-            SizedBox::new(
-                Label::new("Left pane (drag the divider)")
-                    .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
-            ),
+        let left = NewWidget::new(SizedBox::new(
+            Label::new("Left pane (drag the divider)")
+                .with_style(StyleProperty::FontSize(14.0))
+                .with_auto_id(),
+        ))
+        .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x1f, 0x2a, 0x44)))
                 .with(Padding::all(12.0)),
         );
 
-        let right = NewWidget::new_with_props(
-            SizedBox::new(
-                Label::new("Right pane")
-                    .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
-            ),
+        let right = NewWidget::new(SizedBox::new(
+            Label::new("Right pane")
+                .with_style(StyleProperty::FontSize(14.0))
+                .with_auto_id(),
+        ))
+        .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x2b, 0x3c, 0x2f)))
                 .with(Padding::all(12.0)),

@@ -90,7 +90,7 @@ impl AppDriver for Driver {
 
 fn main() {
     let scroll_tag = WidgetTag::unique();
-    let main_widget = NewWidget::new_with_tag(init(), scroll_tag).erased();
+    let main_widget = NewWidget::new(init()).with_tag(scroll_tag).erased();
     let driver = Driver {
         scroll_tag,
         fizz: "Fizz".into(),

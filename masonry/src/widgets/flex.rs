@@ -1250,7 +1250,7 @@ impl Widget for Flex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{WidgetOptions, WidgetTag};
+    use crate::core::WidgetTag;
     use crate::kurbo::{Cap, Line, Stroke};
     use crate::layout::AsUnit;
     use crate::palette;
@@ -1385,14 +1385,14 @@ mod tests {
 
     #[test]
     fn flex_row_fixed_size_only() {
-        let widget = NewWidget::new_with_props(
+        let widget = NewWidget::new(
             Flex::row()
                 .with_fixed(Label::new("hello").with_auto_id())
                 .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
                 .with_fixed(Label::new("bar").with_auto_id()),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1431,7 +1431,7 @@ mod tests {
     // TODO - Reduce copy-pasting?
     #[test]
     fn flex_row_cross_axis_snapshots() {
-        let widget = NewWidget::new_with_props(
+        let widget = NewWidget::new(
             Flex::row()
                 .with_fixed(Label::new("hello").with_auto_id())
                 .with(Label::new("world").with_auto_id(), 1.0)
@@ -1440,8 +1440,8 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1482,14 +1482,14 @@ mod tests {
     #[test]
     fn flex_row_main_axis_snapshots() {
         // ALl children need to be fixed, otherwise a flexible child will use up all the space.
-        let widget = NewWidget::new_with_props(
+        let widget = NewWidget::new(
             Flex::row()
                 .with_fixed(Label::new("hello").with_auto_id())
                 .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
                 .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1529,7 +1529,7 @@ mod tests {
 
     #[test]
     fn flex_col_cross_axis_snapshots() {
-        let widget = NewWidget::new_with_props(
+        let widget = NewWidget::new(
             Flex::column()
                 .with_fixed(Label::new("hello").with_auto_id())
                 .with(Label::new("world").with_auto_id(), 1.0)
@@ -1538,8 +1538,8 @@ mod tests {
                     Label::new("bar").with_auto_id(),
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1580,14 +1580,14 @@ mod tests {
     #[test]
     fn flex_col_main_axis_snapshots() {
         // ALl children need to be fixed, otherwise a flexible child will use up all the space.
-        let widget = NewWidget::new_with_props(
+        let widget = NewWidget::new(
             Flex::column()
                 .with_fixed(Label::new("hello").with_auto_id())
                 .with_fixed(Label::new("world").with_auto_id())
                 .with_fixed(Label::new("foo").with_auto_id())
                 .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1642,7 +1642,7 @@ mod tests {
 
         let flex_tag = WidgetTag::unique();
 
-        let flex = NewWidget::new_with(
+        let flex = NewWidget::new(
             Flex::row()
                 .cross_axis_alignment(CrossAxisAlignment::Center)
                 .with_fixed(Label::new("Left").with_props(props(0., 0.)))
@@ -1651,10 +1651,9 @@ mod tests {
                 .with_fixed(Label::new("F\nG\nH\nI").with_props(props(20., 20.)))
                 .with_fixed(Label::new("J\nK\nL\nM\nN").with_props(props(0., 30.)))
                 .with_fixed(Label::new("Right\nToo").with_props(props(50., 50.))),
-            Some(flex_tag),
-            WidgetOptions::default(),
-            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)),
-        );
+        )
+        .with_tag(flex_tag)
+        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let root = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)

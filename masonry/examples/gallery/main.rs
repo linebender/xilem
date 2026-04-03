@@ -337,15 +337,12 @@ fn main() {
 
     // Padding so the first item isn't flush with the window, and a right inset so an overlay
     // scrollbar doesn't sit on top of the buttons.
-    let list = NewWidget::new_with_props(
-        SizedBox::new(list.with_auto_id()),
-        Padding {
-            top: LEFT_PANE_TOP_PADDING,
-            bottom: 0.0,
-            left: LEFT_PANE_LEFT_PADDING,
-            right: SIDEBAR_SCROLLBAR_INSET,
-        },
-    );
+    let list = NewWidget::new(SizedBox::new(list.with_auto_id())).with_props(Padding {
+        top: LEFT_PANE_TOP_PADDING,
+        bottom: 0.0,
+        left: LEFT_PANE_LEFT_PADDING,
+        right: SIDEBAR_SCROLLBAR_INSET,
+    });
 
     let sidebar = SizedBox::new(Portal::new(list).constrain_horizontal(true).with_auto_id())
         .width(SIDEBAR_WIDTH);
@@ -359,18 +356,18 @@ fn main() {
 
     let right_panel = Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Stretch)
-        .with_fixed(NewWidget::new_with_tag(
-            Label::new(demos[0].name())
-                .with_style(StyleProperty::FontSize(DEMO_TITLE_FONT_SIZE))
-                .with_style(StyleProperty::FontWeight(FontWeight::BOLD)),
-            title_tag,
-        ))
-        .with(NewWidget::new_with_tag(stack, stack_tag), 1.0);
+        .with_fixed(
+            NewWidget::new(
+                Label::new(demos[0].name())
+                    .with_style(StyleProperty::FontSize(DEMO_TITLE_FONT_SIZE))
+                    .with_style(StyleProperty::FontWeight(FontWeight::BOLD)),
+            )
+            .with_tag(title_tag),
+        )
+        .with(NewWidget::new(stack).with_tag(stack_tag), 1.0);
 
-    let right_panel = NewWidget::new_with_props(
-        SizedBox::new(right_panel.with_auto_id()),
-        Padding::all(RIGHT_PANE_PADDING),
-    );
+    let right_panel = NewWidget::new(SizedBox::new(right_panel.with_auto_id()))
+        .with_props(Padding::all(RIGHT_PANE_PADDING));
 
     let root = Flex::row()
         .cross_axis_alignment(CrossAxisAlignment::Stretch)

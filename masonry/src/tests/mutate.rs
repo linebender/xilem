@@ -13,7 +13,7 @@ use crate::widgets::SizedBox;
 fn mutate_order() {
     let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new(SizedBox::empty());
-    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child)).with_tag(parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let (sender, receiver) = mpsc::channel::<u32>();
@@ -44,7 +44,7 @@ fn mutate_order() {
 fn cancel_mutate() {
     let parent_tag = WidgetTag::named("parent");
     let child = NewWidget::new(SizedBox::empty());
-    let parent = NewWidget::new_with_tag(SizedBox::new(child), parent_tag);
+    let parent = NewWidget::new(SizedBox::new(child)).with_tag(parent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), parent);
     harness.edit_widget(parent_tag, move |mut parent| {
