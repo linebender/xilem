@@ -12,11 +12,13 @@ use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text_with_line_offsets,
+    set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
 use crate::layout::LenReq;
+use crate::parley::Layout as ParleyLayout;
 use crate::parley::PlainEditor;
 use crate::parley::editing::{Generation, SplitString};
 use crate::properties::{CaretColor, ContentColor, SelectionColor};
@@ -82,6 +84,11 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 
     /// Time elapsed (ms) to calculate the timeout of the cursor's blink animation.
     anim_elapsed: u64,
+
+    /// Baselines of all lines saved before IME composition starts, used to prevent
+    /// vertical jitter when preedit text changes line metrics
+    /// (e.g., Latin → Chinese font fallback).
+    compose_baselines: Option<Vec<f32>>,
 }
 
 // --- MARK: BUILDERS
@@ -126,6 +133,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             anim_cursor_visible: true,
             anim_prev_interval: 0,
             anim_elapsed: 0,
+            compose_baselines: None,
         }
     }
 
@@ -256,6 +264,47 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             "TextArea::ime_area should only be called when the editor layout is available"
         );
         bounding_box_to_rect(self.editor.ime_cursor_area())
+    }
+
+    /// Saves all lines' baselines before composition starts.
+    fn save_compose_baselines(&mut self) {
+        if self.compose_baselines.is_some() {
+            return;
+        }
+        if let Some(layout) = self.editor.try_layout() {
+            let baselines: Vec<f32> = (0..layout.len())
+                .filter_map(|i| layout.get(i).map(|line| line.metrics().baseline))
+                .collect();
+            self.compose_baselines = Some(baselines);
+        }
+    }
+
+    /// Computes per-line Y offsets for IME baseline compensation, returning
+    /// both the offsets Vec and the first non-zero offset (for cursor/selection).
+    fn compute_line_offsets(
+        &self,
+        layout: &ParleyLayout<BrushIndex>,
+    ) -> (Vec<f64>, f64) {
+        let Some(saved_baselines) = &self.compose_baselines else {
+            return (Vec::new(), 0.0);
+        };
+        let mut compose_dy = 0.0;
+        let offsets: Vec<f64> = (0..layout.len())
+            .map(|i| {
+                let Some(&saved) = saved_baselines.get(i) else {
+                    return 0.0;
+                };
+                let Some(current) = layout.get(i).map(|l| l.metrics().baseline) else {
+                    return 0.0;
+                };
+                let dy = (saved - current) as f64;
+                if compose_dy == 0.0 && dy.abs() > 0.01 {
+                    compose_dy = dy;
+                }
+                dy
+            })
+            .collect();
+        (offsets, compose_dy)
     }
 }
 
@@ -515,19 +564,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.request_focus();
                 ctx.capture_pointer();
             }
-            PointerEvent::Move(PointerUpdate { current, .. }) => {
-                if ctx.is_active() {
-                    let cursor_pos = ctx.local_position(current.position);
-                    let (fctx, lctx) = ctx.text_contexts();
-                    self.editor
-                        .driver(fctx, lctx)
-                        .extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                    let new_generation = self.editor.generation();
-                    if new_generation != self.rendered_generation {
-                        ctx.request_render();
-                        ctx.set_ime_area(self.ime_area());
-                        self.rendered_generation = new_generation;
-                    }
+            PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
+                let cursor_pos = ctx.local_position(current.position);
+                let (fctx, lctx) = ctx.text_contexts();
+                self.editor
+                    .driver(fctx, lctx)
+                    .extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_render();
+                    ctx.set_ime_area(self.ime_area());
+                    self.rendered_generation = new_generation;
                 }
             }
             _ => {}
@@ -755,22 +802,28 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 // Whether the returned text has changed.
                 // We don't send a TextChanged when the preedit changes
                 let mut edited = false;
+                let mut is_preedit = false;
                 match e {
                     Ime::Disabled => {
                         self.editor.driver(fctx, lctx).clear_compose();
+                        self.compose_baselines = None;
                     }
                     Ime::Preedit(text, cursor) => {
                         if text.is_empty() {
                             self.editor.driver(fctx, lctx).clear_compose();
+                            self.compose_baselines = None;
                         } else {
+                            // Save all lines' baselines before set_compose changes metrics.
+                            self.save_compose_baselines();
                             self.editor.driver(fctx, lctx).set_compose(text, *cursor);
-                            edited = true;
+                            is_preedit = true;
                         }
                     }
                     Ime::Commit(text) => {
                         self.editor
                             .driver(fctx, lctx)
                             .insert_or_replace_selection(text);
+                        self.compose_baselines = None;
                         edited = true;
                     }
                     Ime::Enabled => {}
@@ -784,7 +837,15 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
-                    ctx.request_layout();
+                    if is_preedit {
+                        // Preedit changes are temporary; avoid full relayout to prevent
+                        // text jitter. The editor's internal layout is already updated
+                        // by set_compose().
+                        ctx.request_render();
+                        ctx.set_ime_area(self.ime_area());
+                    } else {
+                        ctx.request_layout();
+                    }
                     self.rendered_generation = new_generation;
                 }
             }
@@ -1003,6 +1064,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.refresh_layout(fctx, lctx);
             self.editor.try_layout().unwrap()
         };
+
+        // During IME composition, compensate for baseline changes caused by
+        // font metric differences (e.g., Latin → Chinese font fallback).
+        let (line_offsets, compose_dy) = self.compute_line_offsets(layout);
+
         if ctx.is_focus_target() {
             let (caret_color, selection_color) = {
                 let cache = ctx.property_cache();
@@ -1012,14 +1078,18 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 )
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
-                let rect = bounding_box_to_rect(*rect);
+                let mut rect = bounding_box_to_rect(*rect);
+                rect.y0 += compose_dy;
+                rect.y1 += compose_dy;
                 painter.fill(rect, selection_color).draw();
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
                 && self.anim_cursor_visible
                 && ctx.is_window_focused()
             {
-                let rect = bounding_box_to_rect(cursor);
+                let mut rect = bounding_box_to_rect(cursor);
+                rect.y0 += compose_dy;
+                rect.y1 += compose_dy;
                 painter.fill(rect, caret_color).draw();
             };
         }
@@ -1027,12 +1097,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
 
-        render_text(
+        render_text_with_line_offsets(
             painter,
             Affine::IDENTITY,
             layout,
             &[text_color.color.into()],
             self.hint,
+            |line_idx| line_offsets.get(line_idx).copied().unwrap_or(0.0),
         );
     }
 

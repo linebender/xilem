@@ -50,7 +50,31 @@ pub fn render_text(
     // TODO: Should this be part of `BrushIndex` (i.e. `brushes`)?
     hint: bool,
 ) {
-    for line in layout.lines() {
+    render_text_with_line_offsets(painter, transform, layout, brushes, hint, |_| 0.0);
+}
+
+/// Renders laid out glyphs through imaging's [`Painter`] with per-line Y offset adjustments.
+///
+/// This is similar to [`render_text`] but accepts a closure that returns a Y offset for each
+/// line index. This is useful for compensating baseline shifts during IME composition, where
+/// preedit text may trigger font fallback that changes line metrics.
+pub fn render_text_with_line_offsets<F>(
+    painter: &mut Painter<'_, impl PaintSink + ?Sized>,
+    transform: Affine,
+    layout: &Layout<BrushIndex>,
+    brushes: &[Brush],
+    hint: bool,
+    line_y_offset: F,
+) where
+    F: Fn(usize) -> f64,
+{
+    for (line_idx, line) in layout.lines().enumerate() {
+        let dy = line_y_offset(line_idx);
+        let line_transform = if dy != 0.0 {
+            transform * Affine::translate((0.0, dy))
+        } else {
+            transform
+        };
         for item in line.items() {
             let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
                 continue;
@@ -82,7 +106,7 @@ pub fn render_text(
                 );
                 painter
                     .stroke(line, &Stroke::new(width.into()), underline_brush)
-                    .transform(transform)
+                    .transform(line_transform)
                     .draw();
             }
             let mut x = glyph_run.offset();
@@ -112,7 +136,7 @@ pub fn render_text(
             painter
                 .glyphs(font, brush)
                 .hint(hint)
-                .transform(transform)
+                .transform(line_transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)
                 .normalized_coords(coords)
@@ -141,7 +165,7 @@ pub fn render_text(
                 );
                 painter
                     .stroke(line, &Stroke::new(width.into()), strikethrough_brush)
-                    .transform(transform)
+                    .transform(line_transform)
                     .draw();
             }
         }
