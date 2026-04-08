@@ -1044,7 +1044,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if EDITABLE {
             match self.insert_newline {
                 InsertNewline::OnShiftEnter | InsertNewline::OnEnter => Role::MultilineTextInput,
-                _ => Role::TextInput,
+                InsertNewline::Never => Role::TextInput,
             }
         } else {
             Role::Document
