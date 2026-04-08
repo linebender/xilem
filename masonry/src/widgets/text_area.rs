@@ -201,7 +201,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// To modify this on an active text area, use [`set_hint`](Self::set_hint).
     /// You should do so as an animation starts and ends.
     // TODO: Should we tell each widget if smooth scrolling is ongoing so they can disable their hinting?
-    // Alternatively, we should automate disabling hinting at the Vello layer when composing.
     pub fn with_hint(mut self, hint: bool) -> Self {
         self.hint = hint;
         self
@@ -1032,7 +1031,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             Affine::IDENTITY,
             layout,
             &[text_color.color.into()],
-            self.hint,
+            self.hint && !self.editor.is_composing(),
         );
     }
 
