@@ -281,10 +281,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Computes per-line Y offsets for IME baseline compensation, returning
     /// both the offsets Vec and the first non-zero offset (for cursor/selection).
-    fn compute_line_offsets(
-        &self,
-        layout: &ParleyLayout<BrushIndex>,
-    ) -> (Vec<f64>, f64) {
+    fn compute_line_offsets(&self, layout: &ParleyLayout<BrushIndex>) -> (Vec<f64>, f64) {
         let Some(saved_baselines) = &self.compose_baselines else {
             return (Vec::new(), 0.0);
         };
