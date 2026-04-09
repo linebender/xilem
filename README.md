@@ -106,8 +106,8 @@ sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 
 There's a Nix flake in `docs/` which may be used for developing on NixOS:
 
-> [!INFO]
->
+> [!NOTE]
+> 
 > This flake is provided as a starting point, and we do not routinely validate its correctness.
 > We do not require contributors to ensure that this accurately reflects the build requirements, as we expect most contributors (and indeed many maintainers) will not be using NixOS.
 > If it is out of date, please let us know by opening an issue or PR.
