@@ -9,18 +9,20 @@ use std::sync::{Arc, mpsc};
 use accesskit_winit::Adapter;
 use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use imaging_vello::VelloSceneSink;
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
     DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WindowEvent,
 };
-use masonry_core::kurbo::{Affine, Rect};
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
+use masonry_imaging::texture_render::{
+    RenderInput as ImagingRenderInput, RenderTarget as ImagingRenderTarget,
+    Renderer as ImagingRenderer,
+};
+use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
 use tracing::{info, info_span, trace};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
-use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene, wgpu};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
@@ -193,8 +195,7 @@ pub struct MasonryState<'a> {
     /// See [`ApplicationHandler::suspended()`] for details.
     is_suspended: bool,
     render_cx: RenderContext,
-    renderer: Option<Renderer>,
-    image_overrides: HashMap<u64, ImageOverrideState>,
+    renderer: ImagingRenderer,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     event_loop_proxy: EventLoopProxy,
@@ -221,14 +222,6 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
-}
-
-#[derive(Debug)]
-struct ImageOverrideState {
-    image: masonry_core::peniko::ImageData,
-    texture: wgpu::Texture,
-    applied: bool,
-    prev: Option<wgpu::TexelCopyTextureInfoBase<wgpu::Texture>>,
 }
 
 // TODO - Merge into MasonryState?
@@ -365,6 +358,11 @@ impl MasonryState<'_> {
         new_windows: Vec<NewWindow>,
         default_properties: DefaultProperties,
     ) -> Self {
+        tracing::debug!(
+            backend = ImagingRenderer::BACKEND_NAME,
+            "selected Masonry Winit render backend"
+        );
+
         let render_cx = RenderContext::new();
 
         let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
@@ -382,8 +380,7 @@ impl MasonryState<'_> {
         MasonryState {
             is_suspended: true,
             render_cx,
-            renderer: None,
-            image_overrides: HashMap::new(),
+            renderer: ImagingRenderer::new(),
             event_loop_proxy,
             #[cfg(feature = "tracy")]
             frame: None,
@@ -569,66 +566,18 @@ impl MasonryState<'_> {
         window.handle.set_ime_allowed(false);
     }
 
+    #[cfg(feature = "imaging_vello")]
     pub(crate) fn set_image_override(
         &mut self,
         image: masonry_core::peniko::ImageData,
         texture: wgpu::Texture,
     ) {
-        let image_id = image.data.id();
-
-        if let Some(existing) = self.image_overrides.get_mut(&image_id) {
-            existing.texture = texture;
-            if existing.applied {
-                if let Some(renderer) = &mut self.renderer {
-                    renderer.override_image(
-                        &existing.image,
-                        Some(wgpu::TexelCopyTextureInfoBase {
-                            texture: existing.texture.clone(),
-                            mip_level: 0,
-                            origin: wgpu::Origin3d::ZERO,
-                            aspect: wgpu::TextureAspect::All,
-                        }),
-                    );
-                } else {
-                    existing.applied = false;
-                }
-            }
-            return;
-        }
-
-        let mut state = ImageOverrideState {
-            image,
-            texture,
-            applied: false,
-            prev: None,
-        };
-
-        if let Some(renderer) = &mut self.renderer {
-            state.prev = renderer.override_image(
-                &state.image,
-                Some(wgpu::TexelCopyTextureInfoBase {
-                    texture: state.texture.clone(),
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                }),
-            );
-            state.applied = true;
-        }
-
-        self.image_overrides.insert(image_id, state);
+        self.renderer.set_image_override(image, texture);
     }
 
+    #[cfg(feature = "imaging_vello")]
     pub(crate) fn clear_image_override(&mut self, image: &masonry_core::peniko::ImageData) {
-        let image_id = image.data.id();
-        let Some(state) = self.image_overrides.remove(&image_id) else {
-            return;
-        };
-        if state.applied
-            && let Some(renderer) = &mut self.renderer
-        {
-            renderer.override_image(&state.image, state.prev);
-        }
+        self.renderer.clear_image_override(image);
     }
 
     // --- MARK: REDRAW
@@ -700,22 +649,24 @@ impl MasonryState<'_> {
         }
 
         let (paint_result, tree_update) = window.render_root.redraw();
-        let mut scene = Scene::new();
-        let bounds = Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
-        let mut sink = VelloSceneSink::new(&mut scene, bounds);
-        paint_result.replay_into(&mut sink);
-        if let Err(err) = sink.finish() {
-            tracing::error!("Couldn't translate retained imaging scene for Vello: {err:?}");
-            return;
-        }
-        Self::render(
-            surface,
-            window,
-            scene,
-            &self.render_cx,
-            &mut self.renderer,
-            &mut self.image_overrides,
+        let overlays: Vec<_> = paint_result
+            .overlays
+            .iter()
+            .map(|layer| ImagingLayer {
+                scene: &layer.scene,
+                transform: layer.transform,
+            })
+            .collect();
+        let size = window.render_root.size();
+        let frame = PreparedFrame::new(
+            size.width,
+            size.height,
+            window.handle.scale_factor(),
+            window.base_color,
+            &paint_result.base,
+            &overlays,
         );
+        Self::render(surface, window, frame, &self.render_cx, &mut self.renderer);
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
         if let Some(tree_update) = tree_update {
@@ -727,112 +678,79 @@ impl MasonryState<'_> {
     fn render(
         surface: &mut RenderSurface<'_>,
         window: &mut Window,
-        scene: Scene,
+        frame: PreparedFrame<'_>,
         render_cx: &RenderContext,
-        renderer: &mut Option<Renderer>,
-        image_overrides: &mut HashMap<u64, ImageOverrideState>,
+        renderer: &mut ImagingRenderer,
     ) {
-        let size = window.render_root.size();
-        let scale_factor = window.handle.scale_factor();
-
-        let transformed_scene = if scale_factor == 1.0 {
-            None
-        } else {
-            let mut new_scene = Scene::new();
-            new_scene.append(&scene, Some(Affine::scale(scale_factor)));
-            Some(new_scene)
-        };
-        let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
-
         let dev_id = surface.dev_id;
         let device = &render_cx.devices[dev_id].device;
         let queue = &render_cx.devices[dev_id].queue;
-        let renderer_options = RendererOptions {
-            antialiasing_support: AaSupport::area_only(),
-            ..Default::default()
-        };
-        let render_params = RenderParams {
-            base_color: window.base_color,
-            width: size.width,
-            height: size.height,
-            antialiasing_method: AaConfig::Area,
+        let Some(surface_texture) = Self::acquire_surface_texture(surface, window, render_cx)
+        else {
+            return;
         };
 
-        let surface_texture = match surface.surface.get_current_texture() {
-            Ok(texture) => texture,
+        let _render_span = tracing::info_span!(
+            "Rendering Masonry window",
+            backend = ImagingRenderer::BACKEND_NAME
+        )
+        .entered();
+        if let Err(err) = renderer.render_to_texture(
+            ImagingRenderTarget {
+                adapter: &render_cx.devices[dev_id].adapter,
+                device,
+                queue,
+                texture: &surface.target_texture,
+                view: &surface.target_view,
+            },
+            ImagingRenderInput { frame },
+        ) {
+            tracing::error!(
+                backend = ImagingRenderer::BACKEND_NAME,
+                "Couldn't render Masonry content into target texture: {err}"
+            );
+            return;
+        }
+        Self::present_surface(surface, surface_texture, &window.handle, device, queue);
+    }
+
+    fn acquire_surface_texture(
+        surface: &mut RenderSurface<'_>,
+        window: &Window,
+        render_cx: &RenderContext,
+    ) -> Option<wgpu::SurfaceTexture> {
+        match surface.surface.get_current_texture() {
+            Ok(texture) => Some(texture),
             Err(wgpu::SurfaceError::Outdated) => {
                 let size = window.handle.inner_size();
                 render_cx.resize_surface(surface, size.width, size.height);
 
                 match surface.surface.get_current_texture() {
-                    Ok(texture) => texture,
+                    Ok(texture) => Some(texture),
                     Err(err) => {
                         // This is a common occurrence on X11 and Xwayland with NVIDIA drivers
                         // when opening and resizing the window.
                         tracing::error!(
                             "Couldn't get swap chain texture after configuring. Cause: '{err}'"
                         );
-                        return;
+                        None
                     }
                 }
             }
             Err(err) => {
                 tracing::error!("Couldn't get swap chain texture, operation unrecoverable: {err}");
-                return;
+                None
             }
-        };
-
-        let _render_span = tracing::info_span!("Rendering using Vello").entered();
-        let renderer = renderer.get_or_insert_with(|| {
-            #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
-            let mut renderer = Renderer::new(device, renderer_options).unwrap();
-            #[cfg(feature = "tracy")]
-            {
-                let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
-                    wgpu_profiler::GpuProfilerSettings::default(),
-                    // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
-                    // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
-                    wgpu::Backend::Vulkan,
-                    device,
-                    queue,
-                )
-                .unwrap_or(renderer.profiler);
-                renderer.profiler = new_profiler;
-            }
-            renderer
-        });
-
-        // Apply any persistent image overrides.
-        //
-        // `Renderer` is shared across windows, so these overrides are global to the current
-        // renderer/device. We apply them once (lazily, when a renderer exists) and only restore
-        // when explicitly cleared.
-        for ovr in image_overrides.values_mut() {
-            if ovr.applied {
-                continue;
-            }
-            ovr.prev = renderer.override_image(
-                &ovr.image,
-                Some(wgpu::TexelCopyTextureInfoBase {
-                    texture: ovr.texture.clone(),
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                }),
-            );
-            ovr.applied = true;
         }
+    }
 
-        renderer
-            .render_to_texture(
-                device,
-                queue,
-                scene_ref,
-                &surface.target_view,
-                &render_params,
-            )
-            .expect("failed to render to surface");
-
+    fn present_surface(
+        surface: &RenderSurface<'_>,
+        surface_texture: wgpu::SurfaceTexture,
+        window: &WindowHandle,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) {
         // Copy the new surface content to the surface.
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Surface Blit"),
@@ -846,7 +764,7 @@ impl MasonryState<'_> {
                 .create_view(&wgpu::TextureViewDescriptor::default()),
         );
         queue.submit([encoder.finish()]);
-        window.handle.pre_present_notify();
+        window.pre_present_notify();
         surface_texture.present();
         {
             let _render_poll_span =

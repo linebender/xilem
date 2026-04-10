@@ -6,6 +6,7 @@ members = [
     "xilem_masonry",
     "masonry",
     "masonry_core",
+    "masonry_imaging",
     "masonry_testing",
     "masonry_winit",
 
@@ -28,7 +29,7 @@ members = [
 
 [workspace.package]
 # Xilem version, also used by other packages which want to mimic Xilem's version.
-# Right now those packages include: xilem_core, xilem_masonry, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
+# Right now those packages include: xilem_core, xilem_masonry, xilem_web, masonry, masonry_core, masonry_imaging, masonry_testing, masonry_winit.
 #
 # NOTE: When bumping this, remember to also bump the aforementioned other packages'
 #       version in the dependencies section of this file.
@@ -44,6 +45,7 @@ repository = "https://github.com/linebender/xilem"
 
 masonry = { version = "0.4.0", path = "masonry", default-features = false }
 masonry_core = { version = "0.4.0", path = "masonry_core", default-features = false }
+masonry_imaging = { version = "0.4.0", path = "masonry_imaging", default-features = false }
 masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
 masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
 xilem_core = { version = "0.4.0", path = "xilem_core" }
@@ -53,9 +55,15 @@ tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
-imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "850af057d4c56cf644f37aaa644c7814a7a03a4b" }
-imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "850af057d4c56cf644f37aaa644c7814a7a03a4b" }
+imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
+imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
+imaging_vello_hybrid = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
+imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
+imaging_skia = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b", features = [
+    "gpu",
+] }
 vello = { version = "0.8.0", default-features = false, features = ["wgpu"] }
+wgpu = "28.0.0"
 kurbo = "0.13.0"
 parley = { version = "0.8.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.

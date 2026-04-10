@@ -67,6 +67,16 @@ UI screenshots compress well, so we expect this to be scalable.
 For repositories hosted on GitHub, this scheme also allows for including screenshots of your app or
 widgets in hosted documentation, although we haven't documented this publicly yet.
 
+## Feature flags
+
+Screenshot rendering is backend-driven:
+
+- `default`: Enables screenshot rendering via `imaging_vello`.
+- `imaging_vello`: Enables screenshot rendering via `imaging_vello`.
+- `imaging_vello_hybrid`: Enables screenshot rendering via `imaging_vello_hybrid`.
+- `imaging_vello_cpu`: Enables screenshot rendering via `imaging_vello_cpu`.
+- `imaging_skia`: Enables screenshot rendering via `imaging_skia`.
+
 ## Examples
 
 For examples of this crate in use

@@ -8,9 +8,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
+#[cfg(feature = "imaging_vello")]
 use masonry_core::peniko::ImageData;
 use tracing::field::DisplayValue;
-use vello::wgpu;
 use winit::event_loop::ActiveEventLoop;
 
 use crate::app::MasonryState;
@@ -192,6 +192,7 @@ impl DriverCtx<'_, '_> {
     /// `image` is drawn in the UI scene.
     ///
     /// The texture must be `Rgba8Unorm` and include `COPY_SRC` usage.
+    #[cfg(feature = "imaging_vello")]
     pub fn set_image_override(&mut self, image: ImageData, texture: wgpu::Texture) {
         self.state.set_image_override(image, texture);
     }
@@ -199,6 +200,7 @@ impl DriverCtx<'_, '_> {
     /// Clear a previously-set image override for the given `ImageData`.
     ///
     /// Note: overrides are global to the current renderer/device; see [`set_image_override`](Self::set_image_override).
+    #[cfg(feature = "imaging_vello")]
     pub fn clear_image_override(&mut self, image: &ImageData) {
         self.state.clear_image_override(image);
     }

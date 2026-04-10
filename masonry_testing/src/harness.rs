@@ -12,7 +12,11 @@ use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use imaging_vello::VelloRenderer;
+use masonry_imaging::ImageRenderer as _;
+use masonry_imaging::image_render::{
+    BACKEND_NAME as IMAGING_BACKEND_NAME, Renderer as ImagingRenderer, new_headless_renderer,
+};
+use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -29,9 +33,7 @@ use masonry_core::core::{
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use masonry_core::imaging::Painter;
-use masonry_core::imaging::record::{Scene, replay_transformed};
-use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
+use masonry_core::kurbo::{Point, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
 
@@ -130,8 +132,7 @@ pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: accesskit_consumer::Tree,
-    renderer: Option<VelloRenderer>,
-    renderer_size: Option<(u16, u16)>,
+    renderer: Option<ImagingRenderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     root_padding: u32,
@@ -354,7 +355,6 @@ impl<W: Widget> TestHarness<W> {
             ),
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             renderer: None,
-            renderer_size: None,
             mouse_state,
             window_size,
             background_color: params.background_color,
@@ -492,53 +492,40 @@ impl<W: Widget> TestHarness<W> {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
 
-        let (width, height) = padded_dimensions(self.window_size, self.root_padding);
-        let width_u16 = u16::try_from(width).expect("screenshot width exceeds renderer limit");
-        let height_u16 = u16::try_from(height).expect("screenshot height exceeds renderer limit");
-
-        if self.renderer_size != Some((width_u16, height_u16)) {
-            self.renderer = Some(VelloRenderer::new(width_u16, height_u16));
-            self.renderer_size = Some((width_u16, height_u16));
+        let overlays: Vec<_> = paint_result
+            .overlays
+            .iter()
+            .map(|layer| ImagingLayer {
+                scene: &layer.scene,
+                transform: layer.transform,
+            })
+            .collect();
+        let frame = PreparedFrame::new(
+            self.window_size.width,
+            self.window_size.height,
+            1.0,
+            self.background_color,
+            &paint_result.base,
+            &overlays,
+        );
+        let mut source = frame.snapshot_source(self.root_padding);
+        let width = source.width();
+        let height = source.height();
+        if self.renderer.is_none() {
+            self.renderer =
+                Some(new_headless_renderer().expect("create imaging renderer for test harness"));
         }
 
         let renderer = self.renderer.as_mut().unwrap();
-        let mut scene = Scene::new();
-        {
-            let mut painter = Painter::new(&mut scene);
-            painter.fill_rect(
-                Rect::new(0.0, 0.0, f64::from(width), f64::from(height)),
-                self.background_color,
-            );
-
-            if self.root_padding != 0 {
-                // 25% opacity of 50% grey provides a border of where the actual widget content is.
-                // Alternatively, maybe we should use a stronger color here?
-                let padding_color = Color::from_rgba8(127, 127, 127, 64);
-                // We draw the border first, so that any content is above the background color.
-                for [x0, y0, x1, y1] in padding_rects(width, height, self.root_padding) {
-                    painter.fill_rect(
-                        Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
-                        padding_color,
-                    );
-                }
-            }
-        }
-
-        let padding_transform =
-            Affine::translate((self.root_padding as f64, self.root_padding as f64));
-        replay_transformed(&paint_result.base, &mut scene, padding_transform);
-        for layer in &paint_result.overlays {
-            replay_transformed(
-                &layer.scene,
-                &mut scene,
-                padding_transform * layer.transform,
-            );
-        }
-
-        let rgba = renderer
-            .render_scene_rgba8(&scene)
-            .expect("render retained imaging scene for Vello");
-        RgbaImage::from_vec(width, height, rgba).expect("failed to create image")
+        let image = renderer
+            .render_source(&mut source, width, height)
+            .unwrap_or_else(|err| {
+                panic!(
+                    "render retained imaging scene for {}: {err:?}",
+                    IMAGING_BACKEND_NAME
+                )
+            });
+        RgbaImage::from_vec(image.width, image.height, image.data).expect("failed to create image")
     }
 
     /// Returns a reference to the current state of the accessibility tree.
@@ -1151,22 +1138,6 @@ impl<W: Widget> TestHarness<W> {
             }
         }
     }
-}
-
-fn padded_dimensions(window_size: PhysicalSize<u32>, root_padding: u32) -> (u32, u32) {
-    // Avoid having a zero-sized image.
-    let width = window_size.width.max(1) + root_padding * 2;
-    let height = window_size.height.max(1) + root_padding * 2;
-    (width, height)
-}
-
-fn padding_rects(width: u32, height: u32, padding: u32) -> [[u32; 4]; 4] {
-    [
-        [0, 0, padding, height],                              // Left edge
-        [width - padding, 0, width, height],                  // Right edge
-        [padding, 0, width - padding, padding],               // Top edge
-        [padding, height - padding, width - padding, height], // Bottom edge
-    ]
 }
 
 struct NoOpTreeChangeHandler;
