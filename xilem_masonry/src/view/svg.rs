@@ -106,7 +106,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Svg {
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,
-            "Message arrived in Svg::message, but Image doesn't consume any messages, this is a bug."
+            "Message arrived in Svg::message, but Svg doesn't consume any messages, this is a bug."
         );
         MessageResult::Stale
     }
