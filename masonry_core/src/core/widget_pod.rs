@@ -89,58 +89,18 @@ impl<W: Widget> NewWidget<W> {
     /// You can also get the same result with [`Widget::with_auto_id()`].
     #[inline(always)]
     pub fn new(inner: W) -> Self {
-        Self::new_with(
-            inner,
-            None,
-            WidgetOptions::default(),
-            PropertySet::default(),
-        )
-    }
-
-    /// Creates a new widget with a potential [`WidgetTag`],
-    /// custom [`WidgetOptions`] and custom [`PropertySet`].
-    pub fn new_with(
-        inner: W,
-        tag: Option<WidgetTag<W>>,
-        options: WidgetOptions,
-        props: impl Into<PropertySet>,
-    ) -> Self {
         Self {
             widget: Box::new(inner),
             id: WidgetId::next(),
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
-            options,
-            properties: props.into(),
+            options: WidgetOptions::default(),
+            properties: PropertySet::default(),
             property_stack_id: None,
             classes: HashSet::new(),
-            tag: tag.map(|tag| tag.inner),
+            tag: None,
         }
-    }
-
-    /// Creates a new widget with a [`WidgetTag`].
-    #[inline(always)]
-    pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
-        Self::new_with(
-            inner,
-            Some(tag),
-            WidgetOptions::default(),
-            PropertySet::default(),
-        )
-    }
-
-    // TODO - Replace with builder methods? More allocations then though?
-    /// Creates a new widget with custom [`PropertySet`].
-    #[inline(always)]
-    pub fn new_with_props(inner: W, props: impl Into<PropertySet>) -> Self {
-        Self::new_with(inner, None, WidgetOptions::default(), props)
-    }
-
-    /// Creates a new widget with custom [`WidgetOptions`].
-    #[inline(always)]
-    pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
-        Self::new_with(inner, None, options, PropertySet::default())
     }
 }
 
@@ -162,6 +122,24 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         }
     }
 
+    /// Sets the [`WidgetTag`] to this widget.
+    pub fn with_tag(mut self, tag: WidgetTag<W>) -> Self {
+        self.tag = Some(tag.inner);
+        self
+    }
+
+    /// Sets the [`PropertySet`] for this widget.
+    pub fn with_props(mut self, props: impl Into<PropertySet>) -> Self {
+        self.properties = props.into();
+        self
+    }
+
+    /// Sets the [`Affine`] transform for this widget.
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.options.transform = transform;
+        self
+    }
+
     /// Assigns a [`PropertyStack`](crate::core::PropertyStack) to this widget.
     pub fn with_property_stack(mut self, id: PropertyStackId) -> Self {
         self.property_stack_id = Some(id);
@@ -181,6 +159,14 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     /// [classes]: crate::doc::masonry_concepts#classes
     pub fn with_classes(mut self, classes: impl IntoIterator<Item = String>) -> Self {
         self.classes.extend(classes);
+        self
+    }
+
+    /// Set whether the widget will be created in a [disabled] state.
+    ///
+    /// [disabled]: crate::doc::masonry_concepts#disabled
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.options.disabled = disabled;
         self
     }
 

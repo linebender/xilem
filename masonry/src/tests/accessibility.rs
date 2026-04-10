@@ -13,8 +13,8 @@ use crate::widgets::SizedBox;
 fn request_accessibility() {
     let target_tag = WidgetTag::named("target");
     let parent_tag = WidgetTag::named("parent");
-    let child = NewWidget::new_with_tag(SizedBox::empty().record(), target_tag);
-    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child).record()).with_tag(parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let mut harness = TestHarness::create(test_property_set(), grandparent);
@@ -49,10 +49,10 @@ fn access_node_children() {
     let child_2 = NewWidget::new(SizedBox::empty());
     let child_3 = NewWidget::new(SizedBox::empty());
 
-    let parent = NewWidget::new_with_tag(
-        ModularWidget::new_multi_parent(vec![child_1, child_2, child_3]),
-        parent_tag,
-    );
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        child_1, child_2, child_3,
+    ]))
+    .with_tag(parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let mut harness = TestHarness::create(test_property_set(), grandparent);

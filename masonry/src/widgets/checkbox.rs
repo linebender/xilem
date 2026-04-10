@@ -443,10 +443,8 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = NewWidget::new_with_props(
-                label,
-                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
-            );
+            let label = NewWidget::new(label)
+                .with_props(PropertySet::new().with(ContentColor::new(ACCENT_COLOR)));
             let checkbox = NewWidget::new(Checkbox::from_label(true, label));
 
             let mut harness =

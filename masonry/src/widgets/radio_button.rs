@@ -423,7 +423,7 @@ mod tests {
     #[test]
     fn simple_radio_button() {
         let radio_tag = WidgetTag::unique();
-        let widget = NewWidget::new_with_tag(RadioButton::new(false, "Hello"), radio_tag);
+        let widget = NewWidget::new(RadioButton::new(false, "Hello")).with_tag(radio_tag);
         let widget = NewWidget::new(RadioGroup::new(widget));
 
         let window_size = Size::new(100.0, 40.0);
@@ -486,7 +486,7 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = NewWidget::new_with_props(label, ContentColor::new(ACCENT_COLOR));
+            let label = NewWidget::new(label).with_props(ContentColor::new(ACCENT_COLOR));
             let radio = NewWidget::new(RadioButton::from_label(true, label));
             let group = NewWidget::new(RadioGroup::new(radio));
 

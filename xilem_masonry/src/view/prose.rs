@@ -106,7 +106,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Prose<Sta
         if let Some(color) = self.text_color {
             props.insert(ContentColor { color });
         }
-        let text_area = NewWidget::new_with_props(text_area, props);
+        let text_area = NewWidget::new(text_area).with_props(props);
 
         let pod = ctx.create_pod(
             widgets::Prose::from_text_area(text_area)

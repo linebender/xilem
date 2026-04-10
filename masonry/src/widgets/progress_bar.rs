@@ -49,8 +49,9 @@ impl ProgressBar {
     pub fn new(progress: Option<f64>) -> Self {
         let progress = clamp_progress(progress);
         let label_props = PropertySet::one(LineBreaking::Overflow);
-        let label =
-            NewWidget::new_with_props(Label::new(Self::value(progress)), label_props).to_pod();
+        let label = NewWidget::new(Label::new(Self::value(progress)))
+            .with_props(label_props)
+            .to_pod();
         Self { progress, label }
     }
 }

@@ -190,7 +190,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
     );
-    let mut button = NewWidget::new_with_props(button, CalcAction::Op(op));
+    let mut button = NewWidget::new(button).with_props(CalcAction::Op(op));
     button.classes.insert("op_button".to_string());
 
     button
@@ -207,7 +207,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
             .with_auto_id(),
     );
 
-    let mut button = NewWidget::new_with_props(button, CalcAction::Digit(digit));
+    let mut button = NewWidget::new(button).with_props(CalcAction::Digit(digit));
     button.classes.insert("digit_button".to_string());
 
     button
@@ -252,8 +252,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         .with(op_button('.'), button_params(2, 5))
         .with(op_button('='), button_params(3, 5));
 
-    NewWidget::new_with_props(
-        root_widget,
+    NewWidget::new(root_widget).with_props(
         PropertySet::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
             .with(Padding::all(2.0))

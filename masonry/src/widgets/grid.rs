@@ -476,13 +476,11 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = NewWidget::new_with_props(
-            Grid::with_dimensions(1, 1).with(
-                Button::with_text("A").with_auto_id(),
-                GridParams::new(0, 0, 1, 1),
-            ),
-            Dimensions::STRETCH,
-        );
+        let widget = NewWidget::new(Grid::with_dimensions(1, 1).with(
+            Button::with_text("A").with_auto_id(),
+            GridParams::new(0, 0, 1, 1),
+        ))
+        .with_props(Dimensions::STRETCH);
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.

@@ -43,10 +43,8 @@ impl DemoPage for ImageDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let image = NewWidget::new_with_props(
-            Image::new(make_image_data()),
-            PropertySet::one(ObjectFit::Contain),
-        );
+        let image = NewWidget::new(Image::new(make_image_data()))
+            .with_props(PropertySet::one(ObjectFit::Contain));
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)

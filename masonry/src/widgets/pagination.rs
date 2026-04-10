@@ -9,7 +9,7 @@ use tracing::{Span, trace_span};
 use crate::core::{
     AccessCtx, ActionCtx, ChildrenIds, ErasedAction, FromDynWidget, LayoutCtx, MeasureCtx,
     MutateCtx, NewWidget, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
@@ -249,14 +249,7 @@ impl Pagination {
             let text = format!("{}", page_idx + 1);
             let disabled = page_idx == self.active_page;
             let button = Button::with_text(text);
-            let button = NewWidget::new_with_options(
-                button,
-                WidgetOptions {
-                    disabled,
-                    ..WidgetOptions::default()
-                },
-            )
-            .to_pod();
+            let button = NewWidget::new(button).disabled(disabled).to_pod();
             self.buttons.push(PageButton {
                 widget: button,
                 disabled,

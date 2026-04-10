@@ -124,22 +124,20 @@ impl AppDriver for Driver {
 
 /// Return initial to-do-list without items.
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
-    let text_input = NewWidget::new_with_tag(
+    let text_input = NewWidget::new(
         TextInput::new("").with_placeholder("ex: 'Do the dishes', 'File my taxes', ..."),
-        TEXT_INPUT_TAG,
-    );
+    )
+    .with_tag(TEXT_INPUT_TAG);
     let button = NewWidget::new(Button::with_text("Add task"));
 
     let list = Flex::column()
-        .with_fixed(NewWidget::new_with_props(
-            Flex::row()
-                .with(text_input, 1.0)
-                .with_fixed(button),
-            PropertySet::new().with(Padding::all(WIDGET_SPACING.get())),
-        ))
+        .with_fixed(
+            NewWidget::new(Flex::row().with(text_input, 1.0).with_fixed(button))
+                .with_props(PropertySet::new().with(Padding::all(WIDGET_SPACING.get()))),
+        )
         .with_fixed_spacer(WIDGET_SPACING);
 
-    NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
+    NewWidget::new(Portal::new(NewWidget::new(list).with_tag(LIST_TAG)))
 }
 
 fn main() {

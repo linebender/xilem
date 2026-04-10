@@ -265,7 +265,7 @@ mod tests {
             .with(prose4.with_auto_id(), CrossAxisAlignment::Center)
             .with(prose5.with_auto_id(), CrossAxisAlignment::Center)
             .with(prose6.with_auto_id(), CrossAxisAlignment::Center);
-        let flex = NewWidget::new_with_props(flex, PropertySet::one(Gap::ZERO));
+        let flex = NewWidget::new(flex).with_props(PropertySet::one(Gap::ZERO));
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 120.0));

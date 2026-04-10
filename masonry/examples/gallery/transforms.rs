@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{
-    NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
-};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::kurbo::{Affine, Vec2};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
@@ -85,47 +83,33 @@ impl DemoPage for TransformsDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let state = NewWidget::new_with_tag(
+        let state = NewWidget::new(
             Label::new("angle: 0°   scale: 1.00").with_style(StyleProperty::FontSize(13.0)),
-            self.state_label,
-        );
+        )
+        .with_tag(self.state_label);
 
         let controls = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::Center)
-            .with_fixed(NewWidget::new_with_tag(
-                Button::with_text("⟲"),
-                self.btn_rotate_left,
-            ))
+            .with_fixed(NewWidget::new(Button::with_text("⟲")).with_tag(self.btn_rotate_left))
             .with_fixed_spacer(SIDEBAR_GAP)
-            .with_fixed(NewWidget::new_with_tag(
-                Button::with_text("⟳"),
-                self.btn_rotate_right,
-            ))
+            .with_fixed(NewWidget::new(Button::with_text("⟳")).with_tag(self.btn_rotate_right))
             .with_fixed_spacer(SIDEBAR_GAP)
-            .with_fixed(NewWidget::new_with_tag(
-                Button::with_text("−"),
-                self.btn_scale_down,
-            ))
+            .with_fixed(NewWidget::new(Button::with_text("−")).with_tag(self.btn_scale_down))
             .with_fixed_spacer(SIDEBAR_GAP)
-            .with_fixed(NewWidget::new_with_tag(
-                Button::with_text("+"),
-                self.btn_scale_up,
-            ))
+            .with_fixed(NewWidget::new(Button::with_text("+")).with_tag(self.btn_scale_up))
             .with_fixed_spacer(SIDEBAR_GAP)
-            .with_fixed(NewWidget::new_with_tag(
-                Button::with_text("Reset"),
-                self.btn_reset,
-            ));
+            .with_fixed(NewWidget::new(Button::with_text("Reset")).with_tag(self.btn_reset));
 
-        let target = NewWidget::new_with(
+        let target = NewWidget::new(
             SizedBox::new(
                 Label::new("Transform me\nand\nsee what happens")
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_auto_id(),
             )
             .size(160.0.px(), 160.0.px()),
-            Some(self.target),
-            WidgetOptions::default(),
+        )
+        .with_tag(self.target)
+        .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x35, 0x35, 0x35)))
                 .with(Padding::all(12.0)),

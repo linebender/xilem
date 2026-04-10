@@ -88,13 +88,13 @@ pub(crate) fn wrap_in_shell(
     body: NewWidget<dyn Widget>,
 ) -> NewWidget<dyn Widget> {
     let disabled_toggle =
-        NewWidget::new_with_tag(Checkbox::new(false, "Disabled"), shell.disabled_toggle);
+        NewWidget::new(Checkbox::new(false, "Disabled")).with_tag(shell.disabled_toggle);
 
     let header = Flex::row()
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .with_fixed(disabled_toggle);
 
-    let content = NewWidget::new_with_tag(SizedBox::new(body), shell.content_wrapper);
+    let content = NewWidget::new(SizedBox::new(body)).with_tag(shell.content_wrapper);
 
     NewWidget::new(
         Flex::column()
@@ -117,5 +117,5 @@ pub(crate) fn build_sidebar_button(
     tag: WidgetTag<Button>,
     name: &'static str,
 ) -> NewWidget<Button> {
-    NewWidget::new_with_tag(Button::with_text(name), tag)
+    NewWidget::new(Button::with_text(name)).with_tag(tag)
 }

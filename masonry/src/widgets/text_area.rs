@@ -1178,10 +1178,8 @@ mod tests {
         test_params.window_size = Size::new(200.0, 20.0);
 
         let base_target = {
-            let area = NewWidget::new_with_props(
-                TextArea::new_immutable("Test string"),
-                PropertySet::new().with(ContentColor::new(palette::css::AZURE)),
-            );
+            let area = NewWidget::new(TextArea::new_immutable("Test string"))
+                .with_props(PropertySet::new().with(ContentColor::new(palette::css::AZURE)));
 
             let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 
@@ -1189,10 +1187,8 @@ mod tests {
         };
 
         {
-            let area = NewWidget::new_with_props(
-                TextArea::new_immutable("Different string"),
-                PropertySet::new().with(ContentColor::new(palette::css::AZURE)),
-            );
+            let area = NewWidget::new(TextArea::new_immutable("Different string"))
+                .with_props(PropertySet::new().with(ContentColor::new(palette::css::AZURE)));
 
             let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 

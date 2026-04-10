@@ -184,7 +184,7 @@ mod tests {
     fn detects_inner_resizing() {
         let tag = WidgetTag::named("inner_box");
         let inner_box =
-            NewWidget::new_with_tag(SizedBox::empty().width(100.px()).height(100.px()), tag);
+            NewWidget::new(SizedBox::empty().width(100.px()).height(100.px())).with_tag(tag);
         let observer = ResizeObserver::new(inner_box).with_props(Dimensions::MAX);
         let observer_id = observer.id();
         // We use a flex here as the inner `SizedBox` will take up the full space available in this case.

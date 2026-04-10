@@ -332,10 +332,8 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = NewWidget::new_with_props(
-                label,
-                PropertySet::new().with(ContentColor::new(ACCENT_COLOR)),
-            );
+            let label = NewWidget::new(label)
+                .with_props(PropertySet::new().with(ContentColor::new(ACCENT_COLOR)));
 
             let button = NewWidget::new(Button::new(label));
 
@@ -410,8 +408,7 @@ mod tests {
                 Button::with_text("D").with_auto_id(),
                 GridParams::new(1, 1, 1, 1),
             );
-        let root_widget = NewWidget::new_with_props(
-            grid,
+        let root_widget = NewWidget::new(grid).with_props(
             PropertySet::new()
                 .with(Padding::all(20.0))
                 .with(Gap::new(40.px())),

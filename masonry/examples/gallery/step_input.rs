@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetTag,
+    NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::layout::AsUnit;
 use masonry::peniko::color::AlphaColor;
@@ -155,25 +155,19 @@ impl DemoPage for StepInputDemo {
                 Flex::row()
                     .with_fixed(desc("There are two styles"))
                     .with(
-                        NewWidget::new_with(
-                            StepInput::new(BALANCE_TOTAL / 2, 1, 0, BALANCE_TOTAL),
-                            Some(self.tag_left),
-                            WidgetOptions::default(),
-                            StepInputStyle::Basic,
-                        ),
+                        NewWidget::new(StepInput::new(BALANCE_TOTAL / 2, 1, 0, BALANCE_TOTAL))
+                            .with_tag(self.tag_left)
+                            .with_props(StepInputStyle::Basic),
                         3.,
                     )
                     .with(
-                        NewWidget::new_with_tag(Button::with_text("Balance"), self.tag_balance),
+                        NewWidget::new(Button::with_text("Balance")).with_tag(self.tag_balance),
                         2.,
                     )
                     .with(
-                        NewWidget::new_with(
-                            StepInput::new(BALANCE_TOTAL / 2, 1, 0, BALANCE_TOTAL),
-                            Some(self.tag_right),
-                            WidgetOptions::default(),
-                            StepInputStyle::Flow,
-                        ),
+                        NewWidget::new(StepInput::new(BALANCE_TOTAL / 2, 1, 0, BALANCE_TOTAL))
+                            .with_tag(self.tag_right)
+                            .with_props(StepInputStyle::Flow),
                         3.,
                     )
                     .with_auto_id(),
@@ -243,13 +237,10 @@ impl DemoPage for StepInputDemo {
                 Flex::row()
                     .with_fixed(desc("Visuals can be customized"))
                     .with(
-                        NewWidget::new_with(
-                            StepInput::new(u16::MAX / 2, 1, 0, u16::MAX),
-                            Some(self.tag_custom),
-                            WidgetOptions::default(),
-                            StepInputStyle::Flow,
-                        )
-                        .with_class("custom"),
+                        NewWidget::new(StepInput::new(u16::MAX / 2, 1, 0, u16::MAX))
+                            .with_tag(self.tag_custom)
+                            .with_props(StepInputStyle::Flow)
+                            .with_class("custom"),
                         1.,
                     )
                     .with_auto_id(),

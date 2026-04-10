@@ -44,7 +44,7 @@ pub fn make_image() -> NewWidget<Image> {
         height,
     };
 
-    NewWidget::new_with_props(Image::new(png_data), PropertySet::one(ObjectFit::Contain))
+    NewWidget::new(Image::new(png_data)).with_props(PropertySet::one(ObjectFit::Contain))
 }
 
 fn main() {

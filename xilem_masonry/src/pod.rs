@@ -37,7 +37,7 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     /// Creates a new [`Pod`] with the given `widget` and `props`.
     pub fn new_with_props(widget: W, props: impl Into<PropertySet>) -> Self {
         Self {
-            new_widget: NewWidget::new_with_props(widget, props),
+            new_widget: NewWidget::new(widget).with_props(props),
         }
     }
 }

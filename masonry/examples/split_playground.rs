@@ -94,27 +94,16 @@ fn make_widget_tree() -> NewWidget<impl masonry::core::Widget> {
     const SPACING: Length = Length::const_px(8.0);
 
     let controls = Flex::row()
-        .with_fixed(NewWidget::new_with_tag(
-            Button::with_text("Fraction"),
-            FRACTION_BTN,
-        ))
+        .with_fixed(NewWidget::new(Button::with_text("Fraction")).with_tag(FRACTION_BTN))
         .with_fixed_spacer(SPACING)
-        .with_fixed(NewWidget::new_with_tag(
-            Button::with_text("From start"),
-            START_BTN,
-        ))
+        .with_fixed(NewWidget::new(Button::with_text("From start")).with_tag(START_BTN))
         .with_fixed_spacer(SPACING)
-        .with_fixed(NewWidget::new_with_tag(
-            Button::with_text("From end"),
-            END_BTN,
-        ));
+        .with_fixed(NewWidget::new(Button::with_text("From end")).with_tag(END_BTN));
 
-    let status = NewWidget::new_with_tag(
-        Label::new(
-            "Click the divider, then use arrow keys (Shift = bigger step), Home/End to jump.",
-        ),
-        STATUS_TAG,
-    );
+    let status = NewWidget::new(Label::new(
+        "Click the divider, then use arrow keys (Shift = bigger step), Home/End to jump.",
+    ))
+    .with_tag(STATUS_TAG);
 
     let left = Flex::column()
         .with_fixed(
@@ -132,12 +121,12 @@ fn make_widget_tree() -> NewWidget<impl masonry::core::Widget> {
         )
         .with_fixed(Label::new("Try switching split-point modes.").with_auto_id());
 
-    let split = NewWidget::new_with_tag(
+    let split = NewWidget::new(
         Split::new(NewWidget::new(left), NewWidget::new(right))
             .min_lengths(80.px(), 80.px())
             .min_bar_area(12.px()),
-        SPLIT_TAG,
-    );
+    )
+    .with_tag(SPLIT_TAG);
 
     NewWidget::new(
         Flex::column()

@@ -69,23 +69,18 @@ impl DemoPage for ProgressDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let slider = NewWidget::new_with_tag(
-            Slider::new(0.0, 1.0, self.value).with_step(0.01),
-            self.slider,
-        );
+        let slider =
+            NewWidget::new(Slider::new(0.0, 1.0, self.value).with_step(0.01)).with_tag(self.slider);
         let indeterminate =
-            NewWidget::new_with_tag(Checkbox::new(false, "Indeterminate"), self.indeterminate);
+            NewWidget::new(Checkbox::new(false, "Indeterminate")).with_tag(self.indeterminate);
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(NewWidget::new_with_tag(
-                ProgressBar::new(Some(self.value)),
-                self.bar,
-            ))
-            .with_fixed(NewWidget::new_with_tag(
-                Label::new("Value: 35%").with_style(StyleProperty::FontSize(13.0)),
-                self.value_label,
-            ))
+            .with_fixed(NewWidget::new(ProgressBar::new(Some(self.value))).with_tag(self.bar))
+            .with_fixed(
+                NewWidget::new(Label::new("Value: 35%").with_style(StyleProperty::FontSize(13.0)))
+                    .with_tag(self.value_label),
+            )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(slider)
             .with_fixed_spacer(CONTENT_GAP)

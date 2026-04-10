@@ -19,8 +19,8 @@ use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, Sized
 fn request_paint() {
     let target_tag = WidgetTag::named("target");
     let parent_tag = WidgetTag::named("parent");
-    let child = NewWidget::new_with_tag(SizedBox::empty().record(), target_tag);
-    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child).record()).with_tag(parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let mut harness = TestHarness::create(test_property_set(), grandparent);
@@ -61,18 +61,12 @@ fn request_paint() {
 fn paint_order() {
     const SQUARE_SIZE: f64 = 30.;
     const SQUARE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
-    let child1 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        Background::Color(RED),
-    );
-    let child2 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        Background::Color(GREEN),
-    );
-    let child3 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
-        Background::Color(BLUE),
-    );
+    let child1 = NewWidget::new(SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH))
+        .with_props(Background::Color(RED));
+    let child2 = NewWidget::new(SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH))
+        .with_props(Background::Color(GREEN));
+    let child3 = NewWidget::new(SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH))
+        .with_props(Background::Color(BLUE));
     let children = vec![child1, child2, child3];
     let parent = NewWidget::new(
         ModularWidget::new_multi_parent(children)
