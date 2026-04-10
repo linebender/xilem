@@ -47,10 +47,11 @@ impl Count {
                 Count::Many => {
                     current_count = Count::Many;
                 }
-                Count::Unknown if !matches!(current_count, Count::Many) => {
+                // Unknown is set when we haven't already reached Many
+                Count::Unknown if matches!(current_count, Count::Many) => {}
+                Count::Unknown => {
                     current_count = Count::Unknown;
                 }
-                _ => panic!("How to report this properly"),
             }
         }
         current_count

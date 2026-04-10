@@ -613,14 +613,14 @@ impl Child {
     fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
         match self {
             Self::Widget { widget, .. } => Some(widget),
-            _ => None,
+            Self::Spacer { .. } => None,
         }
     }
 
     fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
         match self {
             Self::Widget { widget, .. } => Some(widget),
-            _ => None,
+            Self::Spacer { .. } => None,
         }
     }
 }
@@ -1098,10 +1098,10 @@ impl Widget for Flex {
                                 alignment_descent =
                                     Some(alignment_descent.unwrap_or(descent).max(descent));
                             }
-                            _ => (),
+                            CrossAxisAlignment::Start | CrossAxisAlignment::Center | CrossAxisAlignment::End | CrossAxisAlignment::Stretch => (),
                         }
                     }
-                    _ => (),
+                    Child::Spacer { .. } => ()
                 }
             }
         }
