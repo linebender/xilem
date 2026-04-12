@@ -465,9 +465,8 @@ impl AllowRawMut for ScrollBar {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::TextEvent;
     use crate::core::keyboard::{Key, NamedKey};
-    use crate::core::NewWidget;
+    use crate::core::{NewWidget, TextEvent};
     use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
