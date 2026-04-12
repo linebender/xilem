@@ -396,7 +396,7 @@ mod tests {
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(checkbox_id);
+        harness.mouse_click_on(checkbox_id, None);
         assert_eq!(
             harness.pop_action::<CheckboxToggled>(),
             Some((CheckboxToggled(true), checkbox_id))

@@ -17,9 +17,7 @@ use crate as masonry;
 
 use masonry::peniko::Color;
 // ---
-use masonry::core::{
-    AccessEvent, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget,
-};
+use masonry::core::{AccessEvent, EventCtx, PointerEvent, PropertiesMut, TextEvent, Widget};
 // ---
 use masonry::core::{Update, UpdateCtx};
 // ---
@@ -75,7 +73,7 @@ impl Widget for ColorRectangle {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down(b) if b.button == Some(PointerButton::Primary) => {
+            PointerEvent::Down(_) => {
                 ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {}
@@ -316,7 +314,7 @@ mod tests {
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
 
-        harness.mouse_click_on(rect_id);
+        harness.mouse_click_on(rect_id, None);
         assert!(matches!(
             harness.pop_action::<ColorRectanglePress>(),
             Some((ColorRectanglePress, _))

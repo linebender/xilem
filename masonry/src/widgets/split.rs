@@ -826,7 +826,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{PointerButton, TextEvent, WindowEvent};
+    use crate::core::{TextEvent, WindowEvent};
     use crate::dpi::PhysicalSize;
     use crate::properties::Padding;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -925,9 +925,9 @@ mod tests {
         // Initial bar center with default settings:
         // split_space = 150 - 6 = 144, child1 = 72, bar center = 72 + 3 = 75.
         harness.mouse_move(Point::new(75.0, 10.0));
-        harness.mouse_button_press(PointerButton::Primary);
+        harness.mouse_button_press(None);
         harness.mouse_move(Point::new(105.0, 10.0));
-        harness.mouse_button_release(PointerButton::Primary);
+        harness.mouse_button_release(None);
 
         let (child1_width, child2_width) = {
             let root = harness.root_widget();

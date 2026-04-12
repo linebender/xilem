@@ -506,7 +506,7 @@ impl Widget for Slider {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{PointerButton, TextEvent};
+    use crate::core::TextEvent;
     use crate::kurbo::{Point, Size};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -534,7 +534,7 @@ mod tests {
 
         // 2. Press the mouse button.
         // This should not emit an action because the value does not change.
-        harness.mouse_button_press(PointerButton::Primary);
+        harness.mouse_button_press(None);
         assert!(harness.pop_action::<f64>().is_none());
 
         // 3. Move to the new position (75%).
@@ -545,7 +545,7 @@ mod tests {
         assert_render_snapshot!(harness, "slider_drag_to_75");
 
         // Release the mouse
-        harness.mouse_button_release(PointerButton::Primary);
+        harness.mouse_button_release(None);
         assert_render_snapshot!(harness, "slider_drag_released_at_75");
     }
 

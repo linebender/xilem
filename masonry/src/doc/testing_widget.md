@@ -179,7 +179,7 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
 
-        harness.mouse_click_on(rect_id);
+        harness.mouse_click_on(rect_id, None);
         assert!(matches!(
             harness.pop_action::<ColorRectanglePress>(),
             Some((ColorRectanglePress, _))

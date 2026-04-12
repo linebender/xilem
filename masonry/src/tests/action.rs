@@ -128,7 +128,7 @@ fn action_propagation() {
 
     let mut harness = TestHarness::create(test_property_set(), parent3);
 
-    harness.mouse_click_on(button_id);
+    harness.mouse_click_on(button_id, None);
 
     // Only the translated action should reach the app driver
     assert_matches!(

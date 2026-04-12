@@ -290,7 +290,7 @@ mod tests {
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(button_id);
+        harness.mouse_click_on(button_id, Some(PointerButton::Primary));
         assert_eq!(
             harness.pop_action::<ButtonPress>(),
             Some((
@@ -322,7 +322,7 @@ mod tests {
 
         harness.focus_on(None);
         harness.mouse_move_to(button_id);
-        harness.mouse_button_press(PointerButton::Primary);
+        harness.mouse_button_press(None);
 
         assert_eq!(harness.focused_widget_id(), Some(button_id));
     }
@@ -479,13 +479,13 @@ mod tests {
             button.ctx().is_hovered(),
             "The child shouldn't prevent hover."
         );
-        harness.mouse_button_press(PointerButton::Primary);
+        harness.mouse_button_press(None);
         let button = harness.get_widget_with_id(button_id);
         assert!(
             button.ctx().is_pointer_capture_target(),
             "A non-interactive child shouldn't prevent pointer capture."
         );
-        harness.mouse_button_release(PointerButton::Primary);
+        harness.mouse_button_release(None);
         let (_, event_id) = harness
             .pop_action::<<Button as Widget>::Action>()
             .expect("There should be an action.");

@@ -64,7 +64,7 @@ fn pointer_event_bubbling() {
     let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
-    harness.mouse_click_on(button_id);
+    harness.mouse_click_on(button_id, None);
 
     fn is_pointer_down(record: Record) -> bool {
         matches!(record, Record::PointerEvent(PointerEvent::Down { .. }))
@@ -87,7 +87,7 @@ fn pointer_capture_and_cancel() {
     let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
     harness.process_pointer_event(PointerEvent::Cancel(PointerInfo {
@@ -110,7 +110,7 @@ fn synthetic_cancel() {
     let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
     // When we disable a widget with pointer capture, it gets a
@@ -146,7 +146,7 @@ fn pointer_capture_suppresses_neighbors() {
     let other_id = harness.get_widget(other_tag).id();
 
     harness.mouse_move_to(target_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
 
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
@@ -158,7 +158,7 @@ fn pointer_capture_suppresses_neighbors() {
     assert!(!harness.get_widget(other_tag).ctx().is_hovered());
 
     // We end pointer capture.
-    harness.mouse_button_release(PointerButton::Primary);
+    harness.mouse_button_release(None);
     assert_eq!(harness.pointer_capture_target_id(), None);
 
     // Once the capture is released, 'other' should immediately register as hovered.
@@ -212,7 +212,7 @@ fn pointer_cancel_on_window_blur() {
     let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
     harness.flush_records_of(target_tag);
 
@@ -253,7 +253,7 @@ fn click_anchors_focus() {
 
     // Clicking a disabled button doesn't focus it.
     harness.set_disabled(child_3, true);
-    harness.mouse_click_on(child_3_id);
+    harness.mouse_click_on(child_3_id, None);
     assert_eq!(harness.focused_widget_id(), None);
 
     // But the next tab event focuses its neighbor.
@@ -266,8 +266,8 @@ fn click_anchors_focus() {
 
     // Clicking another non-focusable widget clears focus.
     harness.mouse_move_to_unchecked(other_id);
-    harness.mouse_button_press(PointerButton::Primary);
-    harness.mouse_button_release(PointerButton::Primary);
+    harness.mouse_button_press(None);
+    harness.mouse_button_release(None);
     assert_eq!(harness.focused_widget_id(), None);
 }
 
@@ -440,7 +440,7 @@ fn multi_pointers_capture() {
     // Move mouse to button 1, mouse press
     // Check mouse is captured, button 1 is active
     harness.mouse_move_to(button_1_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
 
     assert_captured_by(&harness, PointerId::PRIMARY, button_1_id);
     assert!(harness.get_widget(button_1_tag).ctx().is_active());

@@ -583,21 +583,25 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Sends a [`Down`](PointerEvent::Down) event to the window.
-    pub fn mouse_button_press(&mut self, button: PointerButton) {
-        self.mouse_state.buttons.insert(button);
+    pub fn mouse_button_press(&mut self, button: Option<PointerButton>) {
+        if let Some(button) = button {
+            self.mouse_state.buttons.insert(button);
+        }
         self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
-            button: button.into(),
+            button,
             state: self.mouse_state.clone(),
         }));
     }
 
     /// Sends an [`Up`](PointerEvent::Up) event to the window.
-    pub fn mouse_button_release(&mut self, button: PointerButton) {
-        self.mouse_state.buttons.remove(button);
+    pub fn mouse_button_release(&mut self, button: Option<PointerButton>) {
+        if let Some(button) = button {
+            self.mouse_state.buttons.remove(button);
+        }
         self.process_pointer_event(PointerEvent::Up(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
-            button: button.into(),
+            button,
             state: self.mouse_state.clone(),
         }));
     }
@@ -622,10 +626,10 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget doesn't accept pointer events.
     /// - If the widget is scrolled out of view.
     #[track_caller]
-    pub fn mouse_click_on(&mut self, id: WidgetId) {
+    pub fn mouse_click_on(&mut self, id: WidgetId, button: Option<PointerButton>) {
         self.mouse_move_to(id);
-        self.mouse_button_press(PointerButton::Primary);
-        self.mouse_button_release(PointerButton::Primary);
+        self.mouse_button_press(button);
+        self.mouse_button_release(button);
     }
 
     /// Uses [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.

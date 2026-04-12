@@ -88,9 +88,7 @@ First we implement event methods:
 
 ```rust,ignore
 // ...
-use masonry::core::{
-    AccessEvent, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget
-};
+use masonry::core::{AccessEvent, EventCtx, PointerEvent, PropertiesMut, TextEvent, Widget};
 // ...
 
 #[derive(Debug)]
@@ -101,7 +99,7 @@ impl Widget for ColorRectangle {
 
     fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
-            PointerEvent::Down { button: Some(PointerButton::Primary), .. } => {
+            PointerEvent::Down(_) => {
                 ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {},
@@ -123,7 +121,7 @@ impl Widget for ColorRectangle {
 }
 ```
 
-We handle pointer events and accessibility events the same way: we check the event type, and if it's a left-click, we submit an action.
+We handle pointer events and accessibility events the same way: we check the event type, and if it's a click, we submit an action.
 
 Submitting an action lets Masonry know that a semantically meaningful event has occurred; Masonry will call `AppDriver::on_action()` with the action before the end of the frame.
 This lets higher-level frameworks like Xilem react to UI events - in this case, the color rectangle being pressed.
