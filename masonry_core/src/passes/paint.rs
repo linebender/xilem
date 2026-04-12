@@ -231,13 +231,13 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     let mut scene_cache = std::mem::take(&mut root.global_state.scene_cache);
 
     let root_id = root.root_id();
-    let layer_ids = root.layer_ids();
+    let layer_root_ids = root.layer_root_ids();
 
     // Paint each layer into its own scene.
     let mut base_scene = Scene::new();
     let mut overlays = Vec::new();
 
-    for (idx, &layer_widget_id) in layer_ids.iter().enumerate() {
+    for (idx, &layer_widget_id) in layer_root_ids.iter().enumerate() {
         if idx == 0 {
             paint_layer(
                 root,
@@ -296,7 +296,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
             window_to_layer_transform * border_box_to_window_transform;
 
         // Draw the hover rect in the owning layer's scene.
-        if layer_root == layer_ids[0] {
+        if layer_root == layer_root_ids[0] {
             Painter::new(&mut base_scene)
                 .fill(rect, HOVER_FILL_COLOR)
                 .transform(border_box_to_layer_transform)
