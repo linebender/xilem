@@ -24,6 +24,7 @@ imaging_vello_cpu = ["dep:imaging_vello_cpu"]
 imaging_skia = ["dep:imaging_skia"]
 
 [dependencies]
+masonry_core.workspace = true
 imaging.workspace = true
 imaging_vello = { workspace = true, optional = true }
 imaging_vello_hybrid = { workspace = true, optional = true }

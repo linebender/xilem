@@ -6,9 +6,9 @@ use std::any::TypeId;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ActionCtx, ChildrenIds, ComposeCtx, CursorIcon, ErasedAction, EventCtx,
-    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut,
-    PropertiesRef, PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
+    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PaintLayerMode, PointerEvent,
+    PropertiesMut, PropertiesRef, PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer, pre_paint,
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
@@ -45,6 +45,7 @@ pub struct ModularWidget<S> {
     /// The state passed to all the callbacks of this widget
     pub state: S,
     icon: CursorIcon,
+    paint_layer_mode: PaintLayerMode,
     accepts_pointer_interaction: bool,
     propagates_pointer_interaction: bool,
     accepts_focus: bool,
@@ -77,6 +78,7 @@ impl<S> ModularWidget<S> {
         Self {
             state,
             icon: CursorIcon::Default,
+            paint_layer_mode: PaintLayerMode::Inline,
             accepts_pointer_interaction: true,
             propagates_pointer_interaction: true,
             accepts_focus: false,
@@ -192,6 +194,12 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
+        self
+    }
+
+    /// See [`Widget::paint_layer_mode`]
+    pub fn paint_layer_mode(mut self, mode: PaintLayerMode) -> Self {
+        self.paint_layer_mode = mode;
         self
     }
 
@@ -530,6 +538,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
         } else {
             ChildrenIds::new()
         }
+    }
+
+    fn paint_layer_mode(&self) -> PaintLayerMode {
+        self.paint_layer_mode
     }
 
     fn as_layer(&mut self) -> Option<&mut dyn Layer> {
