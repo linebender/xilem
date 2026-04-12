@@ -296,7 +296,7 @@ impl MutateCtx<'_> {
             .item_mut(child.id())
             .expect("get_mut: child not found");
         let child_stack_id = node_mut.item.state.property_stack_id;
-        let child_type_id = (*node_mut.item.widget).type_id();
+        let child_type_id = node_mut.item.widget.type_id();
         let child_stack = self.property_arena.get(child_stack_id, child_type_id);
         let child_ctx = MutateCtx {
             global_state: self.global_state,
