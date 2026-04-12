@@ -57,20 +57,6 @@ pub struct RenderRoot {
     /// `WidgetPod` handle for the layer stack, which holds the root widget of each layer.
     pub(crate) layer_stack: WidgetPod<LayerStack>,
 
-    /// The accessibility pass creates a wrapper node for the app with `Role::Window`.
-    ///
-    /// This is the id of that node.
-    pub(crate) window_node_id: NodeId,
-
-    /// Whether the window size should be determined by the content or the user.
-    pub(crate) size_policy: WindowSizePolicy,
-
-    /// Current size of the window.
-    pub(crate) size: PhysicalSize<u32>,
-
-    /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
-    pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
-
     /// Property data, including property stacks and per-widget-type default properties.
     pub(crate) property_arena: PropertyArena,
 
@@ -85,6 +71,20 @@ pub struct RenderRoot {
 pub(crate) struct RenderRootState {
     /// Sink for signals to be processed by the event loop.
     pub(crate) signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+
+    /// The accessibility pass creates a wrapper node for the app with `Role::Window`.
+    ///
+    /// This is the id of that node.
+    pub(crate) window_node_id: NodeId,
+
+    /// Whether the window size should be determined by the content or the user.
+    pub(crate) size_policy: WindowSizePolicy,
+
+    /// Current size of the window.
+    pub(crate) size: PhysicalSize<u32>,
+
+    /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
+    pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -333,12 +333,12 @@ impl RenderRoot {
 
         let mut root = Self {
             layer_stack,
-            window_node_id: AccessCtx::next_node_id(),
-            size_policy,
-            size,
-            last_mouse_pos: None,
             global_state: RenderRootState {
                 signal_sink: Box::new(signal_sink),
+                window_node_id: AccessCtx::next_node_id(),
+                size_policy,
+                size,
+                last_mouse_pos: None,
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
@@ -476,7 +476,7 @@ impl RenderRoot {
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
-                self.size = size;
+                self.global_state.size = size;
                 self.root_state_mut().request_layout = true;
                 self.root_state_mut().set_needs_layout(true);
                 self.run_rewrite_passes();
@@ -770,11 +770,14 @@ impl RenderRoot {
 
     /// Returns the current size of the window.
     pub fn size(&self) -> PhysicalSize<u32> {
-        self.size
+        self.global_state.size
     }
 
     pub(crate) fn get_kurbo_size(&self) -> Size {
-        let size = self.size.to_logical(self.global_state.scale_factor);
+        let size = self
+            .global_state
+            .size
+            .to_logical(self.global_state.scale_factor);
         Size::new(size.width, size.height)
     }
 

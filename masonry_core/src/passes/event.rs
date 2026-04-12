@@ -157,8 +157,8 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     let event_pos = try_event_position(event).map(|p| p.to_logical(root.global_state.scale_factor));
 
-    if event_pos != root.last_mouse_pos {
-        root.last_mouse_pos = event_pos;
+    if event_pos != root.global_state.last_mouse_pos {
+        root.global_state.last_mouse_pos = event_pos;
     }
     root.global_state.needs_pointer_pass = true;
 

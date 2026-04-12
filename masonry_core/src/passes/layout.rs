@@ -606,7 +606,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     let window_size = root.get_kurbo_size();
     let mut root_node = root.widget_arena.get_node_mut(root.root_id());
-    let root_node_size = match root.size_policy {
+    let root_node_size = match root.global_state.size_policy {
         WindowSizePolicy::User => resolve_size(
             &mut root.global_state,
             &root.property_arena,
@@ -631,15 +631,15 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     );
     place_widget(&mut root_node.item.state, Point::ORIGIN);
 
-    if let WindowSizePolicy::Content = root.size_policy {
+    if let WindowSizePolicy::Content = root.global_state.size_policy {
         // We use the aligned border-box size, which means that transforms won't affect window size.
         let size = root_node.item.state.border_box_size();
         // TODO: Remove HACK: Until scale factor rework happens, we still need to scale here.
         //       https://github.com/linebender/xilem/issues/1264
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
-        if root.size != new_size {
-            root.size = new_size;
+        if root.global_state.size != new_size {
+            root.global_state.size = new_size;
             root.global_state
                 .emit_signal(RenderRootSignal::SetSize(new_size));
         }
