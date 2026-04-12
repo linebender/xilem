@@ -153,42 +153,23 @@ pub trait AppDriver {
     /// Called when Masonry has created its WGPU device.
     fn on_wgpu_ready(&mut self, _wgpu: &WgpuContext<'_>) {}
 
-    /// Called on redraw with the current ordered visual layer plan for a window.
-    ///
-    /// This hook runs after Masonry has produced its paint-time layer plan and before the
-    /// retained scene is rendered into the window texture. The plan reflects the current painter
-    /// order of both Masonry scene layers and host-managed external layers in the widget tree.
-    ///
-    /// Hosts that want to integrate with a compositor or native surface system should inspect
-    /// this plan directly. External layers identify host-managed surface slots; scene layers mark
-    /// Masonry-painted content in the same ordering.
-    ///
-    /// Masonry Winit does not realize host-managed layers itself. If the application ignores
-    /// external layers in this plan, those surfaces will be absent from the final presentation.
-    fn on_visual_layers(
-        &mut self,
-        window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
-        layers: &VisualLayerPlan,
-    ) {
-    }
-
     /// Called when the application wants to override Masonry Winit's default flattened
     /// presentation path and render a [`VisualLayerPlan`] directly.
     ///
-    /// Return `true` if the visual layers were fully rendered into `target.view`. Masonry Winit
-    /// will then skip its default rendering path and only present the surface. Return `false` to
-    /// fall back to Masonry Winit's built-in flattened imaging renderer.
+    /// Return `Some(request_redraw)` if the visual layers were fully rendered into `target.view`.
+    /// Masonry Winit will then skip its default rendering path and only present the surface.
+    /// Return `None` to fall back to Masonry Winit's built-in flattened imaging renderer.
     ///
-    /// This hook is intended for compositor integrations such as `subduction`, where the host
-    /// wants to interleave Masonry scene layers and host-managed external layers in one output.
+    /// This hook is the real host override seam for compositor integrations such as `subduction`,
+    /// where the host wants to interleave Masonry scene layers and host-managed external layers in
+    /// one output.
     fn present_visual_layers(
         &mut self,
         window_id: WindowId,
         target: PresentationTarget<'_>,
         layers: &VisualLayerPlan,
-    ) -> bool {
-        false
+    ) -> Option<bool> {
+        None
     }
 }
 

@@ -92,8 +92,9 @@ use vello as _;
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;
-#[cfg(all(feature = "subduction", feature = "imaging_vello"))]
+#[cfg(feature = "imaging_vello")]
 mod subduction_presenter;
+mod surface_presenter;
 mod vello_util;
 
 pub use winit;
@@ -107,11 +108,8 @@ pub mod app {
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
         Window, run, run_with,
     };
-    #[cfg(all(feature = "subduction", feature = "imaging_vello"))]
-    pub use super::subduction_presenter::{
-        ExternalLayerRenderer, ExternalLayerTarget, PresentError as SubductionPresentError,
-        SubductionPresenter,
-    };
+    #[cfg(feature = "imaging_vello")]
+    pub use super::subduction_presenter::{LayerTextureTarget, SubductionPresenter};
 
     pub(crate) use super::convert_winit_event::{
         masonry_resize_direction_to_winit, winit_ime_to_masonry,

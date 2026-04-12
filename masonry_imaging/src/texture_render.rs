@@ -6,9 +6,13 @@
 //! This module owns backend state for rendering Masonry visual layers into a caller-provided WGPU
 //! texture target. It does not own window surfaces or presentation.
 
+use imaging::record::{ValidateError, replay_transformed};
+use imaging::render::RenderSource;
+use imaging::{PaintSink, Painter};
+use kurbo::{Affine, Rect};
 use wgpu;
 
-use masonry_core::app::VisualLayerPlan;
+use masonry_core::app::{VisualLayerKind, VisualLayerPlan};
 use peniko::Color;
 
 /// GPU target that Masonry content should be rendered into.
@@ -68,6 +72,72 @@ impl<'a> RenderInput<'a> {
             scale_factor,
             background_color,
             visual_layers,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct WindowSource<'a> {
+    width: u32,
+    height: u32,
+    scale_factor: f64,
+    background_color: Color,
+    layers: &'a VisualLayerPlan,
+}
+
+impl core::fmt::Debug for WindowSource<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("WindowSource")
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("scale_factor", &self.scale_factor)
+            .field("background_color", &self.background_color)
+            .field("visual_layer_count", &self.layers.layers.len())
+            .finish()
+    }
+}
+
+impl<'a> WindowSource<'a> {
+    fn from_visual_layers(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        layers: &'a VisualLayerPlan,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            scale_factor,
+            background_color,
+            layers,
+        }
+    }
+}
+
+impl RenderSource for WindowSource<'_> {
+    fn validate(&self) -> Result<(), ValidateError> {
+        for layer in &self.layers.layers {
+            if let VisualLayerKind::Scene(scene) = &layer.kind {
+                scene.validate()?;
+            }
+        }
+        Ok(())
+    }
+
+    fn paint_into(&mut self, sink: &mut dyn PaintSink) {
+        {
+            let mut painter = Painter::new(sink);
+            painter.fill_rect(
+                Rect::new(0.0, 0.0, f64::from(self.width), f64::from(self.height)),
+                self.background_color,
+            );
+        }
+
+        for layer in &self.layers.layers {
+            if let VisualLayerKind::Scene(scene) = &layer.kind {
+                replay_transformed(scene, sink, Affine::scale(self.scale_factor) * layer.transform);
+            }
         }
     }
 }
@@ -222,7 +292,7 @@ mod imp {
     use super::non_vello::{CachedRenderer, render_window_source_to_texture};
     use crate::skia::{TargetRenderer, TextureTarget, new_target_renderer};
 
-    use super::{RenderInput, RenderTarget};
+    use super::{RenderInput, RenderTarget, WindowSource};
 
     /// Errors that can occur while rendering Masonry content with Skia.
     #[derive(Debug)]
@@ -310,7 +380,7 @@ mod imp {
 
     use crate::vello::build_scene_from_source;
 
-    use super::{RenderInput, RenderTarget};
+    use super::{RenderInput, RenderTarget, WindowSource};
 
     /// Errors that can occur while rendering Masonry content with Vello.
     #[derive(Debug)]
@@ -378,7 +448,7 @@ mod imp {
         ) -> Result<(), Error> {
             let width = input.width;
             let height = input.height;
-            let mut source = crate::WindowSource::from_visual_layers(
+            let mut source = WindowSource::from_visual_layers(
                 input.width,
                 input.height,
                 input.scale_factor,

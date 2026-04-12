@@ -7,15 +7,25 @@
 //! They are distinct from the internal `LayerStack`, which owns persistent widget roots.
 
 use crate::core::WidgetId;
-use crate::imaging::PaintSink;
-use crate::imaging::record::{Scene, replay_transformed};
+use crate::imaging::record::Scene;
 use kurbo::{Affine, Rect};
 
-/// The kind of host-owned external layer preserved in the visual layer plan.
+/// Stable identifier for one visual layer within a layer root.
+///
+/// Visual-layer ids are stable for a given `(root_id, ordinal)` pair, where `ordinal`
+/// is the painter-order index of that visual layer within the same layer root.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ExternalLayerKind {
-    /// A host-managed surface slot reserved within the widget tree.
-    Surface,
+pub struct VisualLayerId {
+    /// The root widget that owns this visual layer.
+    pub root_id: WidgetId,
+    /// Painter-order index of the visual layer within its owning root.
+    pub ordinal: u32,
+}
+
+impl VisualLayerId {
+    fn new(root_id: WidgetId, ordinal: u32) -> Self {
+        Self { root_id, ordinal }
+    }
 }
 
 /// Where a visual layer boundary came from in the widget model.
@@ -32,14 +42,14 @@ pub enum VisualLayerKind {
     /// Masonry-painted retained content, in the layer's local coordinate space.
     Scene(Scene),
     /// Host-owned external/native content identified by the layer root widget.
-    External(ExternalLayerKind),
+    External,
 }
 
 impl core::fmt::Debug for VisualLayerKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Scene(_) => f.write_str("Scene(..)"),
-            Self::External(kind) => f.debug_tuple("External").field(kind).finish(),
+            Self::External => f.write_str("External"),
         }
     }
 }
@@ -50,9 +60,10 @@ impl core::fmt::Debug for VisualLayerKind {
 /// External layers preserve a host-managed layer boundary. In both cases, apply
 /// [`transform`](Self::transform) to place the layer in window space.
 pub struct VisualLayer {
+    id: VisualLayerId,
     /// The content realization of this layer.
     pub kind: VisualLayerKind,
-    /// Where this visual layer boundary originated.
+    /// Whether this layer came from a top-level `LayerStack` root or an in-tree paint split.
     pub boundary: VisualLayerBoundary,
     /// Axis-aligned bounds of this layer's content in layer-local coordinates.
     pub bounds: Rect,
@@ -75,6 +86,7 @@ impl VisualLayer {
         root_id: WidgetId,
     ) -> Self {
         Self {
+            id: VisualLayerId::new(root_id, 0),
             kind: VisualLayerKind::Scene(scene),
             boundary,
             bounds,
@@ -86,7 +98,6 @@ impl VisualLayer {
 
     /// Create an externally realized layer.
     pub fn external(
-        kind: ExternalLayerKind,
         boundary: VisualLayerBoundary,
         bounds: Rect,
         clip: Option<Rect>,
@@ -94,7 +105,8 @@ impl VisualLayer {
         root_id: WidgetId,
     ) -> Self {
         Self {
-            kind: VisualLayerKind::External(kind),
+            id: VisualLayerId::new(root_id, 0),
+            kind: VisualLayerKind::External,
             boundary,
             bounds,
             clip,
@@ -103,12 +115,9 @@ impl VisualLayer {
         }
     }
 
-    /// Returns the external-layer kind, if this is host-owned content.
-    pub fn external_kind(&self) -> Option<ExternalLayerKind> {
-        match self.kind {
-            VisualLayerKind::External(kind) => Some(kind),
-            VisualLayerKind::Scene(_) => None,
-        }
+    /// Stable identifier for this visual layer.
+    pub fn id(&self) -> VisualLayerId {
+        self.id
     }
 
     /// Returns the axis-aligned bounds in window coordinates.
@@ -134,25 +143,17 @@ pub struct VisualLayerPlan {
 }
 
 impl VisualLayerPlan {
-    /// Replay all scene-backed layers into a sink in window coordinate space.
-    ///
-    /// This is the backend-agnostic way to consume Masonry's retained paint output.
-    pub fn replay_into<S>(&self, sink: &mut S)
-    where
-        S: PaintSink + ?Sized,
-    {
-        for layer in &self.layers {
-            if let VisualLayerKind::Scene(scene) = &layer.kind {
-                replay_transformed(scene, sink, layer.transform);
-            }
-        }
+    /// Create a visual-layer plan and assign stable visual-layer ids.
+    pub fn new(mut layers: Vec<VisualLayer>) -> Self {
+        assign_visual_layer_ids(&mut layers);
+        Self { layers }
     }
 
     /// Iterate the external layers in painter order together with their external-layer index.
-    pub fn external_layers(&self) -> impl Iterator<Item = (usize, &VisualLayer)> {
+    pub fn external_layers(&self) -> impl Iterator<Item = (usize, &VisualLayer)> + '_ {
         self.layers
             .iter()
-            .filter(|layer| layer.external_kind().is_some())
+            .filter(|layer| matches!(layer.kind, VisualLayerKind::External))
             .enumerate()
     }
 
@@ -160,6 +161,15 @@ impl VisualLayerPlan {
     pub fn has_external_layers(&self) -> bool {
         self.layers
             .iter()
-            .any(|layer| layer.external_kind().is_some())
+            .any(|layer| matches!(layer.kind, VisualLayerKind::External))
+    }
+}
+
+fn assign_visual_layer_ids(layers: &mut [VisualLayer]) {
+    let mut ordinals = std::collections::HashMap::<WidgetId, u32>::new();
+    for layer in layers {
+        let ordinal = ordinals.entry(layer.root_id).or_insert(0);
+        layer.id = VisualLayerId::new(layer.root_id, *ordinal);
+        *ordinal += 1;
     }
 }

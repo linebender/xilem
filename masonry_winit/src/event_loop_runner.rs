@@ -34,6 +34,7 @@ use crate::app::{
     masonry_resize_direction_to_winit, winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
+use crate::surface_presenter::present_surface;
 use crate::vello_util::{RenderContext, RenderSurface};
 
 /// The custom event type that we inject into winit's [`EventLoop`](winit::event_loop::EventLoop).
@@ -583,12 +584,12 @@ impl MasonryState<'_> {
     fn redraw(
         &mut self,
         handle_id: HandleId,
-        event_loop: &ActiveEventLoop,
+        _event_loop: &ActiveEventLoop,
         app_driver: &mut dyn AppDriver,
     ) {
         let _span = info_span!("redraw");
 
-        let (window_id, window_handle, size, scale_factor, base_color, visual_layers, tree_update) = {
+        let (window_handle, size, scale_factor, base_color, visual_layers, tree_update) = {
             let window = self.windows.get_mut(&handle_id).unwrap();
             let size = window.render_root.size();
             if size.width == 0 || size.height == 0 {
@@ -613,7 +614,6 @@ impl MasonryState<'_> {
 
             let (visual_layers, tree_update) = window.render_root.redraw();
             (
-                window.id,
                 window.handle.clone(),
                 size,
                 window.handle.scale_factor(),
@@ -622,15 +622,6 @@ impl MasonryState<'_> {
                 tree_update,
             )
         };
-        {
-            let mut ctx = DriverCtx::new(self, event_loop);
-            app_driver.on_visual_layers(window_id, &mut ctx, &visual_layers);
-        }
-        if !self.windows.contains_key(&handle_id) {
-            self.surfaces.remove(&handle_id);
-            return;
-        }
-
         // Get the existing surface or create a new one.
         let surface = if let Some(surface) = self.surfaces.get_mut(&handle_id) {
             #[cfg(target_os = "macos")]
@@ -708,7 +699,7 @@ impl MasonryState<'_> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        if app_driver.present_visual_layers(
+        if let Some(request_redraw) = app_driver.present_visual_layers(
             window.id,
             PresentationTarget {
                 adapter,
@@ -724,6 +715,9 @@ impl MasonryState<'_> {
         ) {
             window.handle.pre_present_notify();
             surface_texture.present();
+            if request_redraw {
+                window.handle.request_redraw();
+            }
             return;
         }
 
@@ -754,35 +748,7 @@ impl MasonryState<'_> {
             );
             return;
         }
-        Self::present_surface(surface, surface_texture, &window.handle, device, queue);
-    }
-
-    fn present_surface(
-        surface: &RenderSurface<'_>,
-        surface_texture: wgpu::SurfaceTexture,
-        window: &WindowHandle,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Surface Blit"),
-        });
-        surface.blitter.copy(
-            device,
-            &mut encoder,
-            &surface.target_view,
-            &surface_texture
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default()),
-        );
-        queue.submit([encoder.finish()]);
-        window.pre_present_notify();
-        surface_texture.present();
-        {
-            let _render_poll_span =
-                tracing::info_span!("Waiting for GPU to finish rendering").entered();
-            device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-        }
+        present_surface(surface, surface_texture, &window.handle, device, queue);
     }
 
     fn acquire_surface_texture(

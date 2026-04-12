@@ -22,8 +22,8 @@ const DEFAULT_LENGTH: Length = Length::const_px(100.);
 /// external paint layer so hosts such as `masonry_winit` can realize it as a foreign surface,
 /// 3D viewport, or compositor-managed layer.
 ///
-/// Hosts discover these slots through `masonry_winit::app::AppDriver::on_visual_layers`, which
-/// reports the ordered visual layer plan each frame.
+/// Hosts discover these slots when they inspect the current visual layer plan during
+/// `masonry_winit::app::AppDriver::present_visual_layers`.
 #[derive(Default)]
 pub struct ExternalSurface {
     alt_text: Option<ArcStr>,
@@ -113,7 +113,7 @@ impl Widget for ExternalSurface {
 mod tests {
     use std::sync::Arc;
 
-    use crate::app::{ExternalLayerKind, RenderRoot, RenderRootOptions, WindowSizePolicy};
+    use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
     use crate::core::{DefaultProperties, NewWidget, Widget, WidgetTag};
     use crate::dpi::PhysicalSize;
     use crate::kurbo::{Point, Rect, Size};
@@ -155,7 +155,7 @@ mod tests {
         let external = visual_layers
             .external_layers()
             .map(|(_, layer)| layer)
-            .find(|layer| matches!(layer.kind, ExternalLayerKind::Surface))
+            .next()
             .expect("missing external layer");
 
         assert_eq!(external.root_id, surface_ref.id());

@@ -7,21 +7,21 @@ use accesskit::{Node, Role};
 
 use super::run_paint_pass;
 use crate::app::{
-    ExternalLayerKind, RenderRoot, RenderRootOptions, VisualLayer, VisualLayerBoundary,
-    VisualLayerKind, VisualLayerPlan, WindowSizePolicy,
+    RenderRoot, RenderRootOptions, VisualLayerKind, VisualLayerPlan, WindowSizePolicy,
 };
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, DefaultProperties, LayoutCtx, MeasureCtx, NewWidget,
     NoAction, PaintCtx, PaintLayerMode, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    TextEvent, Update, UpdateCtx, Widget, WidgetPod,
 };
 use crate::dpi::PhysicalSize;
 use crate::imaging::Painter;
-use crate::imaging::record::Scene;
 use crate::kurbo::{Axis, Point, Rect, Size};
 use crate::layout::{LenReq, SizeDef};
 use crate::peniko::Color;
 
+/// Minimal leaf widget used to produce deterministic painted content with a selectable
+/// `PaintLayerMode`.
 struct PaintLeaf {
     color: Color,
     paint_layer_mode: PaintLayerMode,
@@ -107,6 +107,10 @@ impl Widget for PaintLeaf {
     }
 }
 
+/// Three fixed-width leaf widgets laid out in a row.
+///
+/// This is the basic fixture for assertions about how an isolated middle child splits the
+/// ordered visual layer output around it.
 struct TripleRow {
     left: WidgetPod<PaintLeaf>,
     middle: WidgetPod<PaintLeaf>,
@@ -218,6 +222,10 @@ impl Widget for TripleRow {
     }
 }
 
+/// Single-child wrapper that applies an offset and clip.
+///
+/// This exists to exercise ancestor transforms and clipping when a descendant becomes its own
+/// visual layer.
 struct OffsetBox {
     child: WidgetPod<PaintLeaf>,
     offset: Point,
@@ -311,6 +319,10 @@ impl Widget for OffsetBox {
     }
 }
 
+/// Variant of `TripleRow` whose middle slot is an `OffsetBox`.
+///
+/// This fixture is used for nested-boundary tests where an external layer must preserve
+/// ancestor offset and clip information.
 struct MixedTripleRow {
     left: WidgetPod<PaintLeaf>,
     middle: WidgetPod<OffsetBox>,
@@ -457,40 +469,6 @@ fn paint_result_for_middle(mode: PaintLayerMode) -> VisualLayerPlan {
 }
 
 #[test]
-fn replay_ignores_external_layers() {
-    let base = Scene::new();
-    let external = VisualLayer::external(
-        ExternalLayerKind::Surface,
-        VisualLayerBoundary::WidgetBoundary,
-        Rect::ZERO,
-        None,
-        kurbo::Affine::IDENTITY,
-        WidgetId::next(),
-    );
-    let result = VisualLayerPlan {
-        layers: vec![
-            VisualLayer::scene(
-                base,
-                VisualLayerBoundary::LayerRoot,
-                Rect::ZERO,
-                None,
-                kurbo::Affine::IDENTITY,
-                WidgetId::next(),
-            ),
-            external,
-        ],
-    };
-
-    let mut sink = Scene::new();
-    result.replay_into(&mut sink);
-
-    assert!(matches!(
-        result.layers[1].kind,
-        VisualLayerKind::External(ExternalLayerKind::Surface)
-    ));
-}
-
-#[test]
 fn isolated_scene_widget_splits_ordered_layers() {
     let result = paint_result_for_middle(PaintLayerMode::IsolatedScene);
 
@@ -511,7 +489,7 @@ fn external_widget_splits_ordered_layers() {
     assert!(matches!(result.layers[0].kind, VisualLayerKind::Scene(_)));
     assert!(matches!(
         result.layers[1].kind,
-        VisualLayerKind::External(ExternalLayerKind::Surface)
+        VisualLayerKind::External
     ));
     assert!(matches!(result.layers[2].kind, VisualLayerKind::Scene(_)));
     assert_eq!(result.layers[1].transform.translation(), (10.0, 0.0).into());
@@ -559,7 +537,7 @@ fn nested_external_widget_preserves_ancestor_offsets() {
     assert_eq!(result.layers.len(), 3);
     assert!(matches!(
         result.layers[1].kind,
-        VisualLayerKind::External(ExternalLayerKind::Surface)
+        VisualLayerKind::External
     ));
     assert_eq!(result.layers[1].transform.translation(), (17.0, 5.0).into());
     assert_eq!(result.layers[1].bounds, Rect::new(0.0, 0.0, 10.0, 8.0));

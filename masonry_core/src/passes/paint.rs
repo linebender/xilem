@@ -9,8 +9,8 @@ use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
 use crate::app::{
-    ExternalLayerKind, RenderRoot, RenderRootState, VisualLayer, VisualLayerBoundary,
-    VisualLayerKind, VisualLayerPlan,
+    RenderRoot, RenderRootState, VisualLayer, VisualLayerBoundary, VisualLayerKind,
+    VisualLayerPlan,
 };
 use crate::core::{
     DefaultProperties, LayerRealization, PaintCtx, PaintLayerMode, PropertiesRef, PropertyArena,
@@ -247,7 +247,6 @@ fn paint_widget(
                         node.reborrow_mut(),
                     );
                     layers.push(VisualLayer::external(
-                        ExternalLayerKind::Surface,
                         child_layer.boundary,
                         child_layer.bounds,
                         child_layer.clip,
@@ -362,7 +361,6 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
                 layer_to_window_transform,
             );
             layers.push(VisualLayer::external(
-                ExternalLayerKind::Surface,
                 VisualLayerBoundary::LayerRoot,
                 layer_bounds,
                 layer_clip,
@@ -423,7 +421,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
         }
     }
 
-    VisualLayerPlan { layers }
+    VisualLayerPlan::new(layers)
 }
 
 /// Paint a single layer root into ordered render layers.
@@ -480,7 +478,6 @@ fn paint_layer(
             layer_node,
         );
         vec![VisualLayer::external(
-            ExternalLayerKind::Surface,
             layer_state.boundary,
             layer_state.bounds,
             layer_state.clip,
