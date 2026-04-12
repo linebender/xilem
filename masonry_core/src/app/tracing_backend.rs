@@ -15,13 +15,18 @@
 
 use std::error::Error;
 use std::fmt;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs::File;
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::UNIX_EPOCH;
 
+#[cfg(not(target_arch = "wasm32"))]
 use time::macros::format_description;
 use tracing::Subscriber;
+#[cfg(not(target_arch = "wasm32"))]
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::LevelFilter;
+#[cfg(not(target_arch = "wasm32"))]
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
 

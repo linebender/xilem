@@ -9,7 +9,7 @@
 //! `masonry_imaging` owns the bridge between Masonry paint output and concrete imaging backends.
 //! In this first slice that means:
 //!
-//! - preparing flattened Masonry frame content from base content plus overlays
+//! - preparing ordered Masonry render layers from base content plus overlays
 //! - exposing backend-specific renderer modules for `imaging_vello`,
 //!   `imaging_vello_hybrid`, `imaging_vello_cpu`, and `imaging_skia`
 //! - exposing host-neutral texture rendering helpers for writing into caller-provided WGPU
@@ -37,6 +37,7 @@ use imaging::record::{Scene, ValidateError, replay_transformed};
 use imaging::render::RenderSource;
 use imaging::{PaintSink, Painter};
 use kurbo::{Affine, Rect};
+use masonry_core::app::{ExternalLayerKind, VisualLayerBoundary, VisualLayerKind, VisualLayerPlan};
 use peniko::Color;
 
 #[cfg(any(feature = "imaging_vello", feature = "imaging_vello_hybrid"))]
@@ -140,134 +141,267 @@ pub mod image_render {
     }
 }
 
-/// A Masonry overlay layer ready to be composited into window space.
+/// Opaque reference to a host-owned external layer.
+///
+/// This is a placeholder for content such as a 3D viewport or platform-native compositor layer.
+/// Current render-source adapters do not realize external layers; compositor-aware hosts are
+/// expected to handle them directly from a higher-level render plan.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ExternalLayerRef {
+    /// Stable layer identifier chosen by the host/widget integration.
+    pub id: u64,
+    /// Logical kind of external layer requested by Masonry.
+    pub kind: ExternalLayerKind,
+}
+
+/// The content realization for a prepared layer.
+#[derive(Clone, Copy, Debug)]
+pub enum LayerKind<'a> {
+    /// Masonry-painted retained scene content.
+    Scene(&'a Scene),
+    /// Host-owned external/native content.
+    External(ExternalLayerRef),
+}
+
+/// A Masonry render layer ready to be composited into window space.
 #[derive(Clone, Copy)]
-pub struct Layer<'a> {
-    /// The retained scene for this layer in layer-local coordinates.
-    pub scene: &'a Scene,
+pub struct PreparedLayer<'a> {
+    /// The content of this layer.
+    pub kind: LayerKind<'a>,
+    /// Where this layer boundary originated in the widget model.
+    pub boundary: VisualLayerBoundary,
+    /// Axis-aligned bounds of this layer's content in layer-local coordinates.
+    pub bounds: Rect,
+    /// Optional clip to apply in layer-local coordinates when realizing the layer.
+    pub clip: Option<Rect>,
     /// Transform from layer-local coordinates into window coordinates.
     pub transform: Affine,
 }
 
-impl core::fmt::Debug for Layer<'_> {
+impl core::fmt::Debug for PreparedLayer<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Layer")
-            .field("scene", &"(Scene)")
+        f.debug_struct("PreparedLayer")
+            .field("kind", &self.kind)
+            .field("boundary", &self.boundary)
+            .field("bounds", &self.bounds)
+            .field("clip", &self.clip)
             .field("transform", &self.transform)
             .finish()
     }
 }
 
-/// A flattened Masonry frame ready to be adapted to a concrete render target.
-///
-/// This is intentionally a single-target convenience type for Masonry's current rendering paths.
-/// Future compositor-oriented work is expected to preserve more layer structure above this level.
-#[derive(Clone, Copy, Debug)]
-pub struct PreparedFrame<'a> {
-    /// Frame width in physical pixels.
-    pub width: u32,
-    /// Frame height in physical pixels.
-    pub height: u32,
-    /// Window scale factor.
-    pub scale_factor: f64,
-    /// Background color to paint before replaying scene content.
-    pub background_color: Color,
-    /// Base retained scene in root coordinates.
-    pub base: &'a Scene,
-    /// Overlay layers in painter order.
-    pub overlays: &'a [Layer<'a>],
-}
-
-impl<'a> PreparedFrame<'a> {
-    /// Create a flattened Masonry frame from base content plus overlays.
-    pub fn new(
-        width: u32,
-        height: u32,
-        scale_factor: f64,
-        background_color: Color,
-        base: &'a Scene,
-        overlays: &'a [Layer<'a>],
+impl<'a> PreparedLayer<'a> {
+    /// Create a Masonry-painted scene layer.
+    pub fn scene(
+        scene: &'a Scene,
+        boundary: VisualLayerBoundary,
+        bounds: Rect,
+        clip: Option<Rect>,
+        transform: Affine,
     ) -> Self {
         Self {
-            width,
-            height,
-            scale_factor,
-            background_color,
-            base,
-            overlays,
+            kind: LayerKind::Scene(scene),
+            boundary,
+            bounds,
+            clip,
+            transform,
         }
     }
 
-    /// Create a render source for window output in physical pixels.
-    pub fn window_source(self) -> WindowSource<'a> {
-        WindowSource { frame: self }
+    /// Create a host-owned external layer placeholder.
+    pub fn external(
+        external: ExternalLayerRef,
+        boundary: VisualLayerBoundary,
+        bounds: Rect,
+        clip: Option<Rect>,
+        transform: Affine,
+    ) -> Self {
+        Self {
+            kind: LayerKind::External(external),
+            boundary,
+            bounds,
+            clip,
+            transform,
+        }
+    }
+}
+
+/// Compatibility alias for the old layer name.
+pub type Layer<'a> = PreparedLayer<'a>;
+
+#[derive(Clone, Copy)]
+enum LayerSource<'a> {
+    Prepared(&'a [PreparedLayer<'a>]),
+    Visual(&'a VisualLayerPlan),
+}
+
+impl core::fmt::Debug for LayerSource<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Prepared(layers) => f.debug_tuple("Prepared").field(&layers.len()).finish(),
+            Self::Visual(layers) => f.debug_tuple("Visual").field(&layers.layers.len()).finish(),
+        }
+    }
+}
+
+impl LayerSource<'_> {
+    fn validate(self) -> Result<(), ValidateError> {
+        match self {
+            Self::Prepared(layers) => validate_prepared_layers(layers),
+            Self::Visual(layers) => validate_visual_layers(layers),
+        }
     }
 
-    /// Create a screenshot render source with optional root padding.
-    pub fn snapshot_source(self, root_padding: u32) -> SnapshotSource<'a> {
-        SnapshotSource::new(self, root_padding)
+    fn replay_into(self, sink: &mut dyn PaintSink, transform: Affine) {
+        match self {
+            Self::Prepared(layers) => {
+                for layer in layers {
+                    if let LayerKind::Scene(scene) = layer.kind {
+                        replay_transformed(scene, sink, transform * layer.transform);
+                    }
+                }
+            }
+            Self::Visual(layers) => {
+                for layer in &layers.layers {
+                    if let VisualLayerKind::Scene(scene) = &layer.kind {
+                        replay_transformed(scene, sink, transform * layer.transform);
+                    }
+                }
+            }
+        }
     }
 }
 
 /// Masonry render source for a window-sized frame.
 #[derive(Clone, Copy, Debug)]
 pub struct WindowSource<'a> {
-    frame: PreparedFrame<'a>,
+    width: u32,
+    height: u32,
+    scale_factor: f64,
+    background_color: Color,
+    layers: LayerSource<'a>,
 }
 
 impl<'a> WindowSource<'a> {
-    /// Create a render source for window output in physical pixels.
-    pub fn new(frame: PreparedFrame<'a>) -> Self {
-        Self { frame }
+    /// Create a render source directly from Masonry-imaging prepared layers.
+    pub fn from_prepared_layers(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        layers: &'a [PreparedLayer<'a>],
+    ) -> Self {
+        Self {
+            width,
+            height,
+            scale_factor,
+            background_color,
+            layers: LayerSource::Prepared(layers),
+        }
+    }
+
+    /// Create a render source directly from Masonry visual layers.
+    pub fn from_visual_layers(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        layers: &'a VisualLayerPlan,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            scale_factor,
+            background_color,
+            layers: LayerSource::Visual(layers),
+        }
     }
 }
 
 impl RenderSource for WindowSource<'_> {
     fn validate(&self) -> Result<(), ValidateError> {
-        validate_layers(self.frame.base, self.frame.overlays)
+        self.layers.validate()
     }
 
     fn paint_into(&mut self, sink: &mut dyn PaintSink) {
         {
             let mut painter = Painter::new(sink);
             painter.fill_rect(
-                Rect::new(
-                    0.0,
-                    0.0,
-                    f64::from(self.frame.width),
-                    f64::from(self.frame.height),
-                ),
-                self.frame.background_color,
+                Rect::new(0.0, 0.0, f64::from(self.width), f64::from(self.height)),
+                self.background_color,
             );
         }
 
-        let scale = Affine::scale(self.frame.scale_factor);
-        replay_transformed(self.frame.base, sink, scale);
-        for layer in self.frame.overlays {
-            replay_transformed(layer.scene, sink, scale * layer.transform);
-        }
+        self.layers
+            .replay_into(sink, Affine::scale(self.scale_factor));
     }
 }
 
 /// Masonry render source for screenshot-style output with optional root padding.
 #[derive(Clone, Copy, Debug)]
 pub struct SnapshotSource<'a> {
-    frame: PreparedFrame<'a>,
+    background_color: Color,
+    layers: LayerSource<'a>,
     width: u32,
     height: u32,
     root_padding: u32,
 }
 
 impl<'a> SnapshotSource<'a> {
-    /// Create a screenshot render source.
-    pub fn new(frame: PreparedFrame<'a>, root_padding: u32) -> Self {
-        let (width, height) = padded_dimensions(frame.width, frame.height, root_padding);
+    /// Create a screenshot render source directly from Masonry-imaging prepared layers.
+    pub fn from_prepared_layers(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        layers: &'a [PreparedLayer<'a>],
+        root_padding: u32,
+    ) -> Self {
+        Self::from_parts(
+            width,
+            height,
+            scale_factor,
+            background_color,
+            LayerSource::Prepared(layers),
+            root_padding,
+        )
+    }
+
+    fn from_parts(
+        width: u32,
+        height: u32,
+        _scale_factor: f64,
+        background_color: Color,
+        layers: LayerSource<'a>,
+        root_padding: u32,
+    ) -> Self {
+        let (width, height) = padded_dimensions(width, height, root_padding);
         Self {
-            frame,
+            background_color,
+            layers,
             width,
             height,
             root_padding,
         }
+    }
+
+    /// Create a screenshot render source directly from Masonry visual layers.
+    pub fn from_visual_layers(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        layers: &'a VisualLayerPlan,
+        root_padding: u32,
+    ) -> Self {
+        Self::from_parts(
+            width,
+            height,
+            scale_factor,
+            background_color,
+            LayerSource::Visual(layers),
+            root_padding,
+        )
     }
 
     /// Output width in pixels.
@@ -283,7 +417,7 @@ impl<'a> SnapshotSource<'a> {
 
 impl RenderSource for SnapshotSource<'_> {
     fn validate(&self) -> Result<(), ValidateError> {
-        validate_layers(self.frame.base, self.frame.overlays)
+        self.layers.validate()
     }
 
     fn paint_into(&mut self, sink: &mut dyn PaintSink) {
@@ -291,7 +425,7 @@ impl RenderSource for SnapshotSource<'_> {
             let mut painter = Painter::new(sink);
             painter.fill_rect(
                 Rect::new(0.0, 0.0, f64::from(self.width), f64::from(self.height)),
-                self.frame.background_color,
+                self.background_color,
             );
 
             if self.root_padding != 0 {
@@ -310,10 +444,7 @@ impl RenderSource for SnapshotSource<'_> {
 
         let padding_transform =
             Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
-        replay_transformed(self.frame.base, sink, padding_transform);
-        for layer in self.frame.overlays {
-            replay_transformed(layer.scene, sink, padding_transform * layer.transform);
-        }
+        self.layers.replay_into(sink, padding_transform);
     }
 }
 
@@ -334,21 +465,44 @@ fn padding_rects(width: u32, height: u32, padding: u32) -> [[u32; 4]; 4] {
     ]
 }
 
-fn validate_layers(base: &Scene, overlays: &[Layer<'_>]) -> Result<(), ValidateError> {
-    base.validate()?;
-    for layer in overlays {
-        layer.scene.validate()?;
+fn validate_prepared_layers(layers: &[PreparedLayer<'_>]) -> Result<(), ValidateError> {
+    for layer in layers {
+        if let LayerKind::Scene(scene) = layer.kind {
+            scene.validate()?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_visual_layers(layers: &VisualLayerPlan) -> Result<(), ValidateError> {
+    for layer in &layers.layers {
+        if let VisualLayerKind::Scene(scene) = &layer.kind {
+            scene.validate()?;
+        }
     }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::padded_dimensions;
+    use masonry_core::app::VisualLayerPlan;
+    use peniko::Color;
+
+    use super::{SnapshotSource, padded_dimensions};
 
     #[test]
     fn padded_dimensions_avoid_zero() {
         assert_eq!(padded_dimensions(0, 0, 0), (1, 1));
         assert_eq!(padded_dimensions(0, 2, 5), (11, 12));
+    }
+
+    #[test]
+    fn snapshot_source_from_visual_layers_uses_padded_dimensions() {
+        let layers = VisualLayerPlan { layers: Vec::new() };
+        let source = SnapshotSource::from_visual_layers(0, 2, 1.0, Color::WHITE, &layers, 5);
+
+        assert_eq!(source.width(), 11);
+        assert_eq!(source.height(), 12);
+        assert!(imaging::render::RenderSource::validate(&source).is_ok());
     }
 }

@@ -6,8 +6,9 @@ use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use masonry_core::app::RenderRoot;
+use masonry_core::app::{RenderRoot, VisualLayerPlan};
 use masonry_core::core::{ErasedAction, WidgetId};
+use masonry_core::peniko::Color;
 #[cfg(feature = "imaging_vello")]
 use masonry_core::peniko::ImageData;
 use tracing::field::DisplayValue;
@@ -64,6 +65,30 @@ pub struct WgpuContext<'a> {
     pub device: &'a wgpu::Device,
     /// The shared WGPU queue.
     pub queue: &'a wgpu::Queue,
+}
+
+/// The surface target for a single presentation pass.
+///
+/// This is provided to [`AppDriver::present_visual_layers`] when an application wants to
+/// override Masonry Winit's default flattened rendering path and present a [`VisualLayerPlan`]
+/// directly, for example via a compositor such as `subduction`.
+pub struct PresentationTarget<'a> {
+    /// The WGPU adapter used to create the device.
+    pub adapter: &'a wgpu::Adapter,
+    /// The shared WGPU device.
+    pub device: &'a wgpu::Device,
+    /// The shared WGPU queue.
+    pub queue: &'a wgpu::Queue,
+    /// The surface output format.
+    pub format: wgpu::TextureFormat,
+    /// The surface size in physical pixels.
+    pub size: winit::dpi::PhysicalSize<u32>,
+    /// The window scale factor.
+    pub scale_factor: f64,
+    /// The window base color requested by Masonry.
+    pub base_color: Color,
+    /// The view to render into for this frame.
+    pub view: &'a wgpu::TextureView,
 }
 
 /// Strategy for selecting `wgpu::Limits` when requesting the WGPU device.
@@ -127,6 +152,44 @@ pub trait AppDriver {
 
     /// Called when Masonry has created its WGPU device.
     fn on_wgpu_ready(&mut self, _wgpu: &WgpuContext<'_>) {}
+
+    /// Called on redraw with the current ordered visual layer plan for a window.
+    ///
+    /// This hook runs after Masonry has produced its paint-time layer plan and before the
+    /// retained scene is rendered into the window texture. The plan reflects the current painter
+    /// order of both Masonry scene layers and host-managed external layers in the widget tree.
+    ///
+    /// Hosts that want to integrate with a compositor or native surface system should inspect
+    /// this plan directly. External layers identify host-managed surface slots; scene layers mark
+    /// Masonry-painted content in the same ordering.
+    ///
+    /// Masonry Winit does not realize host-managed layers itself. If the application ignores
+    /// external layers in this plan, those surfaces will be absent from the final presentation.
+    fn on_visual_layers(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        layers: &VisualLayerPlan,
+    ) {
+    }
+
+    /// Called when the application wants to override Masonry Winit's default flattened
+    /// presentation path and render a [`VisualLayerPlan`] directly.
+    ///
+    /// Return `true` if the visual layers were fully rendered into `target.view`. Masonry Winit
+    /// will then skip its default rendering path and only present the surface. Return `false` to
+    /// fall back to Masonry Winit's built-in flattened imaging renderer.
+    ///
+    /// This hook is intended for compositor integrations such as `subduction`, where the host
+    /// wants to interleave Masonry scene layers and host-managed external layers in one output.
+    fn present_visual_layers(
+        &mut self,
+        window_id: WindowId,
+        target: PresentationTarget<'_>,
+        layers: &VisualLayerPlan,
+    ) -> bool {
+        false
+    }
 }
 
 impl DriverCtx<'_, '_> {
