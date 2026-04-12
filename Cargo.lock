@@ -1120,7 +1120,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2135,6 +2135,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "invalidation"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f67508d5f48cfefd99f534c87837a755edd94c60f87d8cfc3b14e521a7f07a6"
+dependencies = [
+ "hashbrown 0.16.1",
+]
+
+[[package]]
 name = "ipnet"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2248,6 +2257,7 @@ checksum = "7564e90fe3c0d5771e1f0bc95322b21baaeaa0d9213fa6a0b61c99f8b17b3bfb"
 dependencies = [
  "arrayvec",
  "euclid",
+ "libm",
  "smallvec",
 ]
 
@@ -2459,6 +2469,7 @@ dependencies = [
  "imaging_vello_cpu",
  "imaging_vello_hybrid",
  "kurbo",
+ "masonry_core",
  "peniko",
  "vello",
  "wgpu",
@@ -2489,6 +2500,8 @@ dependencies = [
  "masonry_core",
  "masonry_imaging",
  "pollster",
+ "subduction_backend_wgpu",
+ "subduction_core",
  "tracing",
  "tracing-tracy",
  "ui-events-winit",
@@ -2712,7 +2725,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3860,7 +3873,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4324,7 +4337,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4367,6 +4380,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 dependencies = [
  "float-cmp 0.9.0",
+]
+
+[[package]]
+name = "subduction_backend_wgpu"
+version = "0.0.1"
+source = "git+https://github.com/forest-rs/subduction.git?rev=dcabbd3a9b1566a1dd7a6f2ad9f7d40d7be9a39b#dcabbd3a9b1566a1dd7a6f2ad9f7d40d7be9a39b"
+dependencies = [
+ "bytemuck",
+ "subduction_core",
+ "wgpu",
+]
+
+[[package]]
+name = "subduction_core"
+version = "0.0.1"
+source = "git+https://github.com/forest-rs/subduction.git?rev=dcabbd3a9b1566a1dd7a6f2ad9f7d40d7be9a39b#dcabbd3a9b1566a1dd7a6f2ad9f7d40d7be9a39b"
+dependencies = [
+ "invalidation",
+ "kurbo",
 ]
 
 [[package]]
@@ -4469,7 +4501,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5014,7 +5046,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
 dependencies = [
  "memoffset",
  "tempfile",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5789,7 +5821,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

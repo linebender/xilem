@@ -14,9 +14,9 @@ use tracing::{Span, trace_span};
 
 use crate::core::{
     AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
-    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
-    pre_paint,
+    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PaintLayerMode, PointerEvent, PropertiesMut,
+    PropertiesRef, PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut,
+    WidgetRef, pre_paint,
 };
 use crate::imaging::Painter;
 use crate::layout::LenReq;
@@ -453,6 +453,15 @@ pub trait Widget: AsDynWidget + Any {
     /// Default implementation returns `None`.
     fn as_layer(&mut self) -> Option<&mut dyn Layer> {
         None
+    }
+
+    /// Returns how this widget subtree should participate in Masonry's ordered paint layer plan.
+    ///
+    /// Most widgets paint [`PaintLayerMode::Inline`] into their parent's retained scene chunk.
+    /// Widgets that need a separate compositing unit can opt into
+    /// [`PaintLayerMode::IsolatedScene`] or [`PaintLayerMode::External`].
+    fn paint_layer_mode(&self) -> PaintLayerMode {
+        PaintLayerMode::Inline
     }
 
     /// Whether this widget gets pointer events and [hovered] status. True by default.

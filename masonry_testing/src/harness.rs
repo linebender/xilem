@@ -13,10 +13,10 @@ use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_imaging::ImageRenderer as _;
+use masonry_imaging::SnapshotSource;
 use masonry_imaging::image_render::{
     BACKEND_NAME as IMAGING_BACKEND_NAME, Renderer as ImagingRenderer, new_headless_renderer,
 };
-use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -492,23 +492,18 @@ impl<W: Widget> TestHarness<W> {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
 
-        let overlays: Vec<_> = paint_result
-            .overlays
-            .iter()
-            .map(|layer| ImagingLayer {
-                scene: &layer.scene,
-                transform: layer.transform,
-            })
-            .collect();
-        let frame = PreparedFrame::new(
+        assert!(
+            !paint_result.has_external_layers(),
+            "masonry_testing does not support rendering external layers yet"
+        );
+        let mut source = SnapshotSource::from_visual_layers(
             self.window_size.width,
             self.window_size.height,
             1.0,
             self.background_color,
-            &paint_result.base,
-            &overlays,
+            &paint_result,
+            self.root_padding,
         );
-        let mut source = frame.snapshot_source(self.root_padding);
         let width = source.width();
         let height = source.height();
         if self.renderer.is_none() {

@@ -3,12 +3,13 @@
 
 //! Host-neutral texture rendering helpers.
 //!
-//! This module owns backend state for rendering Masonry paint output into a caller-provided WGPU
+//! This module owns backend state for rendering Masonry visual layers into a caller-provided WGPU
 //! texture target. It does not own window surfaces or presentation.
 
 use wgpu;
 
-use crate::PreparedFrame;
+use masonry_core::app::VisualLayerPlan;
+use peniko::Color;
 
 /// GPU target that Masonry content should be rendered into.
 #[derive(Clone, Copy, Debug)]
@@ -26,10 +27,49 @@ pub struct RenderTarget<'a> {
 }
 
 /// Masonry paint output prepared for texture rendering.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct RenderInput<'a> {
-    /// Flattened Masonry frame content prepared for rendering.
-    pub frame: PreparedFrame<'a>,
+    /// Output width in physical pixels.
+    pub width: u32,
+    /// Output height in physical pixels.
+    pub height: u32,
+    /// Output scale factor.
+    pub scale_factor: f64,
+    /// Background color to paint before replaying Masonry scene layers.
+    pub background_color: Color,
+    /// Ordered visual layers to render.
+    pub visual_layers: &'a VisualLayerPlan,
+}
+
+impl core::fmt::Debug for RenderInput<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("RenderInput")
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("scale_factor", &self.scale_factor)
+            .field("background_color", &self.background_color)
+            .field("visual_layer_count", &self.visual_layers.layers.len())
+            .finish()
+    }
+}
+
+impl<'a> RenderInput<'a> {
+    /// Create texture-render input directly from Masonry visual layers.
+    pub fn new(
+        width: u32,
+        height: u32,
+        scale_factor: f64,
+        background_color: Color,
+        visual_layers: &'a VisualLayerPlan,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            scale_factor,
+            background_color,
+            visual_layers,
+        }
+    }
 }
 
 /// Errors that can occur while rendering Masonry content into a target texture.
@@ -83,8 +123,6 @@ impl Default for Renderer {
 mod non_vello {
     use imaging::render::TextureRenderer;
 
-    use crate::PreparedFrame;
-
     #[derive(Debug)]
     pub(super) struct CachedRenderer<R, K> {
         key: Option<K>,
@@ -121,13 +159,19 @@ mod non_vello {
 
     pub(super) fn render_window_source_to_texture<R>(
         renderer: &mut R,
-        frame: PreparedFrame<'_>,
+        input: super::RenderInput<'_>,
         target: R::TextureTarget<'_>,
     ) -> Result<(), R::Error>
     where
         R: TextureRenderer,
     {
-        let mut source = frame.window_source();
+        let mut source = super::WindowSource::from_visual_layers(
+            input.width,
+            input.height,
+            input.scale_factor,
+            input.background_color,
+            input.visual_layers,
+        );
         renderer.render_source_to_texture(&mut source, target)
     }
 }
@@ -223,6 +267,8 @@ mod imp {
             target: RenderTarget<'_>,
             input: RenderInput<'_>,
         ) -> Result<(), Error> {
+            let width = input.width;
+            let height = input.height;
             let renderer = self.inner.get_or_try_init(
                 (
                     target.adapter as *const _ as usize,
@@ -239,12 +285,8 @@ mod imp {
                 },
             )?;
 
-            render_window_source_to_texture(
-                renderer,
-                input.frame,
-                TextureTarget::new(target.texture),
-            )
-            .map_err(Error::Render)
+            render_window_source_to_texture(renderer, input, TextureTarget::new(target.texture))
+                .map_err(Error::Render)
         }
     }
 }
@@ -336,9 +378,17 @@ mod imp {
             target: RenderTarget<'_>,
             input: RenderInput<'_>,
         ) -> Result<(), Error> {
-            let mut source = input.frame.window_source();
-            let scene = build_scene_from_source(&mut source, input.frame.width, input.frame.height)
-                .map_err(Error::BuildScene)?;
+            let width = input.width;
+            let height = input.height;
+            let mut source = crate::WindowSource::from_visual_layers(
+                input.width,
+                input.height,
+                input.scale_factor,
+                input.background_color,
+                input.visual_layers,
+            );
+            let scene =
+                build_scene_from_source(&mut source, width, height).map_err(Error::BuildScene)?;
 
             if self.inner.is_none() {
                 let renderer_options = RendererOptions {
@@ -372,8 +422,8 @@ mod imp {
                 // WindowSource already paints the background into the scene, so keep
                 // Vello's target clear transparent here instead of applying the base color twice.
                 base_color: peniko::Color::from_rgba8(0, 0, 0, 0),
-                width: input.frame.width,
-                height: input.frame.height,
+                width,
+                height,
                 antialiasing_method: AaConfig::Area,
             };
             renderer
@@ -504,6 +554,8 @@ mod imp {
             target: RenderTarget<'_>,
             input: RenderInput<'_>,
         ) -> Result<(), Error> {
+            let width = input.width;
+            let height = input.height;
             let renderer = self.inner.get_or_try_init(
                 (
                     target.device as *const _ as usize,
@@ -519,8 +571,8 @@ mod imp {
 
             render_window_source_to_texture(
                 renderer,
-                input.frame,
-                TextureTarget::new(target.view, input.frame.width, input.frame.height),
+                input,
+                TextureTarget::new(target.view, width, height),
             )
             .map_err(Error::Render)
         }

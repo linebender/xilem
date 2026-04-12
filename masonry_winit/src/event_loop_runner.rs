@@ -20,7 +20,6 @@ use masonry_imaging::texture_render::{
     RenderInput as ImagingRenderInput, RenderTarget as ImagingRenderTarget,
     Renderer as ImagingRenderer,
 };
-use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
 use tracing::{info, info_span, trace};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
@@ -31,10 +30,11 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
-    AppDriver, DriverCtx, WgpuContext, WgpuLimits, masonry_resize_direction_to_winit,
-    winit_ime_to_masonry,
+    AppDriver, DriverCtx, PresentVisualLayersResult, PresentationTarget, WgpuContext, WgpuLimits,
+    masonry_resize_direction_to_winit, winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
+use crate::surface_presenter::present_surface;
 use crate::vello_util::{RenderContext, RenderSurface};
 
 /// The custom event type that we inject into winit's [`EventLoop`](winit::event_loop::EventLoop).
@@ -581,18 +581,58 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: REDRAW
-    fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
+    fn redraw(
+        &mut self,
+        handle_id: HandleId,
+        event_loop: &ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+    ) {
         let _span = info_span!("redraw");
 
-        let window = self.windows.get_mut(&handle_id).unwrap();
-        let size = window.render_root.size();
-        if size.width == 0 || size.height == 0 {
-            // Surface can't have a dimension of zero, remove the stale surface to save memory.
+        let (window_id, window_handle, size, scale_factor, base_color, visual_layers, tree_update) = {
+            let window = self.windows.get_mut(&handle_id).unwrap();
+            let size = window.render_root.size();
+            if size.width == 0 || size.height == 0 {
+                self.surfaces.remove(&handle_id);
+                return;
+            }
+
+            let now = Instant::now();
+            // TODO: this calculation uses wall-clock time of the paint call, which
+            // potentially has jitter.
+            //
+            // See https://github.com/linebender/druid/issues/85 for discussion.
+            let last = self.last_anim.take();
+            let elapsed = last.map(|t| now.duration_since(t)).unwrap_or_default();
+
+            window
+                .render_root
+                .handle_window_event(WindowEvent::AnimFrame(elapsed));
+
+            let animation_continues = window.render_root.needs_anim();
+            self.last_anim = animation_continues.then_some(now);
+
+            let (visual_layers, tree_update) = window.render_root.redraw();
+            (
+                window.id,
+                window.handle.clone(),
+                size,
+                window.handle.scale_factor(),
+                window.base_color,
+                visual_layers,
+                tree_update,
+            )
+        };
+        {
+            let mut ctx = DriverCtx::new(self, event_loop);
+            app_driver.on_visual_layers(window_id, &mut ctx, &visual_layers);
+        }
+        if !self.windows.contains_key(&handle_id) {
             self.surfaces.remove(&handle_id);
             return;
         }
 
-        // Get the existing surface or create a new one
+        // Get the existing surface or create a new one.
         let surface = if let Some(surface) = self.surfaces.get_mut(&handle_id) {
             #[cfg(target_os = "macos")]
             if self.resized_window == Some(handle_id) {
@@ -607,7 +647,7 @@ impl MasonryState<'_> {
             surface
         } else {
             let devices_before = self.render_cx.devices.len();
-            let surface = create_surface(&mut self.render_cx, window.handle.clone(), size);
+            let surface = create_surface(&mut self.render_cx, window_handle, size);
             let dev_id = surface.dev_id;
             self.surfaces.insert(handle_id, surface);
             let surface = self.surfaces.get_mut(&handle_id).unwrap();
@@ -625,48 +665,20 @@ impl MasonryState<'_> {
 
             surface
         };
-
-        let now = Instant::now();
-        // TODO: this calculation uses wall-clock time of the paint call, which
-        // potentially has jitter.
-        //
-        // See https://github.com/linebender/druid/issues/85 for discussion.
-        let last = self.last_anim.take();
-        let elapsed = last.map(|t| now.duration_since(t)).unwrap_or_default();
-
-        window
-            .render_root
-            .handle_window_event(WindowEvent::AnimFrame(elapsed));
-
-        // If this animation will continue, store the time.
-        // If a new animation starts, then it will have zero reported elapsed time.
-        let animation_continues = window.render_root.needs_anim();
-        self.last_anim = animation_continues.then_some(now);
-
-        #[cfg(target_os = "macos")]
-        if self.resized_window == Some(handle_id) {
-            self.render_cx.on_window_resize_state_change(surface, true);
-        }
-
-        let (paint_result, tree_update) = window.render_root.redraw();
-        let overlays: Vec<_> = paint_result
-            .overlays
-            .iter()
-            .map(|layer| ImagingLayer {
-                scene: &layer.scene,
-                transform: layer.transform,
-            })
-            .collect();
-        let size = window.render_root.size();
-        let frame = PreparedFrame::new(
-            size.width,
-            size.height,
-            window.handle.scale_factor(),
-            window.base_color,
-            &paint_result.base,
-            &overlays,
+        let window = self
+            .windows
+            .get_mut(&handle_id)
+            .expect("window state should exist for redraw");
+        Self::render(
+            surface,
+            window,
+            &visual_layers,
+            scale_factor,
+            base_color,
+            &self.render_cx,
+            &mut self.renderer,
+            app_driver,
         );
-        Self::render(surface, window, frame, &self.render_cx, &mut self.renderer);
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
         if let Some(tree_update) = tree_update {
@@ -678,17 +690,49 @@ impl MasonryState<'_> {
     fn render(
         surface: &mut RenderSurface<'_>,
         window: &mut Window,
-        frame: PreparedFrame<'_>,
+        visual_layers: &masonry_core::app::VisualLayerPlan,
+        scale_factor: f64,
+        base_color: Color,
         render_cx: &RenderContext,
         renderer: &mut ImagingRenderer,
+        app_driver: &mut dyn AppDriver,
     ) {
         let dev_id = surface.dev_id;
+        let adapter = &render_cx.devices[dev_id].adapter;
         let device = &render_cx.devices[dev_id].device;
         let queue = &render_cx.devices[dev_id].queue;
         let Some(surface_texture) = Self::acquire_surface_texture(surface, window, render_cx)
         else {
             return;
         };
+        let output_view = surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        match app_driver.present_visual_layers(
+            window.id,
+            PresentationTarget {
+                adapter,
+                device,
+                queue,
+                format: surface.config.format,
+                size: PhysicalSize::new(surface.config.width, surface.config.height),
+                scale_factor,
+                base_color,
+                view: &output_view,
+            },
+            visual_layers,
+        ) {
+            PresentVisualLayersResult::Presented { request_redraw } => {
+                window.handle.pre_present_notify();
+                surface_texture.present();
+                if request_redraw {
+                    window.handle.request_redraw();
+                }
+                return;
+            }
+            PresentVisualLayersResult::NotHandled => {}
+        }
 
         let _render_span = tracing::info_span!(
             "Rendering Masonry window",
@@ -703,7 +747,13 @@ impl MasonryState<'_> {
                 texture: &surface.target_texture,
                 view: &surface.target_view,
             },
-            ImagingRenderInput { frame },
+            ImagingRenderInput::new(
+                surface.config.width,
+                surface.config.height,
+                scale_factor,
+                base_color,
+                visual_layers,
+            ),
         ) {
             tracing::error!(
                 backend = ImagingRenderer::BACKEND_NAME,
@@ -711,7 +761,7 @@ impl MasonryState<'_> {
             );
             return;
         }
-        Self::present_surface(surface, surface_texture, &window.handle, device, queue);
+        present_surface(surface, surface_texture, &window.handle, device, queue);
     }
 
     fn acquire_surface_texture(
@@ -741,35 +791,6 @@ impl MasonryState<'_> {
                 tracing::error!("Couldn't get swap chain texture, operation unrecoverable: {err}");
                 None
             }
-        }
-    }
-
-    fn present_surface(
-        surface: &RenderSurface<'_>,
-        surface_texture: wgpu::SurfaceTexture,
-        window: &WindowHandle,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
-        // Copy the new surface content to the surface.
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Surface Blit"),
-        });
-        surface.blitter.copy(
-            device,
-            &mut encoder,
-            &surface.target_view,
-            &surface_texture
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default()),
-        );
-        queue.submit([encoder.finish()]);
-        window.pre_present_notify();
-        surface_texture.present();
-        {
-            let _render_poll_span =
-                tracing::info_span!("Waiting for GPU to finish rendering").entered();
-            device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
         }
     }
 
@@ -869,7 +890,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
-                self.redraw(handle_id, app_driver);
+                self.redraw(handle_id, event_loop, app_driver);
             }
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
@@ -1100,7 +1121,7 @@ impl MasonryState<'_> {
         // If an app creates a visible window, we firstly create it as invisible
         // and then render the first frame before making it visible to avoid flashing.
         for handle_id in std::mem::take(&mut self.need_first_frame) {
-            self.redraw(handle_id, app_driver);
+            self.redraw(handle_id, event_loop, app_driver);
             let window = self.windows.get_mut(&handle_id).unwrap();
             window.handle.set_visible(true);
         }
