@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::widgets::{Checkbox, Flex, Label, ProgressBar, Slider};
+use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label, ProgressBar, Slider};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -93,36 +93,35 @@ impl DemoPage for ProgressDemo {
         self.apply(render_root);
     }
 
-    fn on_checkbox_toggled(
+    fn on_action(
         &mut self,
         render_root: &mut RenderRoot,
+        action: &ErasedAction,
         widget_id: WidgetId,
-        toggled: bool,
     ) -> bool {
-        let id = render_root
-            .get_widget_with_tag(self.indeterminate)
-            .unwrap()
-            .id();
-        if widget_id != id {
-            return false;
+        if let Some(toggled) = action.downcast_ref::<CheckboxToggled>() {
+            let id = render_root
+                .get_widget_with_tag(self.indeterminate)
+                .unwrap()
+                .id();
+            if widget_id != id {
+                return false;
+            }
+            self.is_indeterminate = toggled.0;
+            self.apply(render_root);
+            return true;
         }
-        self.is_indeterminate = toggled;
-        self.apply(render_root);
-        true
-    }
 
-    fn on_slider_value(
-        &mut self,
-        render_root: &mut RenderRoot,
-        widget_id: WidgetId,
-        value: f64,
-    ) -> bool {
-        let id = render_root.get_widget_with_tag(self.slider).unwrap().id();
-        if widget_id != id {
-            return false;
+        if let Some(&value) = action.downcast_ref::<f64>() {
+            let id = render_root.get_widget_with_tag(self.slider).unwrap().id();
+            if widget_id != id {
+                return false;
+            }
+            self.value = value.clamp(0.0, 1.0);
+            self.apply(render_root);
+            return true;
         }
-        self.value = value.clamp(0.0, 1.0);
-        self.apply(render_root);
-        true
+
+        false
     }
 }

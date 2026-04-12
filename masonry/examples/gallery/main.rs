@@ -37,8 +37,7 @@ use masonry::properties::Padding;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::theme::default_property_set;
 use masonry::widgets::{
-    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, PageChanged, Portal,
-    RadioButtonSelected, SizedBox, Step, SwitchToggled,
+    Button, ButtonPress, Checkbox, CheckboxToggled, Flex, IndexedStack, Label, Portal, SizedBox,
 };
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -121,7 +120,7 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        // Button presses: either sidebar selection or demo-specific buttons.
+        // Sidebar button pressed: select demo.
         if action.is::<ButtonPress>() {
             // Sidebar: match by tagged ids.
             let selected_idx = {
@@ -139,153 +138,37 @@ impl AppDriver for Driver {
                 self.select_demo(ctx, window_id, idx);
                 return;
             }
+        }
 
-            // Forward to demos.
-            let handled = {
+        // Per-demo "Disabled" checkbox toggle.
+        if let Some(toggled) = action.downcast_ref::<CheckboxToggled>() {
+            let toggled = toggled.0;
+            let disabled_demo = {
                 let render_root = ctx.render_root(window_id);
-                self.demos
-                    .iter_mut()
-                    .any(|demo| demo.on_button_press(render_root, widget_id))
+                self.demos.iter().enumerate().find_map(|(idx, demo)| {
+                    let shell = demo.shell_tags();
+                    let id = render_root
+                        .get_widget_with_tag(shell.disabled_toggle)
+                        .unwrap()
+                        .id();
+                    (id == widget_id).then_some(idx)
+                })
             };
 
-            if handled {
+            if let Some(idx) = disabled_demo {
+                self.demo_disabled[idx] = toggled;
+                self.apply_demo_disabled(ctx, window_id, idx, toggled);
                 return;
             }
         }
 
-        // Checkbox toggles: first handle the per-demo "Disabled" toggle, then demo-specific checkboxes.
-        let action = match action.downcast::<CheckboxToggled>() {
-            Ok(toggled) => {
-                let toggled = toggled.0;
-
-                // Demo disabled toggle: identified by tag.
-                let disabled_demo = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos.iter().enumerate().find_map(|(idx, demo)| {
-                        let shell = demo.shell_tags();
-                        let id = render_root
-                            .get_widget_with_tag(shell.disabled_toggle)
-                            .unwrap()
-                            .id();
-                        (id == widget_id).then_some(idx)
-                    })
-                };
-
-                if let Some(idx) = disabled_demo {
-                    self.demo_disabled[idx] = toggled;
-                    self.apply_demo_disabled(ctx, window_id, idx, toggled);
-                    return;
-                }
-
-                let handled = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos
-                        .iter_mut()
-                        .any(|demo| demo.on_checkbox_toggled(render_root, widget_id, toggled))
-                };
-
-                if handled {
-                    return;
-                }
-
+        // Forward everything else to demos.
+        let render_root = ctx.render_root(window_id);
+        for demo in &mut self.demos {
+            if demo.on_action(render_root, &action, widget_id) {
                 return;
             }
-            Err(action) => action,
-        };
-
-        // Page changes.
-        let action = match action.downcast::<PageChanged>() {
-            Ok(page_changed) => {
-                let value = page_changed.0;
-                let handled = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos
-                        .iter_mut()
-                        .any(|demo| demo.on_page_change(render_root, widget_id, value))
-                };
-
-                if handled {
-                    return;
-                }
-
-                return;
-            }
-            Err(action) => action,
-        };
-
-        // Steps.
-        let action = match action.downcast::<Step<isize>>() {
-            Ok(step) => {
-                let value = step.value;
-                let handled = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos
-                        .iter_mut()
-                        .any(|demo| demo.on_step(render_root, widget_id, value))
-                };
-
-                if handled {
-                    return;
-                }
-
-                return;
-            }
-            Err(action) => action,
-        };
-
-        // Selected radio button.
-        let action = match action.downcast::<RadioButtonSelected>() {
-            Ok(_) => {
-                let handled = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos
-                        .iter_mut()
-                        .any(|demo| demo.on_radio_button_selected(render_root, widget_id))
-                };
-
-                if handled {
-                    return;
-                }
-
-                return;
-            }
-            Err(action) => action,
-        };
-
-        // Switch toggles.
-        let action = match action.downcast::<SwitchToggled>() {
-            Ok(toggled) => {
-                let toggled = toggled.0;
-                let handled = {
-                    let render_root = ctx.render_root(window_id);
-                    self.demos
-                        .iter_mut()
-                        .any(|demo| demo.on_switch_toggled(render_root, widget_id, toggled))
-                };
-
-                if handled {
-                    return;
-                }
-
-                return;
-            }
-            Err(action) => action,
-        };
-
-        // Slider values.
-        let Ok(value) = action.downcast::<f64>() else {
-            return;
-        };
-        let value = *value;
-
-        let handled = {
-            let render_root = ctx.render_root(window_id);
-            self.demos
-                .iter_mut()
-                .any(|demo| demo.on_slider_value(render_root, widget_id, value))
-        };
-
-        let _ = handled;
+        }
     }
 }
 

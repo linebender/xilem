@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{
+    ErasedAction, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
+};
 use masonry::kurbo::{Affine, Vec2};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, Padding};
-use masonry::widgets::{Button, Flex, Label, SizedBox};
+use masonry::widgets::{Button, ButtonPress, Flex, Label, SizedBox};
 
 use crate::demo::{CONTENT_GAP, DemoPage, SIDEBAR_GAP, ShellTags, wrap_in_shell};
 
@@ -130,7 +132,16 @@ impl DemoPage for TransformsDemo {
         self.apply(render_root);
     }
 
-    fn on_button_press(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId) -> bool {
+    fn on_action(
+        &mut self,
+        render_root: &mut RenderRoot,
+        action: &ErasedAction,
+        widget_id: WidgetId,
+    ) -> bool {
+        if !action.is::<ButtonPress>() {
+            return false;
+        }
+
         if self.matches_button(render_root, self.btn_rotate_left, widget_id) {
             self.angle_rad -= 15_f64.to_radians();
             self.apply(render_root);

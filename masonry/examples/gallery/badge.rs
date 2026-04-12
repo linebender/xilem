@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{
+    ErasedAction, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
+};
 use masonry::kurbo::Vec2;
 use masonry::layout::Length;
 use masonry::parley::style::FontWeight;
@@ -10,7 +12,8 @@ use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets::{
-    Align, Badge, BadgeCountOverflow, BadgePlacement, Badged, Button, Flex, Label, SizedBox,
+    Align, Badge, BadgeCountOverflow, BadgePlacement, Badged, Button, ButtonPress, Flex, Label,
+    SizedBox,
 };
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
@@ -241,7 +244,16 @@ impl DemoPage for BadgeDemo {
         self.apply_count(render_root);
     }
 
-    fn on_button_press(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId) -> bool {
+    fn on_action(
+        &mut self,
+        render_root: &mut RenderRoot,
+        action: &ErasedAction,
+        widget_id: WidgetId,
+    ) -> bool {
+        if !action.is::<ButtonPress>() {
+            return false;
+        }
+
         let dec_id = render_root
             .get_widget_with_tag(self.decrement_btn)
             .unwrap()

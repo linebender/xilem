@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetTag};
 use masonry::layout::Length;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Button, Checkbox, Flex, SizedBox};
@@ -23,64 +23,12 @@ pub(crate) trait DemoPage {
 
     fn on_selected(&mut self, _render_root: &mut RenderRoot) {}
 
-    // TODO - Replace with "on_action" method?
-
-    fn on_button_press(&mut self, _render_root: &mut RenderRoot, _widget_id: WidgetId) -> bool {
-        false
-    }
-
-    fn on_radio_button_selected(
+    fn on_action(
         &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-    ) -> bool {
-        false
-    }
-
-    fn on_checkbox_toggled(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-        _toggled: bool,
-    ) -> bool {
-        false
-    }
-
-    fn on_page_change(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-        _page_idx: usize,
-    ) -> bool {
-        false
-    }
-
-    fn on_slider_value(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-        _value: f64,
-    ) -> bool {
-        false
-    }
-
-    fn on_step(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-        _value: isize,
-    ) -> bool {
-        false
-    }
-
-    fn on_switch_toggled(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _widget_id: WidgetId,
-        _toggled: bool,
-    ) -> bool {
-        false
-    }
+        render_root: &mut RenderRoot,
+        action: &ErasedAction,
+        widget_id: WidgetId,
+    ) -> bool;
 }
 
 pub(crate) fn wrap_in_shell(

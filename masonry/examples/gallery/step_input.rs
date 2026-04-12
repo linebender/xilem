@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
+    ErasedAction, NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::layout::AsUnit;
 use masonry::peniko::color::AlphaColor;
@@ -13,7 +13,7 @@ use masonry::properties::{
     ForwardColor, HeatColor, StepInputStyle,
 };
 use masonry::theme::DISABLED_TEXT_COLOR;
-use masonry::widgets::{Button, Flex, Label, StepInput};
+use masonry::widgets::{Button, ButtonPress, Flex, Label, Step, StepInput};
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
 
@@ -108,44 +108,52 @@ impl DemoPage for StepInputDemo {
         self.initialized = true;
     }
 
-    fn on_button_press(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId) -> bool {
-        let id_balance = render_root
-            .get_widget_with_tag(self.tag_balance)
-            .unwrap()
-            .id();
-        if widget_id == id_balance {
-            render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
-                StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
-            });
-            render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
-                StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
-            });
-            true
-        } else {
-            false
+    fn on_action(
+        &mut self,
+        render_root: &mut RenderRoot,
+        action: &ErasedAction,
+        widget_id: WidgetId,
+    ) -> bool {
+        if action.is::<ButtonPress>() {
+            let id_balance = render_root
+                .get_widget_with_tag(self.tag_balance)
+                .unwrap()
+                .id();
+            if widget_id == id_balance {
+                render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
+                    StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
+                });
+                render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
+                    StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
+                });
+                return true;
+            }
+            return false;
         }
-    }
 
-    fn on_step(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId, value: isize) -> bool {
-        let id_left = render_root.get_widget_with_tag(self.tag_left).unwrap().id();
-        let id_right = render_root
-            .get_widget_with_tag(self.tag_right)
-            .unwrap()
-            .id();
+        if let Some(step) = action.downcast_ref::<Step<isize>>() {
+            let value = step.value;
+            let id_left = render_root.get_widget_with_tag(self.tag_left).unwrap().id();
+            let id_right = render_root
+                .get_widget_with_tag(self.tag_right)
+                .unwrap()
+                .id();
 
-        if widget_id == id_left {
-            render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
-                StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
-            });
-            true
-        } else if widget_id == id_right {
-            render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
-                StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
-            });
-            true
-        } else {
-            false
+            if widget_id == id_left {
+                render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
+                    StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
+                });
+                return true;
+            } else if widget_id == id_right {
+                render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
+                    StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
+                });
+                return true;
+            }
+            return false;
         }
+
+        false
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {

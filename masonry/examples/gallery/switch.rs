@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::widgets::{Flex, Label, Switch};
+use masonry::widgets::{Flex, Label, Switch, SwitchToggled};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -48,12 +48,17 @@ impl DemoPage for SwitchDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_switch_toggled(
+    fn on_action(
         &mut self,
         render_root: &mut RenderRoot,
+        action: &ErasedAction,
         widget_id: WidgetId,
-        toggled: bool,
     ) -> bool {
+        let Some(toggled) = action.downcast_ref::<SwitchToggled>() else {
+            return false;
+        };
+        let toggled = toggled.0;
+
         let switch_id = render_root.get_widget_with_tag(self.switch).unwrap().id();
         if widget_id != switch_id {
             return false;

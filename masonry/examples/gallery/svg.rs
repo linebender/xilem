@@ -3,7 +3,8 @@
 
 use std::sync::Arc;
 
-use masonry::core::{NewWidget, StyleProperty, Widget};
+use masonry::app::RenderRoot;
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Svg};
 use resvg::usvg::{self, Tree};
@@ -49,5 +50,14 @@ impl DemoPage for SvgDemo {
             .with(svg, 1.0);
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
+    }
+
+    fn on_action(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _action: &ErasedAction,
+        _widget_id: WidgetId,
+    ) -> bool {
+        false
     }
 }

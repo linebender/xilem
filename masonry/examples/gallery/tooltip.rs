@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::kurbo::Point;
 use masonry::layers::Tooltip;
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::widgets::{Button, Flex, Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Label};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -49,7 +49,16 @@ impl DemoPage for TooltipDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_button_press(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId) -> bool {
+    fn on_action(
+        &mut self,
+        render_root: &mut RenderRoot,
+        action: &ErasedAction,
+        widget_id: WidgetId,
+    ) -> bool {
+        if !action.is::<ButtonPress>() {
+            return false;
+        }
+
         let id = render_root.get_widget_with_tag(self.show_btn).unwrap().id();
         if widget_id != id {
             return false;

@@ -1,7 +1,8 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
+use masonry::app::RenderRoot;
+use masonry::core::{ErasedAction, NewWidget, PropertySet, StyleProperty, Widget, WidgetId};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::Color;
 use masonry::properties::{Background, Padding};
@@ -55,5 +56,14 @@ impl DemoPage for SplitDemo {
             .height(260.0.px());
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
+    }
+
+    fn on_action(
+        &mut self,
+        _render_root: &mut RenderRoot,
+        _action: &ErasedAction,
+        _widget_id: WidgetId,
+    ) -> bool {
+        false
     }
 }

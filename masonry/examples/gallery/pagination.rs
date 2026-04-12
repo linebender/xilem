@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{NewWidget, Widget, WidgetId, WidgetTag};
-use masonry::widgets::{Flex, Label, Pagination, StepInput};
+use masonry::widgets::{Flex, Label, PageChanged, Pagination, Step, StepInput};
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
 
@@ -51,87 +51,92 @@ impl DemoPage for PaginationDemo {
         self.shell
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "example stepinput is always isize"
-    )]
-    fn on_step(&mut self, render_root: &mut RenderRoot, widget_id: WidgetId, value: isize) -> bool {
-        let id_page_count = render_root
-            .get_widget_with_tag(self.tag_page_count)
-            .unwrap()
-            .id();
-        let id_page_active = render_root
-            .get_widget_with_tag(self.tag_page_active)
-            .unwrap()
-            .id();
-        let id_buttons_start = render_root
-            .get_widget_with_tag(self.tag_buttons_start)
-            .unwrap()
-            .id();
-        let id_buttons_end = render_root
-            .get_widget_with_tag(self.tag_buttons_end)
-            .unwrap()
-            .id();
-        let id_buttons_total = render_root
-            .get_widget_with_tag(self.tag_buttons_total)
-            .unwrap()
-            .id();
-
-        if widget_id == id_page_count {
-            render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
-                Pagination::set_page_count(&mut widget, value as usize);
-            });
-            true
-        } else if widget_id == id_page_active {
-            render_root.edit_widget_with_tag(self.tag_content, |mut content| {
-                Label::set_text(&mut content, format!("Now on page {}", value));
-            });
-            render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
-                Pagination::set_active_page(&mut widget, (value - 1) as usize);
-            });
-            true
-        } else if widget_id == id_buttons_start {
-            render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
-                Pagination::set_buttons_start(&mut widget, value as u8);
-            });
-            true
-        } else if widget_id == id_buttons_end {
-            render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
-                Pagination::set_buttons_end(&mut widget, value as u8);
-            });
-            true
-        } else if widget_id == id_buttons_total {
-            render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
-                Pagination::set_buttons_total(&mut widget, value as u8);
-            });
-            true
-        } else {
-            false
-        }
-    }
-
-    fn on_page_change(
+    fn on_action(
         &mut self,
         render_root: &mut RenderRoot,
+        action: &masonry::core::ErasedAction,
         widget_id: WidgetId,
-        page_idx: usize,
     ) -> bool {
-        let id_pagination = render_root
-            .get_widget_with_tag(self.tag_pagination)
-            .unwrap()
-            .id();
-        if widget_id != id_pagination {
-            return false;
+        if let Some(step) = action.downcast_ref::<Step<isize>>() {
+            let value = step.value;
+
+            let id_page_count = render_root
+                .get_widget_with_tag(self.tag_page_count)
+                .unwrap()
+                .id();
+            let id_page_active = render_root
+                .get_widget_with_tag(self.tag_page_active)
+                .unwrap()
+                .id();
+            let id_buttons_start = render_root
+                .get_widget_with_tag(self.tag_buttons_start)
+                .unwrap()
+                .id();
+            let id_buttons_end = render_root
+                .get_widget_with_tag(self.tag_buttons_end)
+                .unwrap()
+                .id();
+            let id_buttons_total = render_root
+                .get_widget_with_tag(self.tag_buttons_total)
+                .unwrap()
+                .id();
+
+            if widget_id == id_page_count {
+                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                    Pagination::set_page_count(&mut widget, value as usize);
+                });
+                return true;
+            }
+            if widget_id == id_page_active {
+                render_root.edit_widget_with_tag(self.tag_content, |mut content| {
+                    Label::set_text(&mut content, format!("Now on page {}", value));
+                });
+                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                    Pagination::set_active_page(&mut widget, (value - 1) as usize);
+                });
+                return true;
+            }
+            if widget_id == id_buttons_start {
+                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                    Pagination::set_buttons_start(&mut widget, value as u8);
+                });
+                return true;
+            }
+            if widget_id == id_buttons_end {
+                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                    Pagination::set_buttons_end(&mut widget, value as u8);
+                });
+                return true;
+            }
+            if widget_id == id_buttons_total {
+                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                    Pagination::set_buttons_total(&mut widget, value as u8);
+                });
+                return true;
+            }
         }
 
-        render_root.edit_widget_with_tag(self.tag_content, |mut content| {
-            Label::set_text(&mut content, format!("Now on page {}", page_idx + 1));
-        });
-        render_root.edit_widget_with_tag(self.tag_page_active, |mut widget| {
-            StepInput::set_base(&mut widget, (page_idx + 1).cast_signed());
-        });
+        if let Some(page_changed) = action.downcast_ref::<PageChanged>() {
+            let page_idx = page_changed.0;
 
-        true
+            let id_pagination = render_root
+                .get_widget_with_tag(self.tag_pagination)
+                .unwrap()
+                .id();
+            if widget_id != id_pagination {
+                return false;
+            }
+
+            render_root.edit_widget_with_tag(self.tag_content, |mut content| {
+                Label::set_text(&mut content, format!("Now on page {}", page_idx + 1));
+            });
+            render_root.edit_widget_with_tag(self.tag_page_active, |mut widget| {
+                StepInput::set_base(&mut widget, (page_idx + 1).cast_signed());
+            });
+            return true;
+        };
+
+        false
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
