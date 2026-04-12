@@ -54,7 +54,7 @@ where
 }
 
 /// Invokes the `callback` after the inner `element` [`DomView<State>`]
-/// was rebuild, which usually happens after anything has changed in the `State` .
+/// was rebuilt, which usually happens after anything has changed in the `State` .
 ///
 /// Memoization can prevent `callback` being called.
 /// The callback has a reference to the raw DOM node as its only parameter.

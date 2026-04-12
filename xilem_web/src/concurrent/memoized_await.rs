@@ -39,7 +39,7 @@ where
         self
     }
 
-    /// When `reset` is `true`, everytime `data` updates, the debounce timeout is cleared until `init_future` is invoked.
+    /// When `reset` is `true`, every time `data` updates, the debounce timeout is cleared until `init_future` is invoked.
     /// This is only effective when `debounce > 0`
     ///
     /// The default for this is `true`

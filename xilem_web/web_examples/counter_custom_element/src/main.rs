@@ -1,7 +1,7 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Shows creating a element by raw tag name. This can be useful for web components
+//! Shows creating an element by raw tag name. This can be useful for web components
 
 use xilem_web::elements::custom_element;
 use xilem_web::interfaces::{Element, HtmlElement};

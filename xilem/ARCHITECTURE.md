@@ -39,7 +39,7 @@ fn list_item(item: &ItemData) -> impl View<...> {
 - **Productive:** Xilem offers a high-level API, designed to bypass the borrowing and state management issues that retained GUIs suffer from in Rust.
 - **Idiomatic:** Xilem apps are low on macros or DSLs.
   Writing a component is about creating and composing view objects, no special syntax needed.
-- **Batteries-included:** Through Masonry, Xilme includes advanced text layout, IME, accessibility trees and styling.
+- **Batteries-included:** Through Masonry, Xilem includes advanced text layout, IME, accessibility trees and styling.
 - **Wide platform support:** Xilem supports the web through `xilem_web` and desktop/mobile platforms through `masonry` and `winit`.
 
 

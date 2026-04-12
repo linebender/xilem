@@ -1693,7 +1693,7 @@ impl<T: Steppable> StepInput<T> {
             let style1_x_end = size.width - arrow_offset_active + arrow_width * 0.11;
             // Keep the outer line length at 80% of the inner lines.
             let style1_x_start = self.label_x_end + (style1_x_end - self.label_x_end) * 0.2;
-            // Keep the outer line just barely following the the arrow at the outer edge.
+            // Keep the outer line just barely following the arrow at the outer edge.
             let style1_y_offset = style1.width * 0.5 + arrow_height * 0.05;
 
             // End the inner lines underneath the arrow base.

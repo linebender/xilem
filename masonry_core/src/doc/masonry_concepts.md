@@ -160,7 +160,7 @@ This behavior exists so that when the user clicks somewhere and then presses `Ta
 
 ## Properties
 
-All widgets have associated data of arbitrary types called "properties" (sometimes calls "props" in internal code).
+All widgets have associated data of arbitrary types called "properties" (sometimes called "props" in internal code).
 These properties are mostly used for styling and event handling.
 
 Widgets have multiple layers of properties:

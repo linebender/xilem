@@ -168,7 +168,7 @@ impl Window {
         }
     }
 
-    /// Access the the underlying [Winit window](WindowHandle) of this window.
+    /// Access the underlying [Winit window](WindowHandle) of this window.
     pub fn handle(&self) -> &winit::window::Window {
         &self.handle
     }
@@ -556,7 +556,7 @@ impl MasonryState<'_> {
         let window_id = self
             .window_id_to_handle_id
             .remove(&window_id)
-            .unwrap_or_else(|| panic!("could not found find window for id {window_id:?}"));
+            .unwrap_or_else(|| panic!("could not find window for id {window_id:?}"));
         self.surfaces.remove(&window_id);
         let window = self.windows.remove(&window_id).unwrap();
 

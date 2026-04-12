@@ -29,10 +29,10 @@ fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
             }),
             html::input(())
                 .after_build(|_, _| {
-                    log::debug!("element was build");
+                    log::debug!("element was built");
                 })
                 .after_rebuild(move |app_state: &mut AppState, el| {
-                    log::debug!("element was re-build");
+                    log::debug!("element was rebuilt");
                     if app_state.focus {
                         let _ = el.focus();
                         // Reset `focus` to avoid calling `el.focus` on every rebuild.
