@@ -22,6 +22,8 @@ use crate::kurbo::{Axis, Point, Rect, Size};
 use crate::layout::{LenReq, SizeDef};
 use crate::peniko::Color;
 
+/// Minimal leaf widget used to produce deterministic painted content with a selectable
+/// `PaintLayerMode`.
 struct PaintLeaf {
     color: Color,
     paint_layer_mode: PaintLayerMode,
@@ -107,6 +109,10 @@ impl Widget for PaintLeaf {
     }
 }
 
+/// Three fixed-width leaf widgets laid out in a row.
+///
+/// This is the basic fixture for assertions about how an isolated middle child splits the
+/// ordered visual layer output around it.
 struct TripleRow {
     left: WidgetPod<PaintLeaf>,
     middle: WidgetPod<PaintLeaf>,
@@ -218,6 +224,10 @@ impl Widget for TripleRow {
     }
 }
 
+/// Single-child wrapper that applies an offset and clip.
+///
+/// This exists to exercise ancestor transforms and clipping when a descendant becomes its own
+/// visual layer.
 struct OffsetBox {
     child: WidgetPod<PaintLeaf>,
     offset: Point,
@@ -311,6 +321,10 @@ impl Widget for OffsetBox {
     }
 }
 
+/// Variant of `TripleRow` whose middle slot is an `OffsetBox`.
+///
+/// This fixture is used for nested-boundary tests where an external layer must preserve
+/// ancestor offset and clip information.
 struct MixedTripleRow {
     left: WidgetPod<PaintLeaf>,
     middle: WidgetPod<OffsetBox>,
