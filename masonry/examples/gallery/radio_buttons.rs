@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, RadioButton, RadioButtonSelected, RadioGroup};
 
@@ -62,9 +62,9 @@ impl DemoPage for RadioButtonsDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if !action.is::<RadioButtonSelected>() {
-            return false;
+            return Handled::No;
         }
 
         let selected_text = render_root.edit_widget(widget_id, |mut button| {
@@ -76,6 +76,6 @@ impl DemoPage for RadioButtonsDemo {
         render_root.edit_widget_with_tag(self.state_label, move |mut label| {
             Label::set_text(&mut label, format!("Selected: {selected_text}"));
         });
-        true
+        Handled::Yes
     }
 }

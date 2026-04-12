@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, Widget, WidgetId, WidgetTag};
 use masonry::layout::Length;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Button, Checkbox, Flex, SizedBox};
@@ -28,7 +28,7 @@ pub(crate) trait DemoPage {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool;
+    ) -> Handled;
 }
 
 pub(crate) fn wrap_in_shell(

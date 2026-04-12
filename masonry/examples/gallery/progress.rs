@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label, ProgressBar, Slider};
 
@@ -98,30 +98,30 @@ impl DemoPage for ProgressDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if let Some(toggled) = action.downcast_ref::<CheckboxToggled>() {
             let id = render_root
                 .get_widget_with_tag(self.indeterminate)
                 .unwrap()
                 .id();
             if widget_id != id {
-                return false;
+                return Handled::No;
             }
             self.is_indeterminate = toggled.0;
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
 
         if let Some(&value) = action.downcast_ref::<f64>() {
             let id = render_root.get_widget_with_tag(self.slider).unwrap().id();
             if widget_id != id {
-                return false;
+                return Handled::No;
             }
             self.value = value.clamp(0.0, 1.0);
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
 
-        false
+        Handled::No
     }
 }

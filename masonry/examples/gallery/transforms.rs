@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    ErasedAction, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
+    ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::kurbo::{Affine, Vec2};
 use masonry::layout::AsUnit as _;
@@ -137,37 +137,37 @@ impl DemoPage for TransformsDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if !action.is::<ButtonPress>() {
-            return false;
+            return Handled::No;
         }
 
         if self.matches_button(render_root, self.btn_rotate_left, widget_id) {
             self.angle_rad -= 15_f64.to_radians();
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_rotate_right, widget_id) {
             self.angle_rad += 15_f64.to_radians();
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_scale_down, widget_id) {
             self.scale = (self.scale / 1.1).clamp(0.3, 3.0);
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_scale_up, widget_id) {
             self.scale = (self.scale * 1.1).clamp(0.3, 3.0);
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_reset, widget_id) {
             self.angle_rad = 0.0;
             self.scale = 1.0;
             self.apply(render_root);
-            return true;
+            return Handled::Yes;
         }
-        false
+        Handled::No
     }
 }

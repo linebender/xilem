@@ -165,7 +165,7 @@ impl AppDriver for Driver {
         // Forward everything else to demos.
         let render_root = ctx.render_root(window_id);
         for demo in &mut self.demos {
-            if demo.on_action(render_root, &action, widget_id) {
+            if demo.on_action(render_root, &action, widget_id).is_handled() {
                 return;
             }
         }

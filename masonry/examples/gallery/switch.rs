@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Switch, SwitchToggled};
 
@@ -53,15 +53,15 @@ impl DemoPage for SwitchDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         let Some(toggled) = action.downcast_ref::<SwitchToggled>() else {
-            return false;
+            return Handled::No;
         };
         let toggled = toggled.0;
 
         let switch_id = render_root.get_widget_with_tag(self.switch).unwrap().id();
         if widget_id != switch_id {
-            return false;
+            return Handled::No;
         }
 
         render_root.edit_widget_with_tag(self.state_label, |mut label| {
@@ -70,6 +70,6 @@ impl DemoPage for SwitchDemo {
         render_root.edit_widget_with_tag(self.switch, |mut switch| {
             Switch::set_on(&mut switch, toggled);
         });
-        true
+        Handled::Yes
     }
 }

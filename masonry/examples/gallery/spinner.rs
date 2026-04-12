@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId};
+use masonry::core::{ErasedAction, Handled, NewWidget, Widget, WidgetId};
 use masonry::layout::AsUnit as _;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, SizedBox, Spinner};
@@ -45,7 +45,7 @@ impl DemoPage for SpinnerDemo {
         _render_root: &mut RenderRoot,
         _action: &ErasedAction,
         _widget_id: WidgetId,
-    ) -> bool {
-        false
+    ) -> Handled {
+        Handled::No
     }
 }

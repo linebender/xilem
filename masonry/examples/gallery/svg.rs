@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Svg};
 use resvg::usvg::{self, Tree};
@@ -57,7 +57,7 @@ impl DemoPage for SvgDemo {
         _render_root: &mut RenderRoot,
         _action: &ErasedAction,
         _widget_id: WidgetId,
-    ) -> bool {
-        false
+    ) -> Handled {
+        Handled::No
     }
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, Widget, WidgetId, WidgetTag};
+use masonry::core::{Handled, NewWidget, Widget, WidgetId, WidgetTag};
 use masonry::widgets::{Flex, Label, PageChanged, Pagination, Step, StepInput};
 
 use crate::demo::{DemoPage, ShellTags, wrap_in_shell};
@@ -56,7 +56,7 @@ impl DemoPage for PaginationDemo {
         render_root: &mut RenderRoot,
         action: &masonry::core::ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if let Some(step) = action.downcast_ref::<Step<isize>>() {
             let value = step.value;
 
@@ -85,7 +85,7 @@ impl DemoPage for PaginationDemo {
                 render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
                     Pagination::set_page_count(&mut widget, value as usize);
                 });
-                return true;
+                return Handled::Yes;
             }
             if widget_id == id_page_active {
                 render_root.edit_widget_with_tag(self.tag_content, |mut content| {
@@ -94,25 +94,25 @@ impl DemoPage for PaginationDemo {
                 render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
                     Pagination::set_active_page(&mut widget, (value - 1) as usize);
                 });
-                return true;
+                return Handled::Yes;
             }
             if widget_id == id_buttons_start {
                 render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_start(&mut widget, value as u8);
                 });
-                return true;
+                return Handled::Yes;
             }
             if widget_id == id_buttons_end {
                 render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_end(&mut widget, value as u8);
                 });
-                return true;
+                return Handled::Yes;
             }
             if widget_id == id_buttons_total {
                 render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_total(&mut widget, value as u8);
                 });
-                return true;
+                return Handled::Yes;
             }
         }
 
@@ -124,7 +124,7 @@ impl DemoPage for PaginationDemo {
                 .unwrap()
                 .id();
             if widget_id != id_pagination {
-                return false;
+                return Handled::No;
             }
 
             render_root.edit_widget_with_tag(self.tag_content, |mut content| {
@@ -133,10 +133,10 @@ impl DemoPage for PaginationDemo {
             render_root.edit_widget_with_tag(self.tag_page_active, |mut widget| {
                 StepInput::set_base(&mut widget, (page_idx + 1).cast_signed());
             });
-            return true;
+            return Handled::Yes;
         };
 
-        false
+        Handled::No
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {

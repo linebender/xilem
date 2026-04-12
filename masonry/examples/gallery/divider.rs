@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId};
 use masonry::kurbo::Cap;
 use masonry::layout::AsUnit;
 use masonry::palette;
@@ -119,7 +119,7 @@ impl DemoPage for DividerDemo {
         _render_root: &mut RenderRoot,
         _action: &ErasedAction,
         _widget_id: WidgetId,
-    ) -> bool {
-        false
+    ) -> Handled {
+        Handled::No
     }
 }

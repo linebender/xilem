@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::kurbo::Point;
 use masonry::layers::Tooltip;
 use masonry::properties::types::CrossAxisAlignment;
@@ -54,14 +54,14 @@ impl DemoPage for TooltipDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if !action.is::<ButtonPress>() {
-            return false;
+            return Handled::No;
         }
 
         let id = render_root.get_widget_with_tag(self.show_btn).unwrap().id();
         if widget_id != id {
-            return false;
+            return Handled::No;
         }
 
         let tooltip = NewWidget::new(Tooltip::new(
@@ -70,6 +70,6 @@ impl DemoPage for TooltipDemo {
                 .with_auto_id(),
         ));
         render_root.add_layer(tooltip.erased(), Point::new(320.0, 120.0));
-        true
+        Handled::Yes
     }
 }

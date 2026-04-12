@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label};
 
@@ -55,15 +55,15 @@ impl DemoPage for CheckboxDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         let Some(toggled) = action.downcast_ref::<CheckboxToggled>() else {
-            return false;
+            return Handled::No;
         };
         let checked = toggled.0;
 
         let checkbox_id = render_root.get_widget_with_tag(self.checkbox).unwrap().id();
         if widget_id != checkbox_id {
-            return false;
+            return Handled::No;
         }
 
         render_root.edit_widget_with_tag(self.state_label, |mut label| {
@@ -72,6 +72,6 @@ impl DemoPage for CheckboxDemo {
         render_root.edit_widget_with_tag(self.checkbox, |mut checkbox| {
             Checkbox::set_checked(&mut checkbox, checked);
         });
-        true
+        Handled::Yes
     }
 }

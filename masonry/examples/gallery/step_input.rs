@@ -3,7 +3,8 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    ErasedAction, NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
+    ErasedAction, Handled, NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId,
+    WidgetTag,
 };
 use masonry::layout::AsUnit;
 use masonry::peniko::color::AlphaColor;
@@ -113,7 +114,7 @@ impl DemoPage for StepInputDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if action.is::<ButtonPress>() {
             let id_balance = render_root
                 .get_widget_with_tag(self.tag_balance)
@@ -126,9 +127,9 @@ impl DemoPage for StepInputDemo {
                 render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
                 });
-                return true;
+                return Handled::Yes;
             }
-            return false;
+            return Handled::No;
         }
 
         if let Some(step) = action.downcast_ref::<Step<isize>>() {
@@ -143,17 +144,17 @@ impl DemoPage for StepInputDemo {
                 render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
                 });
-                return true;
+                return Handled::Yes;
             } else if widget_id == id_right {
                 render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
                 });
-                return true;
+                return Handled::Yes;
             }
-            return false;
+            return Handled::No;
         }
 
-        false
+        Handled::No
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {

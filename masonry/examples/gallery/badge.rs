@@ -3,7 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    ErasedAction, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
+    ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::kurbo::Vec2;
 use masonry::layout::Length;
@@ -249,9 +249,9 @@ impl DemoPage for BadgeDemo {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> bool {
+    ) -> Handled {
         if !action.is::<ButtonPress>() {
-            return false;
+            return Handled::No;
         }
 
         let dec_id = render_root
@@ -266,15 +266,15 @@ impl DemoPage for BadgeDemo {
         if widget_id == dec_id {
             self.count = self.count.saturating_sub(1);
             self.apply_count(render_root);
-            return true;
+            return Handled::Yes;
         }
 
         if widget_id == inc_id {
             self.count = self.count.saturating_add(1);
             self.apply_count(render_root);
-            return true;
+            return Handled::Yes;
         }
 
-        false
+        Handled::No
     }
 }
