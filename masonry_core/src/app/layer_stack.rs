@@ -30,21 +30,26 @@ use crate::layout::{LenReq, SizeDef};
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 pub(crate) struct LayerStack {
-    layers: Vec<Layer>,
+    layers: Vec<LayerEntry>,
 }
 
-struct Layer {
-    widget: WidgetPod<dyn Widget>,
-    pos: Point,
+/// A persistent entry in the top-level layer stack.
+///
+/// This is widget ownership state, not a derived visual/render layer.
+struct LayerEntry {
+    /// Root widget owned by this top-level layer entry.
+    root: WidgetPod<dyn Widget>,
+    /// Position of this layer entry in the `LayerStack`'s content-box coordinates.
+    position: Point,
 }
 
 // --- MARK: IMPL LAYER_STACK
 impl LayerStack {
     /// Creates a stack with the provided base layer.
     pub(crate) fn new(root: NewWidget<impl Widget + ?Sized>) -> Self {
-        let layer = Layer {
-            widget: root.erased().to_pod(),
-            pos: Point::ZERO,
+        let layer = LayerEntry {
+            root: root.erased().to_pod(),
+            position: Point::ZERO,
         };
         Self {
             layers: vec![layer],
@@ -61,8 +66,8 @@ impl LayerStack {
     /// # Panics
     ///
     /// Panics if `idx` is out of bounds.
-    pub(crate) fn layer_id(&self, idx: usize) -> WidgetId {
-        self.layers[idx].widget.id()
+    pub(crate) fn layer_root_id(&self, idx: usize) -> WidgetId {
+        self.layers[idx].root.id()
     }
 }
 
@@ -76,11 +81,11 @@ impl LayerStack {
     pub(crate) fn add_layer(
         this: &mut WidgetMut<'_, Self>,
         root: NewWidget<impl Widget + ?Sized>,
-        pos: Point,
+        position: Point,
     ) {
-        let layer = Layer {
-            widget: root.erased().to_pod(),
-            pos,
+        let layer = LayerEntry {
+            root: root.erased().to_pod(),
+            position,
         };
         this.widget.layers.push(layer);
         this.ctx.children_changed();
@@ -96,7 +101,7 @@ impl LayerStack {
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
     ) -> WidgetMut<'t, dyn Widget> {
-        let layer = &mut this.widget.layers[idx].widget;
+        let layer = &mut this.widget.layers[idx].root;
         this.ctx.get_mut(layer)
     }
 
@@ -113,12 +118,12 @@ impl LayerStack {
             .widget
             .layers
             .iter()
-            .position(|layer| layer.widget.id() == root_id)
+            .position(|layer| layer.root.id() == root_id)
         {
             Some(0) => debug_panic!("Cannot remove initial layer"),
             None => debug_panic!("layer with root widget {root_id:?} not found"),
             Some(idx) => {
-                let child = this.widget.layers.remove(idx).widget;
+                let child = this.widget.layers.remove(idx).root;
                 this.ctx.remove_child(child);
             }
         }
@@ -145,12 +150,12 @@ impl LayerStack {
             .widget
             .layers
             .iter()
-            .position(|layer| layer.widget.id() == root_id)
+            .position(|layer| layer.root.id() == root_id)
         {
             Some(0) => debug_panic!("Cannot reposition initial layer"),
             None => debug_panic!("layer with root widget {root_id:?} not found"),
             Some(idx) => {
-                this.widget.layers[idx].pos = new_origin;
+                this.widget.layers[idx].position = new_origin;
                 this.ctx.request_layout();
             }
         }
@@ -163,7 +168,7 @@ impl Widget for LayerStack {
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for layer in self.layers.iter_mut() {
-            ctx.register_child(&mut layer.widget);
+            ctx.register_child(&mut layer.root);
         }
     }
 
@@ -183,7 +188,7 @@ impl Widget for LayerStack {
             return 0.;
         };
         // Let the base layer handle the response
-        ctx.redirect_measurement(&mut base_layer.widget, axis, cross_length)
+        ctx.redirect_measurement(&mut base_layer.root, axis, cross_length)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
@@ -195,11 +200,11 @@ impl Widget for LayerStack {
 
         // Our measurement is just the passed on result from the base layer,
         // so the size we received is effectively meant for the base layer.
-        ctx.run_layout(&mut base_layer.widget, size);
+        ctx.run_layout(&mut base_layer.root, size);
         // The base layer is always located at our origin.
-        ctx.place_child(&mut base_layer.widget, Point::ORIGIN);
+        ctx.place_child(&mut base_layer.root, Point::ORIGIN);
 
-        ctx.derive_baselines(&base_layer.widget);
+        ctx.derive_baselines(&base_layer.root);
 
         for layer in &mut self.layers[1..] {
             // Other layers don't take part in our measurement,
@@ -207,9 +212,9 @@ impl Widget for LayerStack {
             // We don't really care if they go outside the bounds of the base layer,
             // so we won't give any FitContent fallback and instead just use MaxContent.
             // These other layers still have access to the window size via context size.
-            let layer_size = ctx.compute_size(&mut layer.widget, SizeDef::MAX, size.into());
-            ctx.run_layout(&mut layer.widget, layer_size);
-            ctx.place_child(&mut layer.widget, layer.pos);
+            let layer_size = ctx.compute_size(&mut layer.root, SizeDef::MAX, size.into());
+            ctx.run_layout(&mut layer.root, layer_size);
+            ctx.place_child(&mut layer.root, layer.position);
         }
     }
 
@@ -234,7 +239,7 @@ impl Widget for LayerStack {
     }
 
     fn children_ids(&self) -> ChildrenIds {
-        self.layers.iter().map(|child| child.widget.id()).collect()
+        self.layers.iter().map(|child| child.root.id()).collect()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
