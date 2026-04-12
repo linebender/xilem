@@ -183,7 +183,9 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     // (should go hand in hand with introducing support for modal windows?)
     let mut window_node = Node::new(Role::Window);
     window_node.set_children(vec![root.root_id().into()]);
-    tree_update.nodes.push((root.global_state.window_node_id, window_node));
+    tree_update
+        .nodes
+        .push((root.global_state.window_node_id, window_node));
 
     tree_update
 }
