@@ -57,6 +57,10 @@ impl DemoPage for PaginationDemo {
         action: &masonry::core::ErasedAction,
         widget_id: WidgetId,
     ) -> Handled {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "example stepinput is always isize"
+        )]
         if let Some(step) = action.downcast_ref::<Step<isize>>() {
             let value = step.value;
 
