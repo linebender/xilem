@@ -34,7 +34,7 @@ Masonry has some opinionated design goals:
 The Masonry project includes these crates in the Xilem repository:
 
 - **`masonry_core`:** includes the core traits, types and abstractions.
-- **`masonry_testing`:** includes a harness, helper macros and functions, etc, for testing apps builts with Masonry.
+- **`masonry_testing`:** includes a harness, helper macros and functions, etc, for testing apps built with Masonry.
 - **`masonry`:** includes a baseline set of widgets and properties, a default theme, unit tests for widgets, and unit tests for `masonry_core`.
 - **`masonry_winit`:** the winit backend.
 

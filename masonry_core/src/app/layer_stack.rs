@@ -106,8 +106,8 @@ impl LayerStack {
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the the intended layer the base layer or the
-    /// intended layer is not found.
+    /// Panics in debug mode if the intended layer is the base layer or
+    /// is not found.
     pub(crate) fn remove_layer(this: &mut WidgetMut<'_, Self>, root_id: WidgetId) {
         match this
             .widget
@@ -134,8 +134,8 @@ impl LayerStack {
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the the intended layer the base layer or the
-    /// intended layer is not found.
+    /// Panics in debug mode if the intended layer is the base layer or
+    /// is not found.
     pub(crate) fn reposition_layer(
         this: &mut WidgetMut<'_, Self>,
         root_id: WidgetId,

@@ -33,7 +33,7 @@
 //! Cases where this apply include:
 //!
 //! - Writing an alternative driver for Masonry (alike to [Masonry Winit][]).
-//! - Witing a library containing one or more custom widget (such as a 2d mapping widget).
+//! - Writing a library containing one or more custom widget (such as a 2d mapping widget).
 //!
 //! Masonry Core can also be used by applications wishing to not use Masonry's provided
 //! set of widgets, so as to have more control.

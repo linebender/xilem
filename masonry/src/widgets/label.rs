@@ -524,7 +524,7 @@ impl Widget for Label {
                         LenReq::FitContent(space) => Some(space),
                     }
                 } else {
-                    // Block axis is dependant on the inline axis, so cross_length dominates.
+                    // Block axis is dependent on the inline axis, so cross_length dominates.
                     // If there is no explicit cross_length present, we fall back to inline defaults.
                     match len_req {
                         // Fallback is inline axis MinContent

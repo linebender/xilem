@@ -138,7 +138,7 @@ where
     /// Handle a message, propagating to child views if needed.
     /// The context contains both the path of this view, and the remaining
     /// path that the rest of the implementation needs to go along.
-    /// The first items in the remaining part of thtis path will be those added
+    /// The first items in the remaining part of this path will be those added
     /// in build and/or rebuild.
     ///
     /// The provided `elements` must be at the same [`index`](ElementSplice::index)

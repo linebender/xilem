@@ -738,8 +738,8 @@ impl RenderRoot {
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the the intended layer the base layer or the
-    /// intended layer is not found.
+    /// Panics in debug mode if the intended layer is the base layer or
+    /// is not found.
     pub fn remove_layer(&mut self, root_id: WidgetId) {
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
@@ -757,8 +757,8 @@ impl RenderRoot {
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the the intended layer the base layer or the
-    /// intended layer is not found.
+    /// Panics in debug mode if the intended layer is the base layer or
+    /// is not found.
     pub fn reposition_layer(&mut self, root_id: WidgetId, new_origin: Point) {
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
