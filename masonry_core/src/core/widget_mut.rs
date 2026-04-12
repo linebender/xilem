@@ -66,15 +66,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.properties.contains::<T>()
     }
 
-    /// Whether the property `P` of this widget has been modified in this pass.
-    ///
-    /// This is useful when composing units which might mutate a property value.
-    /// In these cases, the "strongest" of these will want to check if it has been
-    /// changed by a different unit, to overwrite this change.
-    pub fn prop_has_changed<P: Property>(&self) -> bool {
-        self.ctx.changed_properties.contains(&TypeId::of::<P>())
-    }
-
     /// Returns the value of property `T`.
     ///
     /// If the widget has an entry for `P`, returns that entry.
@@ -92,7 +83,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn insert_prop<P: Property>(&mut self, value: P) -> Option<P> {
-        self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.insert(value);
         let mut ctx = self.ctx.update_mut();
         let property_type = TypeId::of::<P>();
@@ -107,7 +97,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn remove_prop<P: Property>(&mut self) -> Option<P> {
-        self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.remove::<P>();
         let mut ctx = self.ctx.update_mut();
         let property_type = TypeId::of::<P>();

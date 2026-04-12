@@ -1,10 +1,11 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::HashMap;
+use std::any::TypeId;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut};
+use masonry::core::{FromDynWidget, Property, Widget, WidgetId, WidgetMut};
 
 use crate::Pod;
 use crate::core::{Environment, RawProxy, ViewId, ViewPathTracker};
@@ -18,6 +19,7 @@ pub struct ViewCtx {
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
     runtime: Arc<tokio::runtime::Runtime>,
+    props_changed: HashSet<(WidgetId, TypeId)>,
     environment: Environment,
 }
 
@@ -82,6 +84,29 @@ impl ViewCtx {
         &self.runtime
     }
 
+    /// Marks the property `P` of the widget with the given id as changed.
+    ///
+    /// This is used to avoid bugs when multiple `Prop` views are stacked on the same widget.
+    ///
+    /// This should be reset at the end of each rebuild.
+    pub fn mark_prop_changed<P: Property>(&mut self, id: WidgetId) {
+        self.props_changed.insert((id, TypeId::of::<P>()));
+    }
+
+    /// Checks if the property `P` of the widget with the given id has changed during this rebuild.
+    ///
+    /// This is used to avoid bugs when multiple `Prop` views are stacked on the same widget.
+    pub fn prop_has_changed<P: Property>(&self, id: WidgetId) -> bool {
+        self.props_changed.contains(&(id, TypeId::of::<P>()))
+    }
+
+    /// Resets the changed properties for all widgets.
+    ///
+    /// This should be called at the start of each rebuild.
+    pub fn reset_changed_props(&mut self) {
+        self.props_changed.clear();
+    }
+
     /// Returns an event queue to which [`SendMessage`](crate::core::SendMessage)s can be submitted.
     pub fn proxy(&self) -> Arc<dyn RawProxy + 'static> {
         self.proxy.clone()
@@ -96,6 +121,7 @@ impl ViewCtx {
             id_path: Vec::new(),
             proxy,
             runtime,
+            props_changed: HashSet::default(),
             environment: Environment::new(),
         }
     }

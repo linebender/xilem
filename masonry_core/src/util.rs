@@ -107,10 +107,6 @@ impl Sanitize for Option<f64> {
 // ---
 
 pub(crate) type AnyMap = anymap3::Map<dyn anymap3::CloneAny + Send + Sync>;
-pub(crate) type TypeSet = std::collections::HashSet<
-    std::any::TypeId,
-    std::hash::BuildHasherDefault<anymap3::TypeIdHasher>,
->;
 
 /// Convert a 2d rectangle from Parley to one used for drawing in Vello and other maths.
 pub fn bounding_box_to_rect(bb: parley::BoundingBox) -> kurbo::Rect {

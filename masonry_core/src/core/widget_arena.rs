@@ -4,7 +4,6 @@
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
 use crate::core::{ClassSet, PropertySet, Widget, WidgetId, WidgetState};
-use crate::util::TypeSet;
 
 pub(crate) struct WidgetArena {
     pub(crate) nodes: TreeArena<WidgetArenaNode>,
@@ -14,7 +13,6 @@ pub(crate) struct WidgetArenaNode {
     pub(crate) widget: Box<dyn Widget>,
     pub(crate) state: WidgetState,
     pub(crate) properties: PropertySet,
-    pub(crate) changed_properties: TypeSet,
     pub(crate) class_set: ClassSet,
 }
 

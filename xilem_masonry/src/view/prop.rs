@@ -56,8 +56,12 @@ where
             element.reborrow_mut(),
             app_state,
         );
+        // TODO - This is kind of a hack. We shouldn't allow stacking `Prop` views.
         // If a child view changed the property, we know we're out of date.
-        if self.property != prev.property || element.prop_has_changed::<P>() {
+        let prop_has_changed = ctx.prop_has_changed::<P>(element.id());
+
+        if self.property != prev.property || prop_has_changed {
+            ctx.mark_prop_changed::<P>(element.id());
             element.insert_prop(self.property.clone());
         }
     }
