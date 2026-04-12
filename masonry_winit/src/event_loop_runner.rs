@@ -30,10 +30,11 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
-    AppDriver, DriverCtx, PresentationTarget, WgpuContext, WgpuLimits,
+    AppDriver, DriverCtx, PresentVisualLayersResult, PresentationTarget, WgpuContext, WgpuLimits,
     masonry_resize_direction_to_winit, winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
+use crate::surface_presenter::present_surface;
 use crate::vello_util::{RenderContext, RenderSurface};
 
 /// The custom event type that we inject into winit's [`EventLoop`](winit::event_loop::EventLoop).
@@ -708,7 +709,7 @@ impl MasonryState<'_> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        if app_driver.present_visual_layers(
+        match app_driver.present_visual_layers(
             window.id,
             PresentationTarget {
                 adapter,
@@ -722,9 +723,15 @@ impl MasonryState<'_> {
             },
             visual_layers,
         ) {
-            window.handle.pre_present_notify();
-            surface_texture.present();
-            return;
+            PresentVisualLayersResult::Presented { request_redraw } => {
+                window.handle.pre_present_notify();
+                surface_texture.present();
+                if request_redraw {
+                    window.handle.request_redraw();
+                }
+                return;
+            }
+            PresentVisualLayersResult::NotHandled => {}
         }
 
         let _render_span = tracing::info_span!(
@@ -754,35 +761,7 @@ impl MasonryState<'_> {
             );
             return;
         }
-        Self::present_surface(surface, surface_texture, &window.handle, device, queue);
-    }
-
-    fn present_surface(
-        surface: &RenderSurface<'_>,
-        surface_texture: wgpu::SurfaceTexture,
-        window: &WindowHandle,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Surface Blit"),
-        });
-        surface.blitter.copy(
-            device,
-            &mut encoder,
-            &surface.target_view,
-            &surface_texture
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default()),
-        );
-        queue.submit([encoder.finish()]);
-        window.pre_present_notify();
-        surface_texture.present();
-        {
-            let _render_poll_span =
-                tracing::info_span!("Waiting for GPU to finish rendering").entered();
-            device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-        }
+        present_surface(surface, surface_texture, &window.handle, device, queue);
     }
 
     fn acquire_surface_texture(

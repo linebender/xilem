@@ -423,7 +423,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
         }
     }
 
-    VisualLayerPlan { layers }
+    VisualLayerPlan::new(layers)
 }
 
 /// Paint a single layer root into ordered render layers.

@@ -37,7 +37,9 @@ use imaging::record::{Scene, ValidateError, replay_transformed};
 use imaging::render::RenderSource;
 use imaging::{PaintSink, Painter};
 use kurbo::{Affine, Rect};
-use masonry_core::app::{ExternalLayerKind, VisualLayerBoundary, VisualLayerKind, VisualLayerPlan};
+use masonry_core::app::{
+    ExternalLayerKind, VisualLayerBoundary, VisualLayerId, VisualLayerKind, VisualLayerPlan,
+};
 use peniko::Color;
 
 #[cfg(any(feature = "imaging_vello", feature = "imaging_vello_hybrid"))]
@@ -149,7 +151,7 @@ pub mod image_render {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ExternalLayerRef {
     /// Stable layer identifier chosen by the host/widget integration.
-    pub id: u64,
+    pub id: VisualLayerId,
     /// Logical kind of external layer requested by Masonry.
     pub kind: ExternalLayerKind,
 }
@@ -498,7 +500,7 @@ mod tests {
 
     #[test]
     fn snapshot_source_from_visual_layers_uses_padded_dimensions() {
-        let layers = VisualLayerPlan { layers: Vec::new() };
+        let layers = VisualLayerPlan::new(Vec::new());
         let source = SnapshotSource::from_visual_layers(0, 2, 1.0, Color::WHITE, &layers, 5);
 
         assert_eq!(source.width(), 11);

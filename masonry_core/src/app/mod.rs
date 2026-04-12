@@ -9,7 +9,8 @@ mod render_root;
 mod tracing_backend;
 
 pub use render_layers::{
-    ExternalLayerKind, VisualLayer, VisualLayerBoundary, VisualLayerKind, VisualLayerPlan,
+    ExternalLayerKind, ExternalVisualLayer, SceneVisualLayer, VisualLayer, VisualLayerBoundary,
+    VisualLayerId, VisualLayerKind, VisualLayerPlan,
 };
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use tracing_backend::{

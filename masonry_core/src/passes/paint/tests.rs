@@ -467,19 +467,17 @@ fn replay_ignores_external_layers() {
         kurbo::Affine::IDENTITY,
         WidgetId::next(),
     );
-    let result = VisualLayerPlan {
-        layers: vec![
-            VisualLayer::scene(
-                base,
-                VisualLayerBoundary::LayerRoot,
-                Rect::ZERO,
-                None,
-                kurbo::Affine::IDENTITY,
-                WidgetId::next(),
-            ),
-            external,
-        ],
-    };
+    let result = VisualLayerPlan::new(vec![
+        VisualLayer::scene(
+            base,
+            VisualLayerBoundary::LayerRoot,
+            Rect::ZERO,
+            None,
+            kurbo::Affine::IDENTITY,
+            WidgetId::next(),
+        ),
+        external,
+    ]);
 
     let mut sink = Scene::new();
     result.replay_into(&mut sink);

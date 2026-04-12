@@ -34,10 +34,24 @@ pub const BACKEND_NAME: &str = "imaging_vello";
 /// Masonry alias for the selected Vello renderer type.
 pub type Renderer = imaging_vello::VelloRenderer;
 
+/// Masonry alias for the selected Vello texture renderer type.
+pub type TargetRenderer = imaging_vello::VelloTargetRenderer;
+
+/// Masonry alias for the selected Vello texture target wrapper.
+pub type TextureTarget<'a> = imaging_vello::TextureTarget<'a>;
+
 /// Create a reusable headless Vello renderer.
 pub fn new_headless_renderer() -> Result<Renderer, Error> {
     let (device, queue) = headless_wgpu::try_init_device_and_queue().map_err(|_| Error::Init)?;
     imaging_vello::VelloRenderer::new(device, queue).map_err(Error::Backend)
+}
+
+/// Create a reusable Vello target renderer bound to an existing WGPU device and queue.
+pub fn new_target_renderer(
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+) -> Result<TargetRenderer, Error> {
+    imaging_vello::VelloTargetRenderer::new(device, queue).map_err(Error::Backend)
 }
 
 /// Build a native Vello scene from any render source.

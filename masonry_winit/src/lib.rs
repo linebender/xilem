@@ -94,6 +94,7 @@ mod convert_winit_event;
 mod event_loop_runner;
 #[cfg(all(feature = "subduction", feature = "imaging_vello"))]
 mod subduction_presenter;
+mod surface_presenter;
 mod vello_util;
 
 pub use winit;
@@ -101,7 +102,8 @@ pub use winit;
 /// Types needed for running a Masonry app.
 pub mod app {
     pub use super::app_driver::{
-        AppDriver, DriverCtx, PresentationTarget, WgpuContext, WgpuLimits, WindowId,
+        AppDriver, DriverCtx, PresentVisualLayersResult, PresentationTarget, WgpuContext,
+        WgpuLimits, WindowId,
     };
     pub use super::event_loop_runner::{
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
@@ -109,8 +111,10 @@ pub mod app {
     };
     #[cfg(all(feature = "subduction", feature = "imaging_vello"))]
     pub use super::subduction_presenter::{
-        ExternalLayerRenderer, ExternalLayerTarget, PresentError as SubductionPresentError,
-        SubductionPresenter,
+        ExternalLayerRenderResult, ExternalLayerRenderer, ExternalLayerTarget,
+        ManagedExternalLayerRenderer, ManagedExternalLayers,
+        PresentError as SubductionPresentError, SceneLayerRenderer, SceneLayerTarget,
+        SubductionPresenter, VelloSceneLayerRenderer,
     };
 
     pub(crate) use super::convert_winit_event::{
