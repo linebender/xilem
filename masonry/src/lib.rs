@@ -205,7 +205,6 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
-#![expect(clippy::large_enum_variant, reason = "FIXME: NewWidget is too large")]
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
