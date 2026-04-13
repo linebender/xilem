@@ -86,7 +86,7 @@ enum WidgetPodInner<W: ?Sized> {
 impl<W: Widget> NewWidget<W> {
     /// Creates a new widget.
     ///
-    /// You can also get the same result with [`Widget::with_auto_id()`].
+    /// You can also get the same result with [`Widget::prepare()`].
     #[inline(always)]
     pub fn new(inner: W) -> Self {
         Self {
