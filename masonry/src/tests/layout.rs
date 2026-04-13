@@ -31,10 +31,10 @@ fn layout_simple() {
                         .with_tag(tag_2),
                 )
                 .with_spacer(1.0)
-                .with_auto_id(),
+                .prepare(),
         )
         .with_spacer(1.0)
-        .with_auto_id();
+        .prepare();
 
     let harness = TestHarness::create(test_property_set(), widget);
 
@@ -52,12 +52,12 @@ fn layout_simple() {
 
 #[test]
 fn forget_to_recurse_layout() {
-    let widget = ModularWidget::new_parent(Flex::row().with_auto_id())
+    let widget = ModularWidget::new_parent(Flex::row().prepare())
         .measure_fn(|_, _, _, _, _, _| 0.)
         .layout_fn(|_child, _ctx, _, _| {
             // We forget to call ctx.run_layout();
         })
-        .with_auto_id();
+        .prepare();
 
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
@@ -67,12 +67,12 @@ fn forget_to_recurse_layout() {
 
 #[test]
 fn forget_to_call_place_child() {
-    let widget = ModularWidget::new_parent(Flex::row().with_auto_id())
+    let widget = ModularWidget::new_parent(Flex::row().prepare())
         .layout_fn(|child, ctx, _, size| {
             // We call ctx.run_layout(), but forget place_child
             ctx.run_layout(child, size);
         })
-        .with_auto_id();
+        .prepare();
 
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
@@ -82,13 +82,13 @@ fn forget_to_call_place_child() {
 
 #[test]
 fn call_place_child_before_layout() {
-    let widget = ModularWidget::new_parent(Flex::row().with_auto_id())
+    let widget = ModularWidget::new_parent(Flex::row().prepare())
         .measure_fn(|_, _, _, _, _, _| 0.)
         .layout_fn(|child, ctx, _, _| {
             // We call ctx.place_child(), but forget run_layout
             ctx.place_child(child, Point::ORIGIN);
         })
-        .with_auto_id();
+        .prepare();
 
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
@@ -100,7 +100,7 @@ fn call_place_child_before_layout() {
 fn run_layout_on_stashed() {
     let parent_tag = WidgetTag::named("parent");
     let widget =
-        ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, size| {
+        ModularWidget::new_parent(Flex::row().prepare()).layout_fn(|child, ctx, _, size| {
             ctx.run_layout(child, size);
             ctx.place_child(child, Point::ZERO);
         });
@@ -121,7 +121,7 @@ fn run_layout_on_stashed() {
 fn stash_then_run_layout() {
     let parent_tag = WidgetTag::named("parent");
     let widget =
-        ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, size| {
+        ModularWidget::new_parent(Flex::row().prepare()).layout_fn(|child, ctx, _, size| {
             // We check that stashing a widget is effective "immediately"
             // and triggers an error.
             ctx.set_stashed(child, true);
@@ -140,7 +140,7 @@ fn stash_then_run_layout() {
 fn unstash_then_run_layout() {
     let parent_tag = WidgetTag::named("parent");
     let widget =
-        ModularWidget::new_parent(Flex::row().with_auto_id()).layout_fn(|child, ctx, _, size| {
+        ModularWidget::new_parent(Flex::row().prepare()).layout_fn(|child, ctx, _, size| {
             // We check that unstashing a widget is effective "immediately"
             // and avoids an error.
             ctx.set_stashed(child, false);
@@ -240,7 +240,7 @@ fn layout_insets() {
     ))
     .with_tag(parent_tag);
 
-    let root_widget = Portal::new(parent_widget).with_auto_id();
+    let root_widget = Portal::new(parent_widget).prepare();
 
     let harness = TestHarness::create(test_property_set(), root_widget);
 

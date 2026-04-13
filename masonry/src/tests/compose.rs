@@ -89,7 +89,7 @@ fn scroll_pixel_snap() {
 
             ctx.set_child_scroll_translation(state, offset);
         })
-        .with_auto_id();
+        .prepare();
 
     let harness = TestHarness::create(test_property_set(), parent);
 

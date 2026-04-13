@@ -264,7 +264,9 @@ mod tests {
 
     #[test]
     fn simple_rect() {
-        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
+        let widget = ColorRectangle::new(BLUE)
+            .prepare()
+            .with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -279,7 +281,9 @@ mod tests {
 
     #[test]
     fn hovered() {
-        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
+        let widget = ColorRectangle::new(BLUE)
+            .prepare()
+            .with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
@@ -295,7 +299,9 @@ mod tests {
     #[test]
     fn edit_rect() {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
+        let widget = ColorRectangle::new(BLUE)
+            .prepare()
+            .with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -311,7 +317,9 @@ mod tests {
 
     #[test]
     fn on_click() {
-        let widget = ColorRectangle::new(BLUE).with_props(Dimensions::fixed(20.px(), 20.px()));
+        let widget = ColorRectangle::new(BLUE)
+            .prepare()
+            .with_props(Dimensions::fixed(20.px(), 20.px()));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();

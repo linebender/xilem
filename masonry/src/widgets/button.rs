@@ -48,7 +48,7 @@ impl Button {
     /// use masonry::widgets::{Button, Label};
     /// use masonry::core::Widget;
     ///
-    /// let button = Button::new(Label::new("Increment").with_auto_id());
+    /// let button = Button::new(Label::new("Increment").prepare());
     /// ```
     pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
@@ -67,7 +67,7 @@ impl Button {
     /// let button = Button::with_text("Increment");
     /// ```
     pub fn with_text(text: impl Into<Arc<str>>) -> Self {
-        Self::new(Label::new(text).with_auto_id())
+        Self::new(Label::new(text).prepare())
     }
 }
 
@@ -393,19 +393,19 @@ mod tests {
 
         let grid = Grid::with_dimensions(2, 2)
             .with(
-                Button::with_text("A").with_auto_id(),
+                Button::with_text("A").prepare(),
                 GridParams::new(0, 0, 1, 1),
             )
             .with(
-                Button::with_text("B").with_auto_id(),
+                Button::with_text("B").prepare(),
                 GridParams::new(1, 0, 1, 1),
             )
             .with(
-                Button::with_text("C").with_auto_id(),
+                Button::with_text("C").prepare(),
                 GridParams::new(0, 1, 1, 1),
             )
             .with(
-                Button::with_text("D").with_auto_id(),
+                Button::with_text("D").prepare(),
                 GridParams::new(1, 1, 1, 1),
             );
         let root_widget = NewWidget::new(grid).with_props(
@@ -465,7 +465,7 @@ mod tests {
     /// We validate that each of these actually are correctly supported.
     fn validate_noninteractive_child<W: Widget>(child: NewWidget<W>) {
         let child_id = child.id();
-        let mut button = Button::new(child).with_auto_id();
+        let mut button = Button::new(child).prepare();
         button.properties.insert(Padding::all(10.));
         let button_id = button.id();
         let mut harness = TestHarness::create(test_property_set(), button);
@@ -494,24 +494,21 @@ mod tests {
 
     #[test]
     fn label_child() {
-        let child = Label::new("Some text").with_auto_id();
+        let child = Label::new("Some text").prepare();
         validate_noninteractive_child(child);
     }
 
     #[test]
     fn sized_box_child() {
-        let child = SizedBox::empty()
-            .width(50.px())
-            .height(50.px())
-            .with_auto_id();
+        let child = SizedBox::empty().width(50.px()).height(50.px()).prepare();
         validate_noninteractive_child(child);
     }
 
     #[test]
     fn flex_child() {
         let child = Flex::row()
-            .with_fixed(Label::new("Some text").with_auto_id())
-            .with_auto_id();
+            .with_fixed(Label::new("Some text").prepare())
+            .prepare();
         validate_noninteractive_child(child);
     }
     // We could imagine more involved tests, e.g. a button with an icon

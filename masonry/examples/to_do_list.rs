@@ -45,7 +45,7 @@ impl AppDriver for Driver {
                 TextArea::reset_text(&mut text_area, "");
             });
             render_root.edit_widget_with_tag(LIST_TAG, |mut list| {
-                let child = Label::new(self.next_task.clone()).with_auto_id();
+                let child = Label::new(self.next_task.clone()).prepare();
                 Flex::add_fixed(&mut list, child);
             });
         } else if action.is::<TextAction>() {
@@ -72,7 +72,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
         NewWidget::new(Flex::column().cross_axis_alignment(CrossAxisAlignment::Start))
             .with_tag(LIST_TAG),
     )
-    .with_auto_id();
+    .prepare();
 
     let root = Flex::column()
         .with_fixed(

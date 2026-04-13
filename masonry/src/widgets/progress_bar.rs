@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn _5_percent_styled_progressbar() {
-        let widget = ProgressBar::new(Some(0.05)).with_props((
+        let widget = ProgressBar::new(Some(0.05)).prepare().with_props((
             CornerRadius::all(50.),
             BorderWidth::all(10.),
             BorderColor::new(palette::css::PINK),
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn _95_percent_styled_progressbar() {
-        let widget = ProgressBar::new(Some(0.95)).with_props((
+        let widget = ProgressBar::new(Some(0.95)).prepare().with_props((
             CornerRadius::all(50.),
             BorderWidth::all(10.),
             BorderColor::new(palette::css::PINK),
@@ -365,6 +365,7 @@ mod tests {
     fn edit_progressbar() {
         let image_1 = {
             let bar = ProgressBar::new(Some(0.5))
+                .prepare()
                 .with_props(PropertySet::new().with(BarColor(palette::css::PURPLE)));
 
             let mut harness =

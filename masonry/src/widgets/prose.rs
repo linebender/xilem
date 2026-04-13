@@ -47,7 +47,7 @@ impl Prose {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_immutable(text).with_auto_id())
+        Self::from_text_area(TextArea::new_immutable(text).prepare())
     }
 
     /// Creates a new `Prose` from a styled text area.
@@ -223,14 +223,14 @@ mod tests {
             TextArea::new_immutable("Truncated text - you should not see this")
                 .with_style(StyleProperty::FontSize(14.0))
                 .with_word_wrap(false)
-                .with_auto_id(),
+                .prepare(),
         )
         .with_clip(true)
-        .with_auto_id();
+        .prepare();
 
         let root_widget = Flex::row()
-            .with_fixed(SizedBox::new(prose).width(60.px()).with_auto_id())
-            .with_auto_id();
+            .with_fixed(SizedBox::new(prose).width(60.px()).prepare())
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), root_widget, Size::new(200.0, 40.0));
@@ -249,7 +249,7 @@ mod tests {
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_text_alignment(text_alignment)
                     .with_word_wrap(true)
-                    .with_auto_id(),
+                    .prepare(),
             )
         }
         let prose1 = base_prose(TextAlign::Start);
@@ -259,12 +259,12 @@ mod tests {
         let prose5 = base_prose(TextAlign::Center);
         let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
-            .with(prose1.with_auto_id(), CrossAxisAlignment::Start)
-            .with(prose2.with_auto_id(), CrossAxisAlignment::Start)
-            .with(prose3.with_auto_id(), CrossAxisAlignment::Start)
-            .with(prose4.with_auto_id(), CrossAxisAlignment::Center)
-            .with(prose5.with_auto_id(), CrossAxisAlignment::Center)
-            .with(prose6.with_auto_id(), CrossAxisAlignment::Center);
+            .with(prose1.prepare(), CrossAxisAlignment::Start)
+            .with(prose2.prepare(), CrossAxisAlignment::Start)
+            .with(prose3.prepare(), CrossAxisAlignment::Start)
+            .with(prose4.prepare(), CrossAxisAlignment::Center)
+            .with(prose5.prepare(), CrossAxisAlignment::Center)
+            .with(prose6.prepare(), CrossAxisAlignment::Center);
         let flex = NewWidget::new(flex).with_props(PropertySet::one(Gap::ZERO));
 
         let mut harness =

@@ -36,14 +36,14 @@ impl DemoPage for SvgDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
-        let svg = Svg::new(tiger()).with_auto_id();
+        let svg = Svg::new(tiger()).prepare();
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_fixed(
                 Label::new("SVG widget")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(CONTENT_GAP)
             .with(svg, 1.0);

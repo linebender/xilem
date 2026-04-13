@@ -837,9 +837,9 @@ mod tests {
     fn columns() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        ).split_axis(Axis::Horizontal).draggable(false).with_auto_id();
+            Label::new("Hello").prepare(),
+            Label::new("World").prepare(),
+        ).split_axis(Axis::Horizontal).draggable(false).prepare();
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -851,9 +851,9 @@ mod tests {
     fn rows() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        ).split_axis(Axis::Vertical).draggable(false).with_auto_id();
+            Label::new("Hello").prepare(),
+            Label::new("World").prepare(),
+        ).split_axis(Axis::Vertical).draggable(false).prepare();
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -864,16 +864,13 @@ mod tests {
     #[test]
     fn edit_splitter() {
         let image_1 = {
-            let widget = Split::new(
-                Label::new("Hello").with_auto_id(),
-                Label::new("World").with_auto_id(),
-            )
-            .split_fraction(0.3)
-            .min_lengths(40.px(), 10.px())
-            .bar_thickness(12.px())
-            .draggable(true)
-            .solid_bar(true)
-            .with_auto_id();
+            let widget = Split::new(Label::new("Hello").prepare(), Label::new("World").prepare())
+                .split_fraction(0.3)
+                .min_lengths(40.px(), 10.px())
+                .bar_thickness(12.px())
+                .draggable(true)
+                .solid_bar(true)
+                .prepare();
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
@@ -882,11 +879,8 @@ mod tests {
         };
 
         let image_2 = {
-            let widget = Split::new(
-                Label::new("Hello").with_auto_id(),
-                Label::new("World").with_auto_id(),
-            )
-            .with_auto_id();
+            let widget =
+                Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
@@ -908,11 +902,8 @@ mod tests {
 
     #[test]
     fn drag_moves_split_point() {
-        let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        )
-        .with_auto_id();
+        let widget =
+            Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
         let window_size = Size::new(150.0, 100.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -945,11 +936,8 @@ mod tests {
 
     #[test]
     fn keyboard_moves_split_point() {
-        let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        )
-        .with_auto_id();
+        let widget =
+            Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
         let window_size = Size::new(150.0, 100.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -974,12 +962,9 @@ mod tests {
 
     #[test]
     fn from_start_keeps_pixel_size_on_resize() {
-        let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        )
-        .split_point(SplitPoint::FromStart(50.px()))
-        .with_auto_id();
+        let widget = Split::new(Label::new("Hello").prepare(), Label::new("World").prepare())
+            .split_point(SplitPoint::FromStart(50.px()))
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 100.0));
@@ -1000,12 +985,9 @@ mod tests {
 
     #[test]
     fn from_end_keeps_pixel_size_on_resize() {
-        let widget = Split::new(
-            Label::new("Hello").with_auto_id(),
-            Label::new("World").with_auto_id(),
-        )
-        .split_point(SplitPoint::FromEnd(50.px()))
-        .with_auto_id();
+        let widget = Split::new(Label::new("Hello").prepare(), Label::new("World").prepare())
+            .split_point(SplitPoint::FromEnd(50.px()))
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 100.0));
@@ -1027,10 +1009,10 @@ mod tests {
     #[test]
     fn fraction_clamps_when_set() {
         let widget = Split::new(
-            Label::new("Hello").with_props(Padding::all(0.)),
-            Label::new("World").with_props(Padding::all(0.)),
+            Label::new("Hello").prepare().with_props(Padding::all(0.)),
+            Label::new("World").prepare().with_props(Padding::all(0.)),
         )
-        .with_auto_id();
+        .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(150.0, 100.0));

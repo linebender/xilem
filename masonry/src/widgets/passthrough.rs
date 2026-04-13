@@ -32,11 +32,11 @@ use crate::layout::LenReq;
 /// use masonry::widgets::{Passthrough, Label};
 ///
 /// // Create a host around a label
-/// let host = Passthrough::new(Label::new("Hello").with_auto_id()).with_props(Dimensions::MAX);
+/// let host = Passthrough::new(Label::new("Hello").prepare()).prepare().with_props(Dimensions::MAX);
 ///
 /// // ... in an edit callback, mutate the widget tree
 /// # fn edit(mut host: masonry::core::WidgetMut<'_, Passthrough>) {
-/// Passthrough::set_child(&mut host, Label::new("World").with_auto_id());
+/// Passthrough::set_child(&mut host, Label::new("World").prepare());
 /// # }
 /// ```
 ///
@@ -146,7 +146,9 @@ mod tests {
     #[test]
     fn passthrough_replaces_child() {
         // Start with a label
-        let widget = Passthrough::new(Label::new("A").with_auto_id()).with_props(Dimensions::MAX);
+        let widget = Passthrough::new(Label::new("A").prepare())
+            .prepare()
+            .with_props(Dimensions::MAX);
         let window_size = Size::new(30.0, 30.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
@@ -161,7 +163,7 @@ mod tests {
 
         // Replace with a label with different text
         harness.edit_root_widget(|mut host| {
-            Passthrough::set_child(&mut host, Label::new("B").with_auto_id());
+            Passthrough::set_child(&mut host, Label::new("B").prepare());
         });
 
         assert_render_snapshot!(harness, "passthrough_replaced_label_B");

@@ -33,17 +33,17 @@ impl DemoPage for TextInputDemo {
             .with_fixed(
                 Label::new("Type in the text box:")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(Length::const_px(8.0))
             .with_fixed(
                 SizedBox::new(
                     TextInput::new("")
                         .with_placeholder("Hello from Masonry…")
-                        .with_auto_id(),
+                        .prepare(),
                 )
                 .height(Length::const_px(40.0))
-                .with_auto_id(),
+                .prepare(),
             );
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())

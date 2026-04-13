@@ -50,7 +50,7 @@ mod tests {
     fn zero_size_custom_widget() {
         let mut harness = TestHarness::create_with(
             default_property_set(),
-            others::custom_widget::CustomWidget("Foobar".to_string()).with_auto_id(),
+            others::custom_widget::CustomWidget("Foobar".to_string()).prepare(),
             PARAMS_ZERO_SIZE,
         );
         let _ = harness.render();

@@ -263,12 +263,12 @@ mod tests {
     fn badged_button() {
         let widget = Align::centered(
             Badged::new(
-                Button::with_text("Inbox").with_auto_id(),
-                Badge::with_text("3").with_auto_id(),
+                Button::with_text("Inbox").prepare(),
+                Badge::with_text("3").prepare(),
             )
-            .with_auto_id(),
+            .prepare(),
         )
-        .with_auto_id();
+        .prepare();
 
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = Size::new(240.0, 120.0);
@@ -281,9 +281,9 @@ mod tests {
     #[test]
     fn badged_button_optional_badge() {
         let widget = Align::centered(
-            Badged::new_optional(Button::with_text("Inbox").with_auto_id(), None).with_auto_id(),
+            Badged::new_optional(Button::with_text("Inbox").prepare(), None).prepare(),
         )
-        .with_auto_id();
+        .prepare();
 
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = Size::new(240.0, 120.0);

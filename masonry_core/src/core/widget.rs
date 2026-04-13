@@ -15,8 +15,7 @@ use tracing::{Span, trace_span};
 use crate::core::{
     AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
     LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef,
-    pre_paint,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
 };
 use crate::imaging::Painter;
 use crate::layout::LenReq;
@@ -572,19 +571,11 @@ pub trait Widget: AsDynWidget + Any {
     }
 
     /// Convenience method to wrap this in a [`NewWidget`].
-    fn with_auto_id(self) -> NewWidget<Self>
+    fn prepare(self) -> NewWidget<Self>
     where
         Self: Sized,
     {
         NewWidget::new(self)
-    }
-
-    /// Convenience method to wrap this in a [`NewWidget`] with the given [`PropertySet`].
-    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new(self).with_props(props)
     }
 }
 

@@ -672,7 +672,7 @@ mod tests {
 
     #[test]
     fn simple_label() {
-        let label = Label::new("Hello").with_auto_id();
+        let label = Label::new("Hello").prepare();
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
@@ -688,6 +688,7 @@ mod tests {
             )))
             .with_style(StyleProperty::FontSize(20.0))
             .with_text_alignment(TextAlign::Center)
+            .prepare()
             .with_props(
                 PropertySet::new()
                     .with(ContentColor::new(ACCENT_COLOR))
@@ -704,6 +705,7 @@ mod tests {
     fn underline_label() {
         let label = Label::new("Emphasis")
             .with_style(StyleProperty::Underline(true))
+            .prepare()
             .with_props(PropertySet::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
@@ -716,6 +718,7 @@ mod tests {
         let label = Label::new("Tpyo")
             .with_style(StyleProperty::Strikethrough(true))
             .with_style(StyleProperty::StrikethroughSize(Some(4.)))
+            .prepare()
             .with_props(PropertySet::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
@@ -732,6 +735,7 @@ mod tests {
             Label::new("Hello")
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_text_alignment(text_alignment)
+                .prepare()
                 .with_props(Dimensions::width(Dim::Stretch))
         }
         let label1 = base_label(TextAlign::Start);
@@ -762,31 +766,34 @@ mod tests {
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
+                        .prepare()
                         .with_props(PropertySet::new().with(LineBreaking::WordWrap)),
                 )
                 .width(180.px())
-                .with_auto_id(),
+                .prepare(),
             )
             .with_fixed_spacer(20.px())
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
+                        .prepare()
                         .with_props(PropertySet::new().with(LineBreaking::Clip)),
                 )
                 .width(180.px())
-                .with_auto_id(),
+                .prepare(),
             )
             .with_fixed_spacer(20.px())
             .with_fixed(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
+                        .prepare()
                         .with_props(PropertySet::new().with(LineBreaking::Overflow)),
                 )
                 .width(180.px())
-                .with_auto_id(),
+                .prepare(),
             )
             .with_spacer(1.0)
-            .with_auto_id();
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 200.0));
@@ -803,6 +810,7 @@ mod tests {
                 )))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_text_alignment(TextAlign::Center)
+                .prepare()
                 .with_props(
                     PropertySet::new()
                         .with(ContentColor::new(ACCENT_COLOR))
@@ -818,7 +826,7 @@ mod tests {
         let image_2 = {
             let label = Label::new("Hello world")
                 .with_style(StyleProperty::FontSize(40.0))
-                .with_auto_id();
+                .prepare();
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), label, Size::new(50.0, 50.0));

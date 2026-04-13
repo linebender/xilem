@@ -58,14 +58,17 @@ impl TextInput {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_editable(text).with_auto_id())
+        Self::from_text_area(TextArea::new_editable(text).prepare())
     }
 
     /// Creates a new `TextInput` from a styled text area.
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
-            placeholder: Label::new("").with_props(LineBreaking::Clip).to_pod(),
+            placeholder: Label::new("")
+                .prepare()
+                .with_props(LineBreaking::Clip)
+                .to_pod(),
             placeholder_text: "".into(),
             text_alignment: TextAlign::default(),
             clip: false,
@@ -84,7 +87,7 @@ impl TextInput {
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
-        self.placeholder = label.with_props(LineBreaking::Clip).to_pod();
+        self.placeholder = label.prepare().with_props(LineBreaking::Clip).to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -388,7 +391,7 @@ mod tests {
         let text_input = NewWidget::new(TextInput::from_text_area(
             TextArea::new_editable("TextInput contents")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_auto_id(),
+                .prepare(),
         ));
         let mut harness = TestHarness::create_with(test_property_set(), text_input, HARNESS_PARAMS);
 
@@ -421,7 +424,7 @@ mod tests {
             TextInput::from_text_area(
                 TextArea::new_editable("")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_placeholder("HELLO WORLD"),
         );
@@ -438,7 +441,7 @@ mod tests {
                 TextArea::new_editable("TextInput contents which should be clipped")
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_word_wrap(false)
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_clip(true),
         );

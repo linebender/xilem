@@ -339,6 +339,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -354,7 +355,9 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(CornerRadius::all(5.0));
 
-        let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
+        let widget = SizedBox::new(Label::new("hello").prepare())
+            .prepare()
+            .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -369,9 +372,10 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(CornerRadius::all(5.0));
 
-        let widget = SizedBox::new(Label::new("hello").with_auto_id())
+        let widget = SizedBox::new(Label::new("hello").prepare())
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -388,7 +392,9 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
         box_props.insert(Padding::from_vh(15., 10.));
 
-        let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
+        let widget = SizedBox::new(Label::new("hello").prepare())
+            .prepare()
+            .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -401,9 +407,10 @@ mod tests {
         let mut box_props = PropertySet::new();
         box_props.insert(Background::Color(palette::css::PLUM));
 
-        let widget = SizedBox::new(Label::new("hello").with_auto_id())
+        let widget = SizedBox::new(Label::new("hello").prepare())
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -431,6 +438,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -458,6 +466,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -485,6 +494,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -501,9 +511,10 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(Padding::all(25.));
 
-        let widget = SizedBox::new(Label::new("hello").with_auto_id())
+        let widget = SizedBox::new(Label::new("hello").prepare())
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -528,6 +539,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.px())
             .height(20.px())
+            .prepare()
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);

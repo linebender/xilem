@@ -25,7 +25,7 @@ impl DividerDemo {
 fn desc(text: &str) -> NewWidget<Label> {
     Label::new(text)
         .with_style(StyleProperty::FontSize(14.0))
-        .with_auto_id()
+        .prepare()
 }
 
 impl DemoPage for DividerDemo {
@@ -43,21 +43,24 @@ impl DemoPage for DividerDemo {
                 .thickness(2.px())
                 .dash_pattern(&[10.px(), 10.px()])
                 .dash_fit(dash_fit)
+                .prepare()
                 .with_props(ContentColor::new(palette::css::DARK_CYAN))
         };
         let divider_label = |text: &str, placement: Placement| {
             Divider::horizontal()
                 .label(text)
                 .placement(placement)
-                .with_auto_id()
+                .prepare()
         };
 
-        let img = Image::new(make_image_data()).with_props(Dimensions::fixed(30.px(), 30.px()));
+        let img = Image::new(make_image_data())
+            .prepare()
+            .with_props(Dimensions::fixed(30.px(), 30.px()));
 
         let main = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_fixed(desc("It can be simple"))
-            .with_fixed(Divider::horizontal().with_auto_id())
+            .with_fixed(Divider::horizontal().prepare())
             .with_fixed(desc("It can be stylish"))
             .with_fixed(
                 Divider::horizontal()
@@ -65,6 +68,7 @@ impl DemoPage for DividerDemo {
                     .dash_pattern(&[1.px(), 10.px()])
                     .dash_fit(DashFit::Stretch)
                     .cap(Cap::Round)
+                    .prepare()
                     .with_props(ContentColor::new(palette::css::DARK_ORANGE)),
             )
             .with_fixed(desc(
@@ -89,8 +93,8 @@ impl DemoPage for DividerDemo {
             .with_fixed(divider_label("In the middle", Placement::Center))
             .with_fixed(divider_label("At the end", Placement::End))
             .with_fixed(desc("It even supports arbitrary content!"))
-            .with_fixed(Divider::horizontal().content(img).with_auto_id())
-            .with_auto_id();
+            .with_fixed(Divider::horizontal().content(img).prepare())
+            .prepare();
 
         let sidebar = Flex::column()
             .with_fixed(desc("🔍"))
@@ -98,7 +102,7 @@ impl DemoPage for DividerDemo {
             .with_fixed(desc("💾"))
             .with_fixed(desc("✂️"))
             .with_fixed(desc("🏷️"))
-            .with_auto_id();
+            .prepare();
 
         let body = Flex::row()
             .with_fixed(sidebar)
@@ -106,6 +110,7 @@ impl DemoPage for DividerDemo {
                 Divider::vertical()
                     .thickness(3.px())
                     .label("👉")
+                    .prepare()
                     .with_props(ContentColor::new(palette::css::DARK_SEA_GREEN)),
             )
             .with(main, 1.0);

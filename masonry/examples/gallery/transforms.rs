@@ -104,7 +104,7 @@ impl DemoPage for TransformsDemo {
             SizedBox::new(
                 Label::new("Transform me\nand\nsee what happens")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .size(160.0.px(), 160.0.px()),
         )
@@ -119,7 +119,7 @@ impl DemoPage for TransformsDemo {
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_fixed(state)
             .with_fixed_spacer(CONTENT_GAP)
-            .with_fixed(controls.with_auto_id())
+            .with_fixed(controls.prepare())
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(target);
 

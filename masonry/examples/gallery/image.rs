@@ -51,14 +51,10 @@ impl DemoPage for ImageDemo {
             .with_fixed(
                 Label::new("An `Image` widget (ObjectFit::Contain).")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(CONTENT_GAP)
-            .with_fixed(
-                SizedBox::new(image)
-                    .size(420.0.px(), 280.0.px())
-                    .with_auto_id(),
-            );
+            .with_fixed(SizedBox::new(image).size(420.0.px(), 280.0.px()).prepare());
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }

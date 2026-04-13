@@ -185,12 +185,14 @@ mod tests {
         let tag = WidgetTag::named("inner_box");
         let inner_box =
             NewWidget::new(SizedBox::empty().width(100.px()).height(100.px())).with_tag(tag);
-        let observer = ResizeObserver::new(inner_box).with_props(Dimensions::MAX);
+        let observer = ResizeObserver::new(inner_box)
+            .prepare()
+            .with_props(Dimensions::MAX);
         let observer_id = observer.id();
         // We use a flex here as the inner `SizedBox` will take up the full space available in this case.
         // This doesn't run into the caveat because the size of the inner widget is *not* based on the
         // size of the flex.
-        let flex = Flex::column().with_fixed(observer).with_auto_id();
+        let flex = Flex::column().with_fixed(observer).prepare();
         let mut harness = TestHarness::create(default_property_set(), flex);
         // There will be an initial layout.
         let (LayoutChanged, action_id) = harness.pop_action::<LayoutChanged>().unwrap();
@@ -234,8 +236,10 @@ mod tests {
 
     #[test]
     fn detects_window_resizing() {
-        let inner_box = SizedBox::empty().with_props(Dimensions::STRETCH);
-        let observer = ResizeObserver::new(inner_box).with_props(Dimensions::MAX);
+        let inner_box = SizedBox::empty().prepare().with_props(Dimensions::STRETCH);
+        let observer = ResizeObserver::new(inner_box)
+            .prepare()
+            .with_props(Dimensions::MAX);
         let observer_id = observer.id();
         let mut harness = TestHarness::create_with_size(
             default_property_set(),

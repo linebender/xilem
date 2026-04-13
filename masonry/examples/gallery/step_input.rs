@@ -49,6 +49,7 @@ impl StepInputDemo {
 fn desc(text: &str) -> NewWidget<Label> {
     Label::new(text)
         .with_style(StyleProperty::FontSize(14.0))
+        .prepare()
         .with_props(Dimensions::width(250.px()))
 }
 
@@ -170,16 +171,18 @@ impl DemoPage for StepInputDemo {
                             .with_props(StepInputStyle::Flow),
                         3.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
                     .with_fixed(desc("Step size 100"))
                     .with(
-                        StepInput::new(0, 100, i16::MIN, i16::MAX).with_props(StepInputStyle::Flow),
+                        StepInput::new(0, 100, i16::MIN, i16::MAX)
+                            .prepare()
+                            .with_props(StepInputStyle::Flow),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
@@ -187,19 +190,22 @@ impl DemoPage for StepInputDemo {
                     .with(
                         StepInput::new(50., 0.01, 0., 100.)
                             .with_snap(2.)
+                            .prepare()
                             .with_props(StepInputStyle::Flow),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
                     .with_fixed(desc("Hold Shift for 10x, Alt for 0.1x speed"))
                     .with(
-                        StepInput::new(0, 1, i32::MIN, i32::MAX).with_props(StepInputStyle::Flow),
+                        StepInput::new(0, 1, i32::MIN, i32::MAX)
+                            .prepare()
+                            .with_props(StepInputStyle::Flow),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
@@ -207,10 +213,11 @@ impl DemoPage for StepInputDemo {
                     .with(
                         StepInput::new(0, 1, u8::MIN, u8::MAX)
                             .with_wrap(true)
+                            .prepare()
                             .with_props(StepInputStyle::Flow),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
@@ -228,10 +235,11 @@ impl DemoPage for StepInputDemo {
                                     format!("{}", ctx.value)
                                 }
                             })
+                            .prepare()
                             .with_props(StepInputStyle::Flow),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
@@ -243,7 +251,7 @@ impl DemoPage for StepInputDemo {
                             .with_class("custom"),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             );
 
         wrap_in_shell(self.shell, NewWidget::new(main).erased())

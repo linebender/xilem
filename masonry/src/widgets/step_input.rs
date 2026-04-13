@@ -1292,7 +1292,12 @@ impl<T: Steppable> Widget for StepInput<T> {
                 let color = props.get::<ContentColor>(cache);
 
                 let display_value = self.display_value(self.value);
-                self.label = Some(Label::new(display_value).with_props(*color).to_pod());
+                self.label = Some(
+                    Label::new(display_value)
+                        .prepare()
+                        .with_props(*color)
+                        .to_pod(),
+                );
                 ctx.children_changed();
             }
             Update::ActiveChanged(active) => {
@@ -2354,7 +2359,11 @@ mod tests {
 
     #[test]
     fn basics() {
-        let si = |base, props| StepInput::new(base, 1, 0, usize::MAX).with_props(props);
+        let si = |base, props| {
+            StepInput::new(base, 1, 0, usize::MAX)
+                .prepare()
+                .with_props(props)
+        };
 
         let root = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Start)
@@ -2373,6 +2382,7 @@ mod tests {
                 (StepInputStyle::Basic, Dimensions::width(100.px())),
             ))
             .with_fixed(si(500, (StepInputStyle::Flow, Dimensions::width(100.px()))))
+            .prepare()
             .with_props(Padding::all(10.));
 
         let window_size = Size::new(150.0, 525.0);
@@ -2399,6 +2409,7 @@ mod tests {
             .cross_axis_alignment(CrossAxisAlignment::Start)
             .with_fixed(lines_backward)
             .with_fixed(lines_forward)
+            .prepare()
             .with_props(Padding::all(10.));
 
         let window_size = Size::new(270.0, 200.0);
@@ -2423,11 +2434,15 @@ mod tests {
     fn awkward_layout() {
         let basic = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Basic);
-            StepInput::new(base, 1, 0, usize::MAX).with_props(props)
+            StepInput::new(base, 1, 0, usize::MAX)
+                .prepare()
+                .with_props(props)
         };
         let flow = |base, props: PropertySet| {
             let props = props.with(StepInputStyle::Flow);
-            StepInput::new(base, 1, 0, usize::MAX).with_props(props)
+            StepInput::new(base, 1, 0, usize::MAX)
+                .prepare()
+                .with_props(props)
         };
 
         let root = Flex::column()
@@ -2450,6 +2465,7 @@ mod tests {
             // Extra high widget to test that controls remain reasonably sized.
             .with_fixed(basic(1234, (Dimensions::fixed(100.px(), 200.px())).into()))
             .with_fixed(flow(1234, (Dimensions::fixed(100.px(), 200.px())).into()))
+            .prepare()
             .with_props(Padding::all(10.));
 
         let window_size = Size::new(320.0, 650.0);

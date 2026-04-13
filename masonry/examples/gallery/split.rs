@@ -32,7 +32,7 @@ impl DemoPage for SplitDemo {
         let left = NewWidget::new(SizedBox::new(
             Label::new("Left pane (drag the divider)")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_auto_id(),
+                .prepare(),
         ))
         .with_props(
             PropertySet::new()
@@ -43,7 +43,7 @@ impl DemoPage for SplitDemo {
         let right = NewWidget::new(SizedBox::new(
             Label::new("Right pane")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_auto_id(),
+                .prepare(),
         ))
         .with_props(
             PropertySet::new()
@@ -51,7 +51,7 @@ impl DemoPage for SplitDemo {
                 .with(Padding::all(12.0)),
         );
 
-        let body = SizedBox::new(Split::new(left, right).split_fraction(0.33).with_auto_id())
+        let body = SizedBox::new(Split::new(left, right).split_fraction(0.33).prepare())
             .height(260.0.px());
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())

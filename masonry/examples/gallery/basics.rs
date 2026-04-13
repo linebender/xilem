@@ -33,12 +33,12 @@ impl DemoPage for BasicsDemo {
             .with_fixed(
                 Label::new("This is a Masonry widget gallery.")
                     .with_style(StyleProperty::FontSize(18.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(Length::const_px(12.0))
-            .with_fixed(Button::with_text("A button").with_auto_id())
+            .with_fixed(Button::with_text("A button").prepare())
             .with_fixed_spacer(Length::const_px(6.0))
-            .with_fixed(Button::with_text("Another button").with_auto_id());
+            .with_fixed(Button::with_text("Another button").prepare());
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }

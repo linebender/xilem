@@ -66,6 +66,7 @@ impl CollapsePanel {
 
     fn disclosure_button(collapse: bool) -> WidgetPod<DisclosureButton> {
         DisclosureButton::new(!collapse)
+            .prepare()
             .with_props(
                 // TODO - Move to DefaultProperties
                 Dimensions::fixed(BUTTON_LENGTH, BUTTON_LENGTH),

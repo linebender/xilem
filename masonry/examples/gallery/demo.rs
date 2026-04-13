@@ -99,7 +99,7 @@ pub(crate) fn wrap_in_shell(
     NewWidget::new(
         Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with_fixed(header.with_auto_id())
+            .with_fixed(header.prepare())
             .with_fixed_spacer(CONTENT_GAP)
             .with(content, 1.0),
     )

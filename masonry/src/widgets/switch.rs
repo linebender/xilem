@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn click_emits_action_and_focuses() {
-        let widget = Switch::new(false).with_auto_id();
+        let widget = Switch::new(false).prepare();
         let window_size = Size::new(60.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         let switch_id = harness.root_id();
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn space_emits_action_when_focused() {
-        let widget = Switch::new(false).with_auto_id();
+        let widget = Switch::new(false).prepare();
         let window_size = Size::new(60.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         let switch_id = harness.root_id();
@@ -416,7 +416,7 @@ mod tests {
         // Theme defaults: ThumbRadius(8.0), TrackThickness(20.0), BorderWidth(1.0)
         // Expected: track_height = max(20, 8*2) = 20, track_width = 20*2 = 40
         // With borders: width = 42, height = 22
-        let switch = Switch::new(false).with_auto_id();
+        let switch = Switch::new(false).prepare();
         let switch_id = switch.id();
 
         // Wrap in Flex with Start alignment so it doesn't stretch the switch
@@ -428,7 +428,7 @@ mod tests {
         // Give it much more space than needed
         let window_size = Size::new(200.0, 100.0);
         let harness =
-            TestHarness::create_with_size(test_property_set(), flex.with_auto_id(), window_size);
+            TestHarness::create_with_size(test_property_set(), flex.prepare(), window_size);
 
         let size = harness
             .get_widget_with_id(switch_id)
@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn simple_switch() {
-        let widget = Switch::new(false).with_auto_id();
+        let widget = Switch::new(false).prepare();
 
         let window_size = Size::new(60.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -479,7 +479,7 @@ mod tests {
 
     #[test]
     fn focus_visual() {
-        let widget = Switch::new(false).with_auto_id();
+        let widget = Switch::new(false).prepare();
 
         let window_size = Size::new(60.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -494,7 +494,7 @@ mod tests {
 
     #[test]
     fn on_state() {
-        let widget = Switch::new(true).with_auto_id();
+        let widget = Switch::new(true).prepare();
 
         let window_size = Size::new(60.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);

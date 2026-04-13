@@ -31,9 +31,9 @@ impl DemoPage for SpinnerDemo {
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Center)
             .with_fixed(
-                SizedBox::new(Spinner::new().with_auto_id())
+                SizedBox::new(Spinner::new().prepare())
                     .size(80.0.px(), 80.0.px())
-                    .with_auto_id(),
+                    .prepare(),
             );
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())

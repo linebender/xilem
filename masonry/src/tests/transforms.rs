@@ -24,7 +24,7 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     box_props.insert(BorderWidth::all(2.0));
 
     WrapperWidget::new(
-        SizedBox::new(inner.with_auto_id())
+        SizedBox::new(inner.prepare())
             .width(200.px())
             .height(100.px())
             .with_props(box_props),
@@ -46,7 +46,7 @@ fn transforms_translation_rotation() {
     );
     let widget = ZStack::new()
         .with_fixed(transformed_widget, ChildAlignment::ParentAligned)
-        .with_auto_id();
+        .prepare();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     assert_render_snapshot!(harness, "transforms_translation_rotation");
@@ -55,7 +55,7 @@ fn transforms_translation_rotation() {
 #[test]
 fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new(blue_box(ZStack::new().with_fixed(
-        Button::with_text("Should be pressed").with_auto_id(),
+        Button::with_text("Should be pressed").prepare(),
         UnitPoint::BOTTOM_RIGHT,
     )))
     .with_options(WidgetOptions {
@@ -64,7 +64,7 @@ fn transforms_pointer_events() {
     });
     let widget = ZStack::new()
         .with_fixed(transformed_widget, ChildAlignment::ParentAligned)
-        .with_auto_id();
+        .prepare();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((335.0, 350.0)); // Should hit the last "d" of the button text

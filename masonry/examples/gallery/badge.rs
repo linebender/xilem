@@ -48,7 +48,7 @@ impl BadgeDemo {
                     show_plus: true,
                 },
             )
-            .with_auto_id()
+            .prepare()
             .erased(),
         )
     }
@@ -97,32 +97,32 @@ impl DemoPage for BadgeDemo {
         );
 
         let inbox = Badged::new(
-            Button::with_text("Inbox").with_auto_id(),
-            Badge::count(3).with_auto_id(),
+            Button::with_text("Inbox").prepare(),
+            Badge::count(3).prepare(),
         )
         .with_badge_placement(BadgePlacement::TopRight)
         .with_badge_offset(Vec2::new(2.0, -2.0))
-        .with_auto_id();
+        .prepare();
 
         let inbox_zero = Badged::new_optional(
-            Button::with_text("Empty inbox").with_auto_id(),
-            Badge::count_nonzero(0).map(|b| b.with_auto_id().erased()),
+            Button::with_text("Empty inbox").prepare(),
+            Badge::count_nonzero(0).map(|b| b.prepare().erased()),
         )
         .with_badge_placement(BadgePlacement::TopRight)
         .with_badge_offset(Vec2::new(2.0, -2.0))
-        .with_auto_id();
+        .prepare();
 
         let inbox_overflow = Badged::new(
-            Button::with_text("Big inbox").with_auto_id(),
-            Badge::count(120).with_auto_id(),
+            Button::with_text("Big inbox").prepare(),
+            Badge::count(120).prepare(),
         )
         .with_badge_placement(BadgePlacement::TopRight)
         .with_badge_offset(Vec2::new(2.0, -2.0))
-        .with_auto_id();
+        .prepare();
 
         let interactive_inbox = NewWidget::new(
             Badged::new_optional(
-                Button::with_text("Interactive inbox").with_auto_id(),
+                Button::with_text("Interactive inbox").prepare(),
                 Self::make_count_badge(self.count),
             )
             .with_badge_placement(BadgePlacement::TopRight)
@@ -143,9 +143,9 @@ impl DemoPage for BadgeDemo {
                     Label::new("AB")
                         .with_style(StyleProperty::FontSize(22.0))
                         .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
-                        .with_auto_id(),
+                        .prepare(),
                 )
-                .with_auto_id(),
+                .prepare(),
             )
             .size(Length::const_px(72.0), Length::const_px(72.0)),
         )
@@ -159,7 +159,7 @@ impl DemoPage for BadgeDemo {
         let online_dot = NewWidget::new(Badge::new(
             SizedBox::empty()
                 .size(Length::const_px(10.0), Length::const_px(10.0))
-                .with_auto_id(),
+                .prepare(),
         ))
         .with_props(
             PropertySet::new()
@@ -172,24 +172,24 @@ impl DemoPage for BadgeDemo {
         let avatar_with_status = Badged::new(avatar.erased(), online_dot.erased())
             .with_badge_placement(BadgePlacement::BottomRight)
             .with_badge_offset(Vec2::new(-2.0, -2.0))
-            .with_auto_id();
+            .prepare();
 
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Start)
             .with_fixed(
                 Label::new("Badges are non-interactive, decorative labels.")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(GAP)
             .with_fixed(
                 Flex::row()
-                    .with_fixed(new_badge.with_auto_id())
+                    .with_fixed(new_badge.prepare())
                     .with_fixed_spacer(GAP)
                     .with_fixed(beta_badge)
                     .with_fixed_spacer(GAP)
                     .with_fixed(outline_badge)
-                    .with_auto_id(),
+                    .prepare(),
             );
 
         let body = body
@@ -197,7 +197,7 @@ impl DemoPage for BadgeDemo {
             .with_fixed(
                 Label::new("Decorate other widgets with Badged:")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(GAP)
             .with_fixed(
@@ -210,7 +210,7 @@ impl DemoPage for BadgeDemo {
                     .with_fixed(inbox_overflow)
                     .with_fixed_spacer(Length::const_px(18.0))
                     .with_fixed(avatar_with_status)
-                    .with_auto_id(),
+                    .prepare(),
             );
 
         let body = body
@@ -218,7 +218,7 @@ impl DemoPage for BadgeDemo {
             .with_fixed(
                 Label::new("Interactive count (0 hides, 10 shows 9+):")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(GAP)
             .with_fixed(
@@ -231,7 +231,7 @@ impl DemoPage for BadgeDemo {
                     .with_fixed(count_label)
                     .with_fixed_spacer(Length::const_px(18.0))
                     .with_fixed(interactive_inbox)
-                    .with_auto_id(),
+                    .prepare(),
             );
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())

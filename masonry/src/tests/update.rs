@@ -67,11 +67,11 @@ fn new_widget() {
 
 #[test]
 fn forget_register_child() {
-    let widget = ModularWidget::new_parent(Flex::row().with_auto_id())
+    let widget = ModularWidget::new_parent(Flex::row().prepare())
         .register_children_fn(|_child, _ctx| {
             // We forget to call ctx.register_child();
         })
-        .with_auto_id();
+        .prepare();
 
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
@@ -81,12 +81,12 @@ fn forget_register_child() {
 
 #[test]
 fn register_invalid_child() {
-    let widget = ModularWidget::new_parent(Flex::row().with_auto_id())
+    let widget = ModularWidget::new_parent(Flex::row().prepare())
         .register_children_fn(|child, ctx| {
             ctx.register_child(child);
             ctx.register_child(&mut WidgetPod::new(Flex::row()));
         })
-        .with_auto_id();
+        .prepare();
 
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),

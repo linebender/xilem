@@ -337,7 +337,7 @@ mod tests {
         let widget = ZStack::new()
             .with(
                 NewWidget::new(
-                    SizedBox::new(Label::new("Background").with_auto_id())
+                    SizedBox::new(Label::new("Background").prepare())
                         .width(200.px())
                         .height(100.px()),
                 )
@@ -345,11 +345,11 @@ mod tests {
                 ChildAlignment::ParentAligned,
             )
             .with(
-                NewWidget::new(SizedBox::new(Label::new("Foreground").with_auto_id()))
+                NewWidget::new(SizedBox::new(Label::new("Foreground").prepare()))
                     .with_props(fg_props),
                 ChildAlignment::ParentAligned,
             )
-            .with_auto_id();
+            .prepare();
 
         let mut harness = TestHarness::create(test_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignment_default");
@@ -380,20 +380,14 @@ mod tests {
         let widget = ZStack::new()
             .with_alignment(UnitPoint::CENTER)
             .with(
-                Label::new("ParentAligned").with_auto_id(),
+                Label::new("ParentAligned").prepare(),
                 ChildAlignment::ParentAligned,
             )
-            .with(Label::new("TopLeft").with_auto_id(), UnitPoint::TOP_LEFT)
-            .with(Label::new("TopRight").with_auto_id(), UnitPoint::TOP_RIGHT)
-            .with(
-                Label::new("BottomLeft").with_auto_id(),
-                UnitPoint::BOTTOM_LEFT,
-            )
-            .with(
-                Label::new("BottomRight").with_auto_id(),
-                UnitPoint::BOTTOM_RIGHT,
-            )
-            .with_auto_id();
+            .with(Label::new("TopLeft").prepare(), UnitPoint::TOP_LEFT)
+            .with(Label::new("TopRight").prepare(), UnitPoint::TOP_RIGHT)
+            .with(Label::new("BottomLeft").prepare(), UnitPoint::BOTTOM_LEFT)
+            .with(Label::new("BottomRight").prepare(), UnitPoint::BOTTOM_RIGHT)
+            .prepare();
 
         let mut harness = TestHarness::create(test_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");

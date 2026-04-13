@@ -337,15 +337,15 @@ fn main() {
 
     // Padding so the first item isn't flush with the window, and a right inset so an overlay
     // scrollbar doesn't sit on top of the buttons.
-    let list = NewWidget::new(SizedBox::new(list.with_auto_id())).with_props(Padding {
+    let list = NewWidget::new(SizedBox::new(list.prepare())).with_props(Padding {
         top: LEFT_PANE_TOP_PADDING,
         bottom: 0.0,
         left: LEFT_PANE_LEFT_PADDING,
         right: SIDEBAR_SCROLLBAR_INSET,
     });
 
-    let sidebar = SizedBox::new(Portal::new(list).constrain_horizontal(true).with_auto_id())
-        .width(SIDEBAR_WIDTH);
+    let sidebar =
+        SizedBox::new(Portal::new(list).constrain_horizontal(true).prepare()).width(SIDEBAR_WIDTH);
 
     let stack = demos
         .iter()
@@ -366,12 +366,12 @@ fn main() {
         )
         .with(NewWidget::new(stack).with_tag(stack_tag), 1.0);
 
-    let right_panel = NewWidget::new(SizedBox::new(right_panel.with_auto_id()))
+    let right_panel = NewWidget::new(SizedBox::new(right_panel.prepare()))
         .with_props(Padding::all(RIGHT_PANE_PADDING));
 
     let root = Flex::row()
         .cross_axis_alignment(CrossAxisAlignment::Stretch)
-        .with_fixed(sidebar.with_auto_id())
+        .with_fixed(sidebar.prepare())
         .with(right_panel, 1.0);
 
     let driver = Driver {
