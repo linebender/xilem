@@ -10,6 +10,7 @@ mod box_shadow;
 mod corner_radius;
 mod dimensions;
 mod padding;
+mod visible;
 
 pub mod types;
 
@@ -22,6 +23,7 @@ pub use box_shadow::*;
 pub use corner_radius::*;
 pub use dimensions::*;
 pub use padding::*;
+pub use visible::*;
 
 use crate::core::{Property, UpdateCtx};
 
@@ -38,5 +40,7 @@ pub(crate) fn core_property_changed(ctx: &mut UpdateCtx<'_>, property_type: Type
         ctx.request_layout();
     } else if Background::matches(property_type) || BorderColor::matches(property_type) {
         ctx.request_pre_paint();
+    } else if Visible::matches(property_type) {
+        ctx.widget_state.needs_paint = true;
     }
 }

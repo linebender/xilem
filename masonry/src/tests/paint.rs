@@ -10,7 +10,7 @@ use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::Color;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::MainAxisAlignment;
-use crate::properties::{Background, Dimensions, Gap, Padding};
+use crate::properties::{Background, Dimensions, Gap, Padding, Visible};
 use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::test_property_set;
 use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
@@ -227,4 +227,44 @@ fn paint_transparency() {
     );
 
     assert_render_snapshot!(harness, "paint_transparency");
+}
+
+#[test]
+fn paint_invisible_widget() {
+    const SQUARE_SIZE: f64 = 30.;
+    const SQUARE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
+    const GAP_LENGTH: Length = Length::const_px(SQUARE_SIZE / 2.);
+
+    fn square() -> NewWidget<SizedBox> {
+        NewWidget::new(SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH))
+    }
+
+    // A visible red square, then an invisible green square, then a visible blue square.
+    let child1 = square().with_props(Background::Color(RED));
+    let child2 = square().with_props((Background::Color(GREEN), Visible::new(false)));
+    let child3 = square().with_props(Background::Color(BLUE));
+
+    let parent = NewWidget::new(
+        Flex::row()
+            .with_fixed(child1)
+            .with_fixed(child2)
+            .with_fixed(child3),
+    )
+    .with_props(Gap::new(GAP_LENGTH));
+
+    let mut harness = TestHarness::create_with_size(
+        test_property_set(),
+        parent,
+        Size::new(SQUARE_SIZE * 4., SQUARE_SIZE),
+    );
+
+    // The green square should not be visible; only red and blue should appear.
+    assert_render_snapshot!(harness, "paint_invisible_widget");
+
+    harness.edit_root_widget(|mut flex| {
+        flex.insert_prop(Visible::new(false));
+    });
+
+    // The container is invisible, so none of the squares should be visible.
+    assert_render_snapshot!(harness, "paint_invisible_flex");
 }
