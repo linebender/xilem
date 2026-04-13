@@ -348,6 +348,7 @@ mod tests {
         let widget = Switch::new(false).prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
+        let switch_tag = harness.root_tag();
 
         // Initially not focused, and no actions
         assert!(harness.focused_widget().is_none());
@@ -355,7 +356,7 @@ mod tests {
         assert!(harness.pop_action_erased().is_none());
 
         // Click on switch (off -> wants to be on)
-        harness.mouse_click_on(switch_id, None);
+        harness.mouse_click_on(switch_tag, None);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(switch_id));
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
@@ -366,7 +367,7 @@ mod tests {
         harness.edit_root_widget(|mut switch| Switch::set_on(&mut switch, true));
 
         // Click again (on -> wants to be off)
-        harness.mouse_click_on(switch_id, None);
+        harness.mouse_click_on(switch_tag, None);
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
             Some((SwitchToggled(false), switch_id))
@@ -380,7 +381,7 @@ mod tests {
         let switch_id = harness.root_id();
 
         // Focus via tab
-        harness.focus_on(None);
+        harness.clear_focus();
         harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(switch_id));
 
@@ -447,17 +448,18 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
+        let switch_tag = harness.root_tag();
 
         assert_render_snapshot!(harness, "switch_off");
 
         assert!(harness.pop_action_erased().is_none());
 
         // Hover without clicking to show hovered state (no focus)
-        harness.mouse_move_to(switch_id);
+        harness.mouse_move_to(switch_tag);
         assert_render_snapshot!(harness, "switch_off_hovered");
 
         // Now click to switch
-        harness.mouse_click_on(switch_id, None);
+        harness.mouse_click_on(switch_tag, None);
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
             Some((SwitchToggled(true), switch_id))
@@ -474,10 +476,11 @@ mod tests {
         let widget = Switch::new(false).prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
+        let switch_tag = harness.root_tag();
         let switch_id = harness.root_id();
 
         // Focus directly (not via click) to get focused-but-not-hovered state
-        harness.focus_on(Some(switch_id));
+        harness.focus_on(switch_tag);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(switch_id));
 
         assert_render_snapshot!(harness, "switch_focused");

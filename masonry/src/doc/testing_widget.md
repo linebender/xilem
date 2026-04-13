@@ -122,11 +122,11 @@ Let's create another snapshot test to check that our widget correctly changes co
             .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
-        let rect_id = harness.root_id();
+        let rect_tag = harness.root_tag();
 
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
-        harness.mouse_move_to(rect_id);
+        harness.mouse_move_to(rect_tag);
         assert_render_snapshot!(harness, "rect_hovered_rectangle");
     }
 ```
@@ -187,9 +187,9 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
             .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
-        let rect_id = harness.root_id();
+        let rect_tag = harness.root_tag();
 
-        harness.mouse_click_on(rect_id, None);
+        harness.mouse_click_on(rect_tag, None);
         assert!(matches!(
             harness.pop_action::<ColorRectanglePress>(),
             Some((ColorRectanglePress, _))

@@ -146,6 +146,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
+    root_tag: WidgetTag<W>,
     access_tree: accesskit_consumer::Tree,
     renderer: Option<VelloCpuRenderer>,
     mouse_state: PointerState,
@@ -394,20 +395,26 @@ impl<W: Widget> TestHarness<W> {
             }),
             focus: 0.into(),
         };
+
+        let mut render_root = RenderRoot::new(
+            root_widget,
+            move |signal| signal_sender.send(signal).unwrap(),
+            RenderRootOptions {
+                default_properties: Arc::new(default_props),
+                use_system_fonts: false,
+                size_policy: WindowSizePolicy::User,
+                size: window_size,
+                scale_factor: params.scale_factor,
+                test_font: Some(data),
+            },
+        );
+        let root_id = render_root.get_layer_root(0).id();
+        let root_tag = render_root.make_tag_for_widget(root_id);
+
         let mut harness = Self {
             signal_receiver,
-            render_root: RenderRoot::new(
-                root_widget,
-                move |signal| signal_sender.send(signal).unwrap(),
-                RenderRootOptions {
-                    default_properties: Arc::new(default_props),
-                    use_system_fonts: false,
-                    size_policy: WindowSizePolicy::User,
-                    size: window_size,
-                    scale_factor: params.scale_factor,
-                    test_font: Some(data),
-                },
-            ),
+            render_root,
+            root_tag,
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             renderer: None,
             mouse_state,
@@ -586,7 +593,11 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Returns a reference to the current value of a node of the accessibility tree.
-    pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::Node<'_>> {
+    pub fn access_node<W2: Widget + FromDynWidget + ?Sized>(
+        &self,
+        tag: WidgetTag<W2>,
+    ) -> Option<accesskit_consumer::Node<'_>> {
+        let id = self.get_widget(tag).id();
         let mut node_id = self.access_tree.state().root_id();
         #[expect(
             unsafe_code,
@@ -665,8 +676,12 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget doesn't accept pointer events.
     /// - If the widget is scrolled out of view.
     #[track_caller]
-    pub fn mouse_click_on(&mut self, id: WidgetId, button: Option<PointerButton>) {
-        self.mouse_move_to(id);
+    pub fn mouse_click_on<W2: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        tag: WidgetTag<W2>,
+        button: Option<PointerButton>,
+    ) {
+        self.mouse_move_to(tag);
         self.mouse_button_press(button);
         self.mouse_button_release(button);
     }
@@ -680,8 +695,9 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget doesn't accept pointer events.
     /// - If the widget is scrolled out of view.
     #[track_caller]
-    pub fn mouse_move_to(&mut self, id: WidgetId) {
-        let widget = self.get_widget_with_id(id);
+    pub fn mouse_move_to<W2: Widget + FromDynWidget + ?Sized>(&mut self, tag: WidgetTag<W2>) {
+        let widget = self.get_widget(tag);
+        let id = widget.id();
         let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
@@ -718,8 +734,12 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget is not found in the tree.
     /// - If the widget is stashed.
     #[track_caller]
-    pub fn mouse_move_to_unchecked(&mut self, id: WidgetId) {
-        let widget = self.get_widget_with_id(id);
+    pub fn mouse_move_to_unchecked<W2: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        tag: WidgetTag<W2>,
+    ) {
+        let widget = self.get_widget(tag);
+        let id = widget.id();
         let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
@@ -739,7 +759,8 @@ impl<W: Widget> TestHarness<W> {
     /// [`RequestPanToChild`]: masonry_core::core::Update::RequestPanToChild
     /// [`ScrollIntoView`]: masonry_core::accesskit::Action::ScrollIntoView
     #[track_caller]
-    pub fn scroll_into_view(&mut self, id: WidgetId) {
+    pub fn scroll_into_view<W2: Widget + FromDynWidget + ?Sized>(&mut self, tag: WidgetTag<W2>) {
+        let id = self.get_widget(tag).id();
         self.render_root.handle_access_event(ActionRequest {
             action: Action::ScrollIntoView,
             target_tree: TreeId::ROOT,
@@ -762,7 +783,11 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// [`Click`]: masonry_core::accesskit::Action::Click
     #[track_caller]
-    pub fn accessibility_click_on(&mut self, id: WidgetId) {
+    pub fn accessibility_click_on<W2: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        tag: WidgetTag<W2>,
+    ) {
+        let id = self.get_widget(tag).id();
         self.render_root.handle_access_event(ActionRequest {
             action: Action::Click,
             target_tree: TreeId::ROOT,
@@ -808,19 +833,18 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// If the widget is not found in the tree or can't be focused.
     #[track_caller]
-    pub fn focus_on(&mut self, id: Option<WidgetId>) {
-        if let Some(id) = id {
-            let Some(widget) = self.render_root.get_widget(id) else {
-                panic!("Cannot focus widget {id}: widget not found in tree");
-            };
-            if widget.ctx().is_stashed() {
-                panic!("Cannot focus widget {id}: widget is stashed");
-            }
-            if widget.ctx().is_disabled() {
-                panic!("Cannot focus widget {id}: widget is disabled");
-            }
+    pub fn focus_on<W2: Widget + FromDynWidget + ?Sized>(&mut self, tag: WidgetTag<W2>) {
+        let widget = self.get_widget(tag);
+        let id = widget.id();
+
+        if widget.ctx().is_stashed() {
+            panic!("Cannot focus widget {id}: widget is stashed");
         }
-        let succeeded = self.render_root.focus_on(id);
+        if widget.ctx().is_disabled() {
+            panic!("Cannot focus widget {id}: widget is disabled");
+        }
+
+        let succeeded = self.render_root.focus_on(Some(id));
         assert!(
             succeeded,
             "RenderRoot::focus_on refused a widget which TestHarness::focus_on accepted."
@@ -828,14 +852,21 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
+    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus) to `None`.
+    pub fn clear_focus(&mut self) {
+        let _ = self.render_root.focus_on(None);
+        self.process_signals();
+    }
+
     /// Sets the [focus fallback](masonry_core::doc::masonry_concepts#focus-fallback).
-    pub fn set_focus_fallback(&mut self, id: Option<WidgetId>) {
-        if let Some(id) = id {
-            let Some(_) = self.render_root.get_widget(id) else {
-                panic!("Cannot set widget {id} as focus fallback: widget not found in tree");
-            };
-        }
-        let _ = self.render_root.set_focus_fallback(id);
+    pub fn set_focus_fallback<W2: Widget + FromDynWidget + ?Sized>(&mut self, tag: WidgetTag<W2>) {
+        let id = self.get_widget(tag).id();
+        let _ = self.render_root.set_focus_fallback(Some(id));
+    }
+
+    /// Sets the [focus fallback](masonry_core::doc::masonry_concepts#focus-fallback) to `None`.
+    pub fn clear_focus_fallback(&mut self) {
+        let _ = self.render_root.set_focus_fallback(None);
     }
 
     /// Runs an animation pass on the widget tree.
@@ -864,6 +895,11 @@ impl<W: Widget> TestHarness<W> {
         self.render_root.get_layer_root(0).id()
     }
 
+    /// Returns a [`WidgetTag`] associated with the root widget.
+    pub fn root_tag(&self) -> WidgetTag<W> {
+        self.root_tag
+    }
+
     /// Returns a [`WidgetRef`] to the widget with the given id.
     ///
     /// # Panics
@@ -889,6 +925,18 @@ impl<W: Widget> TestHarness<W> {
         self.render_root
             .get_widget_with_tag(tag)
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
+    }
+
+    /// Creates a unique tag for the widget with the given id and returns it.
+    #[track_caller]
+    pub fn make_tag_for_widget<W2: Widget>(&mut self, id: WidgetId) -> WidgetTag<W> {
+        self.render_root.make_tag_for_widget(id)
+    }
+
+    /// Creates a unique type-erased tag for the widget with the given id and returns it.
+    #[track_caller]
+    pub fn make_dyn_tag_for_widget(&mut self, id: WidgetId) -> WidgetTag<dyn Widget> {
+        self.render_root.make_dyn_tag_for_widget(id)
     }
 
     /// Drains the events recorded by the [`Recorder`] widget with the given tag.

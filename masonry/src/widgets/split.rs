@@ -936,8 +936,8 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 100));
 
-        let root_id = harness.root_id();
-        harness.focus_on(Some(root_id));
+        let root_tag = harness.root_tag();
+        harness.focus_on(root_tag);
 
         let child1_initial_width = {
             let root = harness.root_widget();

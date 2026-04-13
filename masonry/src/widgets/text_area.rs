@@ -1263,9 +1263,10 @@ mod tests {
             );
 
             let mut harness = TestHarness::create(test_property_set(), area);
+            let text_tag = harness.root_tag();
             let text_id = harness.root_id();
 
-            harness.focus_on(Some(text_id));
+            harness.focus_on(text_tag);
             harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
                 key: scenario.key,
                 modifiers: scenario.modifiers,

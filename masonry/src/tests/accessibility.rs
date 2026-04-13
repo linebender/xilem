@@ -59,12 +59,11 @@ fn access_node_children() {
     let _ = harness.render();
 
     let parent_ref = harness.get_widget(parent_tag);
-    let parent_node_id = parent_ref.id();
     let [id_1, id_2, id_3] = parent_ref.inner().children_ids()[..] else {
         unreachable!()
     };
 
-    let parent_node = harness.access_node(parent_node_id).unwrap();
+    let parent_node = harness.access_node(parent_tag).unwrap();
     assert_eq!(
         Vec::<u64>::from_iter(parent_node.child_ids().map(node_local_id_to_u64)),
         vec![id_1.to_raw(), id_2.to_raw(), id_3.to_raw()]
@@ -78,7 +77,7 @@ fn access_node_children() {
     let _ = harness.render();
 
     // Stash child is not included
-    let parent_node = harness.access_node(parent_node_id).unwrap();
+    let parent_node = harness.access_node(parent_tag).unwrap();
     assert_eq!(
         Vec::<u64>::from_iter(parent_node.child_ids().map(node_local_id_to_u64)),
         vec![id_1.to_raw(), id_3.to_raw()]

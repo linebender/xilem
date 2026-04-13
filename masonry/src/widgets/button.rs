@@ -264,16 +264,16 @@ impl Widget for Button {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use masonry_core::core::WidgetTag;
-    use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::{CollectionWidget, PointerButton, PropertySet, StyleProperty};
+    use crate::core::{CollectionWidget, PointerButton, PropertySet, StyleProperty, WidgetTag};
     use crate::layout::AsUnit;
     use crate::properties::{
         BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, Gap, Padding,
     };
-    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::testing::{
+        TestHarness, TestHarnessParams, assert_failing_render_snapshot, assert_render_snapshot,
+    };
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
 
@@ -284,13 +284,14 @@ mod tests {
         let params =
             TestHarnessParams::size_and_padding((100, 40), TestHarnessParams::ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
+        let button_tag = harness.root_tag();
         let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(button_id, Some(PointerButton::Primary));
+        harness.mouse_click_on(button_tag, Some(PointerButton::Primary));
         assert_eq!(
             harness.pop_action::<ButtonPress>(),
             Some((
@@ -302,7 +303,7 @@ mod tests {
         );
 
         // Check that Tab focuses on the widget
-        harness.focus_on(None);
+        harness.clear_focus();
         harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(button_id));
 
@@ -318,10 +319,11 @@ mod tests {
     fn mouse_down_requests_focus() {
         let widget = NewWidget::new(Button::with_text("Hello"));
         let mut harness = TestHarness::create(test_property_set(), widget);
+        let button_tag = harness.root_tag();
         let button_id = harness.root_id();
 
-        harness.focus_on(None);
-        harness.mouse_move_to(button_id);
+        harness.clear_focus();
+        harness.mouse_move_to(button_tag);
         harness.mouse_button_press(None);
 
         assert_eq!(harness.focused_widget_id(), Some(button_id));
@@ -462,20 +464,23 @@ mod tests {
     ///
     /// We validate that each of these actually are correctly supported.
     fn validate_noninteractive_child<W: Widget>(child: NewWidget<W>) {
-        let child_id = child.id();
+        let child_tag = WidgetTag::unique();
+        let child = child.with_tag(child_tag);
+
         let mut button = Button::new(child).prepare();
         button.properties.insert(Padding::all(10.));
-        let button_id = button.id();
         let mut harness = TestHarness::create(test_property_set(), button);
+        let button_tag = harness.root_tag();
+        let button_id = harness.root_id();
 
-        harness.mouse_move_to_unchecked(child_id);
-        let button = harness.get_widget_with_id(button_id);
+        harness.mouse_move_to_unchecked(child_tag);
+        let button = harness.get_widget(button_tag);
         assert!(
             button.ctx().is_hovered(),
             "The child shouldn't prevent hover."
         );
         harness.mouse_button_press(None);
-        let button = harness.get_widget_with_id(button_id);
+        let button = harness.get_widget(button_tag);
         assert!(
             button.ctx().is_pointer_capture_target(),
             "A non-interactive child shouldn't prevent pointer capture."
@@ -518,18 +523,17 @@ mod tests {
     // for the button center.
     // See https://github.com/linebender/xilem/issues/1756
     fn textless_button() {
-        let tag = WidgetTag::unique();
-        let button = Button::with_text("").prepare().with_tag(tag);
+        let button_tag = WidgetTag::unique();
+        let button = Button::with_text("").prepare().with_tag(button_tag);
         let parent = Flex::row().with(button, 0.).prepare();
 
         let params =
             TestHarnessParams::size_and_padding((100, 40), TestHarnessParams::ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), parent, params);
-        let button_id = harness.get_widget(tag).id();
 
         assert_render_snapshot!(harness, "button_no_text");
 
-        harness.mouse_click_on(button_id, Some(PointerButton::Primary));
+        harness.mouse_click_on(button_tag, Some(PointerButton::Primary));
         assert_matches!(
             harness.pop_action::<ButtonPress>(),
             Some((ButtonPress { .. }, ..))

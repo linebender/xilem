@@ -645,6 +645,38 @@ impl RenderRoot {
         self.widget_arena.has(id)
     }
 
+    /// Creates a unique tag for the widget with the given id and returns it.
+    pub fn make_tag_for_widget<W: Widget>(&mut self, id: WidgetId) -> WidgetTag<W> {
+        let Some(node_ref) = self.widget_arena.nodes.find(id) else {
+            panic!("Could not find widget {id} in tree.");
+        };
+
+        let widget = &*node_ref.item.widget;
+        if widget.type_id() != TypeId::of::<W>() {
+            panic!(
+                "Widget {id} does not have type {}.",
+                std::any::type_name::<W>()
+            );
+        }
+
+        let new_tag = WidgetTag::unique();
+        self.global_state.widget_tags.insert(new_tag.inner, id);
+
+        new_tag
+    }
+
+    /// Creates a unique type-erased tag for the widget with the given id and returns it.
+    pub fn make_dyn_tag_for_widget(&mut self, id: WidgetId) -> WidgetTag<dyn Widget> {
+        let Some(_) = self.widget_arena.nodes.find(id) else {
+            panic!("Could not find widget {id} in tree.");
+        };
+
+        let new_tag = WidgetTag::unique();
+        self.global_state.widget_tags.insert(new_tag.inner, id);
+
+        new_tag
+    }
+
     /// Returns a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.

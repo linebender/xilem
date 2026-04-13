@@ -30,7 +30,7 @@ pub(crate) struct WidgetTagInner {
     pub(crate) name: &'static str,
 }
 
-impl<W: Widget> WidgetTag<W> {
+impl<W: Widget + ?Sized> WidgetTag<W> {
     /// Creates a new tag with the given name.
     ///
     /// Calling this method twice with the same string will return the same tag.

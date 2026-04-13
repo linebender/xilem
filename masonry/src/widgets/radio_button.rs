@@ -431,11 +431,11 @@ mod tests {
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_move_to(radio_id);
+        harness.mouse_move_to(radio_tag);
 
         assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
-        harness.mouse_click_on(radio_id, None);
+        harness.mouse_click_on(radio_tag, None);
         assert_eq!(
             harness.pop_action::<RadioButtonSelected>(),
             Some((RadioButtonSelected, radio_id))
@@ -452,7 +452,7 @@ mod tests {
         // The radio button should be unchecked again, but still hovered
         assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
-        harness.focus_on(None);
+        harness.clear_focus();
         harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(radio_id));
     }
@@ -461,8 +461,8 @@ mod tests {
     fn radio_button_focus_indicator() {
         use crate::properties::types::MainAxisAlignment;
 
-        let radio = NewWidget::new(RadioButton::new(true, "Focus test"));
-        let radio_id = radio.id();
+        let radio_tag = WidgetTag::unique();
+        let radio = NewWidget::new(RadioButton::new(true, "Focus test")).with_tag(radio_tag);
         let group = NewWidget::new(RadioGroup::new(radio));
 
         let root = NewWidget::new(
@@ -472,7 +472,7 @@ mod tests {
         );
         let mut harness = TestHarness::create_with_size(default_property_set(), root, (120, 40));
 
-        harness.focus_on(Some(radio_id));
+        harness.focus_on(radio_tag);
         assert_render_snapshot!(harness, "radio_button_focus_focused");
     }
 

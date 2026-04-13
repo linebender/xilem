@@ -376,7 +376,7 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{PropertySet, StyleProperty};
+    use crate::core::{PropertySet, StyleProperty, WidgetTag};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
@@ -387,13 +387,14 @@ mod tests {
         let widget = NewWidget::new(Checkbox::new(false, "Hello"));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 40));
+        let checkbox_tag = harness.root_tag();
         let checkbox_id = harness.root_id();
 
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(checkbox_id, None);
+        harness.mouse_click_on(checkbox_tag, None);
         assert_eq!(
             harness.pop_action::<CheckboxToggled>(),
             Some((CheckboxToggled(true), checkbox_id))
@@ -405,7 +406,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 
-        harness.focus_on(None);
+        harness.clear_focus();
         harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(checkbox_id));
 
@@ -421,8 +422,8 @@ mod tests {
     fn checkbox_focus_indicator() {
         use crate::properties::types::MainAxisAlignment;
 
-        let checkbox = NewWidget::new(Checkbox::new(true, "Focus test"));
-        let checkbox_id = checkbox.id();
+        let checkbox_tag = WidgetTag::named("checkbox");
+        let checkbox = NewWidget::new(Checkbox::new(true, "Focus test")).with_tag(checkbox_tag);
 
         let root = NewWidget::new(
             Flex::row()
@@ -431,7 +432,7 @@ mod tests {
         );
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (120, 40));
 
-        harness.focus_on(Some(checkbox_id));
+        harness.focus_on(checkbox_tag);
         assert_render_snapshot!(harness, "checkbox_focus_focused");
     }
     #[test]

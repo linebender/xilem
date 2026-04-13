@@ -1125,6 +1125,7 @@ mod tests {
         let widget = VirtualScroll::new(0).prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1154,7 +1155,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_moved");
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: 25. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_scrolled");
@@ -1167,6 +1168,7 @@ mod tests {
         let widget = VirtualScroll::new(0).prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1194,7 +1196,7 @@ mod tests {
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
@@ -1206,6 +1208,7 @@ mod tests {
         let widget = VirtualScroll::new(0).prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1233,7 +1236,7 @@ mod tests {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
@@ -1245,6 +1248,7 @@ mod tests {
         let widget = VirtualScroll::new(0).prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1272,7 +1276,7 @@ mod tests {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
@@ -1286,6 +1290,7 @@ mod tests {
             .prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1326,7 +1331,7 @@ mod tests {
             );
             original_range = widget.active_range.clone();
         }
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: -50. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
@@ -1352,6 +1357,7 @@ mod tests {
             .prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_tag = harness.root_tag();
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1394,7 +1400,7 @@ mod tests {
             original_range = widget.active_range.clone();
             assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
         }
-        harness.mouse_move_to(virtual_scroll_id);
+        harness.mouse_move_to(virtual_scroll_tag);
         harness.mouse_wheel(Vec2 { x: 0., y: 5. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
