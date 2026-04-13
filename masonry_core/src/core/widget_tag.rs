@@ -7,14 +7,18 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::core::Widget;
 
-/// A typed key which can be passed to a widget at construction, and then used to access that widget.
+/// A typed key asssociated with a unique widget, which can be used to access that widget.
 ///
-/// Unlike [`WidgetId`](crate::core::WidgetId), using this type to access a widget lets you
-/// skip downcasting.
+/// The type parameter `W` can be `dyn Widget` or a concrete type.
+/// Accessing a widget with a concrete tag lets you skip downcasting.
+///
+/// The main way to associate a tag to a widget is to call [`NewWidget::with_tag`] on creation.
 ///
 /// You can only add one widget with a given tag to the entire widget tree.
 /// Trying to add another widget with the same tag will debug-panic or fail silently.
 /// Tags currently aren't garbage-collected even when the widget is removed from the tree.
+///
+/// [`NewWidget::with_tag`]: crate::core::NewWidget::with_tag
 pub struct WidgetTag<W: Widget + ?Sized> {
     pub(crate) inner: WidgetTagInner,
     pub(crate) _marker: PhantomData<W>,

@@ -141,6 +141,9 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     }
 
     /// Assigns the given [`WidgetTag`] to this widget.
+    ///
+    /// You can only add one widget with a given tag to the entire widget tree.
+    /// Trying to add another widget with the same tag will debug-panic or fail silently.
     pub fn with_tag(mut self, tag: WidgetTag<W>) -> Self {
         self.tag = Some(tag.inner);
         self
