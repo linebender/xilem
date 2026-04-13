@@ -16,17 +16,12 @@ default-target = "x86_64-unknown-linux-gnu"
 targets = []
 
 [features]
-default = ["imaging_vello"]
-imaging_vello = ["masonry_imaging/imaging_vello"]
-imaging_vello_hybrid = ["masonry_imaging/imaging_vello_hybrid"]
-imaging_vello_cpu = ["masonry_imaging/imaging_vello_cpu"]
-imaging_skia = ["masonry_imaging/imaging_skia"]
 
 [dependencies]
 accesskit_consumer.workspace = true
 futures-intrusive = "0.5.0"
 image = { workspace = true, features = ["png"] }
-masonry_imaging = { workspace = true, default-features = false }
+imaging_vello_cpu = { workspace = true }
 masonry_core.workspace = true
 oxipng = { version = "9.1.5", default-features = false }
 tracing = { workspace = true, features = ["default"] }

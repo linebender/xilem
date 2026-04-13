@@ -202,11 +202,6 @@ impl<'a> PreparedFrame<'a> {
     pub fn window_source(self) -> WindowSource<'a> {
         WindowSource { frame: self }
     }
-
-    /// Create a screenshot render source with optional root padding.
-    pub fn snapshot_source(self, root_padding: u32) -> SnapshotSource<'a> {
-        SnapshotSource::new(self, root_padding)
-    }
 }
 
 /// Masonry render source for a window-sized frame.
@@ -249,106 +244,10 @@ impl RenderSource for WindowSource<'_> {
     }
 }
 
-/// Masonry render source for screenshot-style output with optional root padding.
-#[derive(Clone, Copy, Debug)]
-pub struct SnapshotSource<'a> {
-    frame: PreparedFrame<'a>,
-    width: u32,
-    height: u32,
-    root_padding: u32,
-}
-
-impl<'a> SnapshotSource<'a> {
-    /// Create a screenshot render source.
-    pub fn new(frame: PreparedFrame<'a>, root_padding: u32) -> Self {
-        let (width, height) = padded_dimensions(frame.width, frame.height, root_padding);
-        Self {
-            frame,
-            width,
-            height,
-            root_padding,
-        }
-    }
-
-    /// Output width in pixels.
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    /// Output height in pixels.
-    pub fn height(&self) -> u32 {
-        self.height
-    }
-}
-
-impl RenderSource for SnapshotSource<'_> {
-    fn validate(&self) -> Result<(), ValidateError> {
-        validate_layers(self.frame.base, self.frame.overlays)
-    }
-
-    fn paint_into(&mut self, sink: &mut dyn PaintSink) {
-        {
-            let mut painter = Painter::new(sink);
-            painter.fill_rect(
-                Rect::new(0.0, 0.0, f64::from(self.width), f64::from(self.height)),
-                self.frame.background_color,
-            );
-
-            if self.root_padding != 0 {
-                // 25% opacity of 50% grey provides a border of where the actual widget content is.
-                // Alternatively, maybe we should use a stronger color here?
-                let padding_color = Color::from_rgba8(127, 127, 127, 64);
-                // We draw the border first, so that any content is above the background color.
-                for [x0, y0, x1, y1] in padding_rects(self.width, self.height, self.root_padding) {
-                    painter.fill_rect(
-                        Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
-                        padding_color,
-                    );
-                }
-            }
-        }
-
-        let padding_transform =
-            Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
-        replay_transformed(self.frame.base, sink, padding_transform);
-        for layer in self.frame.overlays {
-            replay_transformed(layer.scene, sink, padding_transform * layer.transform);
-        }
-    }
-}
-
-/// Compute the output dimensions for a padded render target.
-fn padded_dimensions(content_width: u32, content_height: u32, root_padding: u32) -> (u32, u32) {
-    // Avoid having a zero-sized image.
-    let width = content_width.max(1) + root_padding * 2;
-    let height = content_height.max(1) + root_padding * 2;
-    (width, height)
-}
-
-fn padding_rects(width: u32, height: u32, padding: u32) -> [[u32; 4]; 4] {
-    [
-        [0, 0, padding, height],                              // Left edge
-        [width - padding, 0, width, height],                  // Right edge
-        [padding, 0, width - padding, padding],               // Top edge
-        [padding, height - padding, width - padding, height], // Bottom edge
-    ]
-}
-
 fn validate_layers(base: &Scene, overlays: &[Layer<'_>]) -> Result<(), ValidateError> {
     base.validate()?;
     for layer in overlays {
         layer.scene.validate()?;
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::padded_dimensions;
-
-    #[test]
-    fn padded_dimensions_avoid_zero() {
-        assert_eq!(padded_dimensions(0, 0, 0), (1, 1));
-        assert_eq!(padded_dimensions(0, 2, 5), (11, 12));
-    }
 }

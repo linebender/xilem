@@ -131,7 +131,7 @@ fn pointer_capture_suppresses_neighbors() {
     let target = create_capture_target();
     let target = NewWidget::new(target).with_tag(target_tag);
 
-    let other = Button::with_text("");
+    let other = Button::with_text("Hello");
     let other = NewWidget::new(other.record()).with_tag(other_tag);
 
     let parent = Flex::column()

@@ -419,15 +419,8 @@ fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
 /// This should still be kept relatively close to `default_property_set()` so that screenshots look like end user apps.
 #[cfg(test)]
 pub(crate) fn test_property_set() -> DefaultProperties {
+    #[allow(unused_mut, reason = "Sometimes we don't have anything to change")]
     let mut properties = default_property_set();
-
-    const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
-    properties.insert::<Label, _>(Padding::from_vh(0., 2.));
-    properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
-    properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
-    properties.insert::<TextArea<false>, _>(CaretColor { color: TEXT_COLOR });
-    properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
-    properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
 
     properties
 }
