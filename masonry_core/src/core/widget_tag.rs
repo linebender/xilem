@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::core::Widget;
 
-/// A typed key asssociated with a unique widget, which can be used to access that widget.
+/// A typed key associated with a unique widget, which can be used to access that widget.
 ///
 /// The type parameter `W` can be `dyn Widget` or a concrete type.
 /// Accessing a widget with a concrete tag lets you skip downcasting.
