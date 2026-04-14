@@ -36,6 +36,10 @@ pub mod vertical_stack;
 pub mod doc_01_creating_app {}
 
 #[doc = include_str!("./implementing_widget.md")]
+#[doc = concat!(
+    "[color-rectangle-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/rect_blue_rectangle.png")
+)]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_02_implementing_widget {}
 
@@ -44,6 +48,18 @@ pub mod doc_02_implementing_widget {}
 pub mod doc_03_implementing_container_widget {}
 
 #[doc = include_str!("./testing_widget.md")]
+#[doc = concat!(
+    "[blue-rectangle-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/rect_blue_rectangle.png")
+)]
+#[doc = concat!(
+    "[hovered-rectangle-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/rect_hovered_rectangle.png")
+)]
+#[doc = concat!(
+    "[red-rectangle-screenshot]: ",
+    include_doc_path::include_doc_path!("screenshots/rect_big_red_rectangle.png")
+)]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_04_testing_widget {}
 
