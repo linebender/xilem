@@ -471,14 +471,11 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: RENDER
-    // TODO - We add way too many dependencies in this code
-    // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
     /// was created with on all sides.
-    /// This padded area is currently indicated with a different background color.
     // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
     // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
