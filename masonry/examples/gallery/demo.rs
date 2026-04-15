@@ -28,7 +28,10 @@ pub(crate) trait DemoPage {
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
-    ) -> Handled;
+    ) -> Handled {
+        #![expect(unused_variables, reason = "Default impl")]
+        Handled::No
+    }
 }
 
 pub(crate) fn wrap_in_shell(

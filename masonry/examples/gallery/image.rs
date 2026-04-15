@@ -1,10 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
-use masonry::core::{
-    ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId,
-};
+use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
 use masonry::layout::AsUnit as _;
 use masonry::peniko::{ImageAlphaType, ImageData, ImageFormat};
 use masonry::properties::ObjectFit;
@@ -64,14 +61,5 @@ impl DemoPage for ImageDemo {
             );
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
-    }
-
-    fn on_action(
-        &mut self,
-        _render_root: &mut RenderRoot,
-        _action: &ErasedAction,
-        _widget_id: WidgetId,
-    ) -> Handled {
-        Handled::No
     }
 }
