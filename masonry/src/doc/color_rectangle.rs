@@ -199,7 +199,7 @@ impl Widget for ColorRectangle {
     ) {
         let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
-            Color::WHITE
+            Color::from_rgb8(0xD2, 0xD2, 0xD2)
         } else {
             self.color
         };
@@ -266,7 +266,7 @@ mod tests {
     fn simple_rect() {
         let widget = ColorRectangle::new(BLUE)
             .prepare()
-            .with_props(Dimensions::fixed(20.px(), 20.px()));
+            .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -283,7 +283,7 @@ mod tests {
     fn hovered() {
         let widget = ColorRectangle::new(BLUE)
             .prepare()
-            .with_props(Dimensions::fixed(20.px(), 20.px()));
+            .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();
@@ -301,7 +301,7 @@ mod tests {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
         let widget = ColorRectangle::new(BLUE)
             .prepare()
-            .with_props(Dimensions::fixed(20.px(), 20.px()));
+            .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -319,7 +319,7 @@ mod tests {
     fn on_click() {
         let widget = ColorRectangle::new(BLUE)
             .prepare()
-            .with_props(Dimensions::fixed(20.px(), 20.px()));
+            .with_props(Dimensions::MIN);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         let rect_id = harness.root_id();

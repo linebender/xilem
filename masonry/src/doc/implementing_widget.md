@@ -12,8 +12,6 @@
 
 </div>
 
-**TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
-
 If you're building your own GUI framework on top of Masonry, or even a GUI app with specific needs, you'll want to specify your own widgets.
 
 This tutorial explains how to create a simple leaf widget.
@@ -60,6 +58,8 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 
 Let's implement a very simple widget named `ColorRectangle`.
 This widget has a size, a color, and will notify Masonry when the user left-clicks on it (on mouse press; we'll ignore mouse release).
+
+![Screenshot of the rectangle widget][color-rectangle-screenshot]
 
 First, let's create our struct:
 
@@ -355,7 +355,7 @@ Most context types include these methods for requesting future passes:
 
 ### Using context in `ColorRectangle`
 
-To show how context types are used in practice, let's add a feature to `ColorRectangle`: the widget will now be painted in white when hovered.
+To show how context types are used in practice, let's add a feature to `ColorRectangle`: the widget will now be painted in light-gray when hovered.
 
 First, we update our paint method:
 
@@ -371,7 +371,7 @@ impl Widget for ColorRectangle {
     ) {
         let rect = ctx.content_box();
         let color = if ctx.is_hovered() {
-            Color::WHITE
+            Color::from_rgb8(0xD2, 0xD2, 0xD2)
         } else {
             self.color
         };
