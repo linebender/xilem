@@ -19,7 +19,7 @@ struct Child {
 }
 
 /// An option specifying how a child widget is aligned within a [`ZStack`].
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ChildAlignment {
     /// Specifies that the child should use the global alignment as specified by the parent [`ZStack`] widget.
     ParentAligned,

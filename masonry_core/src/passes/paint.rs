@@ -21,6 +21,7 @@ use crate::util::get_debug_color;
 ///
 /// The retained `imaging` scene is in the layer's local coordinate space. To composite into
 /// window space, apply the layer's [`transform`](Self::transform).
+#[derive(Debug)]
 pub struct PaintedLayer {
     /// The retained `imaging` scene for this layer, in the layer's local coordinate space.
     pub scene: Scene,
@@ -38,6 +39,7 @@ pub struct PaintedLayer {
 /// The base layer contains the main application content in window coordinate space.
 /// Overlay layers contain tooltips, menus, and other popups in layer-local coordinate
 /// space, ordered from bottom to top (painter's order).
+#[derive(Debug)]
 pub struct PaintResult {
     /// The base retained `imaging` scene (main application content) in window coordinate space.
     pub base: Scene,

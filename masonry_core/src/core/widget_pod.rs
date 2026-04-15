@@ -12,7 +12,7 @@ use crate::core::{PropertySet, PropertyStackId, Widget, WidgetId, WidgetTag, Wid
 /// Generally, container widgets don't contain other widgets directly,
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
-pub struct WidgetPod<W: ?Sized> {
+pub struct WidgetPod<W: Widget + ?Sized> {
     id: WidgetId,
     inner: WidgetPodInner<W>,
 }
@@ -46,7 +46,25 @@ pub struct NewWidget<W: ?Sized> {
     pub(crate) tag: Option<WidgetTagInner>,
 }
 
-impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
+impl<W: Widget + ?Sized> std::fmt::Debug for WidgetPod<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WidgetPod")
+            .field("id", &self.id)
+            .field("inner", &self.inner)
+            .finish()
+    }
+}
+
+impl<W: Widget + ?Sized> std::fmt::Debug for WidgetPodInner<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Create(arg0) => f.debug_tuple("Create").field(arg0).finish(),
+            Self::Inserted => write!(f, "Inserted"),
+        }
+    }
+}
+
+impl<W: Widget + ?Sized> std::fmt::Debug for NewWidget<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NewWidget")
             .field("widget_type", &self.widget.short_type_name())
@@ -78,7 +96,7 @@ pub struct WidgetOptions {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
-enum WidgetPodInner<W: ?Sized> {
+enum WidgetPodInner<W: Widget + ?Sized> {
     Create(Box<NewWidget<W>>),
     Inserted,
 }

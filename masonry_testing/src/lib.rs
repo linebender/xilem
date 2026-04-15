@@ -61,9 +61,6 @@
 //! - To test applications: see the tests in Masonry's examples.
 //! - To test widgets: see the `tests` module in each widget in Masonry.
 
-// TODO: Remove any items listed as "Deferred"
-#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-
 mod assert_any;
 mod assert_debug_panics;
 mod debug_name;

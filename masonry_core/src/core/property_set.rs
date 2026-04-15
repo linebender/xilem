@@ -48,6 +48,13 @@ impl PropertySet {
     }
 }
 
+// TODO - Rework upstream anymap to include a proper Debug implementation.
+impl std::fmt::Debug for PropertySet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<{} properties>", self.map.len())
+    }
+}
+
 impl<P: Property> From<P> for PropertySet {
     fn from(prop: P) -> Self {
         Self::one(prop)

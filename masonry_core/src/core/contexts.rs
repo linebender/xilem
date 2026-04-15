@@ -3,6 +3,11 @@
 
 //! The context types that are passed into various widget methods.
 
+#![expect(
+    missing_debug_implementations,
+    reason = "Not sure if it's worth the effort"
+)]
+
 use std::any::{Any, TypeId};
 use std::collections::hash_map::Entry;
 

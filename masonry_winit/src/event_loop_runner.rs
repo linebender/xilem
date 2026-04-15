@@ -62,6 +62,7 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 /// A container for a window yet to be created.
 ///
 /// This is stored inside [`MasonryState`] and will be created during the `resumed` event.
+#[derive(Debug)]
 pub struct NewWindow {
     /// The id is set by the App, and can be created using the [`WindowId::next()`] method.
     ///
@@ -181,6 +182,18 @@ impl Window {
     /// Access base color of this window.
     pub fn base_color(&mut self) -> &mut Color {
         &mut self.base_color
+    }
+}
+
+impl Debug for Window {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Window")
+            .field("id", &self.id)
+            .field("handle", &self.handle)
+            .field("event_reducer", &self.event_reducer)
+            .field("render_root", &self.render_root)
+            .field("base_color", &self.base_color)
+            .finish_non_exhaustive()
     }
 }
 
@@ -344,6 +357,26 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 
     fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_memory_warning(event_loop);
+    }
+}
+
+impl<'a> Debug for MasonryState<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MasonryState")
+            .field("is_suspended", &self.is_suspended)
+            .field("renderer", &self.renderer)
+            .field("event_loop_proxy", &self.event_loop_proxy)
+            .field("window_id_to_handle_id", &self.window_id_to_handle_id)
+            .field("surfaces", &self.surfaces)
+            .field("windows", &self.windows)
+            .field("last_anim", &self.last_anim)
+            .field("signal_receiver", &self.signal_receiver)
+            .field("signal_sender", &self.signal_sender)
+            .field("default_properties", &self.default_properties)
+            .field("exit", &self.exit)
+            .field("new_windows", &self.new_windows)
+            .field("need_first_frame", &self.need_first_frame)
+            .finish_non_exhaustive()
     }
 }
 

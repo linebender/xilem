@@ -192,6 +192,7 @@ pub enum WindowSizePolicy {
 }
 
 /// Options for creating a [`RenderRoot`].
+#[derive(Debug)]
 pub struct RenderRootOptions {
     /// Default values that properties will have if not defined per-widget.
     pub default_properties: Arc<DefaultProperties>,
@@ -976,6 +977,27 @@ impl RenderRoot {
     #[doc(hidden)]
     pub fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.global_state.emit_signal(signal);
+    }
+}
+
+impl std::fmt::Debug for RenderRoot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RenderRoot")
+            .field("property_arena", &self.property_arena)
+            .field(
+                "widget_arena",
+                &format!("<{} widgets>", self.widget_arena.nodes.len()),
+            )
+            .field("layer_stack", &self.layer_stack)
+            .field("global_state", &self.global_state)
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for RenderRootState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO - Document fields?
+        f.debug_struct("RenderRootState").finish_non_exhaustive()
     }
 }
 

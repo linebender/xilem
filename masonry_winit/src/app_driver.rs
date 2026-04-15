@@ -40,6 +40,7 @@ impl WindowId {
 }
 
 /// Context for the [`AppDriver`] trait.
+#[derive(Debug)]
 pub struct DriverCtx<'a, 's> {
     state: &'a mut MasonryState<'s>,
     event_loop: &'a ActiveEventLoop,
@@ -55,6 +56,7 @@ impl<'a, 's> DriverCtx<'a, 's> {
 ///
 /// This is provided via [`AppDriver::on_wgpu_ready`] so applications can create GPU resources
 /// (textures, pipelines, etc.) using the same `Device`/`Queue` as Masonry.
+#[derive(Debug)]
 pub struct WgpuContext<'a> {
     /// The WGPU instance used by Masonry.
     pub instance: &'a wgpu::Instance,

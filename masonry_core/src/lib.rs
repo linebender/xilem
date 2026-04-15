@@ -73,7 +73,6 @@
 )]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
-#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![cfg_attr(
     not(target_arch = "wasm32"),

@@ -128,6 +128,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// [`assert_render_snapshot`]: crate::assert_render_snapshot
 /// [`insta`]: https://docs.rs/insta/latest/insta/
+#[derive(Debug)]
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,

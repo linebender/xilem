@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::TypeId;
+use std::fmt::Debug;
 
 use crate::core::{FromDynWidget, MutateCtx, Property, Widget, WidgetId};
 use crate::kurbo::Affine;
@@ -41,6 +42,15 @@ impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
         if let Some(parent_widget_state) = self.ctx.parent_widget_state.take() {
             parent_widget_state.merge_up(self.ctx.widget_state);
         }
+    }
+}
+
+impl<W: Widget + ?Sized> Debug for WidgetMut<'_, W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WidgetMut")
+            .field("widget", &self.widget.short_type_name())
+            .field("id", &self.ctx.widget_state.id)
+            .finish_non_exhaustive()
     }
 }
 

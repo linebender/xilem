@@ -9,6 +9,8 @@
 // TODO - Find some way to check that code chunks in docs
 // are up to date with this file.
 
+#![expect(missing_debug_implementations, reason = "Example code")]
+
 use crate as masonry;
 
 // Note: The "// ---" lines separate blocks of code which are included together in

@@ -7,7 +7,7 @@ use crate::util::AnyMap;
 /// Reference to a collection of [properties](Property) that a widget has access to.
 ///
 /// Used by the [`Widget`](crate::core::Widget) trait during rendering passes and in some search methods.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct PropertiesRef<'a> {
     pub(crate) local: &'a PropertySet,
     pub(crate) default_map: &'a AnyMap,

@@ -124,6 +124,16 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// Returns the number of items in the arena.
+    pub fn len(&self) -> usize {
+        self.parents_map.len()
+    }
+
+    /// Returns `true` if the arena is empty.
+    pub fn is_empty(&self) -> bool {
+        self.parents_map.is_empty()
+    }
+
     /// Returns a handle giving access to the roots of the tree.
     pub fn roots(&self) -> ArenaRefList<'_, T> {
         ArenaRefList {
