@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::widgets::{Checkbox, Flex, Label};
+use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -50,15 +50,20 @@ impl DemoPage for CheckboxDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_checkbox_toggled(
+    fn on_action(
         &mut self,
         render_root: &mut RenderRoot,
+        action: &ErasedAction,
         widget_id: WidgetId,
-        checked: bool,
-    ) -> bool {
+    ) -> Handled {
+        let Some(toggled) = action.downcast_ref::<CheckboxToggled>() else {
+            return Handled::No;
+        };
+        let checked = toggled.0;
+
         let checkbox_id = render_root.get_widget_with_tag(self.checkbox).unwrap().id();
         if widget_id != checkbox_id {
-            return false;
+            return Handled::No;
         }
 
         render_root.edit_widget_with_tag(self.state_label, |mut label| {
@@ -67,6 +72,6 @@ impl DemoPage for CheckboxDemo {
         render_root.edit_widget_with_tag(self.checkbox, |mut checkbox| {
             Checkbox::set_checked(&mut checkbox, checked);
         });
-        true
+        Handled::Yes
     }
 }

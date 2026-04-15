@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
+use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Slider};
 
@@ -51,19 +51,23 @@ impl DemoPage for SliderDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_slider_value(
+    fn on_action(
         &mut self,
         render_root: &mut RenderRoot,
+        action: &ErasedAction,
         widget_id: WidgetId,
-        value: f64,
-    ) -> bool {
+    ) -> Handled {
+        let Some(&value) = action.downcast_ref::<f64>() else {
+            return Handled::No;
+        };
+
         let id = render_root.get_widget_with_tag(self.slider).unwrap().id();
         if widget_id != id {
-            return false;
+            return Handled::No;
         }
         render_root.edit_widget_with_tag(self.value_label, |mut label| {
             Label::set_text(&mut label, format!("Value: {value:.3}"));
         });
-        true
+        Handled::Yes
     }
 }

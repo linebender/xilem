@@ -140,6 +140,7 @@ impl HasProperty<ThumbRadius> for Slider {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Slider {
+    // FIXME: This should really be a newtype.
     type Action = f64;
 
     fn accepts_focus(&self) -> bool {
