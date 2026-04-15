@@ -59,7 +59,7 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 Let's implement a very simple widget named `ColorRectangle`.
 This widget has a size, a color, and will notify Masonry when the user left-clicks on it (on mouse press; we'll ignore mouse release).
 
-![Screenshot of the ColorRectangle][color-rectangle-screenshot]
+![Screenshot of the rectangle widget][color-rectangle-screenshot]
 
 First, let's create our struct:
 
