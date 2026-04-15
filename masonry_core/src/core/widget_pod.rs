@@ -152,9 +152,18 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         self
     }
 
-    /// Sets the [`PropertySet`] for this widget.
+    /// Applies the given [properties] to this widget.
+    ///
+    /// [properties]: crate::doc::masonry_concepts#properties
     pub fn with_props(mut self, props: impl Into<PropertySet>) -> Self {
-        self.properties = props.into();
+        if self.properties.map.is_empty() {
+            self.properties = props.into();
+        } else {
+            let props = props.into();
+            self.properties
+                .map
+                .extend(props.map.into_raw().into_values());
+        }
         self
     }
 
