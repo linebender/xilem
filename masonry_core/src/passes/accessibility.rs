@@ -157,7 +157,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         tree_id: TreeId::ROOT,
         nodes: vec![],
         tree: Some(Tree {
-            root: root.window_node_id,
+            root: root.global_state.window_node_id,
             toolkit_name: Some("Masonry".to_string()),
             toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         }),
@@ -165,7 +165,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .global_state
             .focused_widget
             .map(Into::into)
-            .unwrap_or(root.window_node_id),
+            .unwrap_or(root.global_state.window_node_id),
     };
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
@@ -183,7 +183,9 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     // (should go hand in hand with introducing support for modal windows?)
     let mut window_node = Node::new(Role::Window);
     window_node.set_children(vec![root.root_id().into()]);
-    tree_update.nodes.push((root.window_node_id, window_node));
+    tree_update
+        .nodes
+        .push((root.global_state.window_node_id, window_node));
 
     tree_update
 }
