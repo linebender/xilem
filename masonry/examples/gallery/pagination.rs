@@ -138,52 +138,52 @@ impl DemoPage for PaginationDemo {
         let body = Flex::column()
             .with_fixed(
                 Flex::row()
-                    .with(Label::new("Total pages").with_auto_id(), 1.)
+                    .with(Label::new("Total pages").prepare(), 1.)
                     .with(
                         NewWidget::new(StepInput::new(20, 1, 0, 1000))
                             .with_tag(self.tag_page_count),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
-                    .with(Label::new("Active page").with_auto_id(), 1.)
+                    .with(Label::new("Active page").prepare(), 1.)
                     .with(
                         NewWidget::new(StepInput::new(1, 1, 1, 1000))
                             .with_tag(self.tag_page_active),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
-                    .with(Label::new("Buttons start").with_auto_id(), 1.)
+                    .with(Label::new("Buttons start").prepare(), 1.)
                     .with(
                         NewWidget::new(StepInput::new(1, 1, 0, 255))
                             .with_tag(self.tag_buttons_start),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
-                    .with(Label::new("Buttons end").with_auto_id(), 1.)
+                    .with(Label::new("Buttons end").prepare(), 1.)
                     .with(
                         NewWidget::new(StepInput::new(1, 1, 0, 255)).with_tag(self.tag_buttons_end),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Flex::row()
-                    .with(Label::new("Buttons total").with_auto_id(), 1.)
+                    .with(Label::new("Buttons total").prepare(), 1.)
                     .with(
                         NewWidget::new(StepInput::new(9, 1, 0, 255))
                             .with_tag(self.tag_buttons_total),
                         1.,
                     )
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(NewWidget::new(Label::new("Some data here ..")).with_tag(self.tag_content))
             .with_fixed(NewWidget::new(Pagination::new(20)).with_tag(self.tag_pagination));

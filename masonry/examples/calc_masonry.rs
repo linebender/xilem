@@ -188,7 +188,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
     let button = Button::new(
         Label::new(label)
             .with_style(StyleProperty::FontSize(24.))
-            .with_auto_id(),
+            .prepare(),
     );
     let mut button = NewWidget::new(button).with_props(CalcAction::Op(op));
     button.classes.insert("op_button".to_string());
@@ -204,7 +204,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
     let button = Button::new(
         Label::new(format!("{digit}"))
             .with_style(StyleProperty::FontSize(24.))
-            .with_auto_id(),
+            .prepare(),
     );
 
     let mut button = NewWidget::new(button).with_props(CalcAction::Digit(digit));
@@ -218,7 +218,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     let display = Flex::column()
         .with_spacer(1.)
-        .with_fixed(display.with_auto_id())
+        .with_fixed(display.prepare())
         .with_spacer(1.)
         .cross_axis_alignment(CrossAxisAlignment::End);
 
@@ -227,7 +227,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     }
 
     let root_widget = Grid::with_dimensions(4, 6)
-        .with(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
+        .with(display.prepare(), GridParams::new(0, 0, 4, 1))
         .with(
             op_button_with_label('c', "CE".to_string()),
             button_params(0, 1),

@@ -328,6 +328,7 @@ impl RenderRoot {
         // LayerStack can't use Dimensions::AUTO because it'll resolve to the window size.
         // Instead we want to always measure LayerStack, so it can measure its base layer.
         let layer_stack = LayerStack::new(root_widget)
+            .prepare()
             .with_props(Dimensions::MAX)
             .to_pod();
 

@@ -17,7 +17,7 @@ use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ActionCtx, ChildrenIds, ComposeCtx, CursorIcon, ErasedAction, EventCtx,
     Layer, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    PropertySet, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
@@ -343,17 +343,10 @@ impl<W: Widget> Widget for Recorder<W> {
         "Recorder"
     }
 
-    fn with_auto_id(self) -> NewWidget<Self>
+    fn prepare(self) -> NewWidget<Self>
     where
         Self: Sized,
     {
         NewWidget::new(self)
-    }
-
-    fn with_props(self, props: impl Into<PropertySet>) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new(self).with_props(props)
     }
 }

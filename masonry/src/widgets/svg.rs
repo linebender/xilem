@@ -270,7 +270,7 @@ mod tests {
     fn empty_tree() {
         let xml = r#"<svg xmlns="http://www.w3.org/2000/svg"/>"#;
         let tree = Tree::from_str(xml, &usvg::Options::default()).unwrap();
-        let svg = Svg::new(Arc::new(tree)).with_auto_id();
+        let svg = Svg::new(Arc::new(tree)).prepare();
         let mut harness = TestHarness::create(test_property_set(), svg);
         let _ = harness.render();
     }
@@ -344,7 +344,7 @@ mod tests {
         };
 
         let tree = Tree::from_str(xml, &opts).unwrap();
-        let svg = Svg::new(Arc::new(tree)).with_auto_id();
+        let svg = Svg::new(Arc::new(tree)).prepare();
 
         let window_size = Size::new(852., 320.);
         let mut harness = TestHarness::create_with_size(test_property_set(), svg, window_size);

@@ -41,7 +41,7 @@ impl DemoPage for TooltipDemo {
             .with_fixed(
                 Label::new("Click the button to create a tooltip layer.")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed_spacer(CONTENT_GAP)
             .with_fixed(show);
@@ -58,7 +58,7 @@ impl DemoPage for TooltipDemo {
         let tooltip = NewWidget::new(Tooltip::new(
             Label::new("Hello from a tooltip layer!")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_auto_id(),
+                .prepare(),
         ));
         render_root.add_layer(tooltip.erased(), Point::new(320.0, 120.0));
         true

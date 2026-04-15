@@ -109,17 +109,17 @@ fn make_widget_tree() -> NewWidget<impl masonry::core::Widget> {
         .with_fixed(
             Label::new("Left pane")
                 .with_style(masonry::core::StyleProperty::FontSize(18.0))
-                .with_auto_id(),
+                .prepare(),
         )
-        .with_fixed(Label::new("Drag / keyboard-resize the divider.").with_auto_id());
+        .with_fixed(Label::new("Drag / keyboard-resize the divider.").prepare());
 
     let right = Flex::column()
         .with_fixed(
             Label::new("Right pane")
                 .with_style(masonry::core::StyleProperty::FontSize(18.0))
-                .with_auto_id(),
+                .prepare(),
         )
-        .with_fixed(Label::new("Try switching split-point modes.").with_auto_id());
+        .with_fixed(Label::new("Try switching split-point modes.").prepare());
 
     let split = NewWidget::new(
         Split::new(NewWidget::new(left), NewWidget::new(right))
@@ -130,7 +130,7 @@ fn make_widget_tree() -> NewWidget<impl masonry::core::Widget> {
 
     NewWidget::new(
         Flex::column()
-            .with_fixed(controls.with_auto_id())
+            .with_fixed(controls.prepare())
             .with_fixed_spacer(SPACING)
             .with_fixed(status)
             .with_fixed_spacer(SPACING)

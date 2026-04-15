@@ -32,6 +32,7 @@ fn action_source_removed() {
             ctx.submit_untyped_action(Box::new(ArbitraryAction));
             ok.store(true, Ordering::Release);
         })
+        .prepare()
         .with_props(Dimensions::fixed(50.px(), 50.px()))
         .to_pod();
     let action_source_id = action_source.id();
@@ -76,7 +77,7 @@ fn action_source_removed() {
             }
             ids
         })
-        .with_auto_id();
+        .prepare();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
 
@@ -94,7 +95,7 @@ fn action_propagation() {
     #[derive(Debug)]
     struct TranslatedAction;
 
-    let button = Button::with_text("Click me!").with_auto_id();
+    let button = Button::with_text("Click me!").prepare();
     let button_id = button.id();
 
     let parent1 = ModularWidget::new_parent(button)
@@ -103,7 +104,7 @@ fn action_propagation() {
             assert_eq!(source, button_id, "unexpected action source");
             assert!(action.is::<ButtonPress>(), "unexpected action type");
         })
-        .with_auto_id();
+        .prepare();
 
     let parent2 = ModularWidget::new_parent(parent1)
         .action_fn(move |_, ctx, _, action, source| {
@@ -115,7 +116,7 @@ fn action_propagation() {
             // Translate it into our own action
             ctx.submit_untyped_action(Box::new(TranslatedAction));
         })
-        .with_auto_id();
+        .prepare();
     let parent2_id = parent2.id();
 
     let parent3 = ModularWidget::new_parent(parent2)
@@ -124,7 +125,7 @@ fn action_propagation() {
             assert_eq!(source, parent2_id, "unexpected action source");
             assert!(action.is::<TranslatedAction>(), "unexpected action type");
         })
-        .with_auto_id();
+        .prepare();
 
     let mut harness = TestHarness::create(test_property_set(), parent3);
 

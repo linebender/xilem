@@ -164,7 +164,7 @@ fn paint_transparency() {
     ) -> NewWidget<Align> {
         let bg_color = bg_color.into();
 
-        let label = Label::new(text).with_props((
+        let label = Label::new(text).prepare().with_props((
             Background::Color(Color::TRANSPARENT),
             Dimensions::fixed(20.px(), 20.px()),
         ));
@@ -174,7 +174,7 @@ fn paint_transparency() {
             props = props.with(Background::Color(bg_color));
         }
 
-        Align::new(align, label).with_props(props)
+        Align::new(align, label).prepare().with_props(props)
     }
 
     let align_a = UnitPoint::TOP_LEFT;
@@ -213,18 +213,15 @@ fn paint_transparency() {
     );
 
     let props = (Padding::all(20.), Gap::new(10.px()));
-    let grid_a = grid_a.with_props(props);
-    let grid_b = grid_b.with_props(props);
+    let grid_a = grid_a.prepare().with_props(props);
+    let grid_b = grid_b.prepare().with_props(props);
 
     let mut root = ZStack::new();
     root = root.with(grid_a, ChildAlignment::ParentAligned);
     root = root.with(grid_b, ChildAlignment::ParentAligned);
 
-    let mut harness = TestHarness::create_with_size(
-        test_property_set(),
-        root.with_auto_id(),
-        Size::new(350., 80.),
-    );
+    let mut harness =
+        TestHarness::create_with_size(test_property_set(), root.prepare(), Size::new(350., 80.));
 
     assert_render_snapshot!(harness, "paint_transparency");
 }

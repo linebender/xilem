@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn slider_initial_state() {
-        let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
+        let widget = Slider::new(0.0, 100.0, 25.0).prepare();
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
 
@@ -522,7 +522,7 @@ mod tests {
 
     #[test]
     fn slider_drag_interaction() {
-        let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
+        let widget = Slider::new(0.0, 100.0, 25.0).prepare();
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
@@ -551,7 +551,7 @@ mod tests {
 
     #[test]
     fn slider_keyboard_interaction() {
-        let widget = Slider::new(0.0, 100.0, 50.0).with_step(10.0).with_auto_id();
+        let widget = Slider::new(0.0, 100.0, 50.0).with_step(10.0).prepare();
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
@@ -568,7 +568,7 @@ mod tests {
 
     #[test]
     fn slider_disabled_state() {
-        let mut widget = Slider::new(0.0, 100.0, 50.0).with_auto_id();
+        let mut widget = Slider::new(0.0, 100.0, 50.0).prepare();
         widget.options.disabled = true;
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));

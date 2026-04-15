@@ -187,6 +187,7 @@ mod tests {
     fn edit_spinner() {
         let image_1 = {
             let spinner = Spinner::new()
+                .prepare()
                 .with_props(PropertySet::one(ContentColor::new(palette::css::PURPLE)));
 
             let mut harness =

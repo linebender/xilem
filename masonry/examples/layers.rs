@@ -186,16 +186,16 @@ fn main() {
         (tooltip, LayerType::Tooltip("Tooltip!!!".to_string()))
     };
 
-    let overlay_box = OverlayBox::new(label.with_auto_id(), Box::new(overlayer));
+    let overlay_box = OverlayBox::new(label.prepare(), Box::new(overlayer));
 
     let selector = Selector::new(vec!["A".to_string(), "B".to_string(), "C".to_string()]);
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
         .with_spacer(1.)
-        .with_fixed(overlay_box.with_auto_id())
+        .with_fixed(overlay_box.prepare())
         .with_fixed_spacer(80.px())
-        .with_fixed(selector.with_auto_id())
+        .with_fixed(selector.prepare())
         .with_spacer(1.);
 
     let driver = Driver {};
@@ -203,7 +203,7 @@ fn main() {
     masonry_winit::app::run(
         vec![NewWindow::new(
             Window::default_attributes().with_title("Hello Layers!"),
-            main_widget.with_auto_id().erased(),
+            main_widget.prepare().erased(),
         )],
         driver,
         default_property_set(),

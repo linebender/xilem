@@ -77,7 +77,7 @@
 //!                 TextArea::reset_text(&mut text_area, "");
 //!             });
 //!             render_root.edit_widget_with_tag(LIST_TAG, |mut list| {
-//!                 let child = Label::new(self.next_task.clone()).with_auto_id();
+//!                 let child = Label::new(self.next_task.clone()).prepare();
 //!                 Flex::add_fixed(&mut list, child);
 //!             });
 //!         } else if action.is::<TextAction>() {

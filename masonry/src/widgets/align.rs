@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn centered() {
-        let widget = Align::centered(Label::new("hello").with_auto_id()).with_auto_id();
+        let widget = Align::centered(Label::new("hello").prepare()).prepare();
 
         let mut harness = TestHarness::create(test_property_set(), widget);
 
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn right() {
-        let widget = Align::right(Label::new("hello").with_auto_id()).with_auto_id();
+        let widget = Align::right(Label::new("hello").prepare()).prepare();
 
         let mut harness = TestHarness::create(test_property_set(), widget);
 
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn left() {
-        let widget = Align::left(Label::new("hello").with_auto_id()).with_auto_id();
+        let widget = Align::left(Label::new("hello").prepare()).prepare();
 
         let mut harness = TestHarness::create(test_property_set(), widget);
 
@@ -250,7 +250,7 @@ mod tests {
     fn oversized() {
         let align_tag = WidgetTag::unique();
 
-        let child = SizedBox::empty().with_props((
+        let child = SizedBox::empty().prepare().with_props((
             Dimensions::fixed(100.px(), 100.px()),
             Background::Color(AlphaColor::from_rgba8(127, 0, 0, 127)),
         ));
@@ -261,7 +261,7 @@ mod tests {
                 BorderWidth::all(2.),
                 BorderColor::new(palette::css::BLACK),
             ));
-        let root = Align::centered(align).with_auto_id();
+        let root = Align::centered(align).prepare();
 
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);

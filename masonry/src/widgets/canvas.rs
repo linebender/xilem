@@ -172,7 +172,7 @@ mod tests {
 
         let mut harness = TestHarness::create(
             DefaultProperties::default(),
-            canvas.with_props(PropertySet::default()),
+            canvas.prepare().with_props(PropertySet::default()),
         );
 
         harness.edit_root_widget(|mut canvas| {
@@ -204,7 +204,7 @@ mod tests {
         harness_params.window_size = Size::new(200., 200.);
         let mut harness = TestHarness::create_with(
             DefaultProperties::default(),
-            canvas.with_props(PropertySet::default()),
+            canvas.prepare().with_props(PropertySet::default()),
             harness_params,
         );
 

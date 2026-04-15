@@ -477,7 +477,7 @@ mod tests {
     fn test_grid_basics() {
         // Start with a 1x1 grid
         let widget = NewWidget::new(Grid::with_dimensions(1, 1).with(
-            Button::with_text("A").with_auto_id(),
+            Button::with_text("A").prepare(),
             GridParams::new(0, 0, 1, 1),
         ))
         .with_props(Dimensions::STRETCH);
@@ -501,7 +501,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add(
                 &mut grid,
-                Button::with_text("B").with_auto_id(),
+                Button::with_text("B").prepare(),
                 GridParams::new(1, 0, 3, 1),
             );
         });
@@ -511,7 +511,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add(
                 &mut grid,
-                Button::with_text("C").with_auto_id(),
+                Button::with_text("C").prepare(),
                 GridParams::new(0, 1, 1, 3),
             );
         });
@@ -521,7 +521,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add(
                 &mut grid,
-                Button::with_text("D").with_auto_id(),
+                Button::with_text("D").prepare(),
                 GridParams::new(1, 1, 2, 2),
             );
         });
@@ -537,7 +537,7 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = NewWidget::new(Grid::with_dimensions(2, 2).with(
-            Button::with_text("A").with_auto_id(),
+            Button::with_text("A").prepare(),
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
@@ -555,7 +555,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add(
                 &mut grid,
-                Button::with_text("A").with_auto_id(),
+                Button::with_text("A").prepare(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -566,7 +566,7 @@ mod tests {
             Grid::remove(&mut grid, 0);
             Grid::add(
                 &mut grid,
-                Button::with_text("X").with_auto_id(),
+                Button::with_text("X").prepare(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -574,7 +574,7 @@ mod tests {
             Grid::set(
                 &mut grid,
                 0,
-                Button::with_text("A").with_auto_id(),
+                Button::with_text("A").prepare(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -596,7 +596,7 @@ mod tests {
     #[test]
     fn test_widget_order() {
         let widget = NewWidget::new(Grid::with_dimensions(2, 2).with(
-            Button::with_text("A").with_auto_id(),
+            Button::with_text("A").prepare(),
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
@@ -608,7 +608,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add(
                 &mut grid,
-                Button::with_text("B").with_auto_id(),
+                Button::with_text("B").prepare(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -620,7 +620,7 @@ mod tests {
             Grid::insert(
                 &mut grid,
                 0,
-                Button::with_text("C").with_auto_id(),
+                Button::with_text("C").prepare(),
                 GridParams::new(0, 0, 2, 1),
             );
         });
@@ -631,39 +631,41 @@ mod tests {
     fn grid_baselines() {
         let grid = Grid::with_dimensions(3, 3)
             .with(
-                Label::new("A\nB").with_props((
+                Label::new("A\nB").prepare().with_props((
                     Padding::from_vh(0., 0.),
                     Background::Color(palette::css::ORANGE),
                 )),
                 GridParams::new(1, 0, 1, 1),
             )
             .with(
-                Label::new("C\nD").with_props((
+                Label::new("C\nD").prepare().with_props((
                     Padding::from_vh(8., 0.),
                     Background::Color(palette::css::DARK_BLUE),
                 )),
                 GridParams::new(0, 0, 1, 2),
             )
             .with(
-                Label::new("E\nF").with_props((
+                Label::new("E\nF").prepare().with_props((
                     Padding::from_vh(16., 0.),
                     Background::Color(palette::css::DARK_SALMON),
                 )),
                 GridParams::new(2, 0, 1, 3),
             )
             .with(
-                Label::new("G\nH").with_props((
+                Label::new("G\nH").prepare().with_props((
                     Padding::from_vh(24., 0.),
                     Background::Color(palette::css::DARK_SLATE_BLUE),
                 )),
                 GridParams::new(1, 1, 1, 2),
             )
+            .prepare()
             .with_props(Dimensions::width(80.px()));
 
         let root = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)
-            .with_fixed(Label::new("Out").with_auto_id())
+            .with_fixed(Label::new("Out").prepare())
             .with_fixed(grid)
+            .prepare()
             .with_props(Padding::all(10.));
 
         let window_size = Size::new(150.0, 200.0);

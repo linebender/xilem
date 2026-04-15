@@ -1122,7 +1122,7 @@ mod tests {
 
     #[test]
     fn sensible_driver() {
-        let widget = VirtualScroll::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
@@ -1165,7 +1165,7 @@ mod tests {
     /// We shouldn't panic or loop if there are small gaps in the items provided by the driver.
     /// Again, this isn't valid code for a user to write, but we should just warn and deal with it
     fn small_gaps() {
-        let widget = VirtualScroll::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
@@ -1205,7 +1205,7 @@ mod tests {
     /// We shouldn't panic or loop if there are big gaps in the items provided by the driver.
     /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
     fn big_gaps() {
-        let widget = VirtualScroll::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
@@ -1245,7 +1245,7 @@ mod tests {
     /// We shouldn't panic or loop if the driver is very poorly written (doesn't set `valid_range` correctly)
     /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
     fn degenerate_driver() {
-        let widget = VirtualScroll::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
@@ -1287,7 +1287,7 @@ mod tests {
         const MIN: i64 = 10;
         let widget = VirtualScroll::new(0)
             .with_valid_range(MIN..i64::MAX)
-            .with_auto_id();
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
@@ -1354,7 +1354,7 @@ mod tests {
         const MAX: i64 = 10;
         let widget = VirtualScroll::new(100)
             .with_valid_range(i64::MIN..MAX)
-            .with_auto_id();
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));

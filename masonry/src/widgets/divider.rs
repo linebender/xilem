@@ -284,7 +284,7 @@ impl Divider {
     ///
     /// [`content`]: Self::content
     pub fn label(self, text: impl Into<ArcStr>) -> Self {
-        self.content(Label::new(text).with_auto_id())
+        self.content(Label::new(text).prepare())
     }
 
     /// Returns `self` with the given `pad`.
@@ -816,23 +816,29 @@ mod tests {
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_fixed(
                 Flex::column()
-                    .with_fixed(Label::new("Above").with_auto_id())
-                    .with_fixed(Divider::horizontal().with_auto_id())
-                    .with_fixed(Label::new("Below").with_auto_id())
-                    .with_auto_id(),
+                    .with_fixed(Label::new("Above").prepare())
+                    .with_fixed(Divider::horizontal().prepare())
+                    .with_fixed(Label::new("Below").prepare())
+                    .prepare(),
             )
             .with_fixed(
                 Divider::vertical()
                     .thickness(5.px())
+                    .prepare()
                     .with_props(ContentColor::new(palette::css::DARK_SALMON)),
             )
             .with(
                 Flex::column()
-                    .with_fixed(Label::new("Another above").with_props(Dimensions::height(50.px())))
-                    .with_fixed(Divider::horizontal().with_auto_id())
-                    .with_auto_id(),
+                    .with_fixed(
+                        Label::new("Another above")
+                            .prepare()
+                            .with_props(Dimensions::height(50.px())),
+                    )
+                    .with_fixed(Divider::horizontal().prepare())
+                    .prepare(),
                 1.,
             )
+            .prepare()
             .with_props(Gap::ZERO);
 
         let mut harness =
@@ -851,12 +857,14 @@ mod tests {
                         .thickness(5.px())
                         .dash_pattern(&pattern(&[1, 10, 5, 20]))
                         .cap(Cap::Round)
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::BLANCHED_ALMOND)),
                 )
                 .with_fixed(
                     Divider::horizontal()
                         .thickness(10.px())
                         .dash_pattern(&pattern(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::LAVENDER)),
                 )
                 .with_fixed(
@@ -865,12 +873,14 @@ mod tests {
                         .dash_pattern(&pattern(&[5, 20]))
                         .start_cap(Cap::Round)
                         .end_cap(Cap::Square)
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::ORANGE)),
                 )
                 .with_fixed(
                     Divider::horizontal()
                         .hairline()
                         .dash_pattern(&pattern(&[5, 1]))
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::CRIMSON)),
                 )
                 .with_fixed(
@@ -878,6 +888,7 @@ mod tests {
                         .thickness(3.px())
                         .dash_pattern(&pattern(&[1, 6, 1, 12]))
                         .cap(Cap::Round)
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::GOLD)),
                 )
                 .with_fixed(
@@ -887,10 +898,12 @@ mod tests {
                         .dash_fit(DashFit::Stretch)
                         .pad(20.px())
                         .label("O")
+                        .prepare()
                         .with_props(ContentColor::new(palette::css::HOT_PINK)),
                 )
-                .with_auto_id(),
+                .prepare(),
         )
+        .prepare()
         .with_props(Padding::all(10.));
 
         let mut harness =
@@ -906,6 +919,7 @@ mod tests {
                 .thickness(5.px())
                 .dash_pattern(&pattern(&[20, 10, 10, 20]))
                 .dash_fit(fit)
+                .prepare()
                 .with_props(ContentColor::new(palette::css::MAGENTA))
         };
 
@@ -918,8 +932,10 @@ mod tests {
                 .with_fixed(divider_fit(DashFit::Start))
                 .with_fixed(divider_fit(DashFit::Center))
                 .with_fixed(divider_fit(DashFit::End))
+                .prepare()
                 .with_props(Background::Color(palette::css::MIDNIGHT_BLUE)),
         )
+        .prepare()
         .with_props(Padding::all(10.));
 
         let mut harness =
@@ -936,19 +952,19 @@ mod tests {
                 Divider::horizontal()
                     .label("Start")
                     .placement(Placement::Start)
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Divider::horizontal()
                     .label("Center")
                     .placement(Placement::Center)
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with_fixed(
                 Divider::horizontal()
                     .label("End")
                     .placement(Placement::End)
-                    .with_auto_id(),
+                    .prepare(),
             )
             .with(
                 Flex::row()
@@ -958,24 +974,24 @@ mod tests {
                         Divider::vertical()
                             .label("Start")
                             .placement(Placement::Start)
-                            .with_auto_id(),
+                            .prepare(),
                     )
                     .with_fixed(
                         Divider::vertical()
                             .label("Center")
                             .placement(Placement::Center)
-                            .with_auto_id(),
+                            .prepare(),
                     )
                     .with_fixed(
                         Divider::vertical()
                             .label("End")
                             .placement(Placement::End)
-                            .with_auto_id(),
+                            .prepare(),
                     )
-                    .with_auto_id(),
+                    .prepare(),
                 1.,
             )
-            .with_auto_id();
+            .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), root, Size::new(200., 200.));
@@ -985,9 +1001,12 @@ mod tests {
 
     #[test]
     fn content() {
-        let content = Spinner::new().with_props(Dimensions::fixed(30.px(), 30.px()));
+        let content = Spinner::new()
+            .prepare()
+            .with_props(Dimensions::fixed(30.px(), 30.px()));
         let root = Divider::horizontal()
             .content(content)
+            .prepare()
             .with_props(Dimensions::STRETCH);
 
         let mut harness =

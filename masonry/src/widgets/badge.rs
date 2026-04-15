@@ -36,7 +36,7 @@ use crate::widgets::Label;
 /// use masonry::core::Widget;
 /// use masonry::widgets::{Badge, Label};
 ///
-/// let badge = Badge::new(Label::new("New").with_auto_id());
+/// let badge = Badge::new(Label::new("New").prepare());
 /// ```
 ///
 /// [`Background`]: crate::properties::Background
@@ -92,7 +92,7 @@ impl Badge {
         let label = Label::new(text)
             .with_style(StyleProperty::FontSize(12.0))
             .with_style(StyleProperty::FontWeight(FontWeight::BOLD))
-            .with_auto_id();
+            .prepare();
 
         Self::new(label)
     }
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn badge_is_non_interactive() {
-        let widget = Badge::new(Label::new("New").with_auto_id()).with_auto_id();
+        let widget = Badge::new(Label::new("New").prepare()).prepare();
         let window_size = Size::new(80.0, 40.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         let badge_id = harness.root_id();
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn badge_with_text() {
-        let widget = Badge::with_text("New").with_auto_id();
+        let widget = Badge::with_text("New").prepare();
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = Size::new(120.0, 60.0);
         params.root_padding = TestHarnessParams::ROOT_PADDING;
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn badge_count_overflow() {
-        let widget = Badge::count(120).with_auto_id();
+        let widget = Badge::count(120).prepare();
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = Size::new(120.0, 60.0);
         params.root_padding = TestHarnessParams::ROOT_PADDING;

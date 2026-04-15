@@ -895,7 +895,7 @@ mod tests {
                 // Because if we were at (0,0) it would be effectively the same as no parent.
                 ctx.place_child(child, Point::new(0., top_pad));
             })
-            .with_auto_id()
+            .prepare()
     }
 
     #[test]
@@ -921,7 +921,7 @@ mod tests {
                 .with_fixed(button("Item 14", 20., None))
                 .with_fixed_spacer(10.px()),
         ))
-        .with_auto_id();
+        .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(400., 400.));
@@ -950,9 +950,9 @@ mod tests {
                 .with_fixed_spacer(500.px())
                 .with_fixed(NewWidget::new(Button::with_text("Fully visible")).with_tag(button_tag))
                 .with_fixed_spacer(500.px())
-                .with_auto_id(),
+                .prepare(),
         )
-        .with_auto_id();
+        .prepare();
 
         let mut harness =
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200., 200.));
@@ -965,7 +965,7 @@ mod tests {
     #[test]
     fn portal_accessibility_node_exposes_scroll() {
         let portal_tag = WidgetTag::named("portal");
-        let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
+        let content = SizedBox::empty().size(300.px(), 300.px()).prepare();
         let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
         let mut harness =
@@ -999,7 +999,7 @@ mod tests {
     #[test]
     fn portal_keyboard_scroll_updates_access_tree() {
         let portal_tag = WidgetTag::named("portal");
-        let content = SizedBox::empty().size(300.px(), 300.px()).with_auto_id();
+        let content = SizedBox::empty().size(300.px(), 300.px()).prepare();
         let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
         let mut harness =

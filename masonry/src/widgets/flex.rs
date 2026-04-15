@@ -1387,10 +1387,10 @@ mod tests {
     fn flex_row_fixed_size_only() {
         let widget = NewWidget::new(
             Flex::row()
-                .with_fixed(Label::new("hello").with_auto_id())
-                .with_fixed(Label::new("world").with_auto_id())
-                .with_fixed(Label::new("foo").with_auto_id())
-                .with_fixed(Label::new("bar").with_auto_id()),
+                .with_fixed(Label::new("hello").prepare())
+                .with_fixed(Label::new("world").prepare())
+                .with_fixed(Label::new("foo").prepare())
+                .with_fixed(Label::new("bar").prepare()),
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
@@ -1433,11 +1433,11 @@ mod tests {
     fn flex_row_cross_axis_snapshots() {
         let widget = NewWidget::new(
             Flex::row()
-                .with_fixed(Label::new("hello").with_auto_id())
-                .with(Label::new("world").with_auto_id(), 1.0)
-                .with_fixed(Label::new("foo").with_auto_id())
+                .with_fixed(Label::new("hello").prepare())
+                .with(Label::new("world").prepare(), 1.0)
+                .with_fixed(Label::new("foo").prepare())
                 .with(
-                    Label::new("bar").with_auto_id(),
+                    Label::new("bar").prepare(),
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
         )
@@ -1484,10 +1484,10 @@ mod tests {
         // ALl children need to be fixed, otherwise a flexible child will use up all the space.
         let widget = NewWidget::new(
             Flex::row()
-                .with_fixed(Label::new("hello").with_auto_id())
-                .with_fixed(Label::new("world").with_auto_id())
-                .with_fixed(Label::new("foo").with_auto_id())
-                .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
+                .with_fixed(Label::new("hello").prepare())
+                .with_fixed(Label::new("world").prepare())
+                .with_fixed(Label::new("foo").prepare())
+                .with(Label::new("bar").prepare(), CrossAxisAlignment::Start),
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
@@ -1531,11 +1531,11 @@ mod tests {
     fn flex_col_cross_axis_snapshots() {
         let widget = NewWidget::new(
             Flex::column()
-                .with_fixed(Label::new("hello").with_auto_id())
-                .with(Label::new("world").with_auto_id(), 1.0)
-                .with_fixed(Label::new("foo").with_auto_id())
+                .with_fixed(Label::new("hello").prepare())
+                .with(Label::new("world").prepare(), 1.0)
+                .with_fixed(Label::new("foo").prepare())
                 .with(
-                    Label::new("bar").with_auto_id(),
+                    Label::new("bar").prepare(),
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
         )
@@ -1582,10 +1582,10 @@ mod tests {
         // ALl children need to be fixed, otherwise a flexible child will use up all the space.
         let widget = NewWidget::new(
             Flex::column()
-                .with_fixed(Label::new("hello").with_auto_id())
-                .with_fixed(Label::new("world").with_auto_id())
-                .with_fixed(Label::new("foo").with_auto_id())
-                .with(Label::new("bar").with_auto_id(), CrossAxisAlignment::Start),
+                .with_fixed(Label::new("hello").prepare())
+                .with_fixed(Label::new("world").prepare())
+                .with_fixed(Label::new("foo").prepare())
+                .with(Label::new("bar").prepare(), CrossAxisAlignment::Start),
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
@@ -1645,20 +1645,33 @@ mod tests {
         let flex = NewWidget::new(
             Flex::row()
                 .cross_axis_alignment(CrossAxisAlignment::Center)
-                .with_fixed(Label::new("Left").with_props(props(0., 0.)))
-                .with_fixed(Label::new("A\nB").with_props(props(30., 10.)))
-                .with_fixed(Label::new("C\nD\nE").with_props(props(20., 115.)))
-                .with_fixed(Label::new("F\nG\nH\nI").with_props(props(20., 20.)))
-                .with_fixed(Label::new("J\nK\nL\nM\nN").with_props(props(0., 30.)))
-                .with_fixed(Label::new("Right\nToo").with_props(props(50., 50.))),
+                .with_fixed(Label::new("Left").prepare().with_props(props(0., 0.)))
+                .with_fixed(Label::new("A\nB").prepare().with_props(props(30., 10.)))
+                .with_fixed(Label::new("C\nD\nE").prepare().with_props(props(20., 115.)))
+                .with_fixed(
+                    Label::new("F\nG\nH\nI")
+                        .prepare()
+                        .with_props(props(20., 20.)),
+                )
+                .with_fixed(
+                    Label::new("J\nK\nL\nM\nN")
+                        .prepare()
+                        .with_props(props(0., 30.)),
+                )
+                .with_fixed(
+                    Label::new("Right\nToo")
+                        .prepare()
+                        .with_props(props(50., 50.)),
+                ),
         )
         .with_tag(flex_tag)
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
         let root = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)
-            .with_fixed(Label::new("Out").with_props(props(10., 10.)))
+            .with_fixed(Label::new("Out").prepare().with_props(props(10., 10.)))
             .with(flex, 1.0)
+            .prepare()
             .with_props((Gap::new(0.px()), Padding::all(20.)));
 
         let window_size = Size::new(240.0, 240.0);
@@ -1757,7 +1770,7 @@ mod tests {
                     scene.fill(border_box, bg_color).draw();
                     scene.stroke(line, &style, line_color).draw();
                 })
-                .with_auto_id()
+                .prepare()
         };
 
         let mut first = Flex::row().main_axis_alignment(MainAxisAlignment::Center);
@@ -1797,8 +1810,9 @@ mod tests {
 
         let root = Flex::column()
             .main_axis_alignment(MainAxisAlignment::SpaceBetween)
-            .with_fixed(first.with_props(props))
-            .with_fixed(last.with_props(props))
+            .with_fixed(first.prepare().with_props(props))
+            .with_fixed(last.prepare().with_props(props))
+            .prepare()
             .with_props((Gap::new(2.px()), Padding::all(10.)));
 
         let window_size = Size::new(450.0, 50.0);
@@ -1813,34 +1827,34 @@ mod tests {
 
         let image_1 = {
             let widget = Flex::column()
-                .with_fixed(Label::new("q").with_auto_id())
-                .with_fixed(Label::new("b").with_auto_id())
-                .with_fixed(Label::new("w").with_auto_id())
-                .with_fixed(Label::new("d").with_auto_id())
-                .with_auto_id();
+                .with_fixed(Label::new("q").prepare())
+                .with_fixed(Label::new("b").prepare())
+                .with_fixed(Label::new("w").prepare())
+                .with_fixed(Label::new("d").prepare())
+                .prepare();
             // -> qbwd
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), widget, window_size);
 
             harness.edit_root_widget(|mut flex| {
-                Flex::set_fixed(&mut flex, 0, Label::new("a").with_auto_id());
+                Flex::set_fixed(&mut flex, 0, Label::new("a").prepare());
                 // -> abwd
-                Flex::set(&mut flex, 2, Label::new("c").with_auto_id(), 0.);
+                Flex::set(&mut flex, 2, Label::new("c").prepare(), 0.);
                 // -> abcd
                 Flex::remove(&mut flex, 1);
                 // -> acd
-                Flex::add_fixed(&mut flex, Label::new("x").with_auto_id());
+                Flex::add_fixed(&mut flex, Label::new("x").prepare());
                 // -> acdx
-                Flex::add(&mut flex, Label::new("y").with_auto_id(), 2.0);
+                Flex::add(&mut flex, Label::new("y").prepare(), 2.0);
                 // -> acdxy
                 Flex::add_fixed_spacer(&mut flex, 5.px());
                 // -> acdxy_
                 Flex::add_spacer(&mut flex, 1.0);
                 // -> acdxy__
-                Flex::insert_fixed(&mut flex, 2, Label::new("i").with_auto_id());
+                Flex::insert_fixed(&mut flex, 2, Label::new("i").prepare());
                 // -> acidxy__
-                Flex::insert(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
+                Flex::insert(&mut flex, 2, Label::new("j").prepare(), 2.0);
                 // -> acjidxy__
                 Flex::insert_fixed_spacer(&mut flex, 2, 5.px());
                 // -> ac_jidxy__
@@ -1853,18 +1867,18 @@ mod tests {
 
         let image_2 = {
             let widget = Flex::column()
-                .with_fixed(Label::new("a").with_auto_id())
-                .with_fixed(Label::new("c").with_auto_id())
+                .with_fixed(Label::new("a").prepare())
+                .with_fixed(Label::new("c").prepare())
                 .with_spacer(1.0)
                 .with_fixed_spacer(5.px())
-                .with(Label::new("j").with_auto_id(), 2.0)
-                .with_fixed(Label::new("i").with_auto_id())
-                .with_fixed(Label::new("d").with_auto_id())
-                .with_fixed(Label::new("x").with_auto_id())
-                .with(Label::new("y").with_auto_id(), 2.0)
+                .with(Label::new("j").prepare(), 2.0)
+                .with_fixed(Label::new("i").prepare())
+                .with_fixed(Label::new("d").prepare())
+                .with_fixed(Label::new("x").prepare())
+                .with(Label::new("y").prepare(), 2.0)
                 .with_fixed_spacer(5.px())
                 .with_spacer(1.0)
-                .with_auto_id();
+                .prepare();
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1878,10 +1892,10 @@ mod tests {
     #[test]
     fn get_flex_child() {
         let widget = Flex::column()
-            .with_fixed(Label::new("hello").with_auto_id())
-            .with_fixed(Label::new("world").with_auto_id())
+            .with_fixed(Label::new("hello").prepare())
+            .with_fixed(Label::new("world").prepare())
             .with_fixed_spacer(1.px())
-            .with_auto_id();
+            .prepare();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
@@ -1904,7 +1918,7 @@ mod tests {
 
     #[test]
     fn divide_by_zero() {
-        let widget = Flex::column().with_spacer(0.0).with_auto_id();
+        let widget = Flex::column().with_spacer(0.0).prepare();
 
         // Running layout should not panic when the flex sum is zero.
         let window_size = Size::new(200.0, 150.0);
