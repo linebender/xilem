@@ -277,7 +277,7 @@ where
 /// A child element of a [`Flex`] view.
 pub enum FlexElement {
     /// Child widget.
-    Child(Pod<dyn Widget>, FlexParams),
+    Child(Box<Pod<dyn Widget>>, FlexParams),
     /// Child spacer with fixed size.
     FixedSpacer(Length),
     /// Child spacer with flex size.
@@ -334,7 +334,7 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::Child(child.erased(), FlexParams::default())
+        Self::Child(Box::new(child.erased()), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -567,7 +567,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
-        (FlexElement::Child(pod.erased(), self.params), state)
+        (
+            FlexElement::Child(Box::new(pod.erased()), self.params),
+            state,
+        )
     }
 
     fn rebuild(

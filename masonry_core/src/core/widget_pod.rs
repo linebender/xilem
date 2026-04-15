@@ -79,7 +79,7 @@ pub struct WidgetOptions {
 // Implementing that requires solving non-trivial design questions.
 
 enum WidgetPodInner<W: ?Sized> {
-    Create(NewWidget<W>),
+    Create(Box<NewWidget<W>>),
     Inserted,
 }
 
@@ -174,7 +174,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     pub fn to_pod(self) -> WidgetPod<W> {
         WidgetPod {
             id: self.id,
-            inner: WidgetPodInner::Create(self),
+            inner: WidgetPodInner::Create(Box::new(self)),
         }
     }
 
@@ -199,7 +199,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
 
     pub(crate) fn take_inner(&mut self) -> Option<NewWidget<W>> {
         match std::mem::replace(&mut self.inner, WidgetPodInner::Inserted) {
-            WidgetPodInner::Create(widget) => Some(widget),
+            WidgetPodInner::Create(widget) => Some(*widget),
             WidgetPodInner::Inserted => None,
         }
     }

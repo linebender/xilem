@@ -31,7 +31,6 @@
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(clippy::large_enum_variant, reason = "FIXME: NewWidget is too large")]
 
 pub use masonry;
 pub use xilem_core as core;
