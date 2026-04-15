@@ -122,8 +122,14 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         }
     }
 
-    /// Sets the [`WidgetTag`] to this widget.
+    /// Assigns the given [`WidgetTag`] to this widget.
     pub fn with_tag(mut self, tag: WidgetTag<W>) -> Self {
+        self.tag = Some(tag.inner);
+        self
+    }
+
+    /// Assigns the given erased [`WidgetTag`] to this widget.
+    pub fn with_erased_tag(mut self, tag: WidgetTag<dyn Widget>) -> Self {
         self.tag = Some(tag.inner);
         self
     }
