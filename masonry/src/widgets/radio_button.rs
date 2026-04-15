@@ -439,7 +439,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
-        harness.mouse_click_on(radio_id);
+        harness.mouse_click_on(radio_id, None);
         assert_eq!(
             harness.pop_action::<RadioButtonSelected>(),
             Some((RadioButtonSelected, radio_id))

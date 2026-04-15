@@ -9,7 +9,7 @@ use masonry_testing::{
     assert_debug_panics,
 };
 
-use crate::core::pointer::{PointerButton, PointerEvent};
+use crate::core::pointer::PointerEvent;
 use crate::core::{
     CursorIcon, Ime, NewWidget, PropertySet, TextEvent, Update, Widget, WidgetId, WidgetPod,
     WidgetTag,
@@ -118,7 +118,7 @@ fn disabled_widget_gets_no_event() {
         ]
     );
 
-    harness.mouse_click_on(button_id);
+    harness.mouse_click_on(button_id, None);
     assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     assert_matches!(harness.focused_widget_id(), None);
@@ -589,14 +589,14 @@ fn pointer_capture_affects_pointer_icon() {
     let label_id = harness.get_widget(label_tag).id();
 
     harness.mouse_move_to(icon_id);
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     assert_eq!(harness.cursor_icon(), CursorIcon::Crosshair);
 
     // We keep the Crosshair icon as long as the pointer stays captured.
     harness.mouse_move_to(label_id);
     assert_eq!(harness.cursor_icon(), CursorIcon::Crosshair);
 
-    harness.mouse_button_release(PointerButton::Primary);
+    harness.mouse_button_release(None);
     assert_eq!(harness.cursor_icon(), CursorIcon::Default);
 }
 
@@ -736,7 +736,7 @@ fn status_flag_update_order() {
     assert!(harness.get_widget(parent1_tag).ctx().is_hovered());
     assert!(harness.get_widget(parent1_tag).ctx().has_hovered());
 
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     let events: Vec<_> = receiver.try_iter().collect();
     assert_eq!(
         events,
@@ -750,7 +750,7 @@ fn status_flag_update_order() {
     assert!(harness.get_widget(parent1_tag).ctx().is_active());
     assert!(harness.get_widget(parent1_tag).ctx().has_active());
 
-    harness.mouse_button_release(PointerButton::Primary);
+    harness.mouse_button_release(None);
     let events: Vec<_> = receiver.try_iter().collect();
     assert_eq!(
         events,

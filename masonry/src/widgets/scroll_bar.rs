@@ -465,9 +465,8 @@ impl AllowRawMut for ScrollBar {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::TextEvent;
     use crate::core::keyboard::{Key, NamedKey};
-    use crate::core::{NewWidget, PointerButton};
+    use crate::core::{NewWidget, TextEvent};
     use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -485,13 +484,13 @@ mod tests {
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(scrollbar_id);
+        harness.mouse_click_on(scrollbar_id, None);
         // TODO - Scroll action?
         assert!(harness.pop_action_erased().is_none());
 
         assert_render_snapshot!(harness, "scrollbar_middle");
 
-        harness.mouse_button_press(PointerButton::Primary);
+        harness.mouse_button_press(None);
         harness.mouse_move(Point::new(30.0, 150.0));
 
         assert_render_snapshot!(harness, "scrollbar_down");
@@ -513,7 +512,7 @@ mod tests {
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(scrollbar_id);
+        harness.mouse_click_on(scrollbar_id, None);
         // TODO - Scroll action?
         assert!(harness.pop_action_erased().is_none());
 

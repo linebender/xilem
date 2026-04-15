@@ -234,7 +234,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         let badge_id = harness.root_id();
 
-        harness.mouse_click_on(badge_id);
+        harness.mouse_click_on(badge_id, None);
         assert!(harness.pop_action_erased().is_none());
         assert!(harness.focused_widget().is_none());
     }

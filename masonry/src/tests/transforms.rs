@@ -7,7 +7,7 @@ use std::f64::consts::PI;
 
 use masonry_testing::WrapperWidget;
 
-use crate::core::{NewWidget, PointerButton, PropertySet, Widget, WidgetOptions};
+use crate::core::{NewWidget, PropertySet, Widget, WidgetOptions};
 use crate::kurbo::{Affine, Vec2};
 use crate::layout::AsUnit;
 use crate::peniko::color::palette;
@@ -68,6 +68,6 @@ fn transforms_pointer_events() {
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((335.0, 350.0)); // Should hit the last "d" of the button text
-    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_press(None);
     assert_render_snapshot!(harness, "transforms_pointer_events");
 }

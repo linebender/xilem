@@ -360,7 +360,7 @@ mod tests {
         assert!(harness.pop_action_erased().is_none());
 
         // Click on switch (off -> wants to be on)
-        harness.mouse_click_on(switch_id);
+        harness.mouse_click_on(switch_id, None);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(switch_id));
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
@@ -371,7 +371,7 @@ mod tests {
         harness.edit_root_widget(|mut switch| Switch::set_on(&mut switch, true));
 
         // Click again (on -> wants to be off)
-        harness.mouse_click_on(switch_id);
+        harness.mouse_click_on(switch_id, None);
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
             Some((SwitchToggled(false), switch_id))
@@ -465,7 +465,7 @@ mod tests {
         assert_render_snapshot!(harness, "switch_off_hovered");
 
         // Now click to switch
-        harness.mouse_click_on(switch_id);
+        harness.mouse_click_on(switch_id, None);
         assert_eq!(
             harness.pop_action::<SwitchToggled>(),
             Some((SwitchToggled(true), switch_id))
