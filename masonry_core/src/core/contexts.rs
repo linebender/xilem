@@ -3,6 +3,11 @@
 
 //! The context types that are passed into various widget methods.
 
+#![expect(
+    missing_debug_implementations,
+    reason = "Not sure if it's worth the effort"
+)]
+
 use std::any::{Any, TypeId};
 use std::collections::hash_map::Entry;
 
@@ -49,6 +54,7 @@ macro_rules! impl_context_method {
 /// will have access to a `MutateCtx`. If that method mutates the widget in a way that
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg [`request_render`](MutateCtx::request_render)).
+//#[derive(Debug)]
 pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,

@@ -179,15 +179,15 @@ impl crate::core::one_of::PhantomElementCtx for ViewCtx {
     reason = "Implementation detail, public because of trait visibility rules"
 )]
 pub enum OneOfWidget<
-    A: ?Sized,
-    B: ?Sized,
-    C: ?Sized,
-    D: ?Sized,
-    E: ?Sized,
-    F: ?Sized,
-    G: ?Sized,
-    H: ?Sized,
-    I: ?Sized,
+    A: Widget + ?Sized,
+    B: Widget + ?Sized,
+    C: Widget + ?Sized,
+    D: Widget + ?Sized,
+    E: Widget + ?Sized,
+    F: Widget + ?Sized,
+    G: Widget + ?Sized,
+    H: Widget + ?Sized,
+    I: Widget + ?Sized,
 > {
     A(WidgetPod<A>),
     B(WidgetPod<B>),

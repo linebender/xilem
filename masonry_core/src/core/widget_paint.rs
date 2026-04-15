@@ -7,6 +7,7 @@ use crate::kurbo::{Affine, Join, Rect, Stroke};
 use crate::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius};
 
 /// References to common pre-paint properties.
+#[derive(Debug)]
 pub struct PrePaintProps<'a> {
     /// Box shadow.
     pub box_shadow: &'a BoxShadow,

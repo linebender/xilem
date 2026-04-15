@@ -6,7 +6,7 @@ use std::{any::TypeId, collections::HashMap, sync::Arc};
 use crate::core::{DefaultProperties, PropertyStack, PropertyStackId};
 
 /// An arena for storing [`PropertyStack`]s, which represent cascading sets of properties that can be applied to widgets.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PropertyArena {
     pub(crate) arena: HashMap<PropertyStackId, PropertyStack>,
 

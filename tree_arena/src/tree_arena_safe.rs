@@ -124,6 +124,11 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// Returns the number of items in the arena.
+    pub fn len(&self) -> usize {
+        self.parents_map.len()
+    }
+
     /// Returns a handle giving access to the roots of the tree.
     pub fn roots(&self) -> ArenaRefList<'_, T> {
         ArenaRefList {

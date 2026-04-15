@@ -1,6 +1,11 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![expect(
+    missing_debug_implementations,
+    reason = "Widgets are not expected to implement Debug"
+)]
+
 use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};

@@ -8,6 +8,11 @@
 //! Note: Some of these types are undocumented. They're meant to help maintainers of
 //! Masonry, not to be user-facing.
 
+#![expect(
+    missing_debug_implementations,
+    reason = "Widgets are not expected to implement Debug"
+)]
+
 use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::VecDeque;

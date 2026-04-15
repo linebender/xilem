@@ -17,7 +17,7 @@ pub struct PropertyStackId(pub(crate) NonZeroU64);
 /// Each layer of the stack consists of a [`Selector`] and a set of properties.
 /// When resolving a property, the stack is traversed from top to bottom until
 /// a matching selector with the requested property is found.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct PropertyStack {
     pub(crate) stack: Vec<(Selector, PropertySet)>,
 }

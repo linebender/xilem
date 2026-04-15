@@ -14,7 +14,7 @@ static EMPTY_STACK: PropertyStack = PropertyStack::new();
 ///
 /// Default property values can be added to this collection for
 /// every `(widget type, property type)` pair.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct DefaultProperties {
     /// Maps widget types to the default property map for that widget.
     pub(crate) map: HashMap<TypeId, AnyMap>,
