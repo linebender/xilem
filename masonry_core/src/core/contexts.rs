@@ -23,7 +23,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{ParentLinkedList, TypeSet, get_debug_color};
+use crate::util::{ParentLinkedList, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -54,7 +54,6 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
-    pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) property_arena: &'a PropertyArena,
 }
@@ -308,7 +307,6 @@ impl MutateCtx<'_> {
                 stack: child_stack,
                 class_set: &node_mut.item.class_set,
             },
-            changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
             property_arena: self.property_arena,
         };
@@ -332,7 +330,6 @@ impl MutateCtx<'_> {
                 stack: self.properties.stack,
                 class_set: self.properties.class_set,
             },
-            changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
             property_arena: self.property_arena,
         }
@@ -2210,7 +2207,6 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties,
-            changed_properties: TypeSet::default(),
             class_set: ClassSet {
                 classes,
                 ..ClassSet::default()
