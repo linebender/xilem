@@ -17,8 +17,7 @@ use masonry_core::core::{
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
 use masonry_imaging::texture_render::{
-    RenderInput as ImagingRenderInput, RenderTarget as ImagingRenderTarget,
-    Renderer as ImagingRenderer,
+    RenderTarget as ImagingRenderTarget, Renderer as ImagingRenderer,
 };
 use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
 use tracing::{info, info_span, trace};
@@ -599,20 +598,6 @@ impl MasonryState<'_> {
         window.handle.set_ime_allowed(false);
     }
 
-    #[cfg(feature = "imaging_vello")]
-    pub(crate) fn set_image_override(
-        &mut self,
-        image: masonry_core::peniko::ImageData,
-        texture: wgpu::Texture,
-    ) {
-        self.renderer.set_image_override(image, texture);
-    }
-
-    #[cfg(feature = "imaging_vello")]
-    pub(crate) fn clear_image_override(&mut self, image: &masonry_core::peniko::ImageData) {
-        self.renderer.clear_image_override(image);
-    }
-
     // --- MARK: REDRAW
     fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
         let _span = info_span!("redraw");
@@ -736,7 +721,7 @@ impl MasonryState<'_> {
                 texture: &surface.target_texture,
                 view: &surface.target_view,
             },
-            ImagingRenderInput { frame },
+            frame,
         ) {
             tracing::error!(
                 backend = ImagingRenderer::BACKEND_NAME,
