@@ -18,12 +18,9 @@ targets = []
 
 [features]
 default = ["masonry_core/default", "imaging_vello"]
-imaging_vello = ["masonry_testing?/imaging_vello", "masonry_winit/imaging_vello"]
-imaging_vello_hybrid = [
-    "masonry_testing?/imaging_vello_hybrid",
-    "masonry_winit/imaging_vello_hybrid",
-]
-imaging_skia = ["masonry_testing?/imaging_skia", "masonry_winit/imaging_skia"]
+imaging_vello = ["masonry_winit/imaging_vello"]
+imaging_vello_hybrid = ["masonry_winit/imaging_vello_hybrid"]
+imaging_skia = ["masonry_winit/imaging_skia"]
 tracy = ["masonry_core/tracy"]
 testing = ["dep:masonry_testing"]
 

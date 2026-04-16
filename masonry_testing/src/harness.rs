@@ -12,11 +12,9 @@ use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_imaging::ImageRenderer as _;
-use masonry_imaging::image_render::{
-    BACKEND_NAME as IMAGING_BACKEND_NAME, Renderer as ImagingRenderer, new_headless_renderer,
-};
-use masonry_imaging::{Layer as ImagingLayer, PreparedFrame};
+use imaging_vello_cpu::VelloCpuRenderer;
+use masonry_core::imaging::record::{Scene, replay_transformed};
+use masonry_core::imaging::{ImageRenderer as _, Painter};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -33,7 +31,7 @@ use masonry_core::core::{
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use masonry_core::kurbo::{Point, Size, Vec2};
+use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
 
@@ -133,7 +131,7 @@ pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: accesskit_consumer::Tree,
-    renderer: Option<ImagingRenderer>,
+    renderer: Option<VelloCpuRenderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     root_padding: u32,
@@ -474,14 +472,11 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: RENDER
-    // TODO - We add way too many dependencies in this code
-    // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
     /// was created with on all sides.
-    /// This padded area is currently indicated with a different background color.
     // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
     // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
@@ -493,39 +488,40 @@ impl<W: Widget> TestHarness<W> {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
 
-        let overlays: Vec<_> = paint_result
-            .overlays
-            .iter()
-            .map(|layer| ImagingLayer {
-                scene: &layer.scene,
-                transform: layer.transform,
-            })
-            .collect();
-        let frame = PreparedFrame::new(
-            self.window_size.width,
-            self.window_size.height,
-            1.0,
-            self.background_color,
-            &paint_result.base,
-            &overlays,
-        );
-        let mut source = frame.snapshot_source(self.root_padding);
-        let width = source.width();
-        let height = source.height();
-        if self.renderer.is_none() {
-            self.renderer =
-                Some(new_headless_renderer().expect("create imaging renderer for test harness"));
+        let (width, height) = {
+            // Avoid having a zero-sized image.
+            let width = self.window_size.width.max(1) + self.root_padding * 2;
+            let height = self.window_size.height.max(1) + self.root_padding * 2;
+            (width, height)
+        };
+
+        let mut full_scene = Scene::new();
+        {
+            let (width, height) = { (f64::from(width), f64::from(height)) };
+            let mut painter = Painter::new(&mut full_scene);
+            painter.fill_rect(Rect::new(0.0, 0.0, width, height), self.background_color);
+
+            let padding_transform =
+                Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
+
+            replay_transformed(&paint_result.base, &mut full_scene, padding_transform);
+            for layer in paint_result.overlays {
+                replay_transformed(
+                    &layer.scene,
+                    &mut full_scene,
+                    padding_transform * layer.transform,
+                );
+            }
         }
 
+        if self.renderer.is_none() {
+            self.renderer = Some(VelloCpuRenderer::new(1, 1));
+        }
         let renderer = self.renderer.as_mut().unwrap();
+
         let image = renderer
-            .render_source(&mut source, width, height)
-            .unwrap_or_else(|err| {
-                panic!(
-                    "render retained imaging scene for {}: {err:?}",
-                    IMAGING_BACKEND_NAME
-                )
-            });
+            .render_source(&mut full_scene, width, height)
+            .unwrap();
         RgbaImage::from_vec(image.width, image.height, image.data).expect("failed to create image")
     }
 

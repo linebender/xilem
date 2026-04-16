@@ -100,7 +100,7 @@ fn register_invalid_child() {
 fn disabled_widget_gets_no_event() {
     let button_tag = WidgetTag::named("button");
     let parent_tag = WidgetTag::named("parent");
-    let child = NewWidget::new(Button::with_text("").record()).with_tag(button_tag);
+    let child = NewWidget::new(Button::with_text("Click me").record()).with_tag(button_tag);
     let parent = NewWidget::new(ModularWidget::new_parent(child)).with_tag(parent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), parent);

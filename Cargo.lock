@@ -2469,10 +2469,9 @@ version = "0.4.0"
 dependencies = [
  "accesskit_consumer",
  "assert_matches",
- "futures-intrusive",
  "image",
+ "imaging_vello_cpu",
  "masonry_core",
- "masonry_imaging",
  "oxipng",
  "profiling",
  "tracing",
