@@ -15,6 +15,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 
+use super::VisualLayerPlan;
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
@@ -32,7 +33,7 @@ use crate::passes::event::{
 };
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
-use crate::passes::paint::{PaintResult, run_paint_pass};
+use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_fonts_pass, run_update_pointer_pass, run_update_props_pass, run_update_scroll_pass,
@@ -572,18 +573,17 @@ impl RenderRoot {
 
     /// Redraws the window.
     ///
-    /// Returns an update to the accessibility tree and retained `imaging` scenes representing
-    /// the widget tree's current state.
-    pub fn redraw(&mut self) -> (PaintResult, Option<TreeUpdate>) {
+    /// Returns the current visual-layer plan and, if accessibility is active, a tree update.
+    pub fn redraw(&mut self) -> (VisualLayerPlan, Option<TreeUpdate>) {
         self.run_rewrite_passes();
 
         let access_tree_active = self.global_state.access_tree_active;
 
         // TODO - Handle invalidation regions
-        let paint_result = run_paint_pass(self);
+        let visual_layers = run_paint_pass(self);
         let tree_update = access_tree_active
             .then(|| run_accessibility_pass(self, self.global_state.scale_factor));
-        (paint_result, tree_update)
+        (visual_layers, tree_update)
     }
 
     /// Returns the current icon that the mouse should display.

@@ -480,7 +480,7 @@ impl<W: Widget> TestHarness<W> {
     // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
     // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
-        let (paint_result, tree_update) = self.render_root.redraw();
+        let (visual_layers, tree_update) = self.render_root.redraw();
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -504,8 +504,7 @@ impl<W: Widget> TestHarness<W> {
             let padding_transform =
                 Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
 
-            replay_transformed(&paint_result.base, &mut full_scene, padding_transform);
-            for layer in paint_result.overlays {
+            for layer in &visual_layers.layers {
                 replay_transformed(
                     &layer.scene,
                     &mut full_scene,

@@ -8,59 +8,14 @@ use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{RenderRoot, RenderRootState, VisualLayer, VisualLayerPlan};
 use crate::core::{
     DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
 };
-use crate::imaging::record::{Clip, Geometry, Scene, replay, replay_transformed};
+use crate::imaging::record::{Clip, Geometry, Scene};
 use crate::imaging::{PaintSink, Painter};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::get_debug_color;
-
-/// A painted overlay layer, ready for compositing.
-///
-/// The retained `imaging` scene is in the layer's local coordinate space. To composite into
-/// window space, apply the layer's [`transform`](Self::transform).
-#[derive(Debug)]
-pub struct PaintedLayer {
-    /// The retained `imaging` scene for this layer, in the layer's local coordinate space.
-    pub scene: Scene,
-    /// Transform from layer-local space to window space.
-    ///
-    /// For layers placed at a simple position, this is a translation.
-    /// Apply this transform when compositing the layer's scene into window space.
-    pub transform: Affine,
-    /// The root widget ID of this layer.
-    pub root_id: WidgetId,
-}
-
-/// Result of the paint pass — one retained `imaging` scene per layer.
-///
-/// The base layer contains the main application content in window coordinate space.
-/// Overlay layers contain tooltips, menus, and other popups in layer-local coordinate
-/// space, ordered from bottom to top (painter's order).
-#[derive(Debug)]
-pub struct PaintResult {
-    /// The base retained `imaging` scene (main application content) in window coordinate space.
-    pub base: Scene,
-    /// Overlay layer scenes in z-order (bottom to top), each in layer-local coordinates.
-    pub overlays: Vec<PaintedLayer>,
-}
-
-impl PaintResult {
-    /// Replay all layers into a sink in window coordinate space.
-    ///
-    /// This is the backend-agnostic way to consume Masonry's retained paint output.
-    pub fn replay_into<S>(&self, sink: &mut S)
-    where
-        S: PaintSink + ?Sized,
-    {
-        replay(&self.base, sink);
-        for layer in &self.overlays {
-            replay_transformed(&layer.scene, sink, layer.transform);
-        }
-    }
-}
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
@@ -225,7 +180,7 @@ fn paint_widget(
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#render-passes).
-pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
+pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
     let _span = info_span!("paint").entered();
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
@@ -236,39 +191,25 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
     let layer_root_ids = root.layer_root_ids();
 
     // Paint each layer into its own scene.
-    let mut base_scene = Scene::new();
-    let mut overlays = Vec::new();
+    let mut layers = Vec::new();
 
     for (idx, &layer_widget_id) in layer_root_ids.iter().enumerate() {
-        if idx == 0 {
-            paint_layer(
-                root,
-                &mut base_scene,
-                &mut scene_cache,
-                root_id,
-                layer_widget_id,
-            );
+        let mut scene = Scene::new();
+        paint_layer(root, &mut scene, &mut scene_cache, root_id, layer_widget_id);
+
+        let transform = if idx == 0 {
+            Affine::IDENTITY
         } else {
-            let mut layer_scene = Scene::new();
-            paint_layer(
-                root,
-                &mut layer_scene,
-                &mut scene_cache,
-                root_id,
-                layer_widget_id,
-            );
-
-            let layer_to_window_transform = root
-                .widget_arena
+            root.widget_arena
                 .get_state(layer_widget_id)
-                .window_transform;
+                .window_transform
+        };
 
-            overlays.push(PaintedLayer {
-                scene: layer_scene,
-                transform: layer_to_window_transform,
-                root_id: layer_widget_id,
-            });
-        }
+        layers.push(VisualLayer {
+            scene,
+            transform,
+            root_id: layer_widget_id,
+        });
     }
 
     root.global_state.scene_cache = scene_cache;
@@ -298,28 +239,17 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> PaintResult {
             window_to_layer_transform * border_box_to_window_transform;
 
         // Draw the hover rect in the owning layer's scene.
-        if layer_root == layer_root_ids[0] {
-            Painter::new(&mut base_scene)
-                .fill(rect, HOVER_FILL_COLOR)
-                .transform(border_box_to_layer_transform)
-                .draw();
-        } else if let Some(layer) = overlays.iter_mut().find(|l| l.root_id == layer_root) {
-            Painter::new(&mut layer.scene)
-                .fill(rect, HOVER_FILL_COLOR)
-                .transform(border_box_to_layer_transform)
-                .draw();
-        } else {
-            Painter::new(&mut base_scene)
-                .fill(rect, HOVER_FILL_COLOR)
-                .transform(border_box_to_layer_transform)
-                .draw();
-        }
+        let target_idx = layers
+            .iter()
+            .position(|layer| layer.root_id == layer_root)
+            .unwrap_or(0);
+        Painter::new(&mut layers[target_idx].scene)
+            .fill(rect, HOVER_FILL_COLOR)
+            .transform(border_box_to_layer_transform)
+            .draw();
     }
 
-    PaintResult {
-        base: base_scene,
-        overlays,
-    }
+    VisualLayerPlan { layers }
 }
 
 /// Paint a single layer's widget subtree into `target_scene`.
