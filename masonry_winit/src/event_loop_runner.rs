@@ -666,9 +666,9 @@ impl MasonryState<'_> {
             self.render_cx.on_window_resize_state_change(surface, true);
         }
 
-        let (paint_result, tree_update) = window.render_root.redraw();
-        let overlays: Vec<_> = paint_result
-            .overlays
+        let (visual_layers, tree_update) = window.render_root.redraw();
+        let overlays: Vec<_> = visual_layers
+            .overlay_layers()
             .iter()
             .map(|layer| ImagingLayer {
                 scene: &layer.scene,
@@ -676,12 +676,15 @@ impl MasonryState<'_> {
             })
             .collect();
         let size = window.render_root.size();
+        let root_layer = visual_layers
+            .root_layer()
+            .expect("paint should always produce a root layer");
         let frame = PreparedFrame::new(
             size.width,
             size.height,
             window.handle.scale_factor(),
             window.base_color,
-            &paint_result.base,
+            &root_layer.scene,
             &overlays,
         );
         Self::render(surface, window, frame, &self.render_cx, &mut self.renderer);
