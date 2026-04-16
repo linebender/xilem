@@ -40,11 +40,12 @@ impl LayerCollector {
     }
 
     fn finish_current_layer(&mut self, allow_empty: bool) {
-        if !allow_empty && self.current_scene == Scene::new() {
+        let empty_scene = Scene::new();
+        if !allow_empty && self.current_scene == empty_scene {
             return;
         }
 
-        let scene = std::mem::replace(&mut self.current_scene, Scene::new());
+        let scene = std::mem::replace(&mut self.current_scene, empty_scene);
         self.layers.push(VisualLayer {
             scene,
             transform: self.transform,

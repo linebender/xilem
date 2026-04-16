@@ -1,10 +1,11 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use kurbo::Affine;
+
 use crate::core::WidgetId;
 use crate::imaging::PaintSink;
 use crate::imaging::record::{Scene, replay_transformed};
-use kurbo::Affine;
 
 /// Snapshot of Masonry's current visual layers in painter order.
 ///
@@ -64,10 +65,11 @@ pub struct VisualLayer {
 #[cfg(test)]
 mod tests {
     use super::{VisualLayer, VisualLayerPlan};
+    use crate::core::WidgetId;
     use crate::imaging::Painter;
     use crate::imaging::record::{Scene, replay_transformed};
-    use crate::peniko::Color;
     use kurbo::{Affine, Rect};
+    use peniko::Color;
 
     fn filled_scene(rect: Rect, color: Color) -> Scene {
         let mut scene = Scene::new();
@@ -86,12 +88,12 @@ mod tests {
                 VisualLayer {
                     scene: root_scene.clone(),
                     transform: Affine::IDENTITY,
-                    root_id: crate::core::WidgetId::next(),
+                    root_id: WidgetId::next(),
                 },
                 VisualLayer {
                     scene: overlay_scene.clone(),
                     transform: Affine::translate((20.0, 5.0)),
-                    root_id: crate::core::WidgetId::next(),
+                    root_id: WidgetId::next(),
                 },
             ],
         };

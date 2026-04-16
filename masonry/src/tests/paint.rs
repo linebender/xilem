@@ -3,18 +3,16 @@
 
 use std::sync::Arc;
 
-use masonry_core::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
-use masonry_core::dpi::PhysicalSize;
-use masonry_core::peniko::Blob;
-
 use assert_matches::assert_matches;
 
+use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
 use crate::core::{NewWidget, PaintLayerMode, PropertySet, Widget, WidgetTag};
+use crate::dpi::PhysicalSize;
 use crate::kurbo::{Circle, Dashes, Point, Size, Stroke, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
-use crate::peniko::Color;
 use crate::peniko::color::{AlphaColor, Srgb};
+use crate::peniko::{Blob, Color};
 use crate::properties::types::MainAxisAlignment;
 use crate::properties::{Background, Dimensions, Gap, Padding};
 use crate::testing::{
