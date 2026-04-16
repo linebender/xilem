@@ -18,7 +18,7 @@ targets = []
 
 [features]
 default = ["imaging_vello"]
-imaging_vello = ["dep:imaging_vello", "dep:vello"]
+imaging_vello = ["dep:imaging_vello"]
 imaging_vello_hybrid = ["dep:imaging_vello_hybrid"]
 imaging_vello_cpu = ["dep:imaging_vello_cpu"]
 imaging_skia = ["dep:imaging_skia"]
@@ -31,7 +31,6 @@ imaging_vello_cpu = { workspace = true, optional = true }
 kurbo.workspace = true
 peniko.workspace = true
 wgpu.workspace = true
-vello = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 imaging_skia = { workspace = true, optional = true }

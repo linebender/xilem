@@ -25,13 +25,6 @@ pub struct RenderTarget<'a> {
     pub view: &'a wgpu::TextureView,
 }
 
-/// Masonry paint output prepared for texture rendering.
-#[derive(Clone, Copy, Debug)]
-pub struct RenderInput<'a> {
-    /// Flattened Masonry frame content prepared for rendering.
-    pub frame: PreparedFrame<'a>,
-}
-
 /// Errors that can occur while rendering Masonry content into a target texture.
 #[derive(Debug)]
 pub struct Error(imp::Error);
@@ -61,9 +54,9 @@ impl Renderer {
     pub fn render_to_texture(
         &mut self,
         target: RenderTarget<'_>,
-        input: RenderInput<'_>,
+        frame: PreparedFrame<'_>,
     ) -> Result<(), Error> {
-        self.0.render_to_texture(target, input).map_err(Error)
+        self.0.render_to_texture(target, frame).map_err(Error)
     }
 }
 
@@ -73,25 +66,23 @@ impl Default for Renderer {
     }
 }
 
-#[cfg(all(
-    not(feature = "imaging_vello"),
-    any(
-        all(feature = "imaging_skia", not(target_arch = "wasm32")),
-        feature = "imaging_vello_hybrid"
-    )
+#[cfg(any(
+    all(feature = "imaging_skia", not(target_arch = "wasm32")),
+    feature = "imaging_vello",
+    feature = "imaging_vello_hybrid"
 ))]
-mod non_vello {
+mod shared_texture_renderer {
     use imaging::render::TextureRenderer;
 
     use crate::PreparedFrame;
 
     #[derive(Debug)]
-    pub(super) struct CachedRenderer<R, K> {
+    pub(super) struct RendererCache<R, K> {
         key: Option<K>,
         inner: Option<R>,
     }
 
-    impl<R, K> CachedRenderer<R, K>
+    impl<R, K> RendererCache<R, K>
     where
         K: Copy + Eq,
     {
@@ -119,6 +110,15 @@ mod non_vello {
         }
     }
 
+    #[cfg(any(feature = "imaging_vello", feature = "imaging_vello_hybrid"))]
+    #[inline]
+    pub(super) fn device_queue_key(target: super::RenderTarget<'_>) -> (usize, usize) {
+        (
+            target.device as *const _ as usize,
+            target.queue as *const _ as usize,
+        )
+    }
+
     pub(super) fn render_window_source_to_texture<R>(
         renderer: &mut R,
         frame: PreparedFrame<'_>,
@@ -138,6 +138,8 @@ mod non_vello {
     all(feature = "imaging_skia", not(target_arch = "wasm32"))
 )))]
 mod imp {
+    use crate::PreparedFrame;
+
     #[derive(Debug)]
     pub(super) enum Error {}
 
@@ -162,7 +164,7 @@ mod imp {
         pub(super) fn render_to_texture(
             &mut self,
             _: super::RenderTarget<'_>,
-            _: super::RenderInput<'_>,
+            _: PreparedFrame<'_>,
         ) -> Result<(), Error> {
             unreachable!("a renderer backend feature is required")
         }
@@ -175,10 +177,11 @@ mod imp {
     not(target_arch = "wasm32")
 ))]
 mod imp {
-    use super::non_vello::{CachedRenderer, render_window_source_to_texture};
+    use super::shared_texture_renderer::{RendererCache, render_window_source_to_texture};
     use crate::skia::{TargetRenderer, TextureTarget, new_target_renderer};
 
-    use super::{RenderInput, RenderTarget};
+    use super::RenderTarget;
+    use crate::PreparedFrame;
 
     /// Errors that can occur while rendering Masonry content with Skia.
     #[derive(Debug)]
@@ -203,7 +206,7 @@ mod imp {
     /// Runtime renderer state for the Skia backend.
     #[derive(Debug)]
     pub(super) struct Renderer {
-        inner: CachedRenderer<TargetRenderer, (usize, usize, usize)>,
+        inner: RendererCache<TargetRenderer, (usize, usize, usize)>,
     }
 
     impl Renderer {
@@ -213,7 +216,7 @@ mod imp {
         /// Create an empty renderer state.
         pub(super) fn new() -> Self {
             Self {
-                inner: CachedRenderer::new(),
+                inner: RendererCache::new(),
             }
         }
 
@@ -221,7 +224,7 @@ mod imp {
         pub(super) fn render_to_texture(
             &mut self,
             target: RenderTarget<'_>,
-            input: RenderInput<'_>,
+            frame: PreparedFrame<'_>,
         ) -> Result<(), Error> {
             let renderer = self.inner.get_or_try_init(
                 (
@@ -239,83 +242,46 @@ mod imp {
                 },
             )?;
 
-            render_window_source_to_texture(
-                renderer,
-                input.frame,
-                TextureTarget::new(target.texture),
-            )
-            .map_err(Error::Render)
+            render_window_source_to_texture(renderer, frame, TextureTarget::new(target.texture))
+                .map_err(Error::Render)
         }
     }
 }
 
 #[cfg(feature = "imaging_vello")]
-impl Renderer {
-    /// Set a persistent image override for the Vello backend.
-    pub fn set_image_override(&mut self, image: peniko::ImageData, texture: wgpu::Texture) {
-        self.0.set_image_override(image, texture);
-    }
-
-    /// Clear a previously-set Vello image override.
-    pub fn clear_image_override(&mut self, image: &peniko::ImageData) {
-        self.0.clear_image_override(image);
-    }
-}
-
-#[cfg(feature = "imaging_vello")]
 mod imp {
-    use std::collections::HashMap;
+    use super::shared_texture_renderer::{
+        RendererCache, device_queue_key, render_window_source_to_texture,
+    };
+    use crate::vello::{TargetRenderer, TextureTarget, new_target_renderer};
 
-    use vello::{AaConfig, AaSupport, RenderParams, Renderer as VelloRenderer, RendererOptions};
-
-    use crate::vello::build_scene_from_source;
-
-    use super::{RenderInput, RenderTarget};
+    use super::RenderTarget;
+    use crate::PreparedFrame;
 
     /// Errors that can occur while rendering Masonry content with Vello.
     #[derive(Debug)]
     pub(super) enum Error {
-        /// Building the native Vello scene failed.
-        BuildScene(crate::vello::Error),
         /// Creating the Vello renderer failed.
-        CreateRenderer(vello::Error),
+        CreateRenderer(crate::vello::Error),
         /// Rendering the scene to the texture failed.
-        Render(vello::Error),
+        Render(imaging_vello::Error),
     }
 
     impl core::fmt::Display for Error {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             match self {
-                Self::BuildScene(err) => write!(f, "building Vello scene failed: {err}"),
                 Self::CreateRenderer(err) => write!(f, "creating Vello renderer failed: {err}"),
-                Self::Render(err) => write!(f, "rendering with Vello failed: {err}"),
+                Self::Render(err) => write!(f, "rendering with Vello failed: {err:?}"),
             }
         }
     }
 
     impl std::error::Error for Error {}
 
-    #[derive(Debug)]
-    struct ImageOverrideState {
-        image: peniko::ImageData,
-        texture: wgpu::Texture,
-        applied: bool,
-        prev: Option<wgpu::TexelCopyTextureInfoBase<wgpu::Texture>>,
-    }
-
     /// Runtime renderer state for the Vello backend.
+    #[derive(Debug)]
     pub(super) struct Renderer {
-        inner: Option<VelloRenderer>,
-        image_overrides: HashMap<u64, ImageOverrideState>,
-    }
-
-    impl core::fmt::Debug for Renderer {
-        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            f.debug_struct("Renderer")
-                .field("inner", &self.inner.as_ref().map(|_| "(VelloRenderer)"))
-                .field("image_overrides", &self.image_overrides)
-                .finish()
-        }
+        inner: RendererCache<TargetRenderer, (usize, usize)>,
     }
 
     impl Renderer {
@@ -325,8 +291,7 @@ mod imp {
         /// Create an empty renderer state.
         pub(super) fn new() -> Self {
             Self {
-                inner: None,
-                image_overrides: HashMap::new(),
+                inner: RendererCache::new(),
             }
         }
 
@@ -334,121 +299,19 @@ mod imp {
         pub(super) fn render_to_texture(
             &mut self,
             target: RenderTarget<'_>,
-            input: RenderInput<'_>,
+            frame: PreparedFrame<'_>,
         ) -> Result<(), Error> {
-            let mut source = input.frame.window_source();
-            let scene = build_scene_from_source(&mut source, input.frame.width, input.frame.height)
-                .map_err(Error::BuildScene)?;
+            let renderer = self.inner.get_or_try_init(device_queue_key(target), || {
+                new_target_renderer(target.device.clone(), target.queue.clone())
+                    .map_err(Error::CreateRenderer)
+            })?;
 
-            if self.inner.is_none() {
-                let renderer_options = RendererOptions {
-                    antialiasing_support: AaSupport::area_only(),
-                    ..Default::default()
-                };
-                self.inner = Some(
-                    VelloRenderer::new(target.device, renderer_options)
-                        .map_err(Error::CreateRenderer)?,
-                );
-            }
-            let renderer = self.inner.as_mut().unwrap();
-
-            for state in self.image_overrides.values_mut() {
-                if state.applied {
-                    continue;
-                }
-                state.prev = renderer.override_image(
-                    &state.image,
-                    Some(wgpu::TexelCopyTextureInfoBase {
-                        texture: state.texture.clone(),
-                        mip_level: 0,
-                        origin: wgpu::Origin3d::ZERO,
-                        aspect: wgpu::TextureAspect::All,
-                    }),
-                );
-                state.applied = true;
-            }
-
-            let render_params = RenderParams {
-                // WindowSource already paints the background into the scene, so keep
-                // Vello's target clear transparent here instead of applying the base color twice.
-                base_color: peniko::Color::from_rgba8(0, 0, 0, 0),
-                width: input.frame.width,
-                height: input.frame.height,
-                antialiasing_method: AaConfig::Area,
-            };
-            renderer
-                .render_to_texture(
-                    target.device,
-                    target.queue,
-                    &scene,
-                    target.view,
-                    &render_params,
-                )
-                .map_err(Error::Render)
-        }
-
-        /// Set a persistent image override for the Vello backend.
-        pub(super) fn set_image_override(
-            &mut self,
-            image: peniko::ImageData,
-            texture: wgpu::Texture,
-        ) {
-            let image_id = image.data.id();
-
-            if let Some(existing) = self.image_overrides.get_mut(&image_id) {
-                existing.texture = texture;
-                if existing.applied {
-                    if let Some(renderer) = &mut self.inner {
-                        renderer.override_image(
-                            &existing.image,
-                            Some(wgpu::TexelCopyTextureInfoBase {
-                                texture: existing.texture.clone(),
-                                mip_level: 0,
-                                origin: wgpu::Origin3d::ZERO,
-                                aspect: wgpu::TextureAspect::All,
-                            }),
-                        );
-                    } else {
-                        existing.applied = false;
-                    }
-                }
-                return;
-            }
-
-            let mut state = ImageOverrideState {
-                image,
-                texture,
-                applied: false,
-                prev: None,
-            };
-
-            if let Some(renderer) = &mut self.inner {
-                state.prev = renderer.override_image(
-                    &state.image,
-                    Some(wgpu::TexelCopyTextureInfoBase {
-                        texture: state.texture.clone(),
-                        mip_level: 0,
-                        origin: wgpu::Origin3d::ZERO,
-                        aspect: wgpu::TextureAspect::All,
-                    }),
-                );
-                state.applied = true;
-            }
-
-            self.image_overrides.insert(image_id, state);
-        }
-
-        /// Clear a previously-set Vello image override.
-        pub(super) fn clear_image_override(&mut self, image: &peniko::ImageData) {
-            let image_id = image.data.id();
-            let Some(state) = self.image_overrides.remove(&image_id) else {
-                return;
-            };
-            if state.applied
-                && let Some(renderer) = &mut self.inner
-            {
-                renderer.override_image(&state.image, state.prev);
-            }
+            render_window_source_to_texture(
+                renderer,
+                frame,
+                TextureTarget::new(target.view, frame.width, frame.height),
+            )
+            .map_err(Error::Render)
         }
     }
 }
@@ -459,10 +322,13 @@ mod imp {
     feature = "imaging_vello_hybrid"
 ))]
 mod imp {
-    use super::non_vello::{CachedRenderer, render_window_source_to_texture};
+    use super::shared_texture_renderer::{
+        RendererCache, device_queue_key, render_window_source_to_texture,
+    };
     use crate::vello_hybrid::{TargetRenderer, TextureTarget, new_target_renderer};
 
-    use super::{RenderInput, RenderTarget};
+    use super::RenderTarget;
+    use crate::PreparedFrame;
 
     /// Errors that can occur while rendering Masonry content with Vello Hybrid.
     #[derive(Debug)]
@@ -484,7 +350,7 @@ mod imp {
     /// Runtime renderer state for the Vello Hybrid backend.
     #[derive(Debug)]
     pub(super) struct Renderer {
-        inner: CachedRenderer<TargetRenderer, (usize, usize)>,
+        inner: RendererCache<TargetRenderer, (usize, usize)>,
     }
 
     impl Renderer {
@@ -494,7 +360,7 @@ mod imp {
         /// Create an empty renderer state.
         pub(super) fn new() -> Self {
             Self {
-                inner: CachedRenderer::new(),
+                inner: RendererCache::new(),
             }
         }
 
@@ -502,25 +368,19 @@ mod imp {
         pub(super) fn render_to_texture(
             &mut self,
             target: RenderTarget<'_>,
-            input: RenderInput<'_>,
+            frame: PreparedFrame<'_>,
         ) -> Result<(), Error> {
-            let renderer = self.inner.get_or_try_init(
-                (
-                    target.device as *const _ as usize,
-                    target.queue as *const _ as usize,
-                ),
-                || {
-                    Ok(new_target_renderer(
-                        target.device.clone(),
-                        target.queue.clone(),
-                    ))
-                },
-            )?;
+            let renderer = self.inner.get_or_try_init(device_queue_key(target), || {
+                Ok(new_target_renderer(
+                    target.device.clone(),
+                    target.queue.clone(),
+                ))
+            })?;
 
             render_window_source_to_texture(
                 renderer,
-                input.frame,
-                TextureTarget::new(target.view, input.frame.width, input.frame.height),
+                frame,
+                TextureTarget::new(target.view, frame.width, frame.height),
             )
             .map_err(Error::Render)
         }
