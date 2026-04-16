@@ -2229,6 +2229,16 @@ impl Drop for RawCtx<'_> {
 
 // --- MARK: DEBUG PAINT
 impl PaintCtx<'_> {
+    /// Controls how this widget subtree is recorded in the current paint pass.
+    ///
+    /// This is reset to [`PaintLayerMode::Inline`](crate::core::PaintLayerMode::Inline)
+    /// at the start of each paint pass for the widget. Widgets that want isolated
+    /// scene layers should set this during `pre_paint`, `paint`, or `post_paint`
+    /// each time they paint.
+    pub fn set_paint_layer_mode(&mut self, mode: crate::core::PaintLayerMode) {
+        self.widget_state.paint_layer_mode = mode;
+    }
+
     /// Whether debug paint is enabled.
     ///
     /// If this property is set, your widget may draw additional debug information

@@ -1,9 +1,15 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
+use masonry_core::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
+use masonry_core::dpi::PhysicalSize;
+use masonry_core::peniko::Blob;
+
 use assert_matches::assert_matches;
 
-use crate::core::{NewWidget, PropertySet, Widget, WidgetTag};
+use crate::core::{NewWidget, PaintLayerMode, PropertySet, Widget, WidgetTag};
 use crate::kurbo::{Circle, Dashes, Point, Size, Stroke, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
@@ -11,7 +17,9 @@ use crate::peniko::Color;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::MainAxisAlignment;
 use crate::properties::{Background, Dimensions, Gap, Padding};
-use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
+use crate::testing::{
+    ModularWidget, ROBOTO, Record, TestHarness, TestWidgetExt, assert_render_snapshot,
+};
 use crate::theme::test_property_set;
 use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
 
@@ -148,6 +156,71 @@ fn paint_clipping() {
     // The red circle should be clipped by the square.
     // The dashed circle shouldn't.
     assert_render_snapshot!(harness, "paint_clipping");
+}
+
+fn make_layer_split_tree(isolate_trailing_box: bool) -> NewWidget<impl Widget> {
+    let leading = NewWidget::new(
+        ModularWidget::new(())
+            .measure_fn(|_, _, _, _, _, _| 20.)
+            .paint_fn(|_, ctx, _, scene| {
+                scene.fill(ctx.content_box(), RED).draw();
+            }),
+    );
+    let trailing = NewWidget::new(
+        ModularWidget::new(isolate_trailing_box)
+            .measure_fn(|_, _, _, _, _, _| 20.)
+            .paint_fn(|isolate, ctx, _, scene| {
+                if *isolate {
+                    ctx.set_paint_layer_mode(PaintLayerMode::IsolatedScene);
+                }
+                scene.fill(ctx.content_box(), BLUE).draw();
+            }),
+    );
+
+    Flex::row()
+        .with_fixed(leading)
+        .with_fixed(trailing)
+        .prepare()
+}
+
+fn create_render_root(root_widget: NewWidget<impl Widget>) -> RenderRoot {
+    let test_font = Blob::new(Arc::new(ROBOTO));
+    RenderRoot::new(
+        root_widget,
+        |_| {},
+        RenderRootOptions {
+            default_properties: Arc::new(test_property_set()),
+            use_system_fonts: false,
+            size_policy: WindowSizePolicy::User,
+            size: PhysicalSize::new(40, 20),
+            scale_factor: 1.0,
+            test_font: Some(test_font),
+        },
+    )
+}
+
+#[test]
+fn isolated_scene_layers_update_the_plan_without_changing_rendering() {
+    let mut inline_root = create_render_root(make_layer_split_tree(false));
+    let (inline_layers, _) = inline_root.redraw();
+    assert_eq!(inline_layers.layers.len(), 1);
+
+    let mut isolated_root = create_render_root(make_layer_split_tree(true));
+    let (isolated_layers, _) = isolated_root.redraw();
+    assert_eq!(isolated_layers.layers.len(), 2);
+
+    let mut inline_harness = TestHarness::create_with_size(
+        test_property_set(),
+        make_layer_split_tree(false),
+        Size::new(40.0, 20.0),
+    );
+    let mut isolated_harness = TestHarness::create_with_size(
+        test_property_set(),
+        make_layer_split_tree(true),
+        Size::new(40.0, 20.0),
+    );
+
+    assert_eq!(inline_harness.render(), isolated_harness.render());
 }
 
 // Layered slightly misaligned grid layer painting:

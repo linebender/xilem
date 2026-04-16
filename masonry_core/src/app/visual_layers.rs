@@ -32,14 +32,16 @@ impl VisualLayerPlan {
 
     /// The root visual layer, if one exists.
     ///
-    /// In the current compatibility model, this is the main application layer.
+    /// In the current compatibility model, this is the first scene layer that
+    /// flattened consumers treat as the base scene.
     pub fn root_layer(&self) -> Option<&VisualLayer> {
         self.layers.first()
     }
 
-    /// All layers above the root layer.
+    /// All layers after the root layer.
     ///
-    /// In the current compatibility model, these are overlay layers in painter order.
+    /// In the current compatibility model, these are replayed after the root layer
+    /// in painter order.
     pub fn overlay_layers(&self) -> &[VisualLayer] {
         self.layers.get(1..).unwrap_or(&[])
     }

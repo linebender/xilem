@@ -6,7 +6,9 @@ use std::any::TypeId;
 use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use tracing::Span;
 
-use crate::core::{ClassSetDiff, PropertyCache, PropertyStackId, WidgetId, WidgetOptions};
+use crate::core::{
+    ClassSetDiff, PaintLayerMode, PropertyCache, PropertyStackId, WidgetId, WidgetOptions,
+};
 use crate::layout::MeasurementCache;
 
 // TODO - Reduce WidgetState size.
@@ -201,6 +203,8 @@ pub(crate) struct WidgetState {
     pub(crate) request_post_paint: bool,
     /// A painting method must be called on this widget or a descendant
     pub(crate) needs_paint: bool,
+    /// How this widget subtree should be represented in the current paint pass.
+    pub(crate) paint_layer_mode: PaintLayerMode,
 
     /// The `accessibility` method must be called on this widget
     pub(crate) request_accessibility: bool,
@@ -321,6 +325,7 @@ impl WidgetState {
             request_paint: true,
             request_post_paint: true,
             needs_paint: true,
+            paint_layer_mode: PaintLayerMode::Inline,
             request_accessibility: true,
             needs_accessibility: true,
             request_anim: true,

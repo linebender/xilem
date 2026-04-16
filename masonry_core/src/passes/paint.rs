@@ -10,19 +10,60 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState, VisualLayer, VisualLayerPlan};
 use crate::core::{
-    DefaultProperties, PaintCtx, PropertiesRef, PropertyArena, WidgetArenaNode, WidgetId,
+    DefaultProperties, PaintCtx, PaintLayerMode, PropertiesRef, PropertyArena, WidgetArenaNode,
+    WidgetId,
 };
 use crate::imaging::record::{Clip, Geometry, Scene};
 use crate::imaging::{PaintSink, Painter};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::get_debug_color;
 
+struct LayerCollector {
+    current_scene: Scene,
+    layers: Vec<VisualLayer>,
+    root_id: WidgetId,
+    transform: Affine,
+}
+
+impl LayerCollector {
+    fn new(root_id: WidgetId, transform: Affine) -> Self {
+        Self {
+            current_scene: Scene::new(),
+            layers: Vec::new(),
+            root_id,
+            transform,
+        }
+    }
+
+    fn scene_mut(&mut self) -> &mut Scene {
+        &mut self.current_scene
+    }
+
+    fn finish_current_layer(&mut self, allow_empty: bool) {
+        if !allow_empty && self.current_scene == Scene::new() {
+            return;
+        }
+
+        let scene = std::mem::replace(&mut self.current_scene, Scene::new());
+        self.layers.push(VisualLayer {
+            scene,
+            transform: self.transform,
+            root_id: self.root_id,
+        });
+    }
+
+    fn into_layers(mut self) -> Vec<VisualLayer> {
+        self.finish_current_layer(self.layers.is_empty());
+        self.layers
+    }
+}
+
 // --- MARK: PAINT WIDGET
 fn paint_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     property_arena: &PropertyArena,
-    complete_scene: &mut Scene,
+    layer_collector: &mut LayerCollector,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
     window_to_layer_transform: &Affine,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -45,6 +86,7 @@ fn paint_widget(
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
 
+    state.paint_layer_mode = PaintLayerMode::Inline;
     if (state.request_pre_paint || state.request_paint || state.request_post_paint) && !is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
@@ -91,6 +133,11 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
+    let isolated_scene = !is_stashed && state.paint_layer_mode == PaintLayerMode::IsolatedScene;
+    if isolated_scene {
+        layer_collector.finish_current_layer(false);
+    }
+
     let border_box_to_layer_transform = *window_to_layer_transform * state.window_transform;
     let content_box_to_layer_transform =
         border_box_to_layer_transform.pre_translate(state.border_box_translation());
@@ -103,18 +150,22 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append_transformed(pre_scene, content_box_to_layer_transform);
+        layer_collector
+            .scene_mut()
+            .append_transformed(pre_scene, content_box_to_layer_transform);
 
         if let Some(clip) = state.clip_path {
             // The clip path is stored in border-box space, so need to use that transform.
-            complete_scene.push_clip(Clip::Fill {
+            layer_collector.scene_mut().push_clip(Clip::Fill {
                 transform: border_box_to_layer_transform,
                 shape: Geometry::Rect(clip),
                 fill_rule: Fill::NonZero,
             });
         }
 
-        complete_scene.append_transformed(scene, content_box_to_layer_transform);
+        layer_collector
+            .scene_mut()
+            .append_transformed(scene, content_box_to_layer_transform);
     }
 
     let parent_state = &mut *state;
@@ -128,7 +179,7 @@ fn paint_widget(
             global_state,
             default_properties,
             property_arena,
-            complete_scene,
+            layer_collector,
             scene_cache,
             window_to_layer_transform,
             node.reborrow_mut(),
@@ -143,7 +194,7 @@ fn paint_widget(
             let color = get_debug_color(id.to_raw());
             let rect = state.bounding_box.inset(BORDER_WIDTH / -2.0);
             let border_style = Stroke::new(BORDER_WIDTH);
-            let mut painter = Painter::new(&mut *complete_scene);
+            let mut painter = Painter::new(layer_collector.scene_mut());
             painter.stroke(rect, &border_style, color).draw();
 
             // Draw the widget's explicit baselines
@@ -164,7 +215,7 @@ fn paint_widget(
         }
 
         if has_clip {
-            complete_scene.pop_clip();
+            layer_collector.scene_mut().pop_clip();
         }
 
         let Some((_, _, post_scene)) = &mut scene_cache.get(&id) else {
@@ -174,7 +225,22 @@ fn paint_widget(
             return;
         };
 
-        complete_scene.append_transformed(post_scene, content_box_to_layer_transform);
+        layer_collector
+            .scene_mut()
+            .append_transformed(post_scene, content_box_to_layer_transform);
+
+        if global_state.inspector_state.hovered_widget == Some(id) {
+            const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
+            let rect = state.border_box_size().to_rect();
+            Painter::new(layer_collector.scene_mut())
+                .fill(rect, HOVER_FILL_COLOR)
+                .transform(border_box_to_layer_transform)
+                .draw();
+        }
+    }
+
+    if isolated_scene {
+        layer_collector.finish_current_layer(false);
     }
 }
 
@@ -190,13 +256,9 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
     let root_id = root.root_id();
     let layer_root_ids = root.layer_root_ids();
 
-    // Paint each layer into its own scene.
     let mut layers = Vec::new();
 
     for (idx, &layer_widget_id) in layer_root_ids.iter().enumerate() {
-        let mut scene = Scene::new();
-        paint_layer(root, &mut scene, &mut scene_cache, root_id, layer_widget_id);
-
         let transform = if idx == 0 {
             Affine::IDENTITY
         } else {
@@ -205,49 +267,18 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
                 .window_transform
         };
 
-        layers.push(VisualLayer {
-            scene,
-            transform,
-            root_id: layer_widget_id,
-        });
+        let mut collector = LayerCollector::new(layer_widget_id, transform);
+        paint_layer(
+            root,
+            &mut collector,
+            &mut scene_cache,
+            root_id,
+            layer_widget_id,
+        );
+        layers.extend(collector.into_layers());
     }
 
     root.global_state.scene_cache = scene_cache;
-
-    // Display a rectangle over the hovered widget, in the layer that owns it.
-    if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
-        const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
-        let state = root.widget_arena.get_state(hovered_widget);
-        let rect = state.border_box_size().to_rect();
-        let border_box_to_window_transform = state.window_transform;
-
-        // Walk up the widget tree to find which layer root this widget belongs to.
-        let mut layer_root = hovered_widget;
-        while let Some(parent) = root.widget_arena.parent_of(layer_root) {
-            if parent == root_id {
-                break;
-            }
-            layer_root = parent;
-        }
-
-        let window_to_layer_transform = root
-            .widget_arena
-            .get_state(layer_root)
-            .window_transform
-            .inverse();
-        let border_box_to_layer_transform =
-            window_to_layer_transform * border_box_to_window_transform;
-
-        // Draw the hover rect in the owning layer's scene.
-        let target_idx = layers
-            .iter()
-            .position(|layer| layer.root_id == layer_root)
-            .unwrap_or(0);
-        Painter::new(&mut layers[target_idx].scene)
-            .fill(rect, HOVER_FILL_COLOR)
-            .transform(border_box_to_layer_transform)
-            .draw();
-    }
 
     VisualLayerPlan { layers }
 }
@@ -258,7 +289,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
 /// `global_state`, `default_properties`, and `widget_arena` simultaneously.
 fn paint_layer(
     root: &mut RenderRoot,
-    target_scene: &mut Scene,
+    layer_collector: &mut LayerCollector,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
     root_id: WidgetId,
     layer_widget_id: WidgetId,
@@ -289,7 +320,7 @@ fn paint_layer(
         &mut root.global_state,
         &root.property_arena.default_properties,
         &root.property_arena,
-        target_scene,
+        layer_collector,
         scene_cache,
         &window_to_layer_transform,
         layer_node,
