@@ -156,11 +156,9 @@ impl Widget for RadioButton {
                 ctx.capture_pointer();
                 trace!("RadioButton {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { .. } => {
-                if ctx.is_active() && ctx.is_hovered() {
-                    trace!("RadioButton {:?} released", ctx.widget_id());
-                    self.select(ctx);
-                }
+            PointerEvent::Up { .. } if ctx.is_active() && ctx.is_hovered() => {
+                trace!("RadioButton {:?} released", ctx.widget_id());
+                self.select(ctx);
             }
             _ => (),
         }

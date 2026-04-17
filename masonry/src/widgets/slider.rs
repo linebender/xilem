@@ -177,22 +177,20 @@ impl Widget for Slider {
                     ctx.submit_action::<f64>(self.value);
                 }
             }
-            PointerEvent::Move(PointerUpdate { current, .. }) => {
-                if ctx.is_active() {
-                    let local_pos = ctx.local_position(current.position);
-                    let width = ctx.content_box_size().width;
-                    let is_focused = ctx.is_focus_target();
-                    let cache = ctx.property_cache();
-                    if self.update_value_from_position(
-                        local_pos.x,
-                        width,
-                        *props.get(cache),
-                        is_focused,
-                    ) {
-                        ctx.submit_action::<f64>(self.value);
-                    }
-                    ctx.request_render();
+            PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
+                let local_pos = ctx.local_position(current.position);
+                let width = ctx.content_box_size().width;
+                let is_focused = ctx.is_focus_target();
+                let cache = ctx.property_cache();
+                if self.update_value_from_position(
+                    local_pos.x,
+                    width,
+                    *props.get(cache),
+                    is_focused,
+                ) {
+                    ctx.submit_action::<f64>(self.value);
                 }
+                ctx.request_render();
             }
             _ => {}
         }

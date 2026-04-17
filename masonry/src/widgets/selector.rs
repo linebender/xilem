@@ -159,15 +159,11 @@ impl Widget for Selector {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down(..) => {
-                if self.menu_layer_id.is_none() {
-                    ctx.capture_pointer();
-                }
+            PointerEvent::Down(..) if self.menu_layer_id.is_none() => {
+                ctx.capture_pointer();
             }
-            PointerEvent::Up(PointerButtonEvent { .. }) => {
-                if ctx.is_active() && ctx.is_hovered() {
-                    self.toggle_selector_layer(ctx);
-                }
+            PointerEvent::Up(PointerButtonEvent { .. }) if ctx.is_active() && ctx.is_hovered() => {
+                self.toggle_selector_layer(ctx);
             }
             _ => (),
         }
@@ -180,12 +176,12 @@ impl Widget for Selector {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::Keyboard(event) if event.state.is_up() => {
-                if matches!(&event.key, Key::Character(c) if c == " ")
-                    || event.key == Key::Named(NamedKey::Enter)
-                {
-                    self.toggle_selector_layer(ctx);
-                }
+            TextEvent::Keyboard(event)
+                if event.state.is_up()
+                    && (matches!(&event.key, Key::Character(c) if c == " ")
+                        || event.key == Key::Named(NamedKey::Enter)) =>
+            {
+                self.toggle_selector_layer(ctx);
                 // TODO - On arrow key, change selected_item
             }
             // TODO - Handle text selection

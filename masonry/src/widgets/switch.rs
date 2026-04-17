@@ -119,11 +119,9 @@ impl Widget for Switch {
                 ctx.capture_pointer();
                 trace!("Switch {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { .. } => {
-                if ctx.is_active() && ctx.is_hovered() {
-                    ctx.submit_action::<Self::Action>(SwitchToggled(!self.on));
-                    trace!("Switch {:?} released", ctx.widget_id());
-                }
+            PointerEvent::Up { .. } if ctx.is_active() && ctx.is_hovered() => {
+                ctx.submit_action::<Self::Action>(SwitchToggled(!self.on));
+                trace!("Switch {:?} released", ctx.widget_id());
             }
             _ => (),
         }
@@ -167,10 +165,8 @@ impl Widget for Switch {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::WidgetAdded => {
-                if self.on {
-                    ctx.add_class("#toggled");
-                }
+            Update::WidgetAdded if self.on => {
+                ctx.add_class("#toggled");
             }
             Update::HoveredChanged(_)
             | Update::ActiveChanged(_)

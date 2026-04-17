@@ -1055,22 +1055,18 @@ impl<T: Steppable> Widget for StepInput<T> {
                         }
                     }
                     _ => match ke.code {
-                        Code::NumpadSubtract => {
-                            if ke.state.is_down() {
-                                value_changed = if snap {
-                                    self.prev_snap()
-                                } else {
-                                    self.prev_step()
-                                }
+                        Code::NumpadSubtract if ke.state.is_down() => {
+                            value_changed = if snap {
+                                self.prev_snap()
+                            } else {
+                                self.prev_step()
                             }
                         }
-                        Code::NumpadAdd => {
-                            if ke.state.is_down() {
-                                value_changed = if snap {
-                                    self.next_snap()
-                                } else {
-                                    self.next_step()
-                                }
+                        Code::NumpadAdd if ke.state.is_down() => {
+                            value_changed = if snap {
+                                self.next_snap()
+                            } else {
+                                self.next_step()
                             }
                         }
                         _ => (),
