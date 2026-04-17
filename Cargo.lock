@@ -1709,6 +1709,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f467dd6dccf739c208452f8014c75c18bb8301b050ad1cfb27153803edb0f51"
+dependencies = [
+ "foldhash 0.2.0",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4960,7 +4969,7 @@ dependencies = [
 name = "tree_arena"
 version = "0.2.0"
 dependencies = [
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
 ]
 
 [[package]]
@@ -6386,7 +6395,7 @@ name = "xilem_core"
 version = "0.4.0"
 dependencies = [
  "anymore",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
  "kurbo",
  "tracing",
 ]
