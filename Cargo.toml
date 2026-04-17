@@ -55,11 +55,14 @@ tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
-imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
-imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
-imaging_vello_hybrid = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
-imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b" }
-imaging_skia = { git = "https://github.com/forest-rs/imaging.git", rev = "0eea0499d2666195103b9837ac4c3ee474176a5b", features = [
+imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2" }
+imaging_wgpu = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2", features = [
+    "wgpu-28",
+] }
+imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2" }
+imaging_vello_hybrid = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2" }
+imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2" }
+imaging_skia = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2", features = [
     "gpu",
 ] }
 vello = { version = "0.8.0", default-features = false, features = ["wgpu"] }

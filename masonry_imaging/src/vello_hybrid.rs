@@ -32,10 +32,10 @@ pub const BACKEND_NAME: &str = "imaging_vello_hybrid";
 pub type Renderer = imaging_vello_hybrid::VelloHybridRenderer;
 
 /// Masonry alias for the selected Vello Hybrid texture renderer type.
-pub type TargetRenderer = imaging_vello_hybrid::VelloHybridTargetRenderer;
+pub type TargetRenderer = imaging_vello_hybrid::VelloHybridRenderer;
 
 /// Masonry alias for the selected Vello Hybrid texture target wrapper.
-pub type TextureTarget<'a> = imaging_vello_hybrid::TextureTarget<'a>;
+pub type TextureTarget = imaging_wgpu::TextureViewTarget;
 
 /// Create a reusable headless Vello Hybrid renderer.
 pub fn new_headless_renderer() -> Result<Renderer, Error> {
@@ -47,5 +47,5 @@ pub fn new_headless_renderer() -> Result<Renderer, Error> {
 
 /// Create a reusable Vello Hybrid target renderer bound to an existing WGPU device and queue.
 pub fn new_target_renderer(device: wgpu::Device, queue: wgpu::Queue) -> TargetRenderer {
-    imaging_vello_hybrid::VelloHybridTargetRenderer::new(device, queue)
+    imaging_vello_hybrid::VelloHybridRenderer::new(device, queue)
 }
