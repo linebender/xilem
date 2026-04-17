@@ -109,11 +109,9 @@ impl Widget for Checkbox {
                 ctx.capture_pointer();
                 trace!("Checkbox {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { .. } => {
-                if ctx.is_active() && ctx.is_hovered() {
-                    ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
-                    trace!("Checkbox {:?} released", ctx.widget_id());
-                }
+            PointerEvent::Up { .. } if ctx.is_active() && ctx.is_hovered() => {
+                ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
+                trace!("Checkbox {:?} released", ctx.widget_id());
             }
             _ => (),
         }

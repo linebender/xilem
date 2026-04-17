@@ -515,19 +515,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.request_focus();
                 ctx.capture_pointer();
             }
-            PointerEvent::Move(PointerUpdate { current, .. }) => {
-                if ctx.is_active() {
-                    let cursor_pos = ctx.local_position(current.position);
-                    let (fctx, lctx) = ctx.text_contexts();
-                    self.editor
-                        .driver(fctx, lctx)
-                        .extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                    let new_generation = self.editor.generation();
-                    if new_generation != self.rendered_generation {
-                        ctx.request_render();
-                        ctx.set_ime_area(self.ime_area());
-                        self.rendered_generation = new_generation;
-                    }
+            PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
+                let cursor_pos = ctx.local_position(current.position);
+                let (fctx, lctx) = ctx.text_contexts();
+                self.editor
+                    .driver(fctx, lctx)
+                    .extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_render();
+                    ctx.set_ime_area(self.ime_area());
+                    self.rendered_generation = new_generation;
                 }
             }
             _ => {}

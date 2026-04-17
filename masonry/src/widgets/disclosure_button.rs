@@ -71,20 +71,18 @@ impl Widget for DisclosureButton {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
-                if !ctx.is_disabled() {
-                    ctx.capture_pointer();
-                    // Checked state impacts appearance and accessibility node
-                    ctx.request_render();
-                }
+            PointerEvent::Down { .. } if !ctx.is_disabled() => {
+                ctx.capture_pointer();
+                // Checked state impacts appearance and accessibility node
+                ctx.request_render();
             }
-            PointerEvent::Up { .. } => {
-                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
-                    self.switch_disclosed_state();
-                    ctx.request_layout();
+            PointerEvent::Up { .. }
+                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() =>
+            {
+                self.switch_disclosed_state();
+                ctx.request_layout();
 
-                    // TODO: Submit actions?
-                }
+                // TODO: Submit actions?
             }
             _ => (),
         }
@@ -97,15 +95,15 @@ impl Widget for DisclosureButton {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::Keyboard(event) if event.state.is_up() => {
-                if matches!(&event.key, Key::Character(c) if c == " ")
-                    || event.key == Key::Named(NamedKey::Enter)
-                {
-                    self.switch_disclosed_state();
-                    ctx.request_layout();
+            TextEvent::Keyboard(event)
+                if event.state.is_up()
+                    && (matches!(&event.key, Key::Character(c) if c == " ")
+                        || event.key == Key::Named(NamedKey::Enter)) =>
+            {
+                self.switch_disclosed_state();
+                ctx.request_layout();
 
-                    // TODO: Submit actions?
-                }
+                // TODO: Submit actions?
             }
             _ => (),
         }

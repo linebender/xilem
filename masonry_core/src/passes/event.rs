@@ -383,17 +383,15 @@ pub(crate) fn run_on_access_event_pass(
 
     // Handle focus events
     match event.action {
-        accesskit::Action::Focus if !handled.is_handled() => {
-            if root.is_still_interactive(target) {
-                root.global_state.next_focused_widget = Some(target);
-                handled = Handled::Yes;
-            }
+        accesskit::Action::Focus if !handled.is_handled() && root.is_still_interactive(target) => {
+            root.global_state.next_focused_widget = Some(target);
+            handled = Handled::Yes;
         }
-        accesskit::Action::Blur if !handled.is_handled() => {
-            if root.global_state.next_focused_widget == Some(target) {
-                root.global_state.next_focused_widget = None;
-                handled = Handled::Yes;
-            }
+        accesskit::Action::Blur
+            if !handled.is_handled() && root.global_state.next_focused_widget == Some(target) =>
+        {
+            root.global_state.next_focused_widget = None;
+            handled = Handled::Yes;
         }
         accesskit::Action::ScrollIntoView if !handled.is_handled() => {
             let widget_state = root.widget_arena.get_state(target);

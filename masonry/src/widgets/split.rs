@@ -494,17 +494,15 @@ where
                         self.click_offset = pos - self.bar_center(length, scale);
                     }
                 }
-                PointerEvent::Move(PointerUpdate { current, .. }) => {
-                    if ctx.is_active() {
-                        let pos = ctx
-                            .local_position(current.position)
-                            .get_coord(self.split_axis);
-                        let length = ctx.content_box_size().get_coord(self.split_axis);
-                        // If widget has pointer capture, assume always it's hovered
-                        let effective_center = pos - self.click_offset;
-                        self.update_split_point_from_bar_center(length, effective_center, scale);
-                        ctx.request_layout();
-                    }
+                PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
+                    let pos = ctx
+                        .local_position(current.position)
+                        .get_coord(self.split_axis);
+                    let length = ctx.content_box_size().get_coord(self.split_axis);
+                    // If widget has pointer capture, assume always it's hovered
+                    let effective_center = pos - self.click_offset;
+                    self.update_split_point_from_bar_center(length, effective_center, scale);
+                    ctx.request_layout();
                 }
                 PointerEvent::Up(..) | PointerEvent::Cancel(..) => {
                     self.click_offset = 0.0;

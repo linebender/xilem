@@ -133,12 +133,12 @@ impl Widget for Button {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::Keyboard(event) if event.state.is_up() => {
-                if matches!(&event.key, Key::Character(c) if c == " ")
-                    || event.key == Key::Named(NamedKey::Enter)
-                {
-                    ctx.submit_action::<Self::Action>(ButtonPress { button: None });
-                }
+            TextEvent::Keyboard(event)
+                if event.state.is_up()
+                    && (matches!(&event.key, Key::Character(c) if c == " ")
+                        || event.key == Key::Named(NamedKey::Enter)) =>
+            {
+                ctx.submit_action::<Self::Action>(ButtonPress { button: None });
             }
             _ => (),
         }
