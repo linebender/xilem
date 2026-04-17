@@ -8,7 +8,7 @@ use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState, VisualLayer, VisualLayerPlan};
+use crate::app::{RenderRoot, RenderRootState, VisualLayer, VisualLayerKind, VisualLayerPlan};
 use crate::core::{
     DefaultProperties, PaintCtx, PaintLayerMode, PropertiesRef, PropertyArena, WidgetArenaNode,
     WidgetId,
@@ -21,7 +21,7 @@ use crate::util::get_debug_color;
 struct LayerCollector {
     current_scene: Scene,
     layers: Vec<VisualLayer>,
-    root_id: WidgetId,
+    current_owner_id: WidgetId,
     transform: Affine,
 }
 
@@ -30,7 +30,7 @@ impl LayerCollector {
         Self {
             current_scene: Scene::new(),
             layers: Vec::new(),
-            root_id,
+            current_owner_id: root_id,
             transform,
         }
     }
@@ -47,9 +47,17 @@ impl LayerCollector {
 
         let scene = std::mem::replace(&mut self.current_scene, empty_scene);
         self.layers.push(VisualLayer {
-            scene,
+            kind: VisualLayerKind::Scene(scene),
             transform: self.transform,
-            root_id: self.root_id,
+            widget_id: self.current_owner_id,
+        });
+    }
+
+    fn push_external_layer(&mut self, widget_id: WidgetId, bounds: kurbo::Rect) {
+        self.layers.push(VisualLayer {
+            kind: VisualLayerKind::External { bounds },
+            transform: self.transform,
+            widget_id,
         });
     }
 
@@ -134,16 +142,32 @@ fn paint_widget(
     state.request_post_paint = false;
     state.needs_paint = false;
 
-    let isolated_scene = !is_stashed && state.paint_layer_mode == PaintLayerMode::IsolatedScene;
-    if isolated_scene {
+    let paint_layer_mode = if is_stashed {
+        PaintLayerMode::Inline
+    } else {
+        state.paint_layer_mode
+    };
+
+    if matches!(
+        paint_layer_mode,
+        PaintLayerMode::IsolatedScene | PaintLayerMode::External
+    ) {
         layer_collector.finish_current_layer(false);
     }
+
+    let previous_owner_id = layer_collector.current_owner_id;
+    layer_collector.current_owner_id = match paint_layer_mode {
+        PaintLayerMode::Inline => previous_owner_id,
+        PaintLayerMode::IsolatedScene | PaintLayerMode::External => id,
+    };
 
     let border_box_to_layer_transform = *window_to_layer_transform * state.window_transform;
     let content_box_to_layer_transform =
         border_box_to_layer_transform.pre_translate(state.border_box_translation());
     let has_clip = state.clip_path.is_some();
-    if !is_stashed {
+    let paint_as_external = paint_layer_mode == PaintLayerMode::External;
+
+    if !is_stashed && !paint_as_external {
         let Some((pre_scene, scene, _)) = &mut scene_cache.get(&id) else {
             debug_panic!(
                 "Error in paint pass: scene should have been cached earlier in this function."
@@ -188,7 +212,7 @@ fn paint_widget(
         parent_state.merge_up(&mut node.item.state);
     });
 
-    if !is_stashed {
+    if !is_stashed && !paint_as_external {
         if global_state.debug_paint {
             // Draw the global axis aligned bounding rect of the widget
             const BORDER_WIDTH: f64 = 1.0;
@@ -240,9 +264,18 @@ fn paint_widget(
         }
     }
 
-    if isolated_scene {
+    if paint_as_external {
+        layer_collector.push_external_layer(id, state.border_box_size().to_rect());
+    }
+
+    if matches!(
+        paint_layer_mode,
+        PaintLayerMode::IsolatedScene | PaintLayerMode::External
+    ) {
         layer_collector.finish_current_layer(false);
     }
+
+    layer_collector.current_owner_id = previous_owner_id;
 }
 
 // --- MARK: ROOT

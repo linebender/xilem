@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use kurbo::Affine;
+use kurbo::{Affine, Rect};
 
 use crate::core::WidgetId;
 use crate::imaging::PaintSink;
@@ -27,24 +27,36 @@ impl VisualLayerPlan {
         S: PaintSink + ?Sized,
     {
         for layer in &self.layers {
-            replay_transformed(&layer.scene, sink, layer.transform);
+            if let VisualLayerKind::Scene(scene) = &layer.kind {
+                replay_transformed(scene, sink, layer.transform);
+            }
         }
     }
 
-    /// The root visual layer, if one exists.
+    /// The first scene layer, if one exists.
     ///
     /// In the current compatibility model, this is the first scene layer that
     /// flattened consumers treat as the base scene.
     pub fn root_layer(&self) -> Option<&VisualLayer> {
-        self.layers.first()
+        self.layers
+            .iter()
+            .find(|layer| matches!(layer.kind, VisualLayerKind::Scene(_)))
     }
 
-    /// All layers after the root layer.
+    /// All scene layers after the first one, in painter order.
     ///
     /// In the current compatibility model, these are replayed after the root layer
-    /// in painter order.
-    pub fn overlay_layers(&self) -> &[VisualLayer] {
-        self.layers.get(1..).unwrap_or(&[])
+    /// in painter order. External placeholders are skipped.
+    pub fn overlay_layers(&self) -> impl Iterator<Item = &VisualLayer> {
+        let mut saw_root_scene = false;
+        self.layers.iter().filter(move |layer| match layer.kind {
+            VisualLayerKind::Scene(_) if !saw_root_scene => {
+                saw_root_scene = true;
+                false
+            }
+            VisualLayerKind::Scene(_) => true,
+            VisualLayerKind::External { .. } => false,
+        })
     }
 }
 
@@ -54,17 +66,32 @@ impl VisualLayerPlan {
 /// to composite it into window space. The root layer uses the identity transform.
 #[derive(Debug)]
 pub struct VisualLayer {
-    /// The retained `imaging` scene for this layer in layer-local coordinates.
-    pub scene: Scene,
+    /// The visual content represented by this layer.
+    pub kind: VisualLayerKind,
     /// Transform from layer-local space to window space.
     pub transform: Affine,
-    /// The root widget that owns this layer.
-    pub root_id: WidgetId,
+    /// The widget that requested this layer boundary.
+    pub widget_id: WidgetId,
+}
+
+/// The content represented by a visual layer.
+#[derive(Debug)]
+pub enum VisualLayerKind {
+    /// Retained Masonry scene content in layer-local coordinates.
+    Scene(Scene),
+    /// A placeholder for externally realized content.
+    ///
+    /// The `bounds` are expressed in layer-local coordinates and should be transformed
+    /// by the layer's [`VisualLayer::transform`] into window space.
+    External {
+        /// Placeholder bounds in layer-local coordinates.
+        bounds: Rect,
+    },
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{VisualLayer, VisualLayerPlan};
+    use super::{VisualLayer, VisualLayerKind, VisualLayerPlan};
     use crate::core::WidgetId;
     use crate::imaging::Painter;
     use crate::imaging::record::{Scene, replay_transformed};
@@ -86,14 +113,21 @@ mod tests {
         let plan = VisualLayerPlan {
             layers: vec![
                 VisualLayer {
-                    scene: root_scene.clone(),
+                    kind: VisualLayerKind::Scene(root_scene.clone()),
                     transform: Affine::IDENTITY,
-                    root_id: WidgetId::next(),
+                    widget_id: WidgetId::next(),
                 },
                 VisualLayer {
-                    scene: overlay_scene.clone(),
+                    kind: VisualLayerKind::External {
+                        bounds: Rect::new(10.0, 0.0, 20.0, 10.0),
+                    },
+                    transform: Affine::IDENTITY,
+                    widget_id: WidgetId::next(),
+                },
+                VisualLayer {
+                    kind: VisualLayerKind::Scene(overlay_scene.clone()),
                     transform: Affine::translate((20.0, 5.0)),
-                    root_id: WidgetId::next(),
+                    widget_id: WidgetId::next(),
                 },
             ],
         };
@@ -110,5 +144,42 @@ mod tests {
         );
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn scene_layer_helpers_skip_external_placeholders() {
+        let root_scene = filled_scene(Rect::new(0.0, 0.0, 10.0, 10.0), Color::from_rgb8(255, 0, 0));
+        let overlay_scene =
+            filled_scene(Rect::new(0.0, 0.0, 4.0, 4.0), Color::from_rgb8(0, 0, 255));
+
+        let plan = VisualLayerPlan {
+            layers: vec![
+                VisualLayer {
+                    kind: VisualLayerKind::Scene(root_scene),
+                    transform: Affine::IDENTITY,
+                    widget_id: WidgetId::next(),
+                },
+                VisualLayer {
+                    kind: VisualLayerKind::External {
+                        bounds: Rect::new(10.0, 0.0, 20.0, 10.0),
+                    },
+                    transform: Affine::IDENTITY,
+                    widget_id: WidgetId::next(),
+                },
+                VisualLayer {
+                    kind: VisualLayerKind::Scene(overlay_scene),
+                    transform: Affine::translate((20.0, 5.0)),
+                    widget_id: WidgetId::next(),
+                },
+            ],
+        };
+
+        assert!(matches!(
+            plan.root_layer().map(|layer| &layer.kind),
+            Some(VisualLayerKind::Scene(_))
+        ));
+        let overlays: Vec<_> = plan.overlay_layers().collect();
+        assert_eq!(overlays.len(), 1);
+        assert!(matches!(overlays[0].kind, VisualLayerKind::Scene(_)));
     }
 }

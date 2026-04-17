@@ -18,4 +18,10 @@ pub enum PaintLayerMode {
     /// layers occur, Masonry will split the surrounding scene as needed to preserve
     /// that order in the flattened visual-layer plan.
     IsolatedScene,
+    /// Record this widget subtree as an external placeholder layer.
+    ///
+    /// Current hosts do not realize these placeholders yet; compatibility consumers
+    /// simply skip them while flattening scene content. This mode exists so the core
+    /// paint model can represent external boundaries before host integration lands.
+    External,
 }

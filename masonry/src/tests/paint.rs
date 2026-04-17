@@ -181,6 +181,39 @@ fn make_layer_split_tree(isolate_trailing_box: bool) -> NewWidget<impl Widget> {
         .prepare()
 }
 
+fn make_external_placeholder_tree() -> NewWidget<impl Widget> {
+    let leading = NewWidget::new(
+        ModularWidget::new(())
+            .measure_fn(|_, _, _, _, _, _| 20.)
+            .paint_fn(|_, ctx, _, scene| {
+                scene.fill(ctx.content_box(), RED).draw();
+            }),
+    );
+    let placeholder = NewWidget::new(
+        ModularWidget::new(())
+            .measure_fn(|_, _, _, _, _, _| 20.)
+            .layout_fn(|_, ctx, _, size| {
+                ctx.set_clip_path(size.to_rect());
+            })
+            .paint_fn(|_, ctx, _, _scene| {
+                ctx.set_paint_layer_mode(PaintLayerMode::External);
+            }),
+    );
+    let trailing = NewWidget::new(
+        ModularWidget::new(())
+            .measure_fn(|_, _, _, _, _, _| 20.)
+            .paint_fn(|_, ctx, _, scene| {
+                scene.fill(ctx.content_box(), BLUE).draw();
+            }),
+    );
+
+    Flex::row()
+        .with_fixed(leading)
+        .with_fixed(placeholder)
+        .with_fixed(trailing)
+        .prepare()
+}
+
 fn create_render_root(root_widget: NewWidget<impl Widget>) -> RenderRoot {
     let test_font = Blob::new(Arc::new(ROBOTO));
     RenderRoot::new(
@@ -219,6 +252,26 @@ fn isolated_scene_layers_update_the_plan_without_changing_rendering() {
     );
 
     assert_eq!(inline_harness.render(), isolated_harness.render());
+}
+
+#[test]
+fn external_placeholders_appear_in_painter_order() {
+    let mut root = create_render_root(make_external_placeholder_tree());
+    let (visual_layers, _) = root.redraw();
+    assert_eq!(visual_layers.layers.len(), 3);
+
+    assert!(matches!(
+        visual_layers.layers[0].kind,
+        crate::app::VisualLayerKind::Scene(_)
+    ));
+    assert!(matches!(
+        visual_layers.layers[1].kind,
+        crate::app::VisualLayerKind::External { .. }
+    ));
+    assert!(matches!(
+        visual_layers.layers[2].kind,
+        crate::app::VisualLayerKind::Scene(_)
+    ));
 }
 
 // Layered slightly misaligned grid layer painting:
