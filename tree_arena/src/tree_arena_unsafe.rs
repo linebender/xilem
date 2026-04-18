@@ -425,21 +425,18 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
-        if self.parent_arena.items.contains_key(&id) {
-            // the id of the parent
-            let parent_id = self.parent_id;
-
-            // The arena is derived from the root, and the id is in the tree
-            if parent_id.is_none() {
-                return true;
-            }
-
-            // iff the path is empty, there is no path from id to self
-            !self.parent_arena.get_id_path(id, parent_id).is_empty()
-        } else {
-            // if the id is not in the tree, it is not a descendant
-            false
+        // Check if id is in the tree at all.
+        if !self.parent_arena.items.contains_key(&id) {
+            return false;
         }
+
+        // If parent_id is None, this is the root list, all nodes are descendants.
+        if self.parent_id.is_none() {
+            return true;
+        }
+
+        // Iff the path is empty, there is no path from id to self
+        !self.parent_arena.get_id_path(id, self.parent_id).is_empty()
     }
 
     /// Returns `true` if the list has an element with the given id.
@@ -542,9 +539,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     }
 
     /// Returns a shared handle to the element of the list with the given id.
-    ///
-    /// Returns a tuple of a mutable reference to the child and a handle to access
-    /// its children.
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has(id) {
@@ -555,9 +549,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     }
 
     /// Returns a mutable handle to the element of the list with the given id.
-    ///
-    /// Returns a tuple of a mutable reference to the child and a handle to access
-    /// its children.
     pub fn item_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
         if self.has(id) {
