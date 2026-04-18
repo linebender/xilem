@@ -296,35 +296,6 @@ impl<T> TreeArena<T> {
     ///
     /// Returns a mutable reference to the item if present.
     ///
-
-impl<T> ArenaMut<'_, T> {
-    /// Id of the item this handle is associated with.
-    pub fn id(&self) -> NodeId {
-        self.children
-            .parent_id
-            .expect("ArenaMut always has a parent_id when it's a member of ArenaMut")
-    }
-
-    /// Returns a shared reference equivalent to this one.
-    pub fn reborrow(&mut self) -> ArenaRef<'_, T> {
-        ArenaRef {
-            parent_id: self.parent_id,
-            item: self.item,
-            children: self.children.reborrow(),
-        }
-    }
-
-    /// Returns a mutable reference equivalent to this one.
-    ///
-    /// This is sometimes useful to work with the borrow checker.
-    pub fn reborrow_mut(&mut self) -> ArenaMut<'_, T> {
-        ArenaMut {
-            parent_id: self.parent_id,
-            item: self.item,
-            children: self.children.reborrow_mut(),
-        }
-    }
-}
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         // safe as derived from the arena itself and has assoc lifetime with the arena
         self.data_map.find_mut_inner(id.into())
