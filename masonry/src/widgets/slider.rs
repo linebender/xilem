@@ -138,10 +138,16 @@ impl HasProperty<TrackThickness> for Slider {}
 impl HasProperty<ThumbColor> for Slider {}
 impl HasProperty<ThumbRadius> for Slider {}
 
+/// A slider was moved.
+#[derive(PartialEq, Debug)]
+pub struct SliderMoved {
+    /// The new value of the slider.
+    pub value: f64,
+}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Slider {
-    // FIXME: This should really be a newtype.
-    type Action = f64;
+    type Action = SliderMoved;
 
     fn accepts_focus(&self) -> bool {
         true
@@ -174,7 +180,7 @@ impl Widget for Slider {
                     *props.get(cache),
                     is_focused,
                 ) {
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
             }
             PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
@@ -188,7 +194,7 @@ impl Widget for Slider {
                     *props.get(cache),
                     is_focused,
                 ) {
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
                 ctx.request_render();
             }
@@ -249,7 +255,7 @@ impl Widget for Slider {
                 if (final_value - self.value).abs() > f64::EPSILON {
                     self.value = final_value;
                     ctx.request_render();
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
             }
         }
@@ -307,7 +313,7 @@ impl Widget for Slider {
                 clamped_value
             };
             ctx.request_render();
-            ctx.submit_action::<f64>(self.value);
+            ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
         }
     }
 
