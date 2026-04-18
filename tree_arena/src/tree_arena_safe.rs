@@ -425,7 +425,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// This is the same as [`item`](Self::item), except it consumes
     /// self. This is sometimes necessary to accommodate the borrow checker.
-    /// // TODO - Remove?
     pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         self.children
