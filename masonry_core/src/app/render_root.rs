@@ -149,6 +149,8 @@ pub(crate) struct RenderRootState {
     /// Scene cache for the widget tree.
     pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
+    // TODO - Add garbage collection.
+    /// Map from widget tags to widget ids.
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
     /// Map of layers attached to widgets, keyed by the attached widget id, then the type of the layer root.
