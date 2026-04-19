@@ -279,10 +279,10 @@ mod tests {
     fn simple_button() {
         let widget = NewWidget::new(Button::with_text("Hello"));
 
-        let window_size = Size::new(100.0, 40.0);
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = window_size;
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params = TestHarnessParams::size_and_padding(
+            Size::new(100.0, 40.0),
+            TestHarnessParams::ROOT_PADDING,
+        );
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
         let button_id = harness.root_id();
 
@@ -414,8 +414,9 @@ mod tests {
                 .with(Gap::new(40.px())),
         );
 
-        let mut test_params = TestHarnessParams::default();
-        test_params.window_size = Size::new(300.0, 300.0);
+        let mut test_params = TestHarnessParams::default().with_size(Size::new(300.0, 300.0));
+        // TODO - Remove? Not sure screenshot_tolerance is useful anymore.
+        // See https://github.com/linebender/xilem/issues/1759
         test_params.screenshot_tolerance = 32;
         let mut harness = TestHarness::create_with(test_property_set(), root_widget, test_params);
 

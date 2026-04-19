@@ -227,6 +227,8 @@ mod tests {
     use crate::theme::test_property_set;
     use crate::widgets::Label;
 
+    const ROOT_PADDING: u32 = TestHarnessParams::ROOT_PADDING;
+
     #[test]
     fn badge_is_non_interactive() {
         let widget = Badge::new(Label::new("New").prepare()).prepare();
@@ -242,9 +244,7 @@ mod tests {
     #[test]
     fn badge_with_text() {
         let widget = Badge::with_text("New").prepare();
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = Size::new(120.0, 60.0);
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params = TestHarnessParams::size_and_padding((120.0, 60.0), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badge_with_text");
@@ -253,9 +253,7 @@ mod tests {
     #[test]
     fn badge_count_overflow() {
         let widget = Badge::count(120).prepare();
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = Size::new(120.0, 60.0);
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params = TestHarnessParams::size_and_padding((120.0, 60.0), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badge_count_overflow");

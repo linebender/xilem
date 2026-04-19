@@ -236,9 +236,9 @@ mod tests {
     fn screenshot_test() {
         let my_string = "Masonry + Vello".to_string();
 
-        let mut test_params = TestHarnessParams::default();
         // This is a screenshot of an example, so it being slightly larger than a normal test is expected.
-        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+        let test_params =
+            TestHarnessParams::default().with_max_screenshot_size(16 * TestHarnessParams::KIBIBYTE);
 
         let mut harness = TestHarness::create_with(
             default_property_set(),

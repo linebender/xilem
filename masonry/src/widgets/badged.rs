@@ -259,6 +259,8 @@ mod tests {
     use crate::theme::test_property_set;
     use crate::widgets::{Align, Badge, Button};
 
+    const ROOT_PADDING: u32 = TestHarnessParams::ROOT_PADDING;
+
     #[test]
     fn badged_button() {
         let widget = Align::centered(
@@ -270,9 +272,7 @@ mod tests {
         )
         .prepare();
 
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = Size::new(240.0, 120.0);
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params = TestHarnessParams::size_and_padding((240.0, 120.0), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badged_button");
@@ -285,9 +285,7 @@ mod tests {
         )
         .prepare();
 
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = Size::new(240.0, 120.0);
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params = TestHarnessParams::size_and_padding((240.0, 120.0), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badged_button_no_badge");
