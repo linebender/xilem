@@ -154,6 +154,9 @@ impl<W: Widget + ?Sized> NewWidget<W> {
 
     /// Applies the given [properties] to this widget.
     ///
+    /// Calling this method multiple times will merge the properties together,
+    /// with later properties taking precedence over earlier ones with the same type.
+    ///
     /// [properties]: crate::doc::masonry_concepts#properties
     pub fn with_props(mut self, props: impl Into<PropertySet>) -> Self {
         if self.properties.map.is_empty() {

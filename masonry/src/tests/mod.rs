@@ -13,5 +13,6 @@ mod event;
 mod layout;
 mod mutate;
 mod paint;
+mod properties;
 mod update;
 mod widget_tag;
