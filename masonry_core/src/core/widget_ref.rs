@@ -117,7 +117,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
             .children_ids()
             .iter()
             .map(|&id| {
-                let Some(node_ref) = self.ctx.children.into_item(id) else {
+                let Some(node_ref) = self.ctx.children.item(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()

@@ -452,7 +452,7 @@ impl RenderRoot {
             .widget_arena
             .nodes
             .roots()
-            .into_item(self.root_id())
+            .item(self.root_id())
             .expect("root widget not in widget tree")
             .item
             .state

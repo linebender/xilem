@@ -338,18 +338,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     }
 
     /// Returns a handle to the element of the list with the given id.
-    pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
-        let id = id.into();
-        self.children
-            .get(&id)
-            .map(|child| child.arena_ref(self.parent_id, self.parents_map.parents_map))
-    }
-
-    /// Returns a handle to the element of the list with the given id.
-    ///
-    /// This is the same as [`item`](Self::item), except it consumes
-    /// self. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
+    pub fn item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         self.children
             .get(&id)
