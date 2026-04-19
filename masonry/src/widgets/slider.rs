@@ -138,10 +138,16 @@ impl HasProperty<TrackThickness> for Slider {}
 impl HasProperty<ThumbColor> for Slider {}
 impl HasProperty<ThumbRadius> for Slider {}
 
+/// A slider was moved.
+#[derive(PartialEq, Debug)]
+pub struct SliderMoved {
+    /// The new value of the slider.
+    pub value: f64,
+}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Slider {
-    // FIXME: This should really be a newtype.
-    type Action = f64;
+    type Action = SliderMoved;
 
     fn accepts_focus(&self) -> bool {
         true
@@ -174,7 +180,7 @@ impl Widget for Slider {
                     *props.get(cache),
                     is_focused,
                 ) {
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
             }
             PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
@@ -188,7 +194,7 @@ impl Widget for Slider {
                     *props.get(cache),
                     is_focused,
                 ) {
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
                 ctx.request_render();
             }
@@ -249,7 +255,7 @@ impl Widget for Slider {
                 if (final_value - self.value).abs() > f64::EPSILON {
                     self.value = final_value;
                     ctx.request_render();
-                    ctx.submit_action::<f64>(self.value);
+                    ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
             }
         }
@@ -307,7 +313,7 @@ impl Widget for Slider {
                 clamped_value
             };
             ctx.request_render();
-            ctx.submit_action::<f64>(self.value);
+            ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
         }
     }
 
@@ -534,13 +540,16 @@ mod tests {
         // 2. Press the mouse button.
         // This should not emit an action because the value does not change.
         harness.mouse_button_press(None);
-        assert!(harness.pop_action::<f64>().is_none());
+        assert!(harness.pop_action::<SliderMoved>().is_none());
 
         // 3. Move to the new position (75%).
         // PosX for 75.0 = 8.0 + (184.0 * 0.75) = 146.0
         harness.mouse_move(Point::new(146.0, 16.0));
 
-        assert_eq!(harness.pop_action::<f64>(), Some((75.0, slider_id)));
+        assert_eq!(
+            harness.pop_action::<SliderMoved>(),
+            Some((SliderMoved { value: 75.0 }, slider_id))
+        );
         assert_render_snapshot!(harness, "slider_drag_to_75");
 
         // Release the mouse
@@ -561,7 +570,10 @@ mod tests {
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowRight)));
         harness.process_text_event(TextEvent::key_up(Key::Named(NamedKey::ArrowRight)));
 
-        assert_eq!(harness.pop_action::<f64>(), Some((60.0, slider_id)));
+        assert_eq!(
+            harness.pop_action::<SliderMoved>(),
+            Some((SliderMoved { value: 60.0 }, slider_id))
+        );
         assert_render_snapshot!(harness, "slider_keyboard_moved");
     }
 
@@ -573,6 +585,6 @@ mod tests {
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
 
         assert_render_snapshot!(harness, "slider_disabled");
-        assert!(harness.pop_action::<f64>().is_none());
+        assert!(harness.pop_action::<SliderMoved>().is_none());
     }
 }
