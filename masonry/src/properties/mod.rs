@@ -3,7 +3,7 @@
 
 //! Types and logic commonly used across widgets.
 //!
-//! See [properties documentation](crate::doc::implementing_container_widget) for details.
+//! See [properties documentation](crate::doc::widget_properties) for details.
 
 mod checkmark;
 mod content_color;

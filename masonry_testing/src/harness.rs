@@ -2,6 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Tools and infrastructure for testing widgets.
+//!
+//! # Note on testing philosophy
+//!
+//! `TestHarness` provides two APIs, so to speak:
+//!
+//! - A high-level API that mimics user interactions.
+//! - A low-level API that mirrors the [`RenderRoot`] API.
+//!
+//! Developers are encouraged to use the former if possible, and write tests as if
+//! they were end users interacting with an application.
+//!
+//! We don't want users to write `harness.pointer_event(left_click(button_position))`,
+//! we want them to write `harness.click_on(button)`, so to speak (actual method names differ).
+//!
+//! When adding features to `TestHarness`, we should always strive to give them such a high-level API.
 
 use std::collections::VecDeque;
 use std::fs::File;
@@ -432,6 +447,8 @@ impl<W: Widget> TestHarness<W> {
 
         harness
     }
+
+    // TODO - Reorder methods. Low-level methods should appear later in the doc than high-level methods.
 
     // --- MARK: PROCESS EVENTS
 
