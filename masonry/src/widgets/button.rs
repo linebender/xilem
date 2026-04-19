@@ -263,6 +263,8 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use assert_matches::assert_matches;
+    use masonry_core::core::WidgetTag;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
@@ -514,4 +516,30 @@ mod tests {
     }
     // We could imagine more involved tests, e.g. a button with an icon
     // or a with a keyboard shortcut indicator.
+
+    #[test]
+    #[should_panic = "is not visible"]
+    // FIXME: Somehow the harness can't find the button under the coordinates it gets
+    // for the button center.
+    // See https://github.com/linebender/xilem/issues/1756
+    fn textless_button() {
+        let tag = WidgetTag::unique();
+        let button = Button::with_text("").prepare().with_tag(tag);
+        let parent = Flex::row().with(button, 0.).prepare();
+
+        let window_size = Size::new(100.0, 40.0);
+        let mut params = TestHarnessParams::DEFAULT;
+        params.window_size = window_size;
+        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let mut harness = TestHarness::create_with(test_property_set(), parent, params);
+        let button_id = harness.get_widget(tag).id();
+
+        assert_render_snapshot!(harness, "button_no_text");
+
+        harness.mouse_click_on(button_id, Some(PointerButton::Primary));
+        assert_matches!(
+            harness.pop_action::<ButtonPress>(),
+            Some((ButtonPress { .. }, ..))
+        );
+    }
 }
