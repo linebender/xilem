@@ -43,8 +43,8 @@ pub struct TreeArena<T> {
 
 /// A reference type giving shared access to an arena item and its children.
 ///
-/// When you borrow an item from a [`TreeArena`], it returns an [`ArenaRef`].
-/// You can access its children to get access to child [`ArenaRef`] handles.
+/// When you borrow an item from a [`TreeArena`], it returns an `ArenaRef`.
+/// You can access its children to get access to child `ArenaRef` handles.
 #[derive(Debug)]
 pub struct ArenaRef<'arena, T> {
     /// Parent of the Node
@@ -100,6 +100,8 @@ pub struct ArenaMutList<'arena, T> {
     /// Array of items
     child_arr: &'arena mut Vec<NodeId>,
 }
+
+// -- MARK: IMPLS
 
 impl<Item> Clone for ArenaRef<'_, Item> {
     fn clone(&self) -> Self {
@@ -226,6 +228,12 @@ impl<T> DataMap<T> {
     }
 }
 
+impl<T> Default for TreeArena<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> TreeArena<T> {
     /// Creates a new empty tree
     pub fn new() -> Self {
@@ -253,11 +261,6 @@ impl<T> TreeArena<T> {
         }
     }
 
-    /// An iterator visiting all root ids in arbitrary order.
-    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
-        self.roots.iter().copied()
-    }
-
     /// Returns a handle whose children are the roots, if any, of the tree.
     ///
     /// Using [`insert`](ArenaMutList::insert) on this handle
@@ -272,13 +275,19 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// An iterator visiting all root ids in arbitrary order.
+    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
+        self.roots.iter().copied()
+    }
+
     /// Finds an item in the tree.
     ///
     /// Returns a shared reference to the item if present.
     ///
     /// # Complexity
     ///
-    /// O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(1) in the unsafe implementation.
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         self.data_map.find_inner(id.into())
     }
@@ -286,6 +295,11 @@ impl<T> TreeArena<T> {
     /// Finds an item in the tree.
     ///
     /// Returns a mutable reference to the item if present.
+    ///
+    /// # Complexity
+    ///
+    /// - O(Depth) in the safe implementation.
+    /// - O(1) in the unsafe implementation.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         // safe as derived from the arena itself and has assoc lifetime with the arena
         self.data_map.find_mut_inner(id.into())
@@ -359,12 +373,6 @@ impl<T> TreeArena<T> {
     }
 }
 
-impl<T> Default for TreeArena<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> ArenaRef<'_, T> {
     /// Id of the item this handle is associated with.
     pub fn id(&self) -> NodeId {
@@ -392,25 +400,22 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
-        if self.parent_arena.items.contains_key(&id) {
-            // the id of the parent
-            let parent_id = self.parent_id;
-
-            // The arena is derived from the root, and the id is in the tree
-            if parent_id.is_none() {
-                return true;
-            }
-
-            // iff the path is empty, there is no path from id to self
-            !self.parent_arena.get_id_path(id, parent_id).is_empty()
-        } else {
-            // if the id is not in the tree, it is not a descendant
-            false
+        // Check if id is in the tree at all.
+        if !self.parent_arena.items.contains_key(&id) {
+            return false;
         }
+
+        // If parent_id is None, this is the root list, all nodes are descendants.
+        if self.parent_id.is_none() {
+            return true;
+        }
+
+        // Iff the path is empty, there is no path from id to self
+        !self.parent_arena.get_id_path(id, self.parent_id).is_empty()
     }
 
     /// Returns `true` if the list has an element with the given id.
-    pub fn has(&self, id: impl Into<NodeId>) -> bool {
+    pub fn has(self, id: impl Into<NodeId>) -> bool {
         let child_id = id.into();
         let parent_id = self.parent_id;
         self.parent_arena
@@ -451,7 +456,9 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth). except access from root which is O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         // the id to search for
         let id: NodeId = id.into();
@@ -507,9 +514,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     }
 
     /// Returns a shared handle to the element of the list with the given id.
-    ///
-    /// Returns a tuple of a mutable reference to the child and a handle to access
-    /// its children.
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has(id) {
@@ -520,9 +524,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     }
 
     /// Returns a mutable handle to the element of the list with the given id.
-    ///
-    /// Returns a tuple of a mutable reference to the child and a handle to access
-    /// its children.
     pub fn item_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
         if self.has(id) {
@@ -652,18 +653,22 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth). except access from root which is O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         self.reborrow().find(id)
     }
 
     /// Finds an arena item among the list's items and their descendants.
     ///
-    /// Returns a shared reference to the item if present.
+    /// Returns a mutable reference to the item if present.
     ///
     /// # Complexity
     ///
-    /// O(Depth). except access from root which is O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
         if self.is_descendant(id) {

@@ -23,7 +23,7 @@ struct TreeNode<T> {
 /// will keep track of parent-child relationships, lets you efficiently find
 /// an item anywhere in the tree hierarchy, and give you mutable access to this item
 /// and its children.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct TreeArena<T> {
     roots: HashMap<NodeId, TreeNode<T>>,
     parents_map: HashMap<NodeId, Option<NodeId>>,
@@ -41,6 +41,16 @@ pub struct ArenaRef<'arena, T> {
     pub item: &'arena T,
     /// Reference to the children of the node
     pub children: ArenaRefList<'arena, T>,
+}
+
+/// A handle giving shared access to a set of arena items.
+///
+/// See [`ArenaRef`] for more information.
+#[derive(Debug)]
+pub struct ArenaRefList<'arena, T> {
+    parent_id: Option<NodeId>,
+    children: &'arena HashMap<NodeId, TreeNode<T>>,
+    parents_map: ArenaMapRef<'arena>,
 }
 
 /// A reference type giving mutable access to an arena item and its children.
@@ -65,16 +75,6 @@ pub struct ArenaMut<'arena, T> {
     pub children: ArenaMutList<'arena, T>,
 }
 
-/// A handle giving shared access to a set of arena items.
-///
-/// See [`ArenaRef`] for more information.
-#[derive(Debug)]
-pub struct ArenaRefList<'arena, T> {
-    parent_id: Option<NodeId>,
-    children: &'arena HashMap<NodeId, TreeNode<T>>,
-    parents_map: ArenaMapRef<'arena>,
-}
-
 /// A handle giving mutable access to a set of arena items.
 ///
 /// See [`ArenaMut`] for more information.
@@ -87,13 +87,13 @@ pub struct ArenaMutList<'arena, T> {
 
 /// A shared reference to the parent father map
 #[derive(Clone, Copy, Debug)]
-pub struct ArenaMapRef<'arena> {
+struct ArenaMapRef<'arena> {
     parents_map: &'arena HashMap<NodeId, Option<NodeId>>,
 }
 
 /// A mutable reference to the parent father map
 #[derive(Debug)]
-pub struct ArenaMapMut<'arena> {
+struct ArenaMapMut<'arena> {
     parents_map: &'arena mut HashMap<NodeId, Option<NodeId>>,
 }
 
@@ -114,6 +114,12 @@ impl<T> Clone for ArenaRefList<'_, T> {
 }
 
 impl<T> Copy for ArenaRefList<'_, T> {}
+
+impl<T> Default for TreeArena<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl<T> TreeArena<T> {
     /// Creates an empty tree.
@@ -145,11 +151,6 @@ impl<T> TreeArena<T> {
         }
     }
 
-    /// An iterator visiting all root ids in arbitrary order.
-    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
-        self.roots.keys().copied()
-    }
-
     /// Returns a handle giving access to the roots of the tree.
     ///
     /// Using [`insert`](ArenaMutList::insert) on this handle
@@ -164,13 +165,19 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// An iterator visiting all root ids in arbitrary order.
+    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
+        self.roots.keys().copied()
+    }
+
     /// Finds an item in the tree.
     ///
     /// Returns a shared reference to the item if present.
     ///
     /// # Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(1) in the unsafe implementation.
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         self.roots().find_inner(id.into())
     }
@@ -181,7 +188,8 @@ impl<T> TreeArena<T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(1) in the unsafe implementation.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         self.roots_mut().find_mut_inner(id.into())
     }
@@ -301,35 +309,6 @@ impl<T> ArenaRef<'_, T> {
     }
 }
 
-impl<T> ArenaMut<'_, T> {
-    /// Id of the item this handle is associated with.
-    pub fn id(&self) -> NodeId {
-        self.children
-            .parent_id
-            .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
-    }
-
-    /// Returns a shared reference equivalent to this one.
-    pub fn reborrow(&mut self) -> ArenaRef<'_, T> {
-        ArenaRef {
-            parent_id: self.parent_id,
-            item: self.item,
-            children: self.children.reborrow(),
-        }
-    }
-
-    /// Returns a mutable reference equivalent to this one.
-    ///
-    /// This is sometimes useful to work with the borrow checker.
-    pub fn reborrow_mut(&mut self) -> ArenaMut<'_, T> {
-        ArenaMut {
-            parent_id: self.parent_id,
-            item: self.item,
-            children: self.children.reborrow_mut(),
-        }
-    }
-}
-
 impl<'arena, T> ArenaRefList<'arena, T> {
     /// Returns `true` if the list has an element with the given id.
     pub fn has(self, id: impl Into<NodeId>) -> bool {
@@ -362,7 +341,9 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         self.find_inner(id.into())
     }
@@ -385,6 +366,35 @@ impl<'arena, T> ArenaRefList<'arena, T> {
 
         let node = node_children.get(&id)?;
         Some(node.arena_ref(*parent_id, self.parents_map.parents_map))
+    }
+}
+
+impl<T> ArenaMut<'_, T> {
+    /// Id of the item this handle is associated with.
+    pub fn id(&self) -> NodeId {
+        self.children
+            .parent_id
+            .expect("ArenaMut always has a parent_id when it's a member of ArenaMut")
+    }
+
+    /// Returns a shared reference equivalent to this one.
+    pub fn reborrow(&mut self) -> ArenaRef<'_, T> {
+        ArenaRef {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow(),
+        }
+    }
+
+    /// Returns a mutable reference equivalent to this one.
+    ///
+    /// This is sometimes useful to work with the borrow checker.
+    pub fn reborrow_mut(&mut self) -> ArenaMut<'_, T> {
+        ArenaMut {
+            parent_id: self.parent_id,
+            item: self.item,
+            children: self.children.reborrow_mut(),
+        }
     }
 }
 
@@ -528,7 +538,9 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         self.reborrow().find(id)
     }
@@ -539,7 +551,9 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// # Complexity
     ///
-    /// O(Depth).
+    /// - O(Depth) in the safe implementation.
+    /// - O(Depth) in the unsafe implementation, when not called from the root.
+    /// - O(1) in the unsafe implementation, when called from the root.
     pub fn find_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         self.find_mut_inner(id.into())
     }
@@ -583,7 +597,7 @@ impl ArenaMapRef<'_> {
     /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
     /// If there is no path from `start_id` to id, returns an empty vector.
-    pub fn get_id_path(self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
+    fn get_id_path(self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
         let mut path = Vec::new();
 
         if !self.parents_map.contains_key(&id) {
@@ -612,7 +626,7 @@ impl ArenaMapRef<'_> {
 
 impl ArenaMapMut<'_> {
     /// Returns a shared handle equivalent to this one.
-    pub fn reborrow(&self) -> ArenaMapRef<'_> {
+    fn reborrow(&self) -> ArenaMapRef<'_> {
         ArenaMapRef {
             parents_map: self.parents_map,
         }
@@ -621,7 +635,7 @@ impl ArenaMapMut<'_> {
     /// Returns a mutable handle equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
-    pub fn reborrow_mut(&mut self) -> ArenaMapMut<'_> {
+    fn reborrow_mut(&mut self) -> ArenaMapMut<'_> {
         ArenaMapMut {
             parents_map: self.parents_map,
         }
@@ -635,7 +649,7 @@ impl ArenaMapMut<'_> {
     /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
     /// If there is no path from `start_id` to id, returns an empty vector.
-    pub fn get_id_path(&self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
+    fn get_id_path(&self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
         self.reborrow().get_id_path(id, start_id)
     }
 }
