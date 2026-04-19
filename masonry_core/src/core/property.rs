@@ -4,6 +4,8 @@
 use std::any::TypeId;
 use std::default::Default;
 
+use crate::core::Widget;
+
 /// A marker trait that indicates that a type is intended to be used as a widget's [property].
 ///
 /// Properties are arbitrary values that are stored alongside a widget.
@@ -39,16 +41,13 @@ pub trait Property: Default + Clone + Send + Sync + 'static {
     }
 }
 
-// TODO - Rename to UsesProperty?
-// TODO - Make it a subtrait of Widget.
-
 /// Marker trait implemented by widgets that read the [property] `P`.
 ///
 /// Every widget can have an arbitrary set of properties whether or not it implements this trait,
 /// but widgets will usually only read the value of a small set of properties.
-/// Each widget should (though this isn't enforced) implement `HasProperty` for every property it reads.
+/// Each widget should (though this isn't enforced) implement `UsesProperty` for every property it reads.
 ///
-/// This is not used directly by Masonry Core, but is instead provided for the convenience of external crates.
+/// This is not used directly by Masonry, but is instead provided for the convenience of external crates.
 ///
 /// [property]: crate::doc::masonry_concepts#layers
-pub trait HasProperty<P: Property> {}
+pub trait UsesProperty<P: Property>: Widget {}

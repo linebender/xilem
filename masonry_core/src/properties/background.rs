@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 use crate::kurbo::Rect;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::Gradient;
@@ -10,7 +10,7 @@ use crate::properties::types::Gradient;
 // to BackgroundImage to match CSS spec.
 
 // Every widget has a background.
-impl<W: Widget> HasProperty<Background> for W {}
+impl<W: Widget> UsesProperty<Background> for W {}
 
 /// The background color/gradient of a widget.
 #[expect(missing_docs, reason = "field names are self-descriptive")]

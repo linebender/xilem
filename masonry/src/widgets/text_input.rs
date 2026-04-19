@@ -8,10 +8,10 @@ use tracing::{Span, trace_span};
 
 use crate::TextAlign;
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps,
-    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod, paint_background, paint_border, paint_box_shadow,
+    AccessCtx, ArcStr, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PointerButton, PointerButtonEvent, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
+    WidgetPod, paint_background, paint_border, paint_box_shadow,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
@@ -154,9 +154,9 @@ impl TextInput {
     }
 }
 
-impl HasProperty<CaretColor> for TextInput {}
-impl HasProperty<PlaceholderColor> for TextInput {}
-impl HasProperty<SelectionColor> for TextInput {}
+impl UsesProperty<CaretColor> for TextInput {}
+impl UsesProperty<PlaceholderColor> for TextInput {}
+impl UsesProperty<SelectionColor> for TextInput {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {

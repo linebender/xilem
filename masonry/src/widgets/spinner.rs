@@ -9,8 +9,8 @@ use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Cap, Line, Point, Size, Stroke, Vec2};
@@ -46,7 +46,7 @@ impl Spinner {
     }
 }
 
-impl HasProperty<ContentColor> for Spinner {}
+impl UsesProperty<ContentColor> for Spinner {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Spinner {

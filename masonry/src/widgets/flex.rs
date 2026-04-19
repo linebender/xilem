@@ -8,9 +8,8 @@ use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ChildrenIds, CollectionWidget, HasProperty, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, ChildrenIds, CollectionWidget, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
@@ -677,7 +676,7 @@ fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> 
     (space_before, space_between)
 }
 
-impl HasProperty<Gap> for Flex {}
+impl UsesProperty<Gap> for Flex {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {

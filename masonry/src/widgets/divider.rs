@@ -10,8 +10,8 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
@@ -574,7 +574,7 @@ impl Divider {
     }
 }
 
-impl HasProperty<ContentColor> for Divider {}
+impl UsesProperty<ContentColor> for Divider {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Divider {

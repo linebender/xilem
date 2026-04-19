@@ -9,9 +9,9 @@ use masonry_core::debug_panic;
 use tracing::{Span, trace, trace_span};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, keyboard::Key,
+    AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget,
+    PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut, WidgetPod, keyboard::Key,
     paint_background, paint_box_shadow,
 };
 use crate::imaging::Painter;
@@ -88,7 +88,7 @@ impl RadioButton {
     }
 }
 
-impl HasProperty<CheckmarkColor> for RadioButton {}
+impl UsesProperty<CheckmarkColor> for RadioButton {}
 
 /// The action type emitted by [`RadioButton`] when it is selected.
 ///
