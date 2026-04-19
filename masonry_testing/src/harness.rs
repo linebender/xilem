@@ -36,8 +36,8 @@ use tracing::debug;
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, WindowSizePolicy,
-    try_init_test_tracing,
+    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan,
+    WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use masonry_core::core::{
@@ -535,13 +535,12 @@ impl<W: Widget> TestHarness<W> {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
     /// was created with on all sides.
-    // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
-    // Those could avoid actually performing a real render.
+    ///
+    /// If you just want to run the rendering passes and get the render data without
+    /// rastering it into an image, use [`Self::redraw`] instead.
     pub fn render(&mut self) -> RgbaImage {
-        let (visual_layers, tree_update) = self.render_root.redraw();
-        let tree_update = tree_update.unwrap();
-        self.access_tree
-            .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
+        let (visual_layers, _tree_update) = self.redraw();
+
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
@@ -578,6 +577,18 @@ impl<W: Widget> TestHarness<W> {
             .render_source(&mut full_scene, width, height)
             .unwrap();
         RgbaImage::from_vec(image.width, image.height, image.data).expect("failed to create image")
+    }
+
+    /// Redraws the window.
+    ///
+    /// If you want to get a bitmap image of the contents, use [`Self::render`] instead.
+    pub fn redraw(&mut self) -> (VisualLayerPlan, TreeUpdate) {
+        let (visual_layers, tree_update) = self.render_root.redraw();
+        let tree_update = tree_update.unwrap();
+        self.access_tree
+            .update_and_process_changes(tree_update.clone(), &mut NoOpTreeChangeHandler);
+
+        (visual_layers, tree_update)
     }
 
     /// Returns a reference to the current state of the accessibility tree.
