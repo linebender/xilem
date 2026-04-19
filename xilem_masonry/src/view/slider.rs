@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::widgets;
+use masonry::widgets::{self, SliderMoved};
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
@@ -122,10 +122,13 @@ where
             tracing::warn!("Got unexpected id path in Slider::message");
             return MessageResult::Stale;
         }
-        match message.take_message::<f64>() {
-            Some(value) => MessageResult::Action((self.on_change)(app_state, *value)),
+        match message.take_message::<SliderMoved>() {
+            Some(value) => MessageResult::Action((self.on_change)(app_state, value.value)),
             None => {
-                tracing::error!("Wrong message type in Slider::message: {message:?}, expected f64");
+                tracing::error!(
+                    "Wrong message type in Slider::message: {message:?}, expected {}",
+                    std::any::type_name::<SliderMoved>(),
+                );
                 MessageResult::Stale
             }
         }

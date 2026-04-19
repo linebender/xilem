@@ -540,13 +540,16 @@ mod tests {
         // 2. Press the mouse button.
         // This should not emit an action because the value does not change.
         harness.mouse_button_press(None);
-        assert!(harness.pop_action::<f64>().is_none());
+        assert!(harness.pop_action::<SliderMoved>().is_none());
 
         // 3. Move to the new position (75%).
         // PosX for 75.0 = 8.0 + (184.0 * 0.75) = 146.0
         harness.mouse_move(Point::new(146.0, 16.0));
 
-        assert_eq!(harness.pop_action::<f64>(), Some((75.0, slider_id)));
+        assert_eq!(
+            harness.pop_action::<SliderMoved>(),
+            Some((SliderMoved { value: 75.0 }, slider_id))
+        );
         assert_render_snapshot!(harness, "slider_drag_to_75");
 
         // Release the mouse
@@ -567,7 +570,10 @@ mod tests {
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowRight)));
         harness.process_text_event(TextEvent::key_up(Key::Named(NamedKey::ArrowRight)));
 
-        assert_eq!(harness.pop_action::<f64>(), Some((60.0, slider_id)));
+        assert_eq!(
+            harness.pop_action::<SliderMoved>(),
+            Some((SliderMoved { value: 60.0 }, slider_id))
+        );
         assert_render_snapshot!(harness, "slider_keyboard_moved");
     }
 
@@ -579,6 +585,6 @@ mod tests {
             TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
 
         assert_render_snapshot!(harness, "slider_disabled");
-        assert!(harness.pop_action::<f64>().is_none());
+        assert!(harness.pop_action::<SliderMoved>().is_none());
     }
 }

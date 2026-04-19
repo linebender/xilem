@@ -4,7 +4,7 @@
 use masonry::app::RenderRoot;
 use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::widgets::{Flex, Label, Slider};
+use masonry::widgets::{Flex, Label, Slider, SliderMoved};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -57,9 +57,10 @@ impl DemoPage for SliderDemo {
         action: &ErasedAction,
         widget_id: WidgetId,
     ) -> Handled {
-        let Some(&value) = action.downcast_ref::<f64>() else {
+        let Some(value) = action.downcast_ref::<SliderMoved>() else {
             return Handled::No;
         };
+        let value = value.value;
 
         let id = render_root.get_widget_with_tag(self.slider).unwrap().id();
         if widget_id != id {
