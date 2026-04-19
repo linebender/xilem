@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![no_std]
+
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=tree_arena
 
@@ -63,6 +65,8 @@
 //! |From root  | O(Depth)     | O(1)     |
 //!
 //! [Masonry]: https://crates.io/crates/masonry
+
+extern crate alloc;
 
 type NodeId = u64;
 
