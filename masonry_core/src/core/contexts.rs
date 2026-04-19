@@ -376,10 +376,7 @@ impl MutateCtx<'_> {
 impl<'w> QueryCtx<'w> {
     /// Returns a [`WidgetRef`] to a child widget.
     pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
-        let child_node = self
-            .children
-            .into_item(child)
-            .expect("get_mut: child not found");
+        let child_node = self.children.item(child).expect("get_mut: child not found");
         let child_type_id = (*child_node.item.widget).type_id();
         let child_stack = self
             .property_arena

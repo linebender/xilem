@@ -428,20 +428,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// Returns a shared handle to the element of the list with the given id.
     ///
     /// Returns a new [`ArenaRef`].
-    pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
-        let id = id.into();
-        if self.has(id) {
-            self.parent_arena.find_inner(id)
-        } else {
-            None
-        }
-    }
-
-    /// Returns a shared handle to the element of the list with the given id.
-    ///
-    /// This is the same as [`item`](Self::item), except it consumes the
-    /// handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
+    pub fn item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.has(id) {
             self.parent_arena.find_inner(id)
