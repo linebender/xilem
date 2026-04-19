@@ -522,10 +522,8 @@ mod tests {
         let button = Button::with_text("").prepare().with_tag(tag);
         let parent = Flex::row().with(button, 0.).prepare();
 
-        let window_size = Size::new(100.0, 40.0);
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = window_size;
-        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let params =
+            TestHarnessParams::size_and_padding((100, 40), TestHarnessParams::ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), parent, params);
         let button_id = harness.get_widget(tag).id();
 
