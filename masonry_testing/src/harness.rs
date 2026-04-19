@@ -36,8 +36,8 @@ use tracing::debug;
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan, WindowSizePolicy,
-    try_init_test_tracing,
+    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan,
+    WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use masonry_core::core::{
