@@ -296,6 +296,10 @@ impl<T> TreeArena<T> {
     ///
     /// Returns a mutable reference to the item if present.
     ///
+    /// # Complexity
+    ///
+    /// - O(Depth) in the safe implementation.
+    /// - O(1) in the unsafe implementation.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         // safe as derived from the arena itself and has assoc lifetime with the arena
         self.data_map.find_mut_inner(id.into())
