@@ -7,8 +7,8 @@ use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
     WidgetMut,
 };
 use crate::imaging::Painter;
@@ -129,7 +129,7 @@ impl Image {
     }
 }
 
-impl HasProperty<ObjectFit> for Image {}
+impl UsesProperty<ObjectFit> for Image {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Image {

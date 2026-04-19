@@ -1,13 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 use crate::kurbo::{Axis, Insets, Point, Rect, RoundedRect, Size, Vec2};
 use crate::layout::Length;
 use crate::properties::CornerRadius;
 
 // Every widget has a border width.
-impl<W: Widget> HasProperty<BorderWidth> for W {}
+impl<W: Widget> UsesProperty<BorderWidth> for W {}
 
 /// The width of a widget's border, in logical pixels.
 #[expect(missing_docs, reason = "field names are self-descriptive")]

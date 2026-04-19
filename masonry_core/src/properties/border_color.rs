@@ -1,12 +1,12 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 use crate::peniko::BrushRef;
 use crate::peniko::color::{AlphaColor, Srgb};
 
 // Every widget has a border color.
-impl<W: Widget> HasProperty<BorderColor> for W {}
+impl<W: Widget> UsesProperty<BorderColor> for W {}
 
 /// The color of a widget's border.
 #[expect(missing_docs, reason = "field names are self-descriptive")]

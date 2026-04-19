@@ -183,7 +183,7 @@ While it would be tempting to implement some kind of trait-based compile-time ve
 The property system is meant to be flexible, and allows users to set properties on a widget whose writer was not aware of them.
 This is useful for debugging and for writing container widgets.
 
-For external crates that *do* want static verification, we provide the non-binding [`HasProperty`] trait.
+For external crates that *do* want static verification, we provide the non-binding [`UsesProperty`] trait.
 
 ### Property fallback
 
@@ -322,7 +322,7 @@ DPI-aware pixel snapping is a future feature.
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
 [`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event
-[`HasProperty`]: crate::core::HasProperty
+[`UsesProperty`]: crate::core::UsesProperty
 [`Selector`]: crate::core::Selector
 [`RenderRoot`]: crate::app::RenderRoot
 [`WidgetTag`]: crate::core::WidgetTag

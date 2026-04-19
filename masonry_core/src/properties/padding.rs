@@ -1,12 +1,12 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 use crate::kurbo::{Axis, Insets, Point, Size, Vec2};
 use crate::layout::Length;
 
 // Every widget has padding.
-impl<W: Widget> HasProperty<Padding> for W {}
+impl<W: Widget> UsesProperty<Padding> for W {}
 
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]

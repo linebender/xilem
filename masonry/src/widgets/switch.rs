@@ -9,8 +9,8 @@ use tracing::{Span, trace, trace_span};
 
 use crate::core::keyboard::Key;
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget,
     WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
@@ -93,9 +93,9 @@ impl Switch {
     }
 }
 
-impl HasProperty<ThumbRadius> for Switch {}
-impl HasProperty<ThumbColor> for Switch {}
-impl HasProperty<TrackThickness> for Switch {}
+impl UsesProperty<ThumbRadius> for Switch {}
+impl UsesProperty<ThumbColor> for Switch {}
+impl UsesProperty<TrackThickness> for Switch {}
 
 /// The action type emitted by [`Switch`] when it is activated.
 ///

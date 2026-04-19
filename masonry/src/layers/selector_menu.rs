@@ -5,9 +5,9 @@ use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, HasProperty,
-    Layer, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PointerButton, PointerButtonEvent,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, Layer, LayoutCtx,
+    MeasureCtx, NewWidget, NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
@@ -136,7 +136,7 @@ impl CollectionWidget<()> for SelectorMenu {
     }
 }
 
-impl HasProperty<Gap> for SelectorMenu {}
+impl UsesProperty<Gap> for SelectorMenu {}
 
 impl Widget for SelectorMenu {
     type Action = NoAction;

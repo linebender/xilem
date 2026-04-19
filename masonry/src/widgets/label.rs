@@ -10,9 +10,9 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, BrushIndex, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction,
-    PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
+    AccessCtx, ArcStr, BrushIndex, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx,
+    UsesProperty, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
@@ -462,8 +462,8 @@ impl Label {
     }
 }
 
-impl HasProperty<ContentColor> for Label {}
-impl HasProperty<LineBreaking> for Label {}
+impl UsesProperty<ContentColor> for Label {}
+impl UsesProperty<LineBreaking> for Label {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Label {

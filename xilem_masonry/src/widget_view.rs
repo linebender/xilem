@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{FromDynWidget, HasProperty, Property, Widget};
+use masonry::core::{FromDynWidget, Property, UsesProperty, Widget};
 use masonry::kurbo::Affine;
 
 use crate::core::{View, ViewSequence};
@@ -51,7 +51,7 @@ pub trait WidgetView<State: 'static, Action = ()>:
         transformed(self).transform(by)
     }
 
-    /// Set a [`Property`] on this view, when the underlying widget [supports](HasProperty) it.
+    /// Set a [`Property`] on this view, when the underlying widget [supports](UsesProperty) it.
     ///
     /// This overrides previous set properties of the same type.
     ///
@@ -75,7 +75,7 @@ pub trait WidgetView<State: 'static, Action = ()>:
         State: 'static,
         Action: 'static,
         Self: Sized,
-        Self::Widget: HasProperty<P>,
+        Self::Widget: UsesProperty<P>,
         P: Property + PartialEq + Clone,
     {
         Prop {

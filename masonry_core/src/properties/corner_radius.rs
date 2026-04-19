@@ -1,10 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 
 // Every widget has a corner radius.
-impl<W: Widget> HasProperty<CornerRadius> for W {}
+impl<W: Widget> UsesProperty<CornerRadius> for W {}
 
 /// The radius of a widget's box corners, in logical pixels.
 #[expect(missing_docs, reason = "field names are self-descriptive")]

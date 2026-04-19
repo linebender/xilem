@@ -10,9 +10,9 @@ use tracing::{Span, trace_span};
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx, PaintCtx,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx,
     PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, Property,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::{Composite, GroupRef, Painter};
 use crate::kurbo::{Axis, Circle, Point, Rect, Size, Stroke};
@@ -133,10 +133,10 @@ impl Slider {
     }
 }
 
-impl HasProperty<BarColor> for Slider {}
-impl HasProperty<TrackThickness> for Slider {}
-impl HasProperty<ThumbColor> for Slider {}
-impl HasProperty<ThumbRadius> for Slider {}
+impl UsesProperty<BarColor> for Slider {}
+impl UsesProperty<TrackThickness> for Slider {}
+impl UsesProperty<ThumbColor> for Slider {}
+impl UsesProperty<ThumbRadius> for Slider {}
 
 /// A slider was moved.
 #[derive(PartialEq, Debug)]

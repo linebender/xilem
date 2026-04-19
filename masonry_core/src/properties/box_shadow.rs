@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{HasProperty, Property, Widget};
+use crate::core::{Property, UsesProperty, Widget};
 use crate::imaging::{BlurredRoundedRect, Composite, Painter};
 use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _};
 use crate::peniko::color::{AlphaColor, Srgb};
@@ -15,7 +15,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 // - Corner radius: Right now take our widget's corner radii, and average them to draw a shadow with a single corner radius. Ideally we'd like to match individual values.
 
 // Every widget has a box shadow.
-impl<W: Widget> HasProperty<BoxShadow> for W {}
+impl<W: Widget> UsesProperty<BoxShadow> for W {}
 
 /// The drop shadow of a widget.
 ///

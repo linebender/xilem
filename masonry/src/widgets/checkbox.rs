@@ -9,9 +9,9 @@ use tracing::{Span, trace, trace_span};
 
 use crate::core::keyboard::Key;
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, HasProperty, LayoutCtx, MeasureCtx,
-    NewWidget, PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, Property,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget,
+    PaintCtx, PointerEvent, PrePaintProps, PropertiesMut, PropertiesRef, Property, RegisterCtx,
+    TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut, WidgetPod,
     paint_background, paint_box_shadow,
 };
 use crate::imaging::Painter;
@@ -85,8 +85,8 @@ impl Checkbox {
     }
 }
 
-impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
-impl HasProperty<CheckmarkColor> for Checkbox {}
+impl UsesProperty<CheckmarkStrokeWidth> for Checkbox {}
+impl UsesProperty<CheckmarkColor> for Checkbox {}
 
 /// The action type emitted by [`Checkbox`] when it is activated.
 ///

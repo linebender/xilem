@@ -4,12 +4,12 @@
 use kurbo::Axis;
 
 use crate::{
-    core::{HasProperty, Property, Widget},
+    core::{Property, UsesProperty, Widget},
     layout::{Dim, Length},
 };
 
 // Every widget has dimensions.
-impl<W: Widget> HasProperty<Dimensions> for W {}
+impl<W: Widget> UsesProperty<Dimensions> for W {}
 
 /// The size of the widget, including borders and padding.
 ///

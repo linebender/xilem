@@ -10,8 +10,8 @@ use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, HasProperty, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
     WidgetMut,
 };
 use crate::imaging::Painter;
@@ -125,7 +125,7 @@ impl Svg {
     }
 }
 
-impl HasProperty<ObjectFit> for Svg {}
+impl UsesProperty<ObjectFit> for Svg {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Svg {

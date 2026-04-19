@@ -3,7 +3,7 @@
 
 //! Traits used to set custom styles on views.
 
-use masonry::core::HasProperty;
+use masonry::core::UsesProperty;
 use masonry::layout::Dim;
 use masonry::peniko::Color;
 pub use masonry::properties::types::{Gradient, GradientShape};
@@ -17,7 +17,7 @@ use crate::view::Prop;
 
 /// Trait implemented by most widget views that lets you style their properties.
 ///
-/// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
+/// Which methods you can use will depend whether the underlying widget implements [`UsesProperty`].
 pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Sized {
     /// Sets the element's dimensions.
     ///
@@ -27,7 +27,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// [`height`]: Style::height
     fn dims(self, dims: impl Into<Dimensions>) -> Prop<Dimensions, Self, State, Action>
     where
-        Self::Widget: HasProperty<Dimensions>,
+        Self::Widget: UsesProperty<Dimensions>,
     {
         self.prop(dims.into())
     }
@@ -37,7 +37,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// This will reset the element's height to [`Dim::Auto`].
     fn width(self, dim: impl Into<Dim>) -> Prop<Dimensions, Self, State, Action>
     where
-        Self::Widget: HasProperty<Dimensions>,
+        Self::Widget: UsesProperty<Dimensions>,
     {
         self.prop(Dimensions::AUTO.with_width(dim.into()))
     }
@@ -47,7 +47,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// This will reset the element's width to [`Dim::Auto`].
     fn height(self, dim: impl Into<Dim>) -> Prop<Dimensions, Self, State, Action>
     where
-        Self::Widget: HasProperty<Dimensions>,
+        Self::Widget: UsesProperty<Dimensions>,
     {
         self.prop(Dimensions::AUTO.with_height(dim.into()))
     }
@@ -57,7 +57,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// "Content color" usually means text or text decorations.
     fn color(self, color: Color) -> Prop<ContentColor, Self, State, Action>
     where
-        Self::Widget: HasProperty<ContentColor>,
+        Self::Widget: UsesProperty<ContentColor>,
     {
         self.prop(ContentColor { color })
     }
@@ -65,7 +65,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's background to a color/gradient.
     fn background(self, background: impl Into<Background>) -> Prop<Background, Self, State, Action>
     where
-        Self::Widget: HasProperty<Background>,
+        Self::Widget: UsesProperty<Background>,
     {
         self.prop(background.into())
     }
@@ -73,7 +73,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's background to a color.
     fn background_color(self, color: Color) -> Prop<Background, Self, State, Action>
     where
-        Self::Widget: HasProperty<Background>,
+        Self::Widget: UsesProperty<Background>,
     {
         self.prop(Background::Color(color))
     }
@@ -81,7 +81,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's background to a gradient.
     fn background_gradient(self, gradient: Gradient) -> Prop<Background, Self, State, Action>
     where
-        Self::Widget: HasProperty<Background>,
+        Self::Widget: UsesProperty<Background>,
     {
         self.prop(Background::Gradient(gradient))
     }
@@ -93,7 +93,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
         width: f64,
     ) -> Prop<BorderWidth, Prop<BorderColor, Self, State, Action>, State, Action>
     where
-        Self::Widget: HasProperty<BorderColor> + HasProperty<BorderWidth>,
+        Self::Widget: UsesProperty<BorderColor> + UsesProperty<BorderWidth>,
     {
         self.prop(BorderColor { color }).prop(BorderWidth { width })
     }
@@ -101,7 +101,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's border color.
     fn border_color(self, color: Color) -> Prop<BorderColor, Self, State, Action>
     where
-        Self::Widget: HasProperty<BorderColor>,
+        Self::Widget: UsesProperty<BorderColor>,
     {
         self.prop(BorderColor { color })
     }
@@ -109,7 +109,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's border width.
     fn border_width(self, width: f64) -> Prop<BorderWidth, Self, State, Action>
     where
-        Self::Widget: HasProperty<BorderWidth>,
+        Self::Widget: UsesProperty<BorderWidth>,
     {
         self.prop(BorderWidth { width })
     }
@@ -117,7 +117,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's box shadow.
     fn box_shadow(self, box_shadow: BoxShadow) -> Prop<BoxShadow, Self, State, Action>
     where
-        Self::Widget: HasProperty<BoxShadow>,
+        Self::Widget: UsesProperty<BoxShadow>,
     {
         self.prop(box_shadow)
     }
@@ -125,7 +125,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's corner radius.
     fn corner_radius(self, radius: f64) -> Prop<CornerRadius, Self, State, Action>
     where
-        Self::Widget: HasProperty<CornerRadius>,
+        Self::Widget: UsesProperty<CornerRadius>,
     {
         self.prop(CornerRadius { radius })
     }
@@ -133,7 +133,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the element's padding.
     fn padding(self, padding: impl Into<Padding>) -> Prop<Padding, Self, State, Action>
     where
-        Self::Widget: HasProperty<Padding>,
+        Self::Widget: UsesProperty<Padding>,
     {
         self.prop(padding.into())
     }
@@ -141,7 +141,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     /// Sets the gap between the element's consecutive children.
     fn gap(self, gap: impl Into<Gap>) -> Prop<Gap, Self, State, Action>
     where
-        Self::Widget: HasProperty<Gap>,
+        Self::Widget: UsesProperty<Gap>,
     {
         self.prop(gap.into())
     }
@@ -152,7 +152,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
         line_break_mode: LineBreaking,
     ) -> Prop<LineBreaking, Self, State, Action>
     where
-        Self::Widget: HasProperty<LineBreaking>,
+        Self::Widget: UsesProperty<LineBreaking>,
     {
         self.prop(line_break_mode)
     }
