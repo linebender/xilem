@@ -1172,8 +1172,7 @@ mod tests {
 
     #[test]
     fn edit_textarea() {
-        let mut test_params = TestHarnessParams::default();
-        test_params.window_size = Size::new(200.0, 20.0);
+        let test_params = TestHarnessParams::default().with_size(Size::new(200.0, 20.0));
 
         let base_target = {
             let area = NewWidget::new(TextArea::new_immutable("Test string"))

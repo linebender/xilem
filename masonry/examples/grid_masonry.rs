@@ -163,9 +163,9 @@ mod tests {
 
     #[test]
     fn screenshot_test() {
-        let mut test_params = TestHarnessParams::default();
         // This is a screenshot of an example, so it being slightly larger than a normal test is expected.
-        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+        let test_params =
+            TestHarnessParams::default().with_max_screenshot_size(16 * TestHarnessParams::KIBIBYTE);
         let mut harness =
             TestHarness::create_with(default_property_set(), make_grid(1.0), test_params);
         assert_render_snapshot!(harness, "example_grid_masonry_initial");

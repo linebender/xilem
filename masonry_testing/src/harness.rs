@@ -268,6 +268,57 @@ impl Default for TestHarnessParams {
     }
 }
 
+impl TestHarnessParams {
+    /// Returns parameters for a test harness with custom dimensions.
+    pub fn size_and_padding(window_size: impl Into<Size>, root_padding: u32) -> Self {
+        Self {
+            window_size: window_size.into(),
+            root_padding,
+            ..Self::DEFAULT
+        }
+    }
+
+    /// Builder method to set `window_size`.
+    pub fn with_size(self, window_size: impl Into<Size>) -> Self {
+        Self {
+            window_size: window_size.into(),
+            ..self
+        }
+    }
+
+    /// Builder method to set `background_color`.
+    pub const fn with_background(self, background_color: Color) -> Self {
+        Self {
+            background_color,
+            ..self
+        }
+    }
+
+    /// Builder method to set `root_padding`.
+    pub const fn with_padding(self, root_padding: u32) -> Self {
+        Self {
+            root_padding,
+            ..self
+        }
+    }
+
+    /// Builder method to set `scale_factor`.
+    pub const fn with_scale(self, scale_factor: f64) -> Self {
+        Self {
+            scale_factor,
+            ..self
+        }
+    }
+
+    /// Builder method to set `max_screenshot_size`.
+    pub const fn with_max_screenshot_size(self, max_screenshot_size: u32) -> Self {
+        Self {
+            max_screenshot_size,
+            ..self
+        }
+    }
+}
+
 /// Roboto is our current test font.
 pub const ROBOTO: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
