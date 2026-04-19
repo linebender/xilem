@@ -655,10 +655,6 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         let parent_id = *arena.parents.get(&id)?;
         let node_cell = arena.items.get(&id)?;
 
-        // FIXME
-        // The following may actually be unsound.
-        // See https://github.com/Storyyeller/stable_deref_trait/issues/15
-
         // SAFETY
         //
         // `node_cell.get().as_mut()` uses pointer trickery to get us two references to
@@ -672,11 +668,12 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         // `ArenaMutList` are only allowed to use it to read/mutate children of the node
         // at `id` (as required by the safety precondition of this method).
         //
-        // `node`
-        //
         // Note that "to read/mutate children of the node" includes inserting or removing
         // children. Doing so can reallocate the arena; this is sound, because the arena
         // stores its nodes in boxes. Reallocating the arena does not invalidate `node`.
+        //
+        // FIXME - That last paragraph may actually be wrong.
+        // See https://github.com/Storyyeller/stable_deref_trait/issues/15
         let node = unsafe { node_cell.get().as_mut()? };
         let TreeNode { item, children } = node;
 
