@@ -929,7 +929,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Creates a unique tag for the widget with the given id and returns it.
     #[track_caller]
-    pub fn make_tag_for_widget<W2: Widget>(&mut self, id: WidgetId) -> WidgetTag<W> {
+    pub fn make_tag_for_widget<W2: Widget>(&mut self, id: WidgetId) -> WidgetTag<W2> {
         self.render_root.make_tag_for_widget(id)
     }
 
