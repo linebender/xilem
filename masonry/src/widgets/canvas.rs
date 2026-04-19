@@ -200,7 +200,7 @@ mod tests {
         let canvas =
             Canvas::default().with_alt_text("The text 'Canvas' with a bright mint green fill");
 
-        let harness_params = TestHarnessParams::default().with_size(Size::new(200., 200.));
+        let harness_params = TestHarnessParams::default().with_size((200, 200));
         let mut harness = TestHarness::create_with(
             DefaultProperties::default(),
             canvas.prepare().with_props(PropertySet::default()),

@@ -476,8 +476,7 @@ mod tests {
         let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0))
             .with_props(Dimensions::FIT);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(50.0, 200.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 200));
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_default");
@@ -504,8 +503,7 @@ mod tests {
         let widget = NewWidget::new(ScrollBar::new(Axis::Horizontal, 200.0, 600.0))
             .with_props(Dimensions::FIT);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 50.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 50));
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
@@ -523,8 +521,7 @@ mod tests {
     fn keyboard_scroll_updates_access_tree() {
         let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0))
             .with_props(Dimensions::FIT);
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(50.0, 200.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 200));
         let _ = harness.render();
 
         let scrollbar_id = harness.root_id();

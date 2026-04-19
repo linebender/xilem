@@ -172,8 +172,7 @@ mod tests {
     fn simple_spinner() {
         let spinner = NewWidget::new(Spinner::new());
 
-        let window_size = Size::new(100.0, 100.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), spinner, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), spinner, (100, 100));
         assert_render_snapshot!(harness, "spinner_init");
 
         harness.animate_ms(700);
@@ -190,16 +189,14 @@ mod tests {
                 .prepare()
                 .with_props(PropertySet::one(ContentColor::new(palette::css::PURPLE)));
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), spinner, (30, 30));
             harness.render()
         };
 
         let image_2 = {
             let spinner = NewWidget::new(Spinner::new());
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), spinner, (30, 30));
 
             harness.edit_root_widget(|mut spinner| {
                 spinner.insert_prop(ContentColor::new(palette::css::PURPLE));

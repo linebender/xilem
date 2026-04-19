@@ -137,7 +137,6 @@ impl Widget for Passthrough {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kurbo::Size;
     use crate::properties::Dimensions;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -149,8 +148,7 @@ mod tests {
         let widget = Passthrough::new(Label::new("A").prepare())
             .prepare()
             .with_props(Dimensions::MAX);
-        let window_size = Size::new(30.0, 30.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (30, 30));
 
         assert_render_snapshot!(harness, "passthrough_initial_label_A");
 

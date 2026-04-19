@@ -241,14 +241,8 @@ mod tests {
             .prepare()
             .with_props(Dimensions::MAX);
         let observer_id = observer.id();
-        let mut harness = TestHarness::create_with_size(
-            default_property_set(),
-            observer,
-            Size {
-                width: 200.,
-                height: 200.,
-            },
-        );
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), observer, (200, 200));
         // There will be an initial layout.
         let (LayoutChanged, action_id) = harness.pop_action::<LayoutChanged>().unwrap();
         assert_eq!(action_id, observer_id);

@@ -281,10 +281,8 @@ mod tests {
     fn simple_button() {
         let widget = NewWidget::new(Button::with_text("Hello"));
 
-        let params = TestHarnessParams::size_and_padding(
-            Size::new(100.0, 40.0),
-            TestHarnessParams::ROOT_PADDING,
-        );
+        let params =
+            TestHarnessParams::size_and_padding((100, 40), TestHarnessParams::ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
         let button_id = harness.root_id();
 
@@ -339,8 +337,7 @@ mod tests {
 
             let button = NewWidget::new(Button::new(label));
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), button, (50, 50));
 
             harness.render()
         };
@@ -348,8 +345,7 @@ mod tests {
         let image_2 = {
             let button = NewWidget::new(Button::with_text("Hello world"));
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), button, (50, 50));
 
             harness.edit_root_widget(|mut button| {
                 let mut label = Button::child_mut(&mut button);
@@ -373,8 +369,7 @@ mod tests {
         let red = crate::palette::css::RED;
         let button = NewWidget::new(Button::with_text("Some random text"));
 
-        let window_size = Size::new(200.0, 80.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), button, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), button, (200, 80));
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
@@ -416,7 +411,7 @@ mod tests {
                 .with(Gap::new(40.px())),
         );
 
-        let mut test_params = TestHarnessParams::default().with_size(Size::new(300.0, 300.0));
+        let mut test_params = TestHarnessParams::default().with_size((300, 300));
         // TODO - Remove? Not sure screenshot_tolerance is useful anymore.
         // See https://github.com/linebender/xilem/issues/1759
         test_params.screenshot_tolerance = 32;

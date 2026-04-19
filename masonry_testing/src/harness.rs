@@ -31,7 +31,7 @@ use masonry_core::core::{
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
+use masonry_core::kurbo::{Affine, Point, Rect, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
 
@@ -153,7 +153,7 @@ pub struct TestHarness<W: Widget> {
 pub struct TestHarnessParams {
     /// The size of the virtual window the harness renders into for snapshot testing.
     /// Defaults to [`TestHarnessParams::DEFAULT_SIZE`].
-    pub window_size: Size,
+    pub window_size: PhysicalSize<u32>,
     /// The background color of the virtual window.
     /// Defaults to [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
@@ -245,7 +245,7 @@ impl TestHarnessParams {
     };
 
     /// Default canvas size for tests.
-    pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
+    pub const DEFAULT_SIZE: PhysicalSize<u32> = PhysicalSize::new(400, 400);
 
     /// Default error tolerance for screenshot tests.
     pub const DEFAULT_SCREENSHOT_TOLERANCE: u32 = 16;
@@ -270,7 +270,7 @@ impl Default for TestHarnessParams {
 
 impl TestHarnessParams {
     /// Returns parameters for a test harness with custom dimensions.
-    pub fn size_and_padding(window_size: impl Into<Size>, root_padding: u32) -> Self {
+    pub fn size_and_padding(window_size: impl Into<PhysicalSize<u32>>, root_padding: u32) -> Self {
         Self {
             window_size: window_size.into(),
             root_padding,
@@ -279,7 +279,7 @@ impl TestHarnessParams {
     }
 
     /// Builder method to set `window_size`.
-    pub fn with_size(self, window_size: impl Into<Size>) -> Self {
+    pub fn with_size(self, window_size: impl Into<PhysicalSize<u32>>) -> Self {
         Self {
             window_size: window_size.into(),
             ..self
@@ -339,15 +339,12 @@ impl<W: Widget> TestHarness<W> {
     pub fn create_with_size(
         default_props: DefaultProperties,
         root_widget: NewWidget<W>,
-        window_size: Size,
+        window_size: impl Into<PhysicalSize<u32>>,
     ) -> Self {
         Self::create_with(
             default_props,
             root_widget,
-            TestHarnessParams {
-                window_size,
-                ..Default::default()
-            },
+            TestHarnessParams::default().with_size(window_size),
         )
     }
 
@@ -358,15 +355,7 @@ impl<W: Widget> TestHarness<W> {
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
-        // TODO - Change params.window_size type and remove this step
-        #[allow(
-            clippy::cast_possible_truncation,
-            reason = "If sizes are large enough to overflow a u32, we have other problems"
-        )]
-        let window_size = PhysicalSize::new(
-            params.window_size.width as _,
-            params.window_size.height as _,
-        );
+        let window_size = params.window_size;
 
         // If no tracing subscriber has been set before, we set our own. If one has
         // already been set, we get an error which we swallow.

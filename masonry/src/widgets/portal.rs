@@ -923,8 +923,7 @@ mod tests {
         ))
         .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(400., 400.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (400, 400));
 
         assert_render_snapshot!(harness, "portal_button_list_no_scroll");
 
@@ -954,8 +953,7 @@ mod tests {
         )
         .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(200., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         let button_id = harness.get_widget(button_tag).id();
 
         harness.scroll_into_view(button_id);
@@ -968,8 +966,7 @@ mod tests {
         let content = SizedBox::empty().size(300.px(), 300.px()).prepare();
         let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), portal, (100, 100));
         let _ = harness.render();
 
         let portal_id = harness.get_widget(portal_tag).id();
@@ -1002,8 +999,7 @@ mod tests {
         let content = SizedBox::empty().size(300.px(), 300.px()).prepare();
         let portal = NewWidget::new(Portal::new(content)).with_tag(portal_tag);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), portal, Size::new(100.0, 100.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), portal, (100, 100));
         let _ = harness.render();
 
         let portal_id = harness.get_widget(portal_tag).id();

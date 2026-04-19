@@ -346,8 +346,7 @@ mod tests {
     #[test]
     fn click_emits_action_and_focuses() {
         let widget = Switch::new(false).prepare();
-        let window_size = Size::new(60.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
 
         // Initially not focused, and no actions
@@ -377,8 +376,7 @@ mod tests {
     #[test]
     fn space_emits_action_when_focused() {
         let widget = Switch::new(false).prepare();
-        let window_size = Size::new(60.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
 
         // Focus via tab
@@ -422,9 +420,8 @@ mod tests {
             .cross_axis_alignment(CrossAxisAlignment::Start);
 
         // Give it much more space than needed
-        let window_size = Size::new(200.0, 100.0);
         let harness =
-            TestHarness::create_with_size(test_property_set(), flex.prepare(), window_size);
+            TestHarness::create_with_size(test_property_set(), flex.prepare(), (200, 100));
 
         let size = harness
             .get_widget_with_id(switch_id)
@@ -448,8 +445,7 @@ mod tests {
     fn simple_switch() {
         let widget = Switch::new(false).prepare();
 
-        let window_size = Size::new(60.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
 
         assert_render_snapshot!(harness, "switch_off");
@@ -477,8 +473,7 @@ mod tests {
     fn focus_visual() {
         let widget = Switch::new(false).prepare();
 
-        let window_size = Size::new(60.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
         let switch_id = harness.root_id();
 
         // Focus directly (not via click) to get focused-but-not-hovered state
@@ -492,8 +487,7 @@ mod tests {
     fn on_state() {
         let widget = Switch::new(true).prepare();
 
-        let window_size = Size::new(60.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (60, 40));
 
         assert_render_snapshot!(harness, "switch_on_initial");
     }

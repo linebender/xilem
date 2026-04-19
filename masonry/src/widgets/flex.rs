@@ -1394,8 +1394,7 @@ mod tests {
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
@@ -1443,8 +1442,7 @@ mod tests {
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
@@ -1491,8 +1489,7 @@ mod tests {
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
         // MAIN AXIS ALIGNMENT
 
@@ -1541,8 +1538,7 @@ mod tests {
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
@@ -1589,8 +1585,7 @@ mod tests {
         )
         .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
         // MAIN AXIS ALIGNMENT
 
@@ -1674,8 +1669,7 @@ mod tests {
             .prepare()
             .with_props((Gap::new(0.px()), Padding::all(20.)));
 
-        let window_size = Size::new(240.0, 240.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (240, 240));
 
         assert_render_snapshot!(harness, "flex_row_baselines_four_center_and_first");
 
@@ -1815,15 +1809,14 @@ mod tests {
             .prepare()
             .with_props((Gap::new(2.px()), Padding::all(10.)));
 
-        let window_size = Size::new(450.0, 50.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (450, 50));
 
         assert_render_snapshot!(harness, "flex_row_baseline_pixel_snapping");
     }
 
     #[test]
     fn edit_flex_container() {
-        let window_size = Size::new(50.0, 300.0);
+        let window_size = (50, 300);
 
         let image_1 = {
             let widget = Flex::column()
@@ -1897,8 +1890,7 @@ mod tests {
             .with_fixed_spacer(1.px())
             .prepare();
 
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
         harness.edit_root_widget(|mut flex| {
             let mut child = Flex::get_mut(&mut flex, 1);
             assert_eq!(
@@ -1921,8 +1913,7 @@ mod tests {
         let widget = Flex::column().with_spacer(0.0).prepare();
 
         // Running layout should not panic when the flex sum is zero.
-        let window_size = Size::new(200.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
         harness.render();
     }
 }
