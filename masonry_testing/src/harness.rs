@@ -36,7 +36,8 @@ use tracing::debug;
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
+    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, WindowSizePolicy,
+    try_init_test_tracing,
 };
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use masonry_core::core::{
@@ -573,11 +574,9 @@ impl<W: Widget> TestHarness<W> {
                 Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
 
             for layer in &visual_layers.layers {
-                replay_transformed(
-                    &layer.scene,
-                    &mut full_scene,
-                    padding_transform * layer.transform,
-                );
+                if let VisualLayerKind::Scene(scene) = &layer.kind {
+                    replay_transformed(scene, &mut full_scene, padding_transform * layer.transform);
+                }
             }
         }
 

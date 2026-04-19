@@ -9,7 +9,9 @@ use std::sync::{Arc, mpsc};
 use accesskit_winit::Adapter;
 use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use masonry_core::app::{
+    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, WindowSizePolicy,
+};
 use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
     DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WindowEvent,
@@ -669,22 +671,29 @@ impl MasonryState<'_> {
         let (visual_layers, tree_update) = window.render_root.redraw();
         let overlays: Vec<_> = visual_layers
             .overlay_layers()
-            .iter()
-            .map(|layer| ImagingLayer {
-                scene: &layer.scene,
-                transform: layer.transform,
+            .map(|layer| {
+                let VisualLayerKind::Scene(scene) = &layer.kind else {
+                    unreachable!("overlay_layers only returns scene layers");
+                };
+                ImagingLayer {
+                    scene,
+                    transform: layer.transform,
+                }
             })
             .collect();
         let size = window.render_root.size();
         let root_layer = visual_layers
             .root_layer()
             .expect("paint should always produce a root layer");
+        let VisualLayerKind::Scene(root_scene) = &root_layer.kind else {
+            unreachable!("root_layer always returns a scene layer");
+        };
         let frame = PreparedFrame::new(
             size.width,
             size.height,
             window.handle.scale_factor(),
             window.base_color,
-            &root_layer.scene,
+            root_scene,
             &overlays,
         );
         Self::render(surface, window, frame, &self.render_cx, &mut self.renderer);
