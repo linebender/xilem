@@ -2381,8 +2381,7 @@ mod tests {
             .prepare()
             .with_props(Padding::all(10.));
 
-        let window_size = Size::new(150.0, 525.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (150, 525));
 
         assert_render_snapshot!(harness, "step_input_basics");
     }
@@ -2408,8 +2407,7 @@ mod tests {
             .prepare()
             .with_props(Padding::all(10.));
 
-        let window_size = Size::new(270.0, 200.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (270, 200));
 
         harness.edit_widget(tag_backward, |mut widget| {
             widget.widget.drag_start = Some(Point::new(10000., 0.));
@@ -2464,8 +2462,7 @@ mod tests {
             .prepare()
             .with_props(Padding::all(10.));
 
-        let window_size = Size::new(320.0, 650.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (320, 650));
 
         assert_render_snapshot!(harness, "step_input_awkward_layout");
     }

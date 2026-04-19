@@ -839,8 +839,7 @@ mod tests {
             Label::new("World").prepare(),
         ).split_axis(Axis::Horizontal).draggable(false).prepare();
 
-        let window_size = Size::new(150.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 150));
 
         assert_render_snapshot!(harness, "split_columns");
     }
@@ -853,8 +852,7 @@ mod tests {
             Label::new("World").prepare(),
         ).split_axis(Axis::Vertical).draggable(false).prepare();
 
-        let window_size = Size::new(150.0, 150.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 150));
 
         assert_render_snapshot!(harness, "split_rows");
     }
@@ -871,7 +869,7 @@ mod tests {
                 .prepare();
 
             let mut harness =
-                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
+                TestHarness::create_with_size(test_property_set(), widget, (100, 100));
 
             harness.render()
         };
@@ -881,7 +879,7 @@ mod tests {
                 Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
             let mut harness =
-                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
+                TestHarness::create_with_size(test_property_set(), widget, (100, 100));
 
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, SplitPoint::Fraction(0.3));
@@ -903,8 +901,7 @@ mod tests {
         let widget =
             Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
-        let window_size = Size::new(150.0, 100.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 100));
 
         let child1_initial_width = {
             let root = harness.root_widget();
@@ -937,8 +934,7 @@ mod tests {
         let widget =
             Split::new(Label::new("Hello").prepare(), Label::new("World").prepare()).prepare();
 
-        let window_size = Size::new(150.0, 100.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 100));
 
         let root_id = harness.root_id();
         harness.focus_on(Some(root_id));
@@ -964,8 +960,7 @@ mod tests {
             .split_point(SplitPoint::FromStart(50.px()))
             .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 100.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 100));
 
         let child1_width = {
             let root = harness.root_widget();
@@ -987,8 +982,7 @@ mod tests {
             .split_point(SplitPoint::FromEnd(50.px()))
             .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 100.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 100));
 
         let child2_width = {
             let root = harness.root_widget();
@@ -1012,8 +1006,7 @@ mod tests {
         )
         .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(150.0, 100.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 100));
 
         harness.edit_root_widget(|mut split| {
             Split::set_split_point(&mut split, SplitPoint::Fraction(2.0));

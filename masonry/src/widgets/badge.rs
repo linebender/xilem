@@ -232,8 +232,7 @@ mod tests {
     #[test]
     fn badge_is_non_interactive() {
         let widget = Badge::new(Label::new("New").prepare()).prepare();
-        let window_size = Size::new(80.0, 40.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (80, 40));
         let badge_id = harness.root_id();
 
         harness.mouse_click_on(badge_id, None);
@@ -244,7 +243,7 @@ mod tests {
     #[test]
     fn badge_with_text() {
         let widget = Badge::with_text("New").prepare();
-        let params = TestHarnessParams::size_and_padding((120.0, 60.0), ROOT_PADDING);
+        let params = TestHarnessParams::size_and_padding((120, 60), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badge_with_text");
@@ -253,7 +252,7 @@ mod tests {
     #[test]
     fn badge_count_overflow() {
         let widget = Badge::count(120).prepare();
-        let params = TestHarnessParams::size_and_padding((120.0, 60.0), ROOT_PADDING);
+        let params = TestHarnessParams::size_and_padding((120, 60), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badge_count_overflow");

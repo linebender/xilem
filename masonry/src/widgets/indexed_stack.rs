@@ -314,8 +314,7 @@ mod tests {
     #[test]
     fn test_indexed_stack_basics() {
         let widget = IndexedStack::new().prepare();
-        let window_size = Size::new(50.0, 50.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 50));
 
         assert_render_snapshot!(harness, "indexed_stack_empty");
 
@@ -381,8 +380,7 @@ mod tests {
             )
             .with_active_child(1)
             .prepare();
-        let window_size = Size::new(50.0, 50.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 50));
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "indexed_stack_initial_builder");
 

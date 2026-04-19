@@ -8,7 +8,7 @@ use assert_matches::assert_matches;
 use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
 use crate::core::{NewWidget, PaintLayerMode, PropertySet, Widget, WidgetTag};
 use crate::dpi::PhysicalSize;
-use crate::kurbo::{Circle, Dashes, Point, Size, Stroke, Vec2};
+use crate::kurbo::{Circle, Dashes, Point, Stroke, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef, UnitPoint};
 use crate::palette::css::{BLUE, GREEN, RED};
 use crate::peniko::color::{AlphaColor, Srgb};
@@ -103,7 +103,7 @@ fn paint_order() {
     let mut harness = TestHarness::create_with_size(
         test_property_set(),
         grandparent,
-        Size::new(SQUARE_SIZE * 3., SQUARE_SIZE * 3.),
+        (SQUARE_SIZE as u32 * 3, SQUARE_SIZE as u32 * 3),
     );
 
     // The resulting image should have, from background to foreground:
@@ -148,7 +148,7 @@ fn paint_clipping() {
     let mut harness = TestHarness::create_with_size(
         test_property_set(),
         parent,
-        Size::new(SQUARE_SIZE * 2., SQUARE_SIZE * 2.),
+        (SQUARE_SIZE as u32 * 2, SQUARE_SIZE as u32 * 2),
     );
 
     // The red circle should be clipped by the square.
@@ -240,16 +240,10 @@ fn isolated_scene_layers_update_the_plan_without_changing_rendering() {
     let (isolated_layers, _) = isolated_root.redraw();
     assert_eq!(isolated_layers.layers.len(), 2);
 
-    let mut inline_harness = TestHarness::create_with_size(
-        test_property_set(),
-        make_layer_split_tree(false),
-        Size::new(40.0, 20.0),
-    );
-    let mut isolated_harness = TestHarness::create_with_size(
-        test_property_set(),
-        make_layer_split_tree(true),
-        Size::new(40.0, 20.0),
-    );
+    let mut inline_harness =
+        TestHarness::create_with_size(test_property_set(), make_layer_split_tree(false), (40, 20));
+    let mut isolated_harness =
+        TestHarness::create_with_size(test_property_set(), make_layer_split_tree(true), (40, 20));
 
     assert_eq!(inline_harness.render(), isolated_harness.render());
 }
@@ -344,8 +338,7 @@ fn paint_transparency() {
     root = root.with(grid_a, ChildAlignment::ParentAligned);
     root = root.with(grid_b, ChildAlignment::ParentAligned);
 
-    let mut harness =
-        TestHarness::create_with_size(test_property_set(), root.prepare(), Size::new(350., 80.));
+    let mut harness = TestHarness::create_with_size(test_property_set(), root.prepare(), (350, 80));
 
     assert_render_snapshot!(harness, "paint_transparency");
 }

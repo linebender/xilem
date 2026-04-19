@@ -206,7 +206,6 @@ mod tests {
     use super::*;
     use crate::TextAlign;
     use crate::core::PropertySet;
-    use crate::kurbo::Size;
     use crate::layout::AsUnit;
     use crate::parley::StyleProperty;
     use crate::properties::Gap;
@@ -233,7 +232,7 @@ mod tests {
             .prepare();
 
         let mut harness =
-            TestHarness::create_with_size(test_property_set(), root_widget, Size::new(200.0, 40.0));
+            TestHarness::create_with_size(test_property_set(), root_widget, (200, 40));
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
@@ -267,8 +266,7 @@ mod tests {
             .with(prose6.prepare(), CrossAxisAlignment::Center);
         let flex = NewWidget::new(flex).with_props(PropertySet::one(Gap::ZERO));
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 120.0));
+        let mut harness = TestHarness::create_with_size(test_property_set(), flex, (200, 120));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }

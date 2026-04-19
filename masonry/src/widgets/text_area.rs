@@ -1116,7 +1116,6 @@ mod tests {
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet};
-    use crate::kurbo::Size;
     use crate::palette;
     use crate::testing::TestHarness;
     use crate::theme::test_property_set;
@@ -1129,8 +1128,7 @@ mod tests {
                 TextArea::new_immutable("String which will wrap").with_word_wrap(true),
             );
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), area, (60, 40));
 
             harness.render()
         };
@@ -1140,8 +1138,7 @@ mod tests {
                 TextArea::new_immutable("String which will wrap").with_word_wrap(false),
             );
 
-            let mut harness =
-                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
+            let mut harness = TestHarness::create_with_size(test_property_set(), area, (60, 40));
 
             let without_wrapping = harness.render();
 
@@ -1172,7 +1169,7 @@ mod tests {
 
     #[test]
     fn edit_textarea() {
-        let test_params = TestHarnessParams::default().with_size(Size::new(200.0, 20.0));
+        let test_params = TestHarnessParams::default().with_size((200, 20));
 
         let base_target = {
             let area = NewWidget::new(TextArea::new_immutable("Test string"))

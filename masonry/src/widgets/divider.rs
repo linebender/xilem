@@ -841,8 +841,7 @@ mod tests {
             .prepare()
             .with_props(Gap::ZERO);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), root, Size::new(350., 80.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (350, 80));
 
         assert_render_snapshot!(harness, "divider_simple");
     }
@@ -906,8 +905,7 @@ mod tests {
         .prepare()
         .with_props(Padding::all(10.));
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), root, Size::new(150., 120.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (150, 120));
 
         assert_render_snapshot!(harness, "divider_styled");
     }
@@ -938,8 +936,7 @@ mod tests {
         .prepare()
         .with_props(Padding::all(10.));
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), root, Size::new(155., 90.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (155, 90));
 
         assert_render_snapshot!(harness, "divider_dash_fit");
     }
@@ -993,8 +990,7 @@ mod tests {
             )
             .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), root, Size::new(200., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (200, 200));
 
         assert_render_snapshot!(harness, "divider_label");
     }
@@ -1009,8 +1005,7 @@ mod tests {
             .prepare()
             .with_props(Dimensions::STRETCH);
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), root, Size::new(100., 60.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (100, 60));
 
         assert_render_snapshot!(harness, "divider_content");
     }

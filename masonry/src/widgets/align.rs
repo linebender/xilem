@@ -263,8 +263,7 @@ mod tests {
             ));
         let root = Align::centered(align).prepare();
 
-        let window_size = Size::new(200.0, 200.0);
-        let mut harness = TestHarness::create_with_size(test_property_set(), root, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), root, (200, 200));
 
         assert_render_snapshot!(harness, "align_oversized_center");
 

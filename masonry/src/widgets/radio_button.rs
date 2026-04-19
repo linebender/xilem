@@ -424,9 +424,7 @@ mod tests {
         let widget = NewWidget::new(RadioButton::new(false, "Hello")).with_tag(radio_tag);
         let widget = NewWidget::new(RadioGroup::new(widget));
 
-        let window_size = Size::new(100.0, 40.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(default_property_set(), widget, (100, 40));
         let radio_id = harness.get_widget(radio_tag).id();
 
         assert_render_snapshot!(harness, "radio_button_hello_unchecked");
@@ -472,8 +470,7 @@ mod tests {
                 .with_fixed(group)
                 .main_axis_alignment(MainAxisAlignment::Center),
         );
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), root, Size::new(120.0, 40.0));
+        let mut harness = TestHarness::create_with_size(default_property_set(), root, (120, 40));
 
         harness.focus_on(Some(radio_id));
         assert_render_snapshot!(harness, "radio_button_focus_focused");
@@ -489,7 +486,7 @@ mod tests {
             let group = NewWidget::new(RadioGroup::new(radio));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), group, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(default_property_set(), group, (50, 50));
 
             harness.render()
         };
@@ -499,7 +496,7 @@ mod tests {
             let group = NewWidget::new(RadioGroup::new(radio));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), group, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(default_property_set(), group, (50, 50));
 
             harness.edit_root_widget(|mut group| {
                 let mut radio = RadioGroup::child_mut(&mut group);

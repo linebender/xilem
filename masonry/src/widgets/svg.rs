@@ -346,8 +346,7 @@ mod tests {
         let tree = Tree::from_str(xml, &opts).unwrap();
         let svg = Svg::new(Arc::new(tree)).prepare();
 
-        let window_size = Size::new(852., 320.);
-        let mut harness = TestHarness::create_with_size(test_property_set(), svg, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), svg, (852, 320));
 
         assert_render_snapshot!(harness, "svg_brick_wall");
     }

@@ -272,7 +272,7 @@ mod tests {
         )
         .prepare();
 
-        let params = TestHarnessParams::size_and_padding((240.0, 120.0), ROOT_PADDING);
+        let params = TestHarnessParams::size_and_padding((240, 120), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badged_button");
@@ -285,7 +285,7 @@ mod tests {
         )
         .prepare();
 
-        let params = TestHarnessParams::size_and_padding((240.0, 120.0), ROOT_PADDING);
+        let params = TestHarnessParams::size_and_padding((240, 120), ROOT_PADDING);
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
 
         assert_render_snapshot!(harness, "badged_button_no_badge");

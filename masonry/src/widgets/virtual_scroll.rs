@@ -1079,7 +1079,7 @@ mod tests {
 
     use super::opt_iter_difference;
     use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
-    use crate::kurbo::{Size, Vec2};
+    use crate::kurbo::Vec2;
     use crate::parley::StyleProperty;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -1124,8 +1124,7 @@ mod tests {
     fn sensible_driver() {
         let widget = VirtualScroll::new(0).prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1167,8 +1166,7 @@ mod tests {
     fn small_gaps() {
         let widget = VirtualScroll::new(0).prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1207,8 +1205,7 @@ mod tests {
     fn big_gaps() {
         let widget = VirtualScroll::new(0).prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1247,8 +1244,7 @@ mod tests {
     fn degenerate_driver() {
         let widget = VirtualScroll::new(0).prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1289,8 +1285,7 @@ mod tests {
             .with_valid_range(MIN..i64::MAX)
             .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1356,8 +1351,7 @@ mod tests {
             .with_valid_range(i64::MIN..MAX)
             .prepare();
 
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);

@@ -21,7 +21,7 @@ pub mod others {
 #[cfg(test)]
 mod tests {
     use masonry::core::Widget;
-    use masonry::kurbo::Size;
+    use masonry::dpi::PhysicalSize;
     use masonry::theme::default_property_set;
     use masonry_testing::{TestHarness, TestHarnessParams};
 
@@ -32,7 +32,7 @@ mod tests {
 
     const PARAMS_ZERO_SIZE: TestHarnessParams = {
         let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = Size::ZERO;
+        params.window_size = PhysicalSize::new(0, 0);
         params
     };
 

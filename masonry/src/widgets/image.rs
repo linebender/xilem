@@ -274,7 +274,7 @@ mod tests {
         let image_widget = NewWidget::new(Image::new(image_data));
 
         let mut harness =
-            TestHarness::create_with_size(test_property_set(), image_widget, Size::new(40., 60.));
+            TestHarness::create_with_size(test_property_set(), image_widget, (40, 60));
         assert_render_snapshot!(harness, "image_tall_paint");
     }
 
@@ -291,11 +291,8 @@ mod tests {
         let render_1 = {
             let image_widget = NewWidget::new(Image::new(image_data.clone()));
 
-            let mut harness = TestHarness::create_with_size(
-                test_property_set(),
-                image_widget,
-                Size::new(40.0, 60.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), image_widget, (40, 60));
 
             harness.render()
         };
@@ -310,11 +307,8 @@ mod tests {
             };
             let image_widget = NewWidget::new(Image::new(other_image_data));
 
-            let mut harness = TestHarness::create_with_size(
-                test_property_set(),
-                image_widget,
-                Size::new(40.0, 60.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), image_widget, (40, 60));
 
             harness.edit_root_widget(|mut image| {
                 Image::set_image_data(&mut image, image_data);
@@ -337,11 +331,9 @@ mod tests {
             width: 8,
             height: 8,
         };
-        let harness_size = Size::new(100.0, 50.0);
-
         let image_widget = NewWidget::new(Image::new(image_data.clone()));
         let mut harness =
-            TestHarness::create_with_size(test_property_set(), image_widget, harness_size);
+            TestHarness::create_with_size(test_property_set(), image_widget, (100, 50));
 
         // Contain.
         harness.edit_root_widget(|mut image| {
