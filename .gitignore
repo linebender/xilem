@@ -2,3 +2,14 @@
 /.direnv
 /target
 .DS_Store
+
+# Common LLM agent files
+AGENT.md
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+research.md
+plan.md
+.mcp.json
+.github/copilot-instructions.md
+.codex
