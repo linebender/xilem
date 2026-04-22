@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{ErasedAction, Handled, NewWidget, Widget, WidgetId, WidgetTag};
 use masonry::layout::Length;
 use masonry::properties::types::CrossAxisAlignment;
@@ -21,10 +21,11 @@ pub(crate) trait DemoPage {
     fn shell_tags(&self) -> ShellTags;
     fn build(&self) -> NewWidget<dyn Widget>;
 
-    fn on_selected(&mut self, _render_root: &mut RenderRoot) {}
+    fn on_selected(&mut self, _app_ctx: &mut AppCtx, _render_root: &mut RenderRoot) {}
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,

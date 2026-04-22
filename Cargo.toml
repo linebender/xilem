@@ -80,6 +80,7 @@ ui-events = { version = "0.3.0", default-features = false, features = ["kurbo"] 
 ui-events-winit = { version = "0.3.0", default-features = false }
 smallvec = "1.15.1"
 hashbrown = { version = "0.17.0", default-features = false, features = ["default-hasher"] }
+copypasta = "0.10.2"
 dpi = "0.1.2"
 image = { version = "0.25.10", default-features = false }
 resvg = "0.47.0"

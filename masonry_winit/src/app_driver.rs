@@ -6,7 +6,7 @@ use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use masonry_core::app::RenderRoot;
+use masonry_core::app::{AppCtx, RenderRoot};
 use masonry_core::core::{ErasedAction, WidgetId};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
@@ -109,7 +109,7 @@ pub trait AppDriver {
     ) {
     }
 
-    /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
+    /// A hook which will be executed when the application starts, to allow initial configuration.
     ///
     /// Use cases include loading fonts.
     ///
@@ -118,7 +118,7 @@ pub trait AppDriver {
     /// not assume it will only be called once (but should feel free to waste work if it is called multiple times,
     /// for example, as the mentioned circumstances are very rare).
     // TODO: Turn into something like on window created, or split into two.
-    fn on_start(&mut self, state: &mut MasonryState<'_>) {}
+    fn on_start(&mut self, ctx: &mut DriverCtx<'_, '_>) {}
 
     /// A hook called when a user has requested to close a window.
     fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
@@ -132,22 +132,42 @@ pub trait AppDriver {
 impl DriverCtx<'_, '_> {
     // TODO - Add method to create timer
 
-    /// Access the [`RenderRoot`] of the given window.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the window cannot be found.
-    pub fn render_root(&mut self, window_id: WindowId) -> &mut RenderRoot {
-        &mut self.window(window_id).render_root
+    /// Returns the shared app context.
+    pub fn app_ctx(&mut self) -> &mut AppCtx {
+        &mut self.state.app_ctx
     }
 
-    /// Access the [`Window`] state of the given window.
+    /// Returns the shared app context and every [`RenderRoot`].
+    pub fn render_roots(&mut self) -> (&mut AppCtx, impl Iterator<Item = &mut RenderRoot>) {
+        (
+            &mut self.state.app_ctx,
+            self.state
+                .windows
+                .values_mut()
+                .map(|window| &mut window.render_root),
+        )
+    }
+
+    /// Returns the shared app context and the [`RenderRoot`] of the given window.
     ///
     /// # Panics
     ///
     /// Panics if the window cannot be found.
-    pub fn window(&mut self, window_id: WindowId) -> &mut Window {
-        self.state.window_mut(window_id)
+    pub fn render_root(&mut self, window_id: WindowId) -> (&mut AppCtx, &mut RenderRoot) {
+        let handle_id = self.state.handle_id(window_id);
+        let window = self.state.windows.get_mut(&handle_id).unwrap();
+        (&mut self.state.app_ctx, &mut window.render_root)
+    }
+
+    /// Returns the shared app context and the [`Window`] state of the given window.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the window cannot be found.
+    pub fn window(&mut self, window_id: WindowId) -> (&mut AppCtx, &mut Window) {
+        let handle_id = self.state.handle_id(window_id);
+        let window = self.state.windows.get_mut(&handle_id).unwrap();
+        (&mut self.state.app_ctx, window)
     }
 
     /// Creates a new window.

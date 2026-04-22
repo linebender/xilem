@@ -26,6 +26,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
+use copypasta::ClipboardProvider;
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use imaging_vello_cpu::VelloCpuRenderer;
 use masonry_core::imaging::record::{Scene, replay_transformed};
@@ -36,7 +37,7 @@ use tracing::debug;
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan,
+    AppCtx, RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan,
     WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
@@ -144,6 +145,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// [`insta`]: https://docs.rs/insta/latest/insta/
 #[derive(Debug)]
 pub struct TestHarness<W: Widget> {
+    app_ctx: AppCtx,
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: accesskit_consumer::Tree,
@@ -158,7 +160,6 @@ pub struct TestHarness<W: Widget> {
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
-    clipboard: String,
     title: String,
     _marker: PhantomData<W>,
 }
@@ -206,6 +207,10 @@ pub struct TestHarnessParams {
     pub max_screenshot_size: u32,
 }
 
+struct SimpleClipboard {
+    contents: String,
+}
+
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
@@ -246,6 +251,31 @@ macro_rules! assert_failing_render_snapshot {
     ($test_harness:expr, $name:expr) => {
         $test_harness.check_render_snapshot(env!("CARGO_MANIFEST_DIR"), $name, true)
     };
+}
+
+impl SimpleClipboard {
+    /// Create an empty clipboard.
+    fn new() -> Self {
+        Self {
+            contents: String::new(),
+        }
+    }
+}
+
+impl ClipboardProvider for SimpleClipboard {
+    fn get_contents(
+        &mut self,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        Ok(self.contents.clone())
+    }
+
+    fn set_contents(
+        &mut self,
+        contents: String,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+        self.contents = contents;
+        Ok(())
+    }
 }
 
 impl TestHarnessParams {
@@ -341,6 +371,12 @@ pub const ROBOTO: &[u8] = include_bytes!(concat!(
     "/resources/fonts/roboto/Roboto-Regular.ttf"
 ));
 
+/// Creates a new [`AppCtx`] suitable for testing.
+pub fn create_app_ctx() -> AppCtx {
+    let clipboard = SimpleClipboard::new();
+    AppCtx::new(Box::new(clipboard))
+}
+
 impl<W: Widget> TestHarness<W> {
     // -- MARK: CREATE
     /// Builds harness with given root widget.
@@ -384,6 +420,8 @@ impl<W: Widget> TestHarness<W> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();
 
+        let mut app_ctx = create_app_ctx();
+
         let dummy_tree_update = TreeUpdate {
             tree_id: TreeId::ROOT,
             nodes: vec![(0.into(), Node::new(Role::Window))],
@@ -394,20 +432,25 @@ impl<W: Widget> TestHarness<W> {
             }),
             focus: 0.into(),
         };
+
+        let render_root = RenderRoot::new(
+            &mut app_ctx,
+            root_widget,
+            move |signal| signal_sender.send(signal).unwrap(),
+            RenderRootOptions {
+                default_properties: Arc::new(default_props),
+                use_system_fonts: false,
+                size_policy: WindowSizePolicy::User,
+                size: window_size,
+                scale_factor: params.scale_factor,
+                test_font: Some(data),
+            },
+        );
+
         let mut harness = Self {
+            app_ctx,
             signal_receiver,
-            render_root: RenderRoot::new(
-                root_widget,
-                move |signal| signal_sender.send(signal).unwrap(),
-                RenderRootOptions {
-                    default_properties: Arc::new(default_props),
-                    use_system_fonts: false,
-                    size_policy: WindowSizePolicy::User,
-                    size: window_size,
-                    scale_factor: params.scale_factor,
-                    test_font: Some(data),
-                },
-            ),
+            render_root,
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             renderer: None,
             mouse_state,
@@ -420,7 +463,6 @@ impl<W: Widget> TestHarness<W> {
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
-            clipboard: String::new(),
             title: String::new(),
             _marker: PhantomData,
         };
@@ -429,7 +471,7 @@ impl<W: Widget> TestHarness<W> {
         harness.process_window_event(WindowEvent::EnableAccessTree);
         harness.animate_ms(0);
 
-        let (_, tree_update) = harness.render_root.redraw();
+        let (_, tree_update) = harness.render_root.redraw(&mut harness.app_ctx);
         let tree_update = tree_update.unwrap();
         harness
             .access_tree
@@ -446,7 +488,9 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
-        let handled = self.render_root.handle_window_event(event);
+        let handled = self
+            .render_root
+            .handle_window_event(&mut self.app_ctx, event);
         self.process_signals();
         handled
     }
@@ -455,7 +499,9 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let handled = self.render_root.handle_pointer_event(event);
+        let handled = self
+            .render_root
+            .handle_pointer_event(&mut self.app_ctx, event);
         self.process_signals();
         handled
     }
@@ -464,7 +510,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
-        let handled = self.render_root.handle_text_event(event);
+        let handled = self.render_root.handle_text_event(&mut self.app_ctx, event);
         self.process_signals();
         handled
     }
@@ -473,7 +519,8 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_access_event(&mut self, event: ActionRequest) {
-        self.render_root.handle_access_event(event);
+        self.render_root
+            .handle_access_event(&mut self.app_ctx, event);
         self.process_signals();
     }
 
@@ -497,9 +544,6 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::ImeMoved(position, size) => {
                     self.ime_rect = (position, size);
                 }
-                RenderRootSignal::ClipboardStore(text) => {
-                    self.clipboard = text;
-                }
                 RenderRootSignal::RequestRedraw => (),
                 RenderRootSignal::RequestAnimFrame => (),
                 RenderRootSignal::TakeFocus => (),
@@ -519,11 +563,14 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::ShowWindowMenu(_) => (),
                 RenderRootSignal::WidgetSelectedInInspector(_) => (),
                 RenderRootSignal::NewLayer(_type, root, pos) => {
-                    self.render_root.add_layer(root, pos);
+                    self.render_root.add_layer(&mut self.app_ctx, root, pos);
                 }
-                RenderRootSignal::RemoveLayer(root_id) => self.render_root.remove_layer(root_id),
+                RenderRootSignal::RemoveLayer(root_id) => {
+                    self.render_root.remove_layer(&mut self.app_ctx, root_id);
+                }
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
-                    self.render_root.reposition_layer(root_id, new_pos);
+                    self.render_root
+                        .reposition_layer(&mut self.app_ctx, root_id, new_pos);
                 }
             }
         }
@@ -583,7 +630,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// If you want to get a bitmap image of the contents, use [`Self::render`] instead.
     pub fn redraw(&mut self) -> (VisualLayerPlan, TreeUpdate) {
-        let (visual_layers, tree_update) = self.render_root.redraw();
+        let (visual_layers, tree_update) = self.render_root.redraw(&mut self.app_ctx);
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update.clone(), &mut NoOpTreeChangeHandler);
@@ -751,12 +798,15 @@ impl<W: Widget> TestHarness<W> {
     /// [`ScrollIntoView`]: masonry_core::accesskit::Action::ScrollIntoView
     #[track_caller]
     pub fn scroll_into_view(&mut self, id: WidgetId) {
-        self.render_root.handle_access_event(ActionRequest {
-            action: Action::ScrollIntoView,
-            target_tree: TreeId::ROOT,
-            target_node: id.to_raw().into(),
-            data: None,
-        });
+        self.render_root.handle_access_event(
+            &mut self.app_ctx,
+            ActionRequest {
+                action: Action::ScrollIntoView,
+                target_tree: TreeId::ROOT,
+                target_node: id.to_raw().into(),
+                data: None,
+            },
+        );
     }
 
     /// Clicks the given widget.
@@ -774,12 +824,15 @@ impl<W: Widget> TestHarness<W> {
     /// [`Click`]: masonry_core::accesskit::Action::Click
     #[track_caller]
     pub fn accessibility_click_on(&mut self, id: WidgetId) {
-        self.render_root.handle_access_event(ActionRequest {
-            action: Action::Click,
-            target_tree: TreeId::ROOT,
-            target_node: id.to_raw().into(),
-            data: None,
-        });
+        self.render_root.handle_access_event(
+            &mut self.app_ctx,
+            ActionRequest {
+                action: Action::Click,
+                target_tree: TreeId::ROOT,
+                target_node: id.to_raw().into(),
+                data: None,
+            },
+        );
     }
 
     // TODO - Handle complicated IME
@@ -789,7 +842,7 @@ impl<W: Widget> TestHarness<W> {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
-            self.render_root.handle_text_event(event);
+            self.render_root.handle_text_event(&mut self.app_ctx, event);
         }
         self.process_signals();
     }
@@ -808,7 +861,7 @@ impl<W: Widget> TestHarness<W> {
             modifiers,
             ..KeyboardEvent::default()
         });
-        self.render_root.handle_text_event(event);
+        self.render_root.handle_text_event(&mut self.app_ctx, event);
         self.process_signals();
     }
 
@@ -831,7 +884,7 @@ impl<W: Widget> TestHarness<W> {
                 panic!("Cannot focus widget {id}: widget is disabled");
             }
         }
-        let succeeded = self.render_root.focus_on(id);
+        let succeeded = self.render_root.focus_on(&mut self.app_ctx, id);
         assert!(
             succeeded,
             "RenderRoot::focus_on refused a widget which TestHarness::focus_on accepted."
@@ -851,8 +904,10 @@ impl<W: Widget> TestHarness<W> {
 
     /// Runs an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
-        self.render_root
-            .handle_window_event(WindowEvent::AnimFrame(Duration::from_millis(ms)));
+        self.render_root.handle_window_event(
+            &mut self.app_ctx,
+            WindowEvent::AnimFrame(Duration::from_millis(ms)),
+        );
         self.process_signals();
     }
 
@@ -970,10 +1025,12 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
-        let ret = self.render_root.edit_base_layer(|mut root| {
-            let root = root.downcast::<W>();
-            f(root)
-        });
+        let ret = self
+            .render_root
+            .edit_base_layer(&mut self.app_ctx, |mut root| {
+                let root = root.downcast::<W>();
+                f(root)
+            });
         self.process_signals();
         ret
     }
@@ -986,7 +1043,7 @@ impl<W: Widget> TestHarness<W> {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
-        let ret = self.render_root.edit_widget(id, f);
+        let ret = self.render_root.edit_widget(&mut self.app_ctx, id, f);
         self.process_signals();
         ret
     }
@@ -1000,7 +1057,9 @@ impl<W: Widget> TestHarness<W> {
         tag: WidgetTag<W2>,
         f: impl FnOnce(WidgetMut<'_, W2>) -> R,
     ) -> R {
-        let ret = self.render_root.edit_widget_with_tag(tag, f);
+        let ret = self
+            .render_root
+            .edit_widget_with_tag(&mut self.app_ctx, tag, f);
         self.process_signals();
         ret
     }
@@ -1053,8 +1112,8 @@ impl<W: Widget> TestHarness<W> {
     /// Returns the contents of the emulated clipboard.
     ///
     /// This is an empty string by default.
-    pub fn clipboard_contents(&self) -> String {
-        self.clipboard.clone()
+    pub fn clipboard_contents(&mut self) -> String {
+        self.app_ctx.get_clipboard()
     }
 
     /// Returns the size of the simulated window.
@@ -1107,7 +1166,7 @@ impl<W: Widget> TestHarness<W> {
     ) {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             // We still redraw to get some coverage in the paint code.
-            let _ = self.render_root.redraw();
+            let _ = self.render_root.redraw(&mut self.app_ctx);
 
             return;
         }

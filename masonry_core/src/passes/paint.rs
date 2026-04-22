@@ -8,7 +8,9 @@ use peniko::{Color, Fill};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState, VisualLayer, VisualLayerKind, VisualLayerPlan};
+use crate::app::{
+    AppCtx, RenderRoot, RenderRootState, VisualLayer, VisualLayerKind, VisualLayerPlan,
+};
 use crate::core::{
     DefaultProperties, PaintCtx, PaintLayerMode, PropertiesRef, PropertyArena, WidgetArenaNode,
     WidgetId,
@@ -69,6 +71,7 @@ impl LayerCollector {
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     property_arena: &PropertyArena,
@@ -103,6 +106,7 @@ fn paint_widget(
 
         let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = PaintCtx {
+            app_ctx,
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
@@ -201,6 +205,7 @@ fn paint_widget(
         // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
         // - We still want to reset needs_paint and request_paint flags.
         paint_widget(
+            app_ctx,
             global_state,
             default_properties,
             property_arena,
@@ -280,7 +285,7 @@ fn paint_widget(
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#render-passes).
-pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
+pub(crate) fn run_paint_pass(app_ctx: &mut AppCtx, root: &mut RenderRoot) -> VisualLayerPlan {
     let _span = info_span!("paint").entered();
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
@@ -303,6 +308,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
 
         let mut collector = LayerCollector::new(layer_widget_id, transform);
         paint_layer(
+            app_ctx,
             root,
             &mut collector,
             &mut scene_cache,
@@ -322,6 +328,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
 /// This is a helper that handles the split borrows needed to access
 /// `global_state`, `default_properties`, and `widget_arena` simultaneously.
 fn paint_layer(
+    app_ctx: &mut AppCtx,
     root: &mut RenderRoot,
     layer_collector: &mut LayerCollector,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene, Scene)>,
@@ -351,6 +358,7 @@ fn paint_layer(
     let window_to_layer_transform = layer_node.item.state.window_transform.inverse();
 
     paint_widget(
+        app_ctx,
         &mut root.global_state,
         &root.property_arena.default_properties,
         &root.property_arena,

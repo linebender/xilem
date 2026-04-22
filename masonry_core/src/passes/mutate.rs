@@ -3,11 +3,12 @@
 
 use tracing::info_span;
 
-use crate::app::RenderRoot;
+use crate::app::{AppCtx, RenderRoot};
 use crate::core::{MutateCtx, PropertiesMut, Widget, WidgetId, WidgetMut};
 use crate::passes::merge_state_up;
 
 pub(crate) fn mutate_widget<R>(
+    app_ctx: &mut AppCtx,
     root: &mut RenderRoot,
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
@@ -32,6 +33,7 @@ pub(crate) fn mutate_widget<R>(
 
     let root_widget = WidgetMut {
         ctx: MutateCtx {
+            app_ctx,
             global_state: &mut root.global_state,
             parent_widget_state: None,
             widget_state: state,
@@ -66,13 +68,13 @@ pub(crate) fn mutate_widget<R>(
 /// Apply any deferred mutations (created using `...Ctx::mutate_later`)
 ///
 /// See the [passes documentation](crate::doc::pass_system#the-mutate-pass).
-pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
+pub(crate) fn run_mutate_pass(app_ctx: &mut AppCtx, root: &mut RenderRoot) {
     let callbacks = std::mem::take(&mut root.global_state.mutate_callbacks);
     for callback in callbacks {
         // Skip callbacks whose target was removed since they were emitted.
         if !root.widget_arena.has(callback.id) {
             continue;
         }
-        mutate_widget(root, callback.id, callback.callback);
+        mutate_widget(app_ctx, root, callback.id, callback.callback);
     }
 }

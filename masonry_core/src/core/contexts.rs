@@ -18,7 +18,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 
-use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
+use crate::app::{AppCtx, MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
     PaintLayerMode, PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId,
@@ -56,6 +56,7 @@ macro_rules! impl_context_method {
 /// requires a later pass (for instance, if your widget has a `set_color` method),
 /// you will need to signal that change in the pass (eg [`request_render`](MutateCtx::request_render)).
 pub struct MutateCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -66,6 +67,7 @@ pub struct MutateCtx<'a> {
 
 /// A context provided to the [`Widget::on_action`] method.
 pub struct ActionCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -87,6 +89,7 @@ pub struct QueryCtx<'a> {
 
 /// A context given when calling another context's `get_raw_mut()` method.
 pub struct RawCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: &'a mut WidgetState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -96,6 +99,7 @@ pub struct RawCtx<'a> {
 
 /// A context provided to event-handling [`Widget`] methods.
 pub struct EventCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -107,6 +111,8 @@ pub struct EventCtx<'a> {
 
 /// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
+    #[expect(dead_code, reason = "AppCtx plumbing is done but not yet utilized")]
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     #[cfg(debug_assertions)]
@@ -115,6 +121,7 @@ pub struct RegisterCtx<'a> {
 
 /// A context provided to the [`Widget::update`] method.
 pub struct UpdateCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -124,6 +131,7 @@ pub struct UpdateCtx<'a> {
 
 /// A context provided to [`Widget::measure`] methods.
 pub struct MeasureCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -135,6 +143,7 @@ pub struct MeasureCtx<'a> {
 
 /// A context provided to [`Widget::layout`] methods.
 pub struct LayoutCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -143,6 +152,7 @@ pub struct LayoutCtx<'a> {
 
 /// A context provided to the [`Widget::compose`] method.
 pub struct ComposeCtx<'a> {
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -151,6 +161,8 @@ pub struct ComposeCtx<'a> {
 
 /// A context passed to [`Widget::paint`] method.
 pub struct PaintCtx<'a> {
+    #[expect(dead_code, reason = "AppCtx plumbing is done but not yet utilized")]
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -158,6 +170,8 @@ pub struct PaintCtx<'a> {
 
 /// A context passed to [`Widget::accessibility`] method.
 pub struct AccessCtx<'a> {
+    #[expect(dead_code, reason = "AppCtx plumbing is done but not yet utilized")]
+    pub(crate) app_ctx: &'a mut AppCtx,
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
@@ -304,6 +318,7 @@ impl MutateCtx<'_> {
         let child_type_id = (*node_mut.item.widget).type_id();
         let child_stack = self.property_arena.get(child_stack_id, child_type_id);
         let child_ctx = MutateCtx {
+            app_ctx: self.app_ctx,
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: &mut node_mut.item.state,
@@ -324,6 +339,7 @@ impl MutateCtx<'_> {
 
     pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
         MutateCtx {
+            app_ctx: self.app_ctx,
             global_state: self.global_state,
             // We don't don't reborrow `parent_widget_state`. This avoids running
             // `merge_up` in `WidgetMut::Drop` multiple times for the same state.
@@ -343,6 +359,7 @@ impl MutateCtx<'_> {
 
     pub(crate) fn update_mut(&mut self) -> UpdateCtx<'_> {
         UpdateCtx {
+            app_ctx: self.app_ctx,
             global_state: self.global_state,
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
@@ -661,6 +678,7 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
         resolve_length(
+            self.app_ctx,
             self.global_state,
             self.property_arena,
             node,
@@ -850,6 +868,7 @@ impl LayoutCtx<'_> {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
         resolve_size(
+            self.app_ctx,
             self.global_state,
             self.property_arena,
             node,
@@ -882,7 +901,13 @@ impl LayoutCtx<'_> {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
 
-        run_layout_on(self.global_state, self.property_arena, node, chosen_size);
+        run_layout_on(
+            self.app_ctx,
+            self.global_state,
+            self.property_arena,
+            node,
+            chosen_size,
+        );
 
         let state_mut = &mut self.children.item_mut(id).unwrap().item.state;
         self.widget_state.merge_up(state_mut);
@@ -1855,6 +1880,7 @@ impl_context_method!(
                 .item_mut(child.id())
                 .expect("get_mut: child not found");
             let child_ctx = RawCtx {
+                app_ctx: self.app_ctx,
                 global_state: self.global_state,
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
@@ -1889,6 +1915,7 @@ impl_context_method!(
                 .item_mut(child.id())
                 .expect("get_mut: child not found");
             let child_ctx = RawCtx {
+                app_ctx: self.app_ctx,
                 global_state: self.global_state,
                 parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
@@ -1966,14 +1993,18 @@ impl_context_method!(
             self.widget_state.ime_area = None;
         }
 
-        /// Sets the contents of the platform clipboard.
+        /// Sets the text content of the platform clipboard.
         ///
         /// For example, text widgets should call this for "cut" and "copy" user interactions.
         /// Note that we currently don't support the "Primary" selection buffer on X11/Wayland.
-        pub fn set_clipboard(&mut self, contents: String) {
+        pub fn set_clipboard(&mut self, text: String) {
             trace!("set_clipboard");
-            self.global_state
-                .emit_signal(RenderRootSignal::ClipboardStore(contents));
+            self.app_ctx.set_clipboard(text);
+        }
+
+        /// Returns the text contents of the platform clipboard.
+        pub fn get_clipboard(&mut self) -> String {
+            self.app_ctx.get_clipboard()
         }
 
         /// Starts a window drag.

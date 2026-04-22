@@ -5,12 +5,13 @@ use kurbo::Affine;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{AppCtx, RenderRoot, RenderRootState};
 use crate::core::{ComposeCtx, PropertyArena, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
 fn compose_widget(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -41,6 +42,7 @@ fn compose_widget(
     state.bounding_box = state.window_transform.transform_rect_bbox(paint_box);
 
     let mut ctx = ComposeCtx {
+        app_ctx,
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
@@ -63,6 +65,7 @@ fn compose_widget(
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {
         compose_widget(
+            app_ctx,
             global_state,
             property_arena,
             node.reborrow_mut(),
@@ -81,7 +84,7 @@ fn compose_widget(
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#compose-pass).
-pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
+pub(crate) fn run_compose_pass(app_ctx: &mut AppCtx, root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 
     // If widgets have moved, pointer-related info may be stale.
@@ -92,6 +95,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
     compose_widget(
+        app_ctx,
         &mut root.global_state,
         &root.property_arena,
         root_node,

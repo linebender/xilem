@@ -6,7 +6,7 @@ use kurbo::Rect;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{AppCtx, RenderRoot, RenderRootState};
 use crate::core::{
     AccessCtx, DefaultProperties, PropertiesRef, PropertyArena, Widget, WidgetArenaNode, WidgetId,
 };
@@ -14,6 +14,7 @@ use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: BUILD TREE
 fn build_accessibility_tree(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     property_arena: &PropertyArena,
@@ -44,6 +45,7 @@ fn build_accessibility_tree(
 
         let stack = property_arena.get(state.property_stack_id, widget.type_id());
         let mut ctx = AccessCtx {
+            app_ctx,
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
@@ -71,6 +73,7 @@ fn build_accessibility_tree(
     let parent_state = state;
     recurse_on_children(id, widget, children, |mut node| {
         build_accessibility_tree(
+            app_ctx,
             global_state,
             default_properties,
             property_arena,
@@ -150,7 +153,11 @@ fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#render-passes).
-pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
+pub(crate) fn run_accessibility_pass(
+    app_ctx: &mut AppCtx,
+    root: &mut RenderRoot,
+    scale_factor: f64,
+) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 
     let mut tree_update = TreeUpdate {
@@ -171,6 +178,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     let root_node = root.widget_arena.get_node_mut(root.root_id());
 
     build_accessibility_tree(
+        app_ctx,
         &mut root.global_state,
         &root.property_arena.default_properties,
         &root.property_arena,

@@ -3,7 +3,7 @@
 
 use tracing::{info_span, trace};
 
-use crate::app::{RenderRoot, RenderRootSignal};
+use crate::app::{AppCtx, RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessEvent, EventCtx, Handled, Ime, PointerButtonEvent, PointerEvent, PointerGestureEvent,
@@ -71,6 +71,7 @@ fn try_event_position(event: &PointerEvent) -> Option<PhysicalPosition<f64>> {
 }
 
 fn run_event_pass<E>(
+    app_ctx: &mut AppCtx,
     root: &mut RenderRoot,
     target: Option<WidgetId>,
     event: &E,
@@ -108,6 +109,7 @@ fn run_event_pass<E>(
                 .property_arena
                 .get(node.item.state.property_stack_id, widget_type_id);
             let mut ctx = EventCtx {
+                app_ctx,
                 global_state: &mut root.global_state,
                 widget_state: &mut node.item.state,
                 children: node.children.reborrow_mut(),
@@ -147,7 +149,11 @@ fn run_event_pass<E>(
 
 // --- MARK: POINTER_EVENT
 /// See the [passes documentation](crate::doc::pass_system#event-passes).
-pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
+pub(crate) fn run_on_pointer_event_pass(
+    app_ctx: &mut AppCtx,
+    root: &mut RenderRoot,
+    event: &PointerEvent,
+) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
     trace!(
@@ -196,6 +202,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
                 .property_arena
                 .get(layer_root.item.state.property_stack_id, layer_type_id);
             let mut ctx = EventCtx {
+                app_ctx,
                 global_state: &mut root.global_state,
                 widget_state: &mut layer_root.item.state,
                 children: layer_root.children.reborrow_mut(),
@@ -242,6 +249,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     let skip_if_disabled = !matches!(event, PointerEvent::Cancel { .. });
     let handled = run_event_pass(
+        app_ctx,
         root,
         target_widget_id,
         event,
@@ -273,9 +281,14 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
 // --- MARK: TEXT EVENT
 /// See the [passes documentation](crate::doc::pass_system#event-passes).
-pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
+pub(crate) fn run_on_text_event_pass(
+    app_ctx: &mut AppCtx,
+    root: &mut RenderRoot,
+    event: &TextEvent,
+) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
         run_on_pointer_event_pass(
+            app_ctx,
             root,
             &PointerEvent::Cancel(PointerInfo {
                 pointer_id: None,
@@ -305,6 +318,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     let skip_if_disabled = !matches!(event, TextEvent::Ime(Ime::Disabled));
     let mut handled = run_event_pass(
+        app_ctx,
         root,
         target,
         event,
@@ -361,6 +375,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 // --- MARK: ACCESS EVENT
 /// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_access_event_pass(
+    app_ctx: &mut AppCtx,
     root: &mut RenderRoot,
     event: &AccessEvent,
     target: WidgetId,
@@ -370,6 +385,7 @@ pub(crate) fn run_on_access_event_pass(
 
     let skip_if_disabled = true;
     let mut handled = run_event_pass(
+        app_ctx,
         root,
         Some(target),
         event,
