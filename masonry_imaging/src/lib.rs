@@ -39,35 +39,41 @@ use imaging::{PaintSink, Painter};
 use kurbo::{Affine, Rect};
 use peniko::Color;
 
-#[cfg(any(feature = "imaging_vello", feature = "imaging_vello_hybrid"))]
+#[cfg(all(
+    not(target_arch = "wasm32"),
+    any(feature = "imaging_vello", feature = "imaging_vello_hybrid")
+))]
 mod headless_wgpu;
 
 /// Masonry helpers for rendering retained scenes with `imaging_skia`.
 #[cfg(all(feature = "imaging_skia", not(target_arch = "wasm32")))]
 pub mod skia;
 /// Host-neutral texture rendering helpers for texture-capable backends.
+#[cfg(not(target_arch = "wasm32"))]
 pub mod texture_render;
 /// Masonry helpers for rendering retained scenes with `imaging_vello`.
-#[cfg(feature = "imaging_vello")]
+#[cfg(all(not(target_arch = "wasm32"), feature = "imaging_vello"))]
 pub mod vello;
 /// Masonry helpers for rendering retained scenes with `imaging_vello_cpu`.
 #[cfg(feature = "imaging_vello_cpu")]
 pub mod vello_cpu;
 /// Masonry helpers for rendering retained scenes with `imaging_vello_hybrid`.
-#[cfg(feature = "imaging_vello_hybrid")]
+#[cfg(all(not(target_arch = "wasm32"), feature = "imaging_vello_hybrid"))]
 pub mod vello_hybrid;
 
-pub use imaging::render::{ImageRenderer, TextureRenderer};
+pub use imaging::render::ImageRenderer;
+#[cfg(not(target_arch = "wasm32"))]
+pub use imaging_wgpu::TextureRenderer;
 
 /// Backend-selected helpers for headless image rendering.
 pub mod image_render {
     #[cfg(all(
+        not(target_arch = "wasm32"),
         not(feature = "imaging_vello"),
-        feature = "imaging_skia",
-        not(target_arch = "wasm32")
+        feature = "imaging_skia"
     ))]
     pub use crate::skia::{BACKEND_NAME, Renderer, new_headless_renderer};
-    #[cfg(feature = "imaging_vello")]
+    #[cfg(all(not(target_arch = "wasm32"), feature = "imaging_vello"))]
     pub use crate::vello::{BACKEND_NAME, Renderer, new_headless_renderer};
     #[cfg(all(
         not(feature = "imaging_vello"),
@@ -77,6 +83,7 @@ pub mod image_render {
     ))]
     pub use crate::vello_cpu::{BACKEND_NAME, Renderer, new_headless_renderer};
     #[cfg(all(
+        not(target_arch = "wasm32"),
         not(feature = "imaging_vello"),
         not(feature = "imaging_skia"),
         feature = "imaging_vello_hybrid"
@@ -98,7 +105,9 @@ pub mod image_render {
         all(feature = "imaging_skia", not(target_arch = "wasm32"))
     )))]
     mod no_backend {
-        use imaging::{RgbaImage, render::RenderSource};
+        use imaging::render::{
+            ImageBufferFormat, ImageBufferTarget, ImageRendererError, RenderSource,
+        };
 
         /// Error returned when no image-render backend feature is enabled.
         #[derive(Debug)]
@@ -125,16 +134,16 @@ pub mod image_render {
         }
 
         impl imaging::render::ImageRenderer for Renderer {
-            type Error = Error;
+            fn supported_image_formats(&self) -> Vec<ImageBufferFormat> {
+                Vec::new()
+            }
 
-            fn render_source_into<S: RenderSource + ?Sized>(
+            fn render_source_into(
                 &mut self,
-                _: &mut S,
-                _: u32,
-                _: u32,
-                _: &mut RgbaImage,
-            ) -> Result<(), Self::Error> {
-                Err(Error)
+                _: &mut dyn RenderSource,
+                _: ImageBufferTarget<'_>,
+            ) -> Result<(), ImageRendererError> {
+                Err(ImageRendererError::backend(Error))
             }
         }
     }
@@ -197,48 +206,25 @@ impl<'a> PreparedFrame<'a> {
             overlays,
         }
     }
-
-    /// Create a render source for window output in physical pixels.
-    pub fn window_source(self) -> WindowSource<'a> {
-        WindowSource { frame: self }
-    }
 }
 
-/// Masonry render source for a window-sized frame.
-#[derive(Clone, Copy, Debug)]
-pub struct WindowSource<'a> {
-    frame: PreparedFrame<'a>,
-}
-
-impl<'a> WindowSource<'a> {
-    /// Create a render source for window output in physical pixels.
-    pub fn new(frame: PreparedFrame<'a>) -> Self {
-        Self { frame }
-    }
-}
-
-impl RenderSource for WindowSource<'_> {
+impl RenderSource for PreparedFrame<'_> {
     fn validate(&self) -> Result<(), ValidateError> {
-        validate_layers(self.frame.base, self.frame.overlays)
+        validate_layers(self.base, self.overlays)
     }
 
     fn paint_into(&mut self, sink: &mut dyn PaintSink) {
         {
             let mut painter = Painter::new(sink);
             painter.fill_rect(
-                Rect::new(
-                    0.0,
-                    0.0,
-                    f64::from(self.frame.width),
-                    f64::from(self.frame.height),
-                ),
-                self.frame.background_color,
+                Rect::new(0.0, 0.0, f64::from(self.width), f64::from(self.height)),
+                self.background_color,
             );
         }
 
-        let scale = Affine::scale(self.frame.scale_factor);
-        replay_transformed(self.frame.base, sink, scale);
-        for layer in self.frame.overlays {
+        let scale = Affine::scale(self.scale_factor);
+        replay_transformed(self.base, sink, scale);
+        for layer in self.overlays {
             replay_transformed(layer.scene, sink, scale * layer.transform);
         }
     }

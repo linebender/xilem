@@ -32,10 +32,10 @@ pub const BACKEND_NAME: &str = "imaging_vello";
 pub type Renderer = imaging_vello::VelloRenderer;
 
 /// Masonry alias for the selected Vello texture renderer type.
-pub type TargetRenderer = imaging_vello::VelloTargetRenderer;
+pub type TargetRenderer = imaging_vello::VelloRenderer;
 
 /// Masonry alias for the selected Vello texture target wrapper.
-pub type TextureTarget<'a> = imaging_vello::TextureTarget<'a>;
+pub type TextureTarget = imaging_wgpu::TextureViewTarget;
 
 /// Create a reusable headless Vello renderer.
 pub fn new_headless_renderer() -> Result<Renderer, Error> {
@@ -48,5 +48,5 @@ pub fn new_target_renderer(
     device: wgpu::Device,
     queue: wgpu::Queue,
 ) -> Result<TargetRenderer, Error> {
-    imaging_vello::VelloTargetRenderer::new(device, queue).map_err(Error::Backend)
+    imaging_vello::VelloRenderer::new(device, queue).map_err(Error::Backend)
 }

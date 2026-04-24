@@ -25,15 +25,16 @@ imaging_skia = ["dep:imaging_skia"]
 
 [dependencies]
 imaging.workspace = true
-imaging_vello = { workspace = true, optional = true }
-imaging_vello_hybrid = { workspace = true, optional = true }
 imaging_vello_cpu = { workspace = true, optional = true }
 kurbo.workspace = true
 peniko.workspace = true
-wgpu.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+imaging_wgpu.workspace = true
+imaging_vello = { workspace = true, optional = true }
+imaging_vello_hybrid = { workspace = true, optional = true }
 imaging_skia = { workspace = true, optional = true }
+wgpu.workspace = true
 
 [lints]
 workspace = true

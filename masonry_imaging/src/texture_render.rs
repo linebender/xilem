@@ -72,7 +72,7 @@ impl Default for Renderer {
     feature = "imaging_vello_hybrid"
 ))]
 mod shared_texture_renderer {
-    use imaging::render::TextureRenderer;
+    use imaging_wgpu::{TextureRenderer, TextureRendererError};
 
     use crate::PreparedFrame;
 
@@ -122,13 +122,13 @@ mod shared_texture_renderer {
     pub(super) fn render_window_source_to_texture<R>(
         renderer: &mut R,
         frame: PreparedFrame<'_>,
-        target: R::TextureTarget<'_>,
-    ) -> Result<(), R::Error>
+        target: R::TextureTarget,
+    ) -> Result<(), TextureRendererError>
     where
         R: TextureRenderer,
     {
-        let mut source = frame.window_source();
-        renderer.render_source_to_texture(&mut source, target)
+        let mut frame = frame;
+        renderer.render_source_into_texture(&mut frame, target)
     }
 }
 
@@ -178,10 +178,11 @@ mod imp {
 ))]
 mod imp {
     use super::shared_texture_renderer::{RendererCache, render_window_source_to_texture};
-    use crate::skia::{TargetRenderer, TextureTarget, new_target_renderer};
+    use crate::skia::{TargetRenderer, new_target_renderer};
 
     use super::RenderTarget;
     use crate::PreparedFrame;
+    use imaging_wgpu::TextureRendererError;
 
     /// Errors that can occur while rendering Masonry content with Skia.
     #[derive(Debug)]
@@ -189,7 +190,7 @@ mod imp {
         /// Creating the Skia renderer failed.
         CreateRenderer(crate::skia::Error),
         /// Rendering the Masonry source failed.
-        Render(imaging_skia::Error),
+        Render(TextureRendererError),
     }
 
     impl core::fmt::Display for Error {
@@ -242,7 +243,7 @@ mod imp {
                 },
             )?;
 
-            render_window_source_to_texture(renderer, frame, TextureTarget::new(target.texture))
+            render_window_source_to_texture(renderer, frame, target.texture.clone())
                 .map_err(Error::Render)
         }
     }
@@ -257,6 +258,7 @@ mod imp {
 
     use super::RenderTarget;
     use crate::PreparedFrame;
+    use imaging_wgpu::TextureRendererError;
 
     /// Errors that can occur while rendering Masonry content with Vello.
     #[derive(Debug)]
@@ -264,7 +266,7 @@ mod imp {
         /// Creating the Vello renderer failed.
         CreateRenderer(crate::vello::Error),
         /// Rendering the scene to the texture failed.
-        Render(imaging_vello::Error),
+        Render(TextureRendererError),
     }
 
     impl core::fmt::Display for Error {
@@ -329,12 +331,13 @@ mod imp {
 
     use super::RenderTarget;
     use crate::PreparedFrame;
+    use imaging_wgpu::TextureRendererError;
 
     /// Errors that can occur while rendering Masonry content with Vello Hybrid.
     #[derive(Debug)]
     pub(super) enum Error {
         /// Rendering the Masonry source failed.
-        Render(imaging_vello_hybrid::Error),
+        Render(TextureRendererError),
     }
 
     impl core::fmt::Display for Error {
