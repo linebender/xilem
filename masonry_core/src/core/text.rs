@@ -100,7 +100,7 @@ pub fn render_text(
                 .glyphs()
                 .map(|glyph| {
                     let gx = x + glyph.x;
-                    let gy = y - glyph.y;
+                    let gy = y + glyph.y;
                     x += glyph.advance;
                     Glyph {
                         id: glyph.id,
