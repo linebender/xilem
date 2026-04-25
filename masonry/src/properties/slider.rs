@@ -27,6 +27,41 @@ impl TrackThickness {
     }
 }
 
+/// Colors of a slider's track.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TrackColor {
+    /// Color of the active portion.
+    pub active: Color,
+
+    /// Color of the inactive portion.
+    pub inactive: Color,
+}
+
+impl Property for TrackColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: TrackColor = TrackColor {
+            active: theme::ACCENT_COLOR,
+            inactive: theme::ZYNC_800,
+        };
+        &DEFAULT
+    }
+}
+
+impl Default for TrackColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl TrackColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type == TypeId::of::<Self>() {
+            ctx.request_paint_only();
+        }
+    }
+}
+
 /// The radius of a slider's thumb, in logical pixels.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct ThumbRadius(pub f64);
@@ -48,7 +83,6 @@ impl ThumbRadius {
 }
 
 /// The color of a slider's thumb.
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ThumbColor(pub Color);
 
