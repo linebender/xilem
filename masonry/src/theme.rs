@@ -350,6 +350,20 @@ pub fn default_property_set() -> DefaultProperties {
         properties.insert_stack::<RadioButton>(stack);
     }
 
+    // Slider
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_hovered(true),
+            BorderColor { color: ZYNC_500 },
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            BorderColor { color: FOCUS_COLOR },
+        );
+        properties.insert_stack::<Slider>(stack);
+    }
+
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
 
