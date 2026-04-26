@@ -372,7 +372,6 @@ impl Widget for Slider {
         painter: &mut Painter<'_>,
     ) {
         // Get parameters and resolve colors
-        // TODO: Create a dedicated TrackColor property
 
         let cache = ctx.property_cache();
         let track_color = props.get::<TrackColor>(cache);
@@ -386,6 +385,7 @@ impl Widget for Slider {
         let track_y = (size.height - track_thickness) / 2.0;
         let border_box = ctx.border_box();
 
+        // TODO: replace with proper disabled colors
         // Push semitransparent layer if disabled
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
@@ -400,12 +400,14 @@ impl Widget for Slider {
         let progress = (self.value - self.min) / (self.max - self.min).max(0.);
         let track_rect = Rect::new(0., track_y, size.width, track_y + track_thickness)
             .to_rounded_rect(track_thickness / 2.);
+        let track_active_frac =
+            progress * (1. - thumb_radius * 2. / size.width) + thumb_radius / size.width;
 
         // Paint with a gradient so we get a straight line slice of the rounded rect.
         let gradient = peniko::Gradient::new_linear((0., 0.), (size.width, 0.)).with_stops([
             (0., track_color.active),
-            (progress as f32, track_color.active),
-            (progress as f32, track_color.inactive),
+            (track_active_frac as f32, track_color.active),
+            (track_active_frac as f32, track_color.inactive),
             (1., track_color.inactive),
         ]);
         painter.fill(track_rect, &gradient).draw();
@@ -537,5 +539,16 @@ mod tests {
 
         assert_render_snapshot!(harness, "slider_disabled");
         assert!(harness.pop_action::<SliderMoved>().is_none());
+    }
+
+    #[test]
+    fn slider_big_transparent_thumb() {
+        let widget = Slider::new(0.0, 100.0, 25.0).prepare();
+        let mut props = test_property_set();
+        props.insert::<Slider, _>(ThumbRadius(20.));
+        props.insert::<Slider, _>(ThumbColor(peniko::Color::TRANSPARENT));
+        let mut harness = TestHarness::create_with_size(props, widget, (200, 50));
+
+        assert_render_snapshot!(harness, "slider_big_transparent_thumb");
     }
 }
