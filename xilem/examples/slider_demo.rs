@@ -17,7 +17,7 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    FlexExt, FlexSpacer, MainAxisAlignment, checkbox, flex, flex_col, flex_row, label, sized_box,
+    FlexExt, FlexSpacer, MainAxisAlignment, canvas, checkbox, flex, flex_col, flex_row, label,
     slider, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -70,7 +70,7 @@ where
 {
     flex_row((
         label(label_text).width(40.px()),
-        slider(0.0, 100.0, value, on_change).width(200.px()),
+        slider(0.0, 100.0, value, on_change).dims((200.px(), 24.px())),
         label(format!("{:.0}% [{}]", value, u_value)).width(60.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -115,7 +115,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 })
                 .step(5.0)
                 .disabled(!state.use_transparency)
-                .width(200.px())
+                .dims((200.px(), 24.px()))
                 .prop(TrackColor {
                     active: Color::from_rgb8(0x78, 0x71, 0x6c),
                     ..Default::default()
@@ -152,14 +152,11 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         .gap(15.0.px()),
         FlexSpacer::Fixed(10.px()),
         // Color preview box
-        sized_box(
-            // An empty label to create a view with a background.
-            label(""),
-        )
-        .dims(Dim::Stretch)
-        .background(final_color)
-        .corner_radius(8.0)
-        .flex(1.0),
+        canvas(|_, _, _, _| {})
+            .dims(Dim::Stretch)
+            .background(final_color)
+            .corner_radius(8.0)
+            .flex(1.0),
     ))
     .gap(20.0.px())
     .padding(20.0)

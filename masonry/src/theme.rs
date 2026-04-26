@@ -6,7 +6,7 @@
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
 use crate::core::{
-    DefaultProperties, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
+    DefaultProperties, Property, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
 };
 use crate::layout::Length;
 use crate::palette::css::DIM_GRAY;
@@ -360,6 +360,18 @@ pub fn default_property_set() -> DefaultProperties {
         stack.push(
             Selector::new().with_focused(true),
             BorderColor { color: FOCUS_COLOR },
+        );
+        stack.push(
+            Selector::new().with_hovered(true),
+            ThumbRadius(ThumbRadius::static_default().0 + 1.),
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            ThumbRadius(ThumbRadius::static_default().0 + 1.),
+        );
+        stack.push(
+            Selector::new().with_active(true),
+            ThumbRadius(ThumbRadius::static_default().0 + 2.),
         );
         properties.insert_stack::<Slider>(stack);
     }
