@@ -6,7 +6,7 @@
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
 use crate::core::{
-    DefaultProperties, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
+    DefaultProperties, Property, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
 };
 use crate::layout::{AsUnit, Length};
 use crate::palette::css::DIM_GRAY;
