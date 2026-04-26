@@ -10,8 +10,8 @@ use tracing::{Span, trace, trace_span};
 use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, Property, RegisterCtx, TextEvent, Update, UpdateCtx,
-    UsesProperty, Widget, WidgetId, WidgetMut,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget,
+    WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Circle, Join, Point, Rect, Size, Stroke};

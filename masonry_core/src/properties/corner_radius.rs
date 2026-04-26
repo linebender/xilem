@@ -81,13 +81,13 @@ impl CornerRadius {
     }
 }
 
-impl Into<RoundedRectRadii> for CornerRadius {
-    fn into(self) -> RoundedRectRadii {
-        RoundedRectRadii {
-            top_left: self.top_left,
-            top_right: self.top_right,
-            bottom_left: self.bottom_left,
-            bottom_right: self.bottom_right,
+impl From<CornerRadius> for RoundedRectRadii {
+    fn from(val: CornerRadius) -> Self {
+        Self {
+            top_left: val.top_left,
+            top_right: val.top_right,
+            bottom_left: val.bottom_left,
+            bottom_right: val.bottom_right,
         }
     }
 }

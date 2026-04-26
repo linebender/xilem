@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, StyleProperty};
-use masonry::parley::StyleProperty::LetterSpacing;
 use masonry::parley::style::FontWeight;
 use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, LineHeight};
 use masonry::widgets;
