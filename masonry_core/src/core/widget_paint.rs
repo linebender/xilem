@@ -71,7 +71,7 @@ pub fn paint_box_shadow(
     if !box_shadow.is_visible() {
         return;
     }
-    let box_shadow_rect = border_box.to_rounded_rect(corner_radius.radius);
+    let box_shadow_rect = border_box.to_rounded_rect(*corner_radius);
     box_shadow.paint(painter, Affine::IDENTITY, box_shadow_rect);
 }
 

@@ -123,7 +123,7 @@ impl BorderWidth {
     pub fn bg_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
         border_box
             .inset(-self.width)
-            .to_rounded_rect((border_radius.radius - self.width).max(0.))
+            .to_rounded_rect((self.width).max(0.))
     }
 
     /// Creates a rounded rectangle that is inset by half the border width.
@@ -134,6 +134,6 @@ impl BorderWidth {
     pub fn border_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
         border_box
             .inset(-self.width / 2.0)
-            .to_rounded_rect(border_radius.radius)
+            .to_rounded_rect(*border_radius)
     }
 }
