@@ -493,6 +493,9 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
+        harness.mouse_move((5., 50.));
+        assert_render_snapshot!(harness, "scrollbar_hovered");
+
         assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(scrollbar_id, None);
@@ -519,6 +522,9 @@ mod tests {
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
+
+        harness.mouse_move((50., 5.));
+        assert_render_snapshot!(harness, "scrollbar_horizontal_hovered");
 
         assert!(harness.pop_action_erased().is_none());
 
