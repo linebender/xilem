@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, StyleProperty};
+use masonry::parley::StyleProperty::LetterSpacing;
 use masonry::parley::style::FontWeight;
 use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, LineHeight};
-use masonry::parley::StyleProperty::LetterSpacing;
 use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -41,7 +41,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         enable_hinting: true,
         line_height: LineHeight::default(),
         font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
-        letter_spacing: 0.0
+        letter_spacing: 0.0,
     }
 }
 
@@ -57,7 +57,7 @@ pub struct Label {
     enable_hinting: bool,
     line_height: LineHeight,
     font: FontFamily<'static>,
-    letter_spacing: f32
+    letter_spacing: f32,
     // TODO: add more attributes of `masonry::widgets::Label`
 }
 
