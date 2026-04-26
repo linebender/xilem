@@ -46,6 +46,7 @@ pub struct ScrollBar {
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
     grab_anchor: Option<f64>,
+    expanded: bool,
 }
 
 // --- MARK: BUILDERS
@@ -62,6 +63,7 @@ impl ScrollBar {
             portal_size,
             content_size,
             grab_anchor: None,
+            expanded: false,
         }
     }
 }
@@ -338,12 +340,14 @@ impl Widget for ScrollBar {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::HoveredChanged(received) => {
+                self.expanded = *received;
+                ctx.request_paint_only();
+            }
+            _ => {}
+        }
     }
 
     fn measure(
@@ -384,12 +388,20 @@ impl Widget for ScrollBar {
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
+        let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
         let size = ctx.content_box_size();
-        let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
+        let inset_start = cursor_padding
+            + if self.expanded {
+                0.
+            } else {
+                scrollbar_width / 2.
+            };
+        let (inset_x0, inset_y0) = self.axis.pack_xy(0.0, inset_start);
+        let (inset_x1, inset_y1) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
             .cursor_rect(size, cursor_min_length)
-            .inset((-inset_x, -inset_y))
+            .inset((-inset_x0, -inset_y0, -inset_x1, -inset_y1))
             .to_rounded_rect(radius);
 
         painter.fill(cursor_rect, theme::SCROLLBAR_COLOR).draw();
