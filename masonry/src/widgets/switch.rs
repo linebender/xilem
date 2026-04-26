@@ -10,8 +10,8 @@ use tracing::{Span, trace, trace_span};
 use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget,
-    WidgetId, WidgetMut,
+    PropertiesMut, PropertiesRef, Property, RegisterCtx, TextEvent, Update, UpdateCtx,
+    UsesProperty, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Circle, Join, Point, Rect, Size, Stroke};
@@ -244,7 +244,7 @@ impl Widget for Switch {
             Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
         let thumb_radius = thumb_radius_val * scale;
         let border_width = props.get::<BorderWidth>(cache).width * scale;
-        let corner_radius = props.get::<CornerRadius>(cache).radius * scale;
+        let mut corner_radius = *props.get::<CornerRadius>(cache);
         let thumb_color = props.get::<ThumbColor>(cache).0;
 
         // Center the track within the available space
@@ -260,8 +260,12 @@ impl Widget for Switch {
         let track_bg = props.get::<Background>(cache);
 
         // Paint track background
-        let track_corner_radius = corner_radius.min(track_height / 2.0);
-        let track_rounded = track_rect.to_rounded_rect(track_corner_radius);
+        let max_radius = track_height / 2.0;
+        corner_radius.top_left = (corner_radius.top_left * scale).min(max_radius);
+        corner_radius.top_right = (corner_radius.top_right * scale).min(max_radius);
+        corner_radius.bottom_left = (corner_radius.bottom_left * scale).min(max_radius);
+        corner_radius.bottom_right = (corner_radius.bottom_right * scale).min(max_radius);
+        let track_rounded = track_rect.to_rounded_rect(corner_radius);
         let brush = track_bg.get_peniko_brush_for_rect(track_rect);
         painter.fill(track_rounded, &brush).draw();
 
