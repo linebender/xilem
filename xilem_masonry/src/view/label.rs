@@ -4,6 +4,7 @@
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::FontWeight;
 use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, LineHeight};
+use masonry::parley::StyleProperty::LetterSpacing;
 use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -40,6 +41,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         enable_hinting: true,
         line_height: LineHeight::default(),
         font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
+        letter_spacing: 0.0
     }
 }
 
@@ -55,6 +57,7 @@ pub struct Label {
     enable_hinting: bool,
     line_height: LineHeight,
     font: FontFamily<'static>,
+    letter_spacing: f32
     // TODO: add more attributes of `masonry::widgets::Label`
 }
 
@@ -90,6 +93,13 @@ impl Label {
         self
     }
 
+    /// Sets font tracking width.
+    #[doc(alias = "tracking")]
+    pub fn letter_spacing(mut self, letter_spacing: f32) -> Self {
+        self.letter_spacing = letter_spacing;
+        self
+    }
+
     /// Set the [font family](FontFamily) this label will use.
     ///
     /// A font family allows for providing fallbacks. If there is no matching font
@@ -122,6 +132,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::LineHeight(self.line_height))
                 .with_style(StyleProperty::FontFamily(self.font.clone()))
+                .with_style(StyleProperty::LetterSpacing(self.letter_spacing))
                 .with_hint(self.enable_hinting),
         );
         (pod, ())
