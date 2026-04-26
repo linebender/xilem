@@ -11,10 +11,11 @@ use crate::core::{
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
     RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::imaging::Painter;
+use crate::imaging::{Composite, GroupRef, Painter};
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
 use crate::theme;
+use crate::widgets::AnimatedF32;
 
 // TODO
 // - Fade scrollbars? Find out how Linux/macOS/Windows do it
@@ -45,6 +46,7 @@ pub struct ScrollBar {
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
+    pub(crate) opacity: AnimatedF32,
     grab_anchor: Option<f64>,
 }
 
@@ -61,6 +63,7 @@ impl ScrollBar {
             moved: false,
             portal_size,
             content_size,
+            opacity: AnimatedF32::stable(0.),
             grab_anchor: None,
         }
     }
@@ -336,6 +339,21 @@ impl Widget for ScrollBar {
         }
     }
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        let millis = (interval as f64 * 1e-6) as f32;
+        let result = self.opacity.advance(millis);
+        ctx.request_paint_only();
+
+        if !result.is_completed() {
+            ctx.request_anim_frame();
+        }
+    }
+
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn measure(
@@ -372,6 +390,14 @@ impl Widget for ScrollBar {
         _props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
+        if self.opacity.value() != 1. {
+            painter.push_fill_clip(ctx.border_box());
+            painter.push_group(GroupRef::new().with_composite(Composite::new(
+                crate::peniko::BlendMode::default(),
+                self.opacity.value(),
+            )));
+        }
+
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -399,6 +425,11 @@ impl Widget for ScrollBar {
                 theme::SCROLLBAR_BORDER_COLOR,
             )
             .draw();
+
+        if self.opacity.value() != 1. {
+            painter.pop_group();
+            painter.pop_clip();
+        }
     }
 
     fn accessibility_role(&self) -> Role {
@@ -472,13 +503,17 @@ mod tests {
 
     #[test]
     fn simple_scrollbar() {
-        let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0))
-            .with_props(Dimensions::FIT);
+        let mut widget = ScrollBar::new(Axis::Vertical, 200.0, 600.0);
+        widget.opacity.move_to(1., 0.);
+        let widget = NewWidget::new(widget).with_props(Dimensions::FIT);
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 200));
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_default");
+
+        harness.mouse_move((5., 50.));
+        assert_render_snapshot!(harness, "scrollbar_hovered");
 
         harness.mouse_move((5., 50.));
         assert_render_snapshot!(harness, "scrollbar_hovered");
@@ -502,8 +537,9 @@ mod tests {
 
     #[test]
     fn horizontal_scrollbar() {
-        let widget = NewWidget::new(ScrollBar::new(Axis::Horizontal, 200.0, 600.0))
-            .with_props(Dimensions::FIT);
+        let mut widget = ScrollBar::new(Axis::Horizontal, 200.0, 600.0);
+        widget.opacity.move_to(1., 0.);
+        let widget = NewWidget::new(widget).with_props(Dimensions::FIT);
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 50));
         let scrollbar_id = harness.root_id();

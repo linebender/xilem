@@ -96,6 +96,16 @@ impl AnimatedF32 {
             AnimationStatus::Ongoing
         }
     }
+
+    /// Returns the target value.        
+    pub fn target(&self) -> f32 {
+        self.target
+    }
+
+    /// Returns the current value.        
+    pub fn value(&self) -> f32 {
+        self.value
+    }
 }
 
 /// The status an animation can be in.
