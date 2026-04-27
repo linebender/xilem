@@ -233,9 +233,9 @@ mod tests {
     fn badge_is_non_interactive() {
         let widget = Badge::new(Label::new("New").prepare()).prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (80, 40));
-        let badge_id = harness.root_id();
+        let badge_tag = harness.root_tag();
 
-        harness.mouse_click_on(badge_id, None);
+        harness.mouse_click_on(badge_tag, None);
         assert!(harness.pop_action_erased().is_none());
         assert!(harness.focused_widget().is_none());
     }

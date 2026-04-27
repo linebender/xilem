@@ -477,13 +477,13 @@ mod tests {
             .with_props(Dimensions::FIT);
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 200));
-        let scrollbar_id = harness.root_id();
+        let scrollbar_tag = harness.root_tag();
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(scrollbar_id, None);
+        harness.mouse_click_on(scrollbar_tag, None);
         // TODO - Scroll action?
         assert!(harness.pop_action_erased().is_none());
 
@@ -504,13 +504,13 @@ mod tests {
             .with_props(Dimensions::FIT);
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 50));
-        let scrollbar_id = harness.root_id();
+        let scrollbar_tag = harness.root_tag();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
 
         assert!(harness.pop_action_erased().is_none());
 
-        harness.mouse_click_on(scrollbar_id, None);
+        harness.mouse_click_on(scrollbar_tag, None);
         // TODO - Scroll action?
         assert!(harness.pop_action_erased().is_none());
 
@@ -524,13 +524,13 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (50, 200));
         let _ = harness.render();
 
-        let scrollbar_id = harness.root_id();
-        harness.focus_on(Some(scrollbar_id));
+        let scrollbar_tag = harness.root_tag();
+        harness.focus_on(scrollbar_tag);
 
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowDown)));
         let _ = harness.render();
 
-        let node = harness.access_node(scrollbar_id).unwrap();
+        let node = harness.access_node(scrollbar_tag).unwrap();
         assert!(node.data().scroll_y().unwrap_or(0.0) > 0.0);
     }
 

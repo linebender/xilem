@@ -149,6 +149,8 @@ pub(crate) struct RenderRootState {
     /// Scene cache for the widget tree.
     pub(crate) scene_cache: HashMap<WidgetId, (Scene, Scene, Scene)>,
 
+    // TODO - Add garbage collection.
+    /// Map from widget tags to widget ids.
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
     /// Map of layers attached to widgets, keyed by the attached widget id, then the type of the layer root.
@@ -643,6 +645,42 @@ impl RenderRoot {
     /// Checks if a widget with the given id is in the tree.
     pub fn has_widget(&self, id: WidgetId) -> bool {
         self.widget_arena.has(id)
+    }
+
+    /// Creates a unique tag for the widget with the given id and returns it.
+    ///
+    /// This will return a unique tag even if called multiple times with the same id.
+    pub fn make_tag_for_widget<W: Widget>(&mut self, id: WidgetId) -> WidgetTag<W> {
+        let Some(node_ref) = self.widget_arena.nodes.find(id) else {
+            panic!("Could not find widget {id} in tree.");
+        };
+
+        let widget = &*node_ref.item.widget;
+        if widget.type_id() != TypeId::of::<W>() {
+            panic!(
+                "Widget {id} does not have type {}.",
+                std::any::type_name::<W>()
+            );
+        }
+
+        let new_tag = WidgetTag::unique();
+        self.global_state.widget_tags.insert(new_tag.inner, id);
+
+        new_tag
+    }
+
+    /// Creates a unique type-erased tag for the widget with the given id and returns it.
+    ///
+    /// This will return a unique tag even if called multiple times with the same id.
+    pub fn make_dyn_tag_for_widget(&mut self, id: WidgetId) -> WidgetTag<dyn Widget> {
+        let Some(_) = self.widget_arena.nodes.find(id) else {
+            panic!("Could not find widget {id} in tree.");
+        };
+
+        let new_tag = WidgetTag::unique();
+        self.global_state.widget_tags.insert(new_tag.inner, id);
+
+        new_tag
     }
 
     /// Returns a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).

@@ -38,10 +38,9 @@ fn pointer_event() {
     let button = NewWidget::new(Button::with_text("button").record()).with_tag(button_tag);
 
     let mut harness = TestHarness::create(test_property_set(), button);
-    let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
-    harness.mouse_move_to(button_id);
+    harness.mouse_move_to(button_tag);
 
     let records = harness.take_records_of(button_tag);
     assert_any(records, |r| {
@@ -61,10 +60,9 @@ fn pointer_event_bubbling() {
         NewWidget::new(ModularWidget::new_parent(parent).record()).with_tag(grandparent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), grandparent);
-    let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
-    harness.mouse_click_on(button_id, None);
+    harness.mouse_click_on(button_tag, None);
 
     fn is_pointer_down(record: Record) -> bool {
         matches!(record, Record::PointerEvent(PointerEvent::Down { .. }))
@@ -86,7 +84,7 @@ fn pointer_capture_and_cancel() {
 
     let target_id = harness.get_widget(target_tag).id();
 
-    harness.mouse_move_to(target_id);
+    harness.mouse_move_to(target_tag);
     harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
@@ -109,7 +107,7 @@ fn synthetic_cancel() {
 
     let target_id = harness.get_widget(target_tag).id();
 
-    harness.mouse_move_to(target_id);
+    harness.mouse_move_to(target_tag);
     harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
@@ -143,15 +141,14 @@ fn pointer_capture_suppresses_neighbors() {
     harness.flush_records_of(other_tag);
 
     let target_id = harness.get_widget(target_tag).id();
-    let other_id = harness.get_widget(other_tag).id();
 
-    harness.mouse_move_to(target_id);
+    harness.mouse_move_to(target_tag);
     harness.mouse_button_press(None);
 
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
     // As long as 'target' is captured, 'other' doesn't get pointer events, even when the cursor is on it.
-    harness.mouse_move_to(other_id);
+    harness.mouse_move_to(other_tag);
     assert_matches!(harness.take_records_of(other_tag)[..], []);
 
     // 'other' is not considered hovered either.
@@ -191,8 +188,7 @@ fn try_capture_pointer_on_text_event() {
         .prepare();
 
     let mut harness = TestHarness::create(test_property_set(), widget);
-    let id = harness.root_id();
-    harness.focus_on(Some(id));
+    harness.focus_on(harness.root_tag());
 
     assert_debug_panics!(
         harness.keyboard_type_chars("a"),
@@ -211,7 +207,7 @@ fn pointer_cancel_on_window_blur() {
 
     let target_id = harness.get_widget(target_tag).id();
 
-    harness.mouse_move_to(target_id);
+    harness.mouse_move_to(target_tag);
     harness.mouse_button_press(None);
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
     harness.flush_records_of(target_tag);
@@ -241,13 +237,11 @@ fn click_anchors_focus() {
 
     let mut harness = TestHarness::create(test_property_set(), parent);
 
-    let child_3_id = harness.get_widget(child_3).id();
     let child_4_id = harness.get_widget(child_4).id();
-    let other_id = harness.get_widget(other).id();
 
     // Clicking a disabled button doesn't focus it.
     harness.set_disabled(child_3, true);
-    harness.mouse_click_on(child_3_id, None);
+    harness.mouse_click_on(child_3, None);
     assert_eq!(harness.focused_widget_id(), None);
 
     // But the next tab event focuses its neighbor.
@@ -259,7 +253,7 @@ fn click_anchors_focus() {
     // is resolved.
 
     // Clicking another non-focusable widget clears focus.
-    harness.mouse_move_to_unchecked(other_id);
+    harness.mouse_move_to_unchecked(other);
     harness.mouse_button_press(None);
     harness.mouse_button_release(None);
     assert_eq!(harness.focused_widget_id(), None);
@@ -433,7 +427,7 @@ fn multi_pointers_capture() {
 
     // Move mouse to button 1, mouse press
     // Check mouse is captured, button 1 is active
-    harness.mouse_move_to(button_1_id);
+    harness.mouse_move_to(button_1_tag);
     harness.mouse_button_press(None);
 
     assert_captured_by(&harness, PointerId::PRIMARY, button_1_id);
@@ -484,7 +478,6 @@ fn text_event() {
     let target = NewWidget::new(TextArea::new_editable("").record()).with_tag(target_tag);
 
     let mut harness = TestHarness::create(test_property_set(), target);
-    let target_id = harness.get_widget(target_tag).id();
     harness.flush_records_of(target_tag);
 
     // The widget isn't focused, it doesn't get text events.
@@ -492,7 +485,7 @@ fn text_event() {
     assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // We focus on the widget, now it gets text events.
-    harness.focus_on(Some(target_id));
+    harness.focus_on(target_tag);
     harness.keyboard_type_chars("A");
     let records = harness.take_records_of(target_tag);
     assert_any(records, |r| matches!(r, Record::TextEvent(_)));
@@ -511,9 +504,8 @@ fn text_event_bubbling() {
         NewWidget::new(ModularWidget::new_parent(parent).record()).with_tag(grandparent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), grandparent);
-    let target_id = harness.get_widget(target_tag).id();
 
-    harness.focus_on(Some(target_id));
+    harness.focus_on(target_tag);
     harness.process_text_event(TextEvent::key_down(Key::Character("A".into())));
 
     fn is_keyboard_event(record: Record) -> bool {
@@ -535,16 +527,14 @@ fn text_event_fallback() {
     let parent = Flex::row().with_fixed(target).with_fixed(other).prepare();
 
     let mut harness = TestHarness::create(test_property_set(), parent);
-    let target_id = harness.get_widget(target_tag).id();
-    let other_id = harness.get_widget(other_tag).id();
     harness.flush_records_of(target_tag);
-    harness.set_focus_fallback(Some(target_id));
+    harness.set_focus_fallback(target_tag);
 
-    harness.focus_on(Some(other_id));
+    harness.focus_on(other_tag);
     assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // If a widget is set as focus fallback, that widget gets text events when no widget is focused.
-    harness.focus_on(None);
+    harness.clear_focus();
     harness.keyboard_type_chars("A");
     let records = harness.take_records_of(target_tag);
     assert_any(records, |r| matches!(r, Record::TextEvent(_)));
@@ -575,30 +565,28 @@ fn tab_focus() {
     let mut harness = TestHarness::create(test_property_set(), parent);
 
     let child_1_id = harness.get_widget(child_1).id();
-    let child_2_id = harness.get_widget(child_2).id();
     let child_3_id = harness.get_widget(child_3).id();
-    let child_4_id = harness.get_widget(child_4).id();
     let child_5_id = harness.get_widget(child_5).id();
 
     assert_eq!(harness.focused_widget_id(), None);
 
     // Tab moves focus to the next focusable widget in the tree.
-    harness.focus_on(Some(child_2_id));
+    harness.focus_on(child_2);
     harness.press_tab_key(false);
     assert_eq!(harness.focused_widget_id(), Some(child_3_id));
 
     // Shift+Tab moves focus to the previous focusable widget in the tree.
-    harness.focus_on(Some(child_4_id));
+    harness.focus_on(child_4);
     harness.press_tab_key(true);
     assert_eq!(harness.focused_widget_id(), Some(child_3_id));
 
     // When nothing is focused, Tab focuses the first focusable widget in the tree.
-    harness.focus_on(None);
+    harness.clear_focus();
     harness.press_tab_key(false);
     assert_eq!(harness.focused_widget_id(), Some(child_1_id));
 
     // When nothing is focused, Shift+Tab focuses the last focusable widget in the tree.
-    harness.focus_on(None);
+    harness.clear_focus();
     harness.press_tab_key(true);
     assert_eq!(harness.focused_widget_id(), Some(child_5_id));
 }
@@ -700,9 +688,8 @@ fn downcast_untyped_action() {
     let widget = NewWidget::new(arbitrary_submitter).with_tag(target_tag);
 
     let mut harness = TestHarness::create(test_property_set(), widget);
-    let target_id = harness.get_widget(target_tag).id();
 
-    harness.mouse_move_to(target_id);
+    harness.mouse_move_to(target_tag);
 
     assert_matches!(
         harness.pop_action::<ArbitraryAction>(),

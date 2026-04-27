@@ -933,10 +933,10 @@ mod tests {
 
         assert_render_snapshot!(harness, "portal_button_list_scrolled");
 
-        harness.scroll_into_view(harness.get_widget(button_3).id());
+        harness.scroll_into_view(button_3);
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_3");
 
-        harness.scroll_into_view(harness.get_widget(button_13).id());
+        harness.scroll_into_view(button_13);
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_13");
     }
 
@@ -954,9 +954,8 @@ mod tests {
         .prepare();
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
-        let button_id = harness.get_widget(button_tag).id();
 
-        harness.scroll_into_view(button_id);
+        harness.scroll_into_view(button_tag);
         assert_render_snapshot!(harness, "portal_scrolled_button_into_view");
     }
 
@@ -969,8 +968,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), portal, (100, 100));
         let _ = harness.render();
 
-        let portal_id = harness.get_widget(portal_tag).id();
-        let node = harness.access_node(portal_id).unwrap();
+        let node = harness.access_node(portal_tag).unwrap();
 
         assert_eq!(node.data().role(), Role::ScrollView);
         assert!(node.data().supports_action(accesskit::Action::ScrollDown));
@@ -988,7 +986,7 @@ mod tests {
         });
         harness.render();
 
-        let node = harness.access_node(portal_id).unwrap();
+        let node = harness.access_node(portal_tag).unwrap();
         assert!(!node.data().supports_action(accesskit::Action::ScrollDown));
         assert!(node.data().supports_action(accesskit::Action::ScrollUp));
     }
@@ -1002,13 +1000,12 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), portal, (100, 100));
         let _ = harness.render();
 
-        let portal_id = harness.get_widget(portal_tag).id();
-        harness.focus_on(Some(portal_id));
+        harness.focus_on(portal_tag);
 
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::PageDown)));
         let _ = harness.render();
 
-        let node = harness.access_node(portal_id).unwrap();
+        let node = harness.access_node(portal_tag).unwrap();
         assert!(node.data().scroll_y().unwrap_or(0.0) > 0.0);
     }
 

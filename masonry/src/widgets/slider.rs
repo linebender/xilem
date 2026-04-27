@@ -560,8 +560,9 @@ mod tests {
         let widget = Slider::new(0.0, 100.0, 50.0).with_step(10.0).prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 32));
         let slider_id = harness.root_id();
+        let slider_tag = harness.root_tag();
 
-        harness.focus_on(Some(slider_id));
+        harness.focus_on(slider_tag);
         assert_render_snapshot!(harness, "slider_keyboard_focused");
 
         harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowRight)));

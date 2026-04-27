@@ -373,7 +373,7 @@ mod tests {
     use masonry_testing::TestHarnessParams;
 
     use super::*;
-    use crate::core::{StyleProperty, TextEvent};
+    use crate::core::{StyleProperty, TextEvent, WidgetTag};
     use crate::dpi::PhysicalSize;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
@@ -388,23 +388,22 @@ mod tests {
 
     #[test]
     fn text_input_outline() {
+        let text_area_tag = WidgetTag::named("text_area");
         let text_input = NewWidget::new(TextInput::from_text_area(
             TextArea::new_editable("TextInput contents")
                 .with_style(StyleProperty::FontSize(14.0))
-                .prepare(),
+                .prepare()
+                .with_tag(text_area_tag),
         ));
         let mut harness = TestHarness::create_with(test_property_set(), text_input, HARNESS_PARAMS);
 
         assert_render_snapshot!(harness, "text_input_outline");
 
-        let mut text_area_id = None;
         harness.edit_root_widget(|mut text_input| {
-            let mut text_input = TextInput::text_mut(&mut text_input);
-            text_area_id = Some(text_input.ctx.widget_id());
-
-            TextArea::select_text(&mut text_input, "contents");
+            let mut text_area = TextInput::text_mut(&mut text_input);
+            TextArea::select_text(&mut text_area, "contents");
         });
-        harness.focus_on(text_area_id);
+        harness.focus_on(text_area_tag);
 
         assert_render_snapshot!(harness, "text_input_selection");
 
