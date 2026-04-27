@@ -377,8 +377,8 @@ impl Widget for Checkbox {
 mod tests {
     use super::*;
     use crate::core::{PropertySet, StyleProperty};
-    use crate::properties::ContentColor;
-    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::properties::{ContentColor, Padding};
+    use crate::testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Flex;
 
@@ -434,6 +434,20 @@ mod tests {
         harness.focus_on(Some(checkbox_id));
         assert_render_snapshot!(harness, "checkbox_focus_focused");
     }
+
+    #[test]
+    fn checkbox_with_padding() {
+        let checkbox =
+            NewWidget::new(Checkbox::new(true, "Padding")).with_props(Padding::from_vh(8., 16.));
+        let checkbox_id = checkbox.id();
+        let params =
+            TestHarnessParams::size_and_padding((180, 72), TestHarnessParams::ROOT_PADDING);
+        let mut harness = TestHarness::create_with(test_property_set(), checkbox, params);
+
+        harness.focus_on(Some(checkbox_id));
+        assert_render_snapshot!(harness, "checkbox_with_padding_focused");
+    }
+
     #[test]
     fn edit_checkbox() {
         let image_1 = {
