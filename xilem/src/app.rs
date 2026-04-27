@@ -5,8 +5,8 @@ use std::iter::Once;
 use std::sync::Arc;
 
 use masonry::core::DefaultProperties;
-use masonry::peniko::Blob;
-use masonry::theme::default_property_set;
+use masonry::peniko::{Blob, Color};
+use masonry::theme::{BACKGROUND_COLOR, default_property_set};
 use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId};
 use tokio::runtime::Runtime as TokioRuntime;
 use winit::error::EventLoopError;
@@ -24,6 +24,7 @@ pub struct Xilem<State, Logic> {
     logic: Logic,
     runtime: Arc<TokioRuntime>,
     default_properties: Option<DefaultProperties>,
+    default_base_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
 }
@@ -144,6 +145,7 @@ where
             logic,
             runtime,
             default_properties: None,
+            default_base_color: BACKGROUND_COLOR,
             fonts: Vec::new(),
         }
     }
@@ -160,6 +162,13 @@ where
     /// Sets default properties of widget tree.
     pub fn with_default_properties(mut self, default_properties: DefaultProperties) -> Self {
         self.default_properties = Some(default_properties);
+        self
+    }
+
+    // TODO: Find better ways to customize default base color.
+    /// Sets default base color of windows.
+    pub fn with_default_base_color(mut self, default_base_color: Color) -> Self {
+        self.default_base_color = default_base_color;
         self
     }
 
@@ -184,6 +193,13 @@ where
         self,
         proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (MasonryDriver<State, Logic>, Vec<NewWindow>) {
-        MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts)
+        MasonryDriver::new(
+            self.state,
+            self.logic,
+            proxy,
+            self.runtime,
+            self.default_base_color,
+            self.fonts,
+        )
     }
 }

@@ -1,12 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::peniko::Color;
-use masonry::theme::BACKGROUND_COLOR;
+use masonry::{theme::BACKGROUND_COLOR, util::debug_panic};
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
-use crate::{AnyWidgetView, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, WindowOptions};
+use crate::{
+    AnyWidgetView, Color, InitialRootWidget, MasonryRoot, ViewCtx, WidgetView, WindowOptions,
+};
 
 /// A view representing a window.
 pub struct WindowView<State: 'static> {
@@ -14,7 +15,7 @@ pub struct WindowView<State: 'static> {
     pub(crate) options: WindowOptions<State>,
     pub(crate) masonry_root: MasonryRoot<State>,
     /// The base color of the window.
-    pub(crate) base_color: Color,
+    pub(crate) base_color: Option<Color>,
 }
 
 pub(crate) type WindowViewState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
@@ -35,7 +36,7 @@ pub fn window<V: WidgetView<State>, State: 'static>(
         id,
         options: WindowOptions::new(title),
         masonry_root: MasonryRoot::new(root_view),
-        base_color: BACKGROUND_COLOR,
+        base_color: None,
     }
 }
 
@@ -53,7 +54,7 @@ impl<State> WindowView<State> {
     ///
     /// This is [`masonry::theme::BACKGROUND_COLOR`] by default.
     pub fn with_base_color(mut self, color: Color) -> Self {
-        self.base_color = color;
+        self.base_color = Some(color);
         self
     }
 }
@@ -77,6 +78,10 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (InitialRootWidget(root_widget), view_state) = self.masonry_root.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
+        let base_color = self.base_color.unwrap_or_else(|| {
+            debug_panic!("base_color should be set already in `MasonryDriver::build_window`");
+            BACKGROUND_COLOR
+        });
         (
             PodWindow(
                 NewWindow::new_with_id(
@@ -84,7 +89,7 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
                     initial_attributes,
                     root_widget.new_widget.erased(),
                 )
-                .with_base_color(self.base_color),
+                .with_base_color(base_color),
             ),
             view_state,
         )
@@ -99,8 +104,10 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
         app_state: &mut State,
     ) {
         self.options.rebuild(&prev.options, window.handle());
-        if self.base_color != prev.base_color {
-            *window.base_color() = self.base_color;
+        if self.base_color != prev.base_color
+            && let Some(base_color) = self.base_color
+        {
+            *window.base_color() = base_color;
         }
 
         self.masonry_root.rebuild(

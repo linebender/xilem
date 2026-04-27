@@ -6,11 +6,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 use winit::error::EventLoopError;
 use xilem::view::{flex_col, label, text_button, text_input};
-use xilem::{AppState, EventLoop, EventLoopBuilder, WindowId, WindowView, Xilem, window};
+use xilem::{AppState, Color, EventLoop, EventLoopBuilder, WindowId, WindowView, Xilem, window};
 
 struct State {
     new_counter_name: String,
@@ -21,6 +21,7 @@ struct State {
 
 struct Counter {
     name: String,
+    color: Option<Color>,
     value: isize,
 }
 
@@ -36,14 +37,13 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
             state.main_window_id,
             "Multiple windows",
             flex_col((
-                label(format!(
-                    "{:#?}",
+                label(
                     state
                         .counters
                         .values()
-                        .map(|counter| (&counter.name, counter.value))
-                        .collect::<BTreeMap<_, _>>()
-                )),
+                        .map(|Counter { name, value, .. }| format!("{name}: {value}\n"))
+                        .collect::<String>(),
+                ),
                 text_input(
                     state.new_counter_name.clone(),
                     |state: &mut State, new_name| {
@@ -59,10 +59,17 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
                         // TODO: show error if name already exists
                         return;
                     }
+
                     let name = std::mem::take(&mut state.new_counter_name);
-                    state
-                        .counters
-                        .insert(WindowId::next(), Counter { name, value: 0 });
+                    let color = name.parse::<Color>().ok();
+                    state.counters.insert(
+                        WindowId::next(),
+                        Counter {
+                            name,
+                            color,
+                            value: 0,
+                        },
+                    );
                 }),
             )),
         )
@@ -72,9 +79,9 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
         state
             .counters
             .iter()
-            .map(|(window_id, Counter { name, value })| {
+            .map(|(window_id, Counter { name, color, value })| {
                 let window_id = *window_id;
-                window(
+                let mut window_view = window(
                     window_id,
                     name,
                     flex_col((
@@ -91,7 +98,11 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
                     o.on_close(move |state: &mut State| {
                         state.counters.remove(&window_id);
                     })
-                })
+                });
+                if let Some(color) = *color {
+                    window_view = window_view.with_base_color(color);
+                }
+                window_view
             }),
     )
     .collect::<Vec<_>>()
@@ -105,7 +116,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         running: true,
         main_window_id: WindowId::next(),
     };
-    let app = Xilem::new(data, app_logic);
+    let app = Xilem::new(data, app_logic).with_default_base_color(Color::from_rgb8(57, 71, 31));
     app.run_in(event_loop)
 }
 
