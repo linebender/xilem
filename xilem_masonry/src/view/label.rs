@@ -29,6 +29,7 @@ use crate::{Pod, TextAlign, ViewCtx};
 ///     .weight(FontWeight::BOLD)
 ///     .font(fontique::GenericFamily::Serif)
 ///     .color(palette::css::RED)
+///     .letter_spacing(-0.3)
 /// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
@@ -41,6 +42,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         line_height: LineHeight::default(),
         font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
         letter_spacing: 0.0,
+        word_spacing: 0.0,
     }
 }
 
@@ -57,6 +59,7 @@ pub struct Label {
     line_height: LineHeight,
     font: FontFamily<'static>,
     letter_spacing: f32,
+    word_spacing: f32,
     // TODO: add more attributes of `masonry::widgets::Label`
 }
 
@@ -99,6 +102,12 @@ impl Label {
         self
     }
 
+    /// Sets word spacing width.
+    pub fn word_spacing(mut self, word_spacing: f32) -> Self {
+        self.word_spacing = word_spacing;
+        self
+    }
+
     /// Set the [font family](FontFamily) this label will use.
     ///
     /// A font family allows for providing fallbacks. If there is no matching font
@@ -131,6 +140,7 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::LineHeight(self.line_height))
                 .with_style(StyleProperty::FontFamily(self.font.clone()))
+                .with_style(StyleProperty::WordSpacing(self.word_spacing))
                 .with_style(StyleProperty::LetterSpacing(self.letter_spacing))
                 .with_hint(self.enable_hinting),
         );
@@ -159,6 +169,18 @@ impl<State: 'static, Action> View<State, Action, ViewCtx> for Label {
         }
         if prev.line_height != self.line_height {
             widgets::Label::insert_style(&mut element, StyleProperty::LineHeight(self.line_height));
+        }
+        if prev.letter_spacing != self.letter_spacing {
+            widgets::Label::insert_style(
+                &mut element,
+                StyleProperty::LetterSpacing(self.letter_spacing),
+            );
+        }
+        if prev.word_spacing != self.word_spacing {
+            widgets::Label::insert_style(
+                &mut element,
+                StyleProperty::WordSpacing(self.word_spacing),
+            );
         }
         if prev.font != self.font {
             widgets::Label::insert_style(
