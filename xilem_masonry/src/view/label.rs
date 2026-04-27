@@ -26,10 +26,10 @@ use crate::{Pod, TextAlign, ViewCtx};
 /// label("Text example.")
 ///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)
+///     .letter_spacing(-0.3)
 ///     .weight(FontWeight::BOLD)
 ///     .font(fontique::GenericFamily::Serif)
 ///     .color(palette::css::RED)
-///     .letter_spacing(-0.3)
 /// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
