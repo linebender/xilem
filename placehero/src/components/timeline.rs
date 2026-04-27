@@ -9,7 +9,7 @@ use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::masonry::core::ArcStr;
 use xilem::masonry::layout::AsUnit;
 use xilem::palette::css;
-use xilem::style::{CornerRadius, Padding, Style};
+use xilem::style::{Padding, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
     MainAxisAlignment, flex_col, flex_row, prose, sized_box, spinner, virtual_scroll, worker_raw,
@@ -194,7 +194,7 @@ pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Timeline, Navi
         sized_box(flex_col((info_line, base_status(primary_status))))
             .border(css::WHITE, 2.0)
             .padding(10.0)
-            .corner_radius(CornerRadius::all(5.)),
+            .corner_radius(5.),
     )
     .padding(Padding::from_vh(5., 4.))
 }

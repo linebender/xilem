@@ -60,7 +60,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Badge
     properties.insert::<Badge, _>(Padding::from_vh(3., 5.));
-    properties.insert::<Badge, _>(CornerRadius::all(999.));
+    properties.insert::<Badge, _>(CornerRadius { radius: 999. });
     properties.insert::<Badge, _>(BorderWidth { width: 0. });
     properties.insert::<Badge, _>(Background::Color(ACCENT_COLOR));
     properties.insert::<Badge, _>(BorderColor { color: ZYNC_700 });
@@ -75,7 +75,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Button
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Button, _>(CornerRadius::all(6.));
+    properties.insert::<Button, _>(CornerRadius { radius: 6. });
     properties.insert::<Button, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -103,7 +103,7 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // Checkbox
-    properties.insert::<Checkbox, _>(CornerRadius::all(4.));
+    properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
     properties.insert::<Checkbox, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -148,7 +148,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
 
     // Switch
-    properties.insert::<Switch, _>(CornerRadius::all(10.0)); // Full pill shape
+    properties.insert::<Switch, _>(CornerRadius { radius: 10. }); // Full pill shape
     properties.insert::<Switch, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -187,7 +187,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Selector
     properties.insert::<SelectorButton, _>(Padding::from_vh(6., 16.));
-    properties.insert::<SelectorButton, _>(CornerRadius::all(2.));
+    properties.insert::<SelectorButton, _>(CornerRadius { radius: 2. });
     properties.insert::<SelectorButton, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -239,7 +239,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // TextInput
     properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
-    properties.insert::<TextInput, _>(CornerRadius::all(4.));
+    properties.insert::<TextInput, _>(CornerRadius { radius: 4. });
     properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -309,7 +309,7 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // ProgressBar
-    properties.insert::<ProgressBar, _>(CornerRadius::all(2.));
+    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
     properties.insert::<ProgressBar, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -382,7 +382,7 @@ pub fn default_text_styles(styles: &mut StyleSet) {
 
 fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
     properties.insert::<StepInput<T>, _>(Padding::from_vh(6., 0.));
-    properties.insert::<StepInput<T>, _>(CornerRadius::all(6.));
+    properties.insert::<StepInput<T>, _>(CornerRadius { radius: 6. });
     properties.insert::<StepInput<T>, _>(BorderWidth {
         width: BORDER_WIDTH,
     });

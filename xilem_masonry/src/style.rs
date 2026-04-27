@@ -123,11 +123,11 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     }
 
     /// Sets the element's corner radius.
-    fn corner_radius(self, radius: CornerRadius) -> Prop<CornerRadius, Self, State, Action>
+    fn corner_radius(self, radius: f64) -> Prop<CornerRadius, Self, State, Action>
     where
         Self::Widget: UsesProperty<CornerRadius>,
     {
-        self.prop(radius)
+        self.prop(CornerRadius { radius })
     }
 
     /// Sets the element's padding.

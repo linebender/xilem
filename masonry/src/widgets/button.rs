@@ -374,7 +374,7 @@ mod tests {
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
             button.insert_prop(BorderWidth { width: 5.0 });
-            button.insert_prop(CornerRadius::all(20.0));
+            button.insert_prop(CornerRadius { radius: 20.0 });
             button.insert_prop(Padding::from_vh(3., 8.));
 
             let mut label = Button::child_mut(&mut button);
