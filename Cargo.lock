@@ -758,6 +758,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "components"
+version = "0.0.0"
+dependencies = [
+ "console_error_panic_hook",
+ "time",
+ "wasm-bindgen",
+ "web-sys",
+ "xilem_web",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4568,6 +4579,7 @@ checksum = "743bd48c283afc0388f9b8827b976905fb217ad9e647fae3a379a9283c4def2c"
 dependencies = [
  "deranged",
  "itoa",
+ "js-sys",
  "libc",
  "num-conv",
  "num_threads",
