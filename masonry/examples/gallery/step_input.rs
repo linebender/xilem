@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{
     ErasedAction, Handled, NewWidget, PropertyStack, Selector, StyleProperty, Widget, WidgetId,
     WidgetTag,
@@ -63,7 +63,7 @@ impl DemoPage for StepInputDemo {
         self.shell
     }
 
-    fn on_selected(&mut self, render_root: &mut RenderRoot) {
+    fn on_selected(&mut self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
         if self.initialized {
             return;
         }
@@ -103,7 +103,7 @@ impl DemoPage for StepInputDemo {
         );
 
         let id = render_root.property_arena().insert(stack);
-        render_root.edit_widget_with_tag(self.tag_custom, |mut widget| {
+        render_root.edit_widget_with_tag(app_ctx, self.tag_custom, |mut widget| {
             widget.ctx.set_property_stack(id);
         });
 
@@ -112,6 +112,7 @@ impl DemoPage for StepInputDemo {
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -122,10 +123,10 @@ impl DemoPage for StepInputDemo {
                 .unwrap()
                 .id();
             if widget_id == id_balance {
-                render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_left, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
                 });
-                render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_right, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL / 2);
                 });
                 return Handled::Yes;
@@ -142,12 +143,12 @@ impl DemoPage for StepInputDemo {
                 .id();
 
             if widget_id == id_left {
-                render_root.edit_widget_with_tag(self.tag_right, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_right, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
                 });
                 return Handled::Yes;
             } else if widget_id == id_right {
-                render_root.edit_widget_with_tag(self.tag_left, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_left, |mut widget| {
                     StepInput::set_base(&mut widget, BALANCE_TOTAL - value);
                 });
                 return Handled::Yes;

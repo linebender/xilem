@@ -3,12 +3,17 @@
 
 use tracing::debug;
 
-use crate::app::{RenderRoot, RenderRootSignal};
+use crate::app::{AppCtx, RenderRoot, RenderRootSignal};
 use crate::core::{ActionCtx, ErasedAction, Handled, PropertiesMut, WidgetId};
 use crate::passes::{enter_span, merge_state_up};
 
 /// Propagates the `action` from the `source` all the way up to the root widget.
-fn handle_action(root: &mut RenderRoot, action: &ErasedAction, source: WidgetId) -> Handled {
+fn handle_action(
+    app_ctx: &mut AppCtx,
+    root: &mut RenderRoot,
+    action: &ErasedAction,
+    source: WidgetId,
+) -> Handled {
     let mut next_widget_id = root.widget_arena.parent_of(source);
     let mut is_handled = false;
 
@@ -31,6 +36,7 @@ fn handle_action(root: &mut RenderRoot, action: &ErasedAction, source: WidgetId)
             let class_set = &node.item.class_set;
 
             let mut ctx = ActionCtx {
+                app_ctx,
                 global_state: &mut root.global_state,
                 widget_state: &mut node.item.state,
                 children: node.children.reborrow_mut(),
@@ -59,7 +65,7 @@ fn handle_action(root: &mut RenderRoot, action: &ErasedAction, source: WidgetId)
 /// Propagate actions from the source widgets up all the way to the app driver.
 ///
 /// See the [passes documentation](crate::doc::pass_system#the-action-pass).
-pub(crate) fn run_action_pass(root: &mut RenderRoot) {
+pub(crate) fn run_action_pass(app_ctx: &mut AppCtx, root: &mut RenderRoot) {
     let actions = std::mem::take(&mut root.global_state.actions);
     for (action, source) in actions {
         if !root.has_widget(source) {
@@ -79,7 +85,7 @@ pub(crate) fn run_action_pass(root: &mut RenderRoot) {
             );
             continue;
         }
-        if let Handled::No = handle_action(root, &action, source) {
+        if let Handled::No = handle_action(app_ctx, root, &action, source) {
             root.global_state
                 .emit_signal(RenderRootSignal::Action(action, source));
         }

@@ -11,7 +11,7 @@ use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
+use crate::app::{AppCtx, RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
 use crate::core::{
     ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget, WidgetArenaNode,
     WidgetState,
@@ -163,6 +163,7 @@ fn resolve_len_def(
 ///
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_length(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -211,6 +212,7 @@ pub(crate) fn resolve_length(
     // Otherwise fall back to measurement
     let mut children = node.children;
     let mut ctx = MeasureCtx {
+        app_ctx,
         global_state,
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
@@ -252,6 +254,7 @@ pub(crate) fn resolve_length(
 ///
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_size(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -309,6 +312,7 @@ pub(crate) fn resolve_size(
     // Otherwise fall back to measurement
     let mut children = node.children;
     let mut ctx = MeasureCtx {
+        app_ctx,
         global_state,
         widget_state: &mut node.item.state,
         children: children.reborrow_mut(),
@@ -362,6 +366,7 @@ pub(crate) fn resolve_size(
 ///
 /// [`Widget::layout`]: crate::core::Widget::layout
 pub(crate) fn run_layout_on(
+    app_ctx: &mut AppCtx,
     global_state: &mut RenderRootState,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -484,6 +489,7 @@ pub(crate) fn run_layout_on(
     let content_box_size = padding.size_down(content_box_size, scale);
 
     let mut ctx = LayoutCtx {
+        app_ctx,
         global_state,
         widget_state: state,
         children: children.reborrow_mut(),
@@ -596,7 +602,7 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
 
 // --- MARK: ROOT
 /// See the [passes documentation](crate::doc::pass_system#layout-pass).
-pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
+pub(crate) fn run_layout_pass(app_ctx: &mut AppCtx, root: &mut RenderRoot) {
     if !root.root_state().needs_layout() {
         return;
     }
@@ -608,6 +614,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let mut root_node = root.widget_arena.get_node_mut(root.root_id());
     let root_node_size = match root.global_state.size_policy {
         WindowSizePolicy::User => resolve_size(
+            app_ctx,
             &mut root.global_state,
             &root.property_arena,
             root_node.reborrow_mut(),
@@ -615,6 +622,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
             window_size.into(),
         ),
         WindowSizePolicy::Content => resolve_size(
+            app_ctx,
             &mut root.global_state,
             &root.property_arena,
             root_node.reborrow_mut(),
@@ -624,6 +632,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     };
 
     run_layout_on(
+        app_ctx,
         &mut root.global_state,
         &root.property_arena,
         root_node.reborrow_mut(),
