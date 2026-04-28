@@ -127,73 +127,6 @@ impl<T> DataMap<T> {
         }
     }
 
-    fn find_node(&self, id: NodeId) -> Option<&TreeNode<T>> {
-        let node_cell = self.items.get(&id)?;
-
-        // SAFETY
-        // We need there to be no mutable access to the node
-        // Mutable access to the node would imply there is some &mut self
-        // As we are taking &self, there can be no mutable access to the node
-        // Thus this is safe
-
-        Some(unsafe { node_cell.get().as_ref()? })
-    }
-
-    /// Finds an item in the tree.
-    ///
-    /// Returns a shared reference to the item if present.
-    ///
-    /// Time Complexity O(1)
-    fn find_inner(&self, id: NodeId) -> Option<ArenaRef<'_, T>> {
-        let parent_id = *self.parents.get(&id)?;
-
-        let TreeNode { item, .. } = self.find_node(id)?;
-
-        let children = ArenaRefList {
-            parent_arena: self,
-            parent_id: Some(id),
-        };
-
-        Some(ArenaRef {
-            parent_id,
-            item,
-            children,
-        })
-    }
-
-    /// Finds an item in the tree.
-    ///
-    /// Returns a mutable reference to the item if present.
-    ///
-    /// Time Complexity O(1)
-    fn find_mut_inner(&mut self, id: NodeId) -> Option<ArenaMut<'_, T>> {
-        let parent_id = *self.parents.get(&id)?;
-        let node_cell = self.items.get(&id)?;
-
-        // SAFETY
-        //
-        // When using this on [`ArenaMutList`] associated with some node,
-        // must ensure that `id` is a descendant of that node, otherwise can
-        // obtain two mutable references to the same node
-        //
-        // Similarly we cannot take any other actions that would affect this node,
-        // such as removing it or removing a parent (and thus this node) or violate
-        // exclusivity by creating a shared reference to the node
-        let TreeNode { item, children } = unsafe { node_cell.get().as_mut()? };
-
-        let children = ArenaMutList {
-            parent_arena: self,
-            parent_id: Some(id),
-            child_arr: children,
-        };
-
-        Some(ArenaMut {
-            parent_id,
-            item,
-            children,
-        })
-    }
-
     /// Returns the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
@@ -289,7 +222,7 @@ impl<T> TreeArena<T> {
     /// - O(Depth) in the safe implementation.
     /// - O(1) in the unsafe implementation.
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
-        self.data_map.find_inner(id.into())
+        self.roots().find_inner(id.into())
     }
 
     /// Finds an item in the tree.
@@ -301,8 +234,8 @@ impl<T> TreeArena<T> {
     /// - O(Depth) in the safe implementation.
     /// - O(1) in the unsafe implementation.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
-        // safe as derived from the arena itself and has assoc lifetime with the arena
-        self.data_map.find_mut_inner(id.into())
+        // SAFETY: id will always point to a descendant of the root list.
+        unsafe { self.roots_mut().find_mut_inner(id.into()) }
     }
 
     /// Returns the path of items from the given item to the root of the tree.
@@ -387,7 +320,6 @@ impl<T> ArenaRef<'_, T> {
     // (since the roots are stored in the TreeArena to which the ArenaRefList doesn't have access).
     pub fn child_ids(&self) -> impl IntoIterator<Item = NodeId> {
         self.children
-            .parent_arena
             .find_node(self.id())
             .into_iter()
             .flat_map(|c: &TreeNode<T>| &c.children)
@@ -431,7 +363,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     pub fn item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.has(id) {
-            self.parent_arena.find_inner(id)
+            self.find_inner(id)
         } else {
             None
         }
@@ -451,10 +383,49 @@ impl<'arena, T> ArenaRefList<'arena, T> {
         let id: NodeId = id.into();
 
         if self.is_descendant(id) {
-            self.parent_arena.find_inner(id)
+            self.find_inner(id)
         } else {
             None
         }
+    }
+
+    /// Finds an item in the tree.
+    fn find_inner(self, id: NodeId) -> Option<ArenaRef<'arena, T>> {
+        let parent_id = *self.parent_arena.parents.get(&id)?;
+
+        let TreeNode { item, .. } = self.find_node(id)?;
+
+        let children = ArenaRefList {
+            parent_arena: self.parent_arena,
+            parent_id: Some(id),
+        };
+
+        Some(ArenaRef {
+            parent_id,
+            item,
+            children,
+        })
+    }
+
+    fn find_node(self, id: NodeId) -> Option<&'arena TreeNode<T>> {
+        let node_cell = self.parent_arena.items.get(&id)?;
+
+        // SAFETY
+        //
+        // `node_cell.get().as_ref()` creates a shared borrow of the node
+        // with a lifetime of 'arena.
+        //
+        // This is sound because `self.arena` is a `&DataMap<T>`, and the only other code
+        // path that can access `node_cell` is `ArenaMutList::find_mut_inner`.
+        // `ArenaMutList::parent_arena` is a `&mut DataMap<T>`, which means that an
+        // `ArenaRefList` can't be constructed as long as an `ArenaMutList` is live.
+        //
+        // In other words, this method can only be called when no mutable view of
+        // node_cell is live.
+
+        // TODO - Rewrite above description after disjoint borrows are added.
+
+        Some(unsafe { node_cell.get().as_ref()? })
     }
 }
 
@@ -504,7 +475,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has(id) {
-            self.parent_arena.find_inner(id)
+            self.reborrow().find_inner(id)
         } else {
             None
         }
@@ -514,8 +485,8 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     pub fn item_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
         if self.has(id) {
-            // safe as we check the node is a direct child node
-            self.parent_arena.find_mut_inner(id)
+            // SAFETY: We just checked that `id` is a direct child of self.
+            unsafe { self.reborrow_mut().find_mut_inner(id) }
         } else {
             None
         }
@@ -528,7 +499,11 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.has(id) {
-            self.parent_arena.find_inner(id)
+            let reborrow = ArenaRefList {
+                parent_arena: self.parent_arena,
+                parent_id: self.parent_id,
+            };
+            reborrow.find_inner(id)
         } else {
             None
         }
@@ -541,8 +516,8 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     pub fn into_item_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
         if self.has(id) {
-            // safe as we check the node is a direct child node
-            self.parent_arena.find_mut_inner(id)
+            // SAFETY: We just checked that `id` is a direct child of self.
+            unsafe { self.find_mut_inner(id) }
         } else {
             None
         }
@@ -582,7 +557,9 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .items
             .insert(child_id, Box::new(UnsafeCell::new(node)));
 
-        self.parent_arena.find_mut_inner(child_id).unwrap()
+        // SAFETY: We just inserted `child_id` into the arena,
+        // so we know it's a descendant of self.
+        unsafe { self.reborrow_mut().find_mut_inner(child_id).unwrap() }
     }
 
     // TODO - How to handle when a subtree is removed?
@@ -659,11 +636,58 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     pub fn find_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
         if self.is_descendant(id) {
-            // safe as we check the node is a descendant
-            self.parent_arena.find_mut_inner(id)
+            // SAFETY: We just checked that `id` is a descendant of self.
+            unsafe { self.find_mut_inner(id) }
         } else {
             None
         }
+    }
+
+    /// Finds an item in the tree.
+    ///
+    /// Returns `None` if `id` is not in the tree.
+    ///
+    /// # Safety
+    ///
+    /// If `id` is in the tree, it must be a descendant of this list.
+    unsafe fn find_mut_inner(self, id: NodeId) -> Option<ArenaMut<'arena, T>> {
+        let arena = self.parent_arena;
+        let parent_id = *arena.parents.get(&id)?;
+        let node_cell = arena.items.get(&id)?;
+
+        // SAFETY
+        //
+        // `node_cell.get().as_mut()` uses pointer trickery to get us two references to
+        // overlapping data:
+        // - `arena` points to the entire arena
+        // - `node` points to the specific node
+        //
+        // (Both references have a lifetime of 'arena)
+        //
+        // This is sound because `arena` is wrapped in `ArenaMutList`, and users of
+        // `ArenaMutList` are only allowed to use it to read/mutate children of the node
+        // at `id` (as required by the safety precondition of this method).
+        //
+        // Note that "to read/mutate children of the node" includes inserting or removing
+        // children. Doing so can reallocate the arena; this is sound, because the arena
+        // stores its nodes in boxes. Reallocating the arena does not invalidate `node`.
+        //
+        // FIXME - That last paragraph may actually be wrong.
+        // See https://github.com/Storyyeller/stable_deref_trait/issues/15
+        let node = unsafe { node_cell.get().as_mut()? };
+        let TreeNode { item, children } = node;
+
+        let children = ArenaMutList {
+            parent_arena: arena,
+            parent_id: Some(id),
+            child_arr: children,
+        };
+
+        Some(ArenaMut {
+            parent_id,
+            item,
+            children,
+        })
     }
 
     /// Used in tests to simulate a call to `Self::insert` or `Self::remove` that
