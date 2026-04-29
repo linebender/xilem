@@ -9,7 +9,7 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
@@ -46,7 +46,6 @@ pub struct ScrollBar {
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
     grab_anchor: Option<f64>,
-    expanded: bool,
 }
 
 // --- MARK: BUILDERS
@@ -63,7 +62,6 @@ impl ScrollBar {
             portal_size,
             content_size,
             grab_anchor: None,
-            expanded: false,
         }
     }
 }
@@ -340,16 +338,6 @@ impl Widget for ScrollBar {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        match event {
-            Update::HoveredChanged(received) => {
-                self.expanded = *received;
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
-    }
-
     fn measure(
         &mut self,
         _ctx: &mut MeasureCtx<'_>,
@@ -391,12 +379,11 @@ impl Widget for ScrollBar {
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
         let size = ctx.content_box_size();
-        let inset_start = cursor_padding
-            + if self.expanded {
-                0.
-            } else {
-                scrollbar_width / 2.
-            };
+        let inset_start = if ctx.is_hovered() || self.grab_anchor.is_some() {
+            cursor_padding
+        } else {
+            cursor_padding + scrollbar_width / 2.
+        };
         let (inset_x0, inset_y0) = self.axis.pack_xy(0.0, inset_start);
         let (inset_x1, inset_y1) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
