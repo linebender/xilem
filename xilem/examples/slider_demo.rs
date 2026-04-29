@@ -70,7 +70,7 @@ where
 {
     flex_row((
         label(label_text).width(40.px()),
-        slider(0.0, 100.0, value, on_change).dims((200.px(), 24.px())),
+        slider(0.0, 100.0, value, on_change).width(200.px()),
         label(format!("{:.0}% [{}]", value, u_value)).width(60.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -115,7 +115,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 })
                 .step(5.0)
                 .disabled(!state.use_transparency)
-                .dims((200.px(), 24.px()))
+                .width(200.px())
                 .prop(TrackColor {
                     active: Color::from_rgb8(0x78, 0x71, 0x6c),
                     ..Default::default()

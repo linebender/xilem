@@ -376,7 +376,13 @@ impl Widget for Slider {
         let thumb_color = props.get::<ThumbColor>(cache).0;
         let track_thickness = props.get::<TrackThickness>(cache).0.get();
         let thumb_radius = props.get::<ThumbRadius>(cache).0.get();
-        let thumb_border_width = 2.0;
+        let thumb_border_width = if ctx.is_active() {
+            2.5
+        } else if ctx.is_hovered() {
+            1.5
+        } else {
+            2.
+        };
 
         // Calculate geometry based on state
         let size = ctx.content_box_size();
@@ -413,7 +419,7 @@ impl Widget for Slider {
         // Paint thumb
         let thumb_x = thumb_radius + progress * (size.width - thumb_radius * 2.).max(0.);
         let thumb_y = size.height / 2.;
-        let thumb_circle = Circle::new((thumb_x, thumb_y), thumb_radius);
+        let thumb_circle = Circle::new((thumb_x, thumb_y), thumb_radius - thumb_border_width / 2.);
 
         painter.fill(thumb_circle, thumb_color).draw();
         painter
