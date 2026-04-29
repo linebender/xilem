@@ -9,7 +9,7 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
@@ -338,14 +338,6 @@ impl Widget for ScrollBar {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
-    }
-
     fn measure(
         &mut self,
         _ctx: &mut MeasureCtx<'_>,
@@ -384,12 +376,19 @@ impl Widget for ScrollBar {
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
+        let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
         let size = ctx.content_box_size();
-        let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
+        let inset_start = if ctx.is_hovered() || self.grab_anchor.is_some() {
+            cursor_padding
+        } else {
+            cursor_padding + scrollbar_width / 2.
+        };
+        let (inset_x0, inset_y0) = self.axis.pack_xy(0.0, inset_start);
+        let (inset_x1, inset_y1) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
             .cursor_rect(size, cursor_min_length)
-            .inset((-inset_x, -inset_y))
+            .inset((-inset_x0, -inset_y0, -inset_x1, -inset_y1))
             .to_rounded_rect(radius);
 
         painter.fill(cursor_rect, theme::SCROLLBAR_COLOR).draw();
@@ -481,6 +480,9 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
+        harness.mouse_move((5., 50.));
+        assert_render_snapshot!(harness, "scrollbar_hovered");
+
         assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(scrollbar_id, None);
@@ -507,6 +509,9 @@ mod tests {
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
+
+        harness.mouse_move((50., 5.));
+        assert_render_snapshot!(harness, "scrollbar_horizontal_hovered");
 
         assert!(harness.pop_action_erased().is_none());
 
