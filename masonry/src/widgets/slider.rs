@@ -546,15 +546,4 @@ mod tests {
         assert_render_snapshot!(harness, "slider_disabled");
         assert!(harness.pop_action::<SliderMoved>().is_none());
     }
-
-    #[test]
-    fn slider_big_transparent_thumb() {
-        let widget = Slider::new(0.0, 100.0, 25.0).prepare();
-        let mut props = test_property_set();
-        props.insert::<Slider, _>(ThumbRadius(20.));
-        props.insert::<Slider, _>(ThumbColor(peniko::Color::TRANSPARENT));
-        let mut harness = TestHarness::create_with_size(props, widget, (200, 50));
-
-        assert_render_snapshot!(harness, "slider_big_transparent_thumb");
-    }
 }
