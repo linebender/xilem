@@ -5,7 +5,6 @@ use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
 use crate::peniko::Color;
-use crate::theme;
 
 /// The thickness of a slider's track, in logical pixels.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -13,7 +12,7 @@ pub struct TrackThickness(pub f64);
 
 impl Property for TrackThickness {
     fn static_default() -> &'static Self {
-        static DEFAULT: TrackThickness = TrackThickness(4.);
+        static DEFAULT: TrackThickness = TrackThickness(0.);
         &DEFAULT
     }
 }
@@ -40,8 +39,8 @@ pub struct TrackColor {
 impl Property for TrackColor {
     fn static_default() -> &'static Self {
         static DEFAULT: TrackColor = TrackColor {
-            active: theme::ACCENT_COLOR,
-            inactive: theme::ZYNC_800,
+            active: Color::TRANSPARENT,
+            inactive: Color::TRANSPARENT,
         };
         &DEFAULT
     }
@@ -68,7 +67,7 @@ pub struct ThumbRadius(pub f64);
 
 impl Property for ThumbRadius {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbRadius = ThumbRadius(6.);
+        static DEFAULT: ThumbRadius = ThumbRadius(0.);
         &DEFAULT
     }
 }
@@ -88,7 +87,7 @@ pub struct ThumbColor(pub Color);
 
 impl Property for ThumbColor {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbColor = ThumbColor(theme::TEXT_COLOR);
+        static DEFAULT: ThumbColor = ThumbColor(Color::TRANSPARENT);
         &DEFAULT
     }
 }

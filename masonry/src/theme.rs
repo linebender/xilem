@@ -6,7 +6,7 @@
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
 use crate::core::{
-    DefaultProperties, Property, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
+    DefaultProperties, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
 };
 use crate::layout::Length;
 use crate::palette::css::DIM_GRAY;
@@ -351,6 +351,13 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // Slider
+    properties.insert::<Slider, _>(TrackThickness(4.));
+    properties.insert::<Slider, _>(TrackColor {
+        active: ACCENT_COLOR,
+        inactive: ZYNC_800,
+    });
+    properties.insert::<Slider, _>(ThumbColor(TEXT_COLOR));
+    properties.insert::<Slider, _>(ThumbRadius(7.));
     {
         let mut stack = PropertyStack::new();
         stack.push(
