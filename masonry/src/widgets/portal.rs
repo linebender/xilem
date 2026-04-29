@@ -18,6 +18,9 @@ use crate::kurbo::{Axis, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
 use crate::widgets::ScrollBar;
 
+// TODO: make this configurable or move to theme
+const SCROLLBAR_ANIM_OVER_MILLIS: f32 = 300.;
+
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
 // TODO - rename "Portal" to "ScrollPortal"?
 // TODO - Document which cases need request_layout, request_compose and request_render
@@ -54,6 +57,7 @@ pub struct Portal<W: Widget + ?Sized> {
     scrollbar_horizontal_visible: bool,
     scrollbar_vertical: WidgetPod<ScrollBar>,
     scrollbar_vertical_visible: bool,
+    nanos_since_last_pointer_move: Option<u64>,
 }
 
 // --- MARK: BUILDERS
@@ -72,6 +76,7 @@ impl<W: Widget + ?Sized> Portal<W> {
             scrollbar_horizontal_visible: false,
             scrollbar_vertical: WidgetPod::new(ScrollBar::new(Axis::Vertical, 0.0, 0.0)),
             scrollbar_vertical_visible: false,
+            nanos_since_last_pointer_move: None,
         }
     }
 
@@ -441,6 +446,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     ctx.set_handled();
                 };
             }
+            PointerEvent::Move(_) => {
+                let f = |mut bar: WidgetMut<'_, ScrollBar>| {
+                    if bar.widget.opacity.value() == 0. {
+                        bar.widget.opacity.move_to(1., SCROLLBAR_ANIM_OVER_MILLIS);
+                        bar.ctx.request_anim_frame();
+                    }
+                };
+                ctx.mutate_child_later(&mut self.scrollbar_horizontal, f);
+                ctx.mutate_child_later(&mut self.scrollbar_vertical, f);
+
+                self.nanos_since_last_pointer_move = Some(0);
+                ctx.request_anim_frame();
+            }
             _ => (),
         }
 
@@ -617,6 +635,31 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         // progress, we synchronize the portal viewport here.
         if self.sync_viewport_from_scrollbars(ctx, portal_size, content_size) {
             ctx.set_handled();
+        }
+    }
+
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        if let Some(mut since_last_move) = self.nanos_since_last_pointer_move.take() {
+            since_last_move += interval;
+
+            // TODO: make this configurable or move to theme
+            const VISIBILITY_TIMEOUT: u64 = 400_000_000;
+            if since_last_move >= VISIBILITY_TIMEOUT {
+                let f = |mut bar: WidgetMut<'_, ScrollBar>| {
+                    bar.widget.opacity.move_to(0., SCROLLBAR_ANIM_OVER_MILLIS);
+                    bar.ctx.request_anim_frame();
+                };
+                ctx.mutate_child_later(&mut self.scrollbar_horizontal, f);
+                ctx.mutate_child_later(&mut self.scrollbar_vertical, f);
+            } else {
+                self.nanos_since_last_pointer_move = Some(since_last_move);
+                ctx.request_anim_frame();
+            }
         }
     }
 
@@ -926,6 +969,10 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (400, 400));
 
         assert_render_snapshot!(harness, "portal_button_list_no_scroll");
+
+        harness.mouse_move((200., 200.));
+        harness.animate_ms(300);
+        assert_render_snapshot!(harness, "portal_button_list_mouse_jiggle");
 
         harness.edit_root_widget(|mut portal| {
             Portal::set_viewport_pos(&mut portal, Point::new(0.0, 130.0))
