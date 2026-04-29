@@ -5,7 +5,6 @@ use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
 use crate::peniko::Color;
-use crate::theme;
 
 /// The thickness of a slider's track, in logical pixels.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -13,7 +12,7 @@ pub struct TrackThickness(pub f64);
 
 impl Property for TrackThickness {
     fn static_default() -> &'static Self {
-        static DEFAULT: TrackThickness = TrackThickness(4.);
+        static DEFAULT: TrackThickness = TrackThickness(0.);
         &DEFAULT
     }
 }
@@ -27,13 +26,48 @@ impl TrackThickness {
     }
 }
 
+/// Colors of a slider's track.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TrackColor {
+    /// Color of the active portion.
+    pub active: Color,
+
+    /// Color of the inactive portion.
+    pub inactive: Color,
+}
+
+impl Property for TrackColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: TrackColor = TrackColor {
+            active: Color::TRANSPARENT,
+            inactive: Color::TRANSPARENT,
+        };
+        &DEFAULT
+    }
+}
+
+impl Default for TrackColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl TrackColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type == TypeId::of::<Self>() {
+            ctx.request_paint_only();
+        }
+    }
+}
+
 /// The radius of a slider's thumb, in logical pixels.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct ThumbRadius(pub f64);
 
 impl Property for ThumbRadius {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbRadius = ThumbRadius(6.);
+        static DEFAULT: ThumbRadius = ThumbRadius(0.);
         &DEFAULT
     }
 }
@@ -48,13 +82,12 @@ impl ThumbRadius {
 }
 
 /// The color of a slider's thumb.
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ThumbColor(pub Color);
 
 impl Property for ThumbColor {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbColor = ThumbColor(theme::TEXT_COLOR);
+        static DEFAULT: ThumbColor = ThumbColor(Color::TRANSPARENT);
         &DEFAULT
     }
 }

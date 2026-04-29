@@ -350,6 +350,27 @@ pub fn default_property_set() -> DefaultProperties {
         properties.insert_stack::<RadioButton>(stack);
     }
 
+    // Slider
+    properties.insert::<Slider, _>(TrackThickness(4.));
+    properties.insert::<Slider, _>(TrackColor {
+        active: ACCENT_COLOR,
+        inactive: ZYNC_800,
+    });
+    properties.insert::<Slider, _>(ThumbColor(TEXT_COLOR));
+    properties.insert::<Slider, _>(ThumbRadius(7.));
+    {
+        let mut stack = PropertyStack::new();
+        stack.push(
+            Selector::new().with_hovered(true),
+            BorderColor { color: ZYNC_500 },
+        );
+        stack.push(
+            Selector::new().with_focused(true),
+            BorderColor { color: FOCUS_COLOR },
+        );
+        properties.insert_stack::<Slider>(stack);
+    }
+
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
 
@@ -366,10 +387,6 @@ pub fn default_property_set() -> DefaultProperties {
     default_step_input_style::<isize>(&mut properties);
     default_step_input_style::<f32>(&mut properties);
     default_step_input_style::<f64>(&mut properties);
-
-    // Slider
-    properties.insert::<Slider, _>(Background::Color(ZYNC_800));
-    properties.insert::<Slider, _>(BarColor(ACCENT_COLOR));
 
     properties
 }
