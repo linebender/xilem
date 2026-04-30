@@ -5,9 +5,25 @@
 
 use kurbo::Rect;
 use ui_events::keyboard::{Code, Key, KeyState, KeyboardEvent};
+use understory_timing::TimerId;
 
 use crate::dpi::PhysicalSize;
 use crate::util::Duration;
+
+/// Identifier for a timer requested by a widget.
+///
+/// Timer tokens are assigned by a [`RenderRoot`](crate::app::RenderRoot)'s
+/// timer queue. A widget can keep the token to recognize a later
+/// [`Update::Timer`] or cancel the timer before it fires.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TimerToken(pub(crate) TimerId);
+
+impl TimerToken {
+    /// Returns the integer value of the timer token.
+    pub fn to_raw(self) -> u64 {
+        self.0.get()
+    }
+}
 
 // --- MARK: TYPES
 
@@ -119,6 +135,9 @@ pub enum Update {
     ///
     /// [hovered]: crate::doc::masonry_concepts#widget-status
     ChildHoveredChanged(bool),
+
+    /// Called when a timer requested by this widget expires.
+    Timer(TimerToken),
 
     /// Called when the [active] status of the current widget changes.
     ///
@@ -284,6 +303,7 @@ impl Update {
             Self::FocusChanged(true) => "FocusChanged(true)",
             Self::ChildFocusChanged(true) => "ChildFocusChanged(true)",
             Self::RequestPanToChild(_) => "RequestPanToChild(_)",
+            Self::Timer(_) => "Timer(_)",
             Self::FontsChanged => "FontsChanged",
         }
     }

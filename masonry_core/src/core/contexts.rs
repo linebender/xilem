@@ -22,14 +22,14 @@ use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
     PaintLayerMode, PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId,
-    ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState,
+    ResizeDirection, TimerToken, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod,
+    WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{ParentLinkedList, get_debug_color};
+use crate::util::{Duration, ParentLinkedList, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -428,6 +428,34 @@ impl_context_method!(
                 &mut self.global_state.font_context,
                 &mut self.global_state.text_layout_context,
             )
+        }
+    }
+);
+
+impl_context_method!(
+    MutateCtx<'_>,
+    ActionCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    RawCtx<'_>,
+    {
+        /// Requests a timer for the current widget.
+        ///
+        /// When the timer expires, this widget receives [`Update::Timer`] with
+        /// the returned token. Timer delivery is best-effort: timers targeting
+        /// removed widgets are ignored by the host.
+        ///
+        /// [`Update::Timer`]: crate::core::Update::Timer
+        pub fn request_timer(&mut self, delay: Duration) -> TimerToken {
+            self.global_state.request_timer(self.widget_id(), delay)
+        }
+
+        /// Cancels a timer previously requested by a widget.
+        ///
+        /// Cancelling an already-fired or unknown timer is allowed and has no
+        /// effect.
+        pub fn cancel_timer(&mut self, token: TimerToken) {
+            self.global_state.cancel_timer(token);
         }
     }
 );

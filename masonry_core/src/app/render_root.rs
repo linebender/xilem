@@ -14,14 +14,15 @@ use parley::fontique::{
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
+use understory_timing::{TimerInstant, TimerQueue};
 
 use crate::app::VisualLayerPlan;
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
     Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
+    ResizeDirection, TextEvent, TimerToken, Widget, WidgetArena, WidgetArenaNode, WidgetId,
+    WidgetMut, WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
@@ -37,14 +38,19 @@ use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_fonts_pass, run_update_pointer_pass, run_update_props_pass, run_update_scroll_pass,
-    run_update_stashed_pass, run_update_widget_tree_pass,
+    run_update_stashed_pass, run_update_timer_pass, run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
 use crate::properties::Dimensions;
+use crate::util::Duration;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
 const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
+
+fn duration_to_timer_ticks(duration: Duration) -> TimerInstant {
+    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
+}
 
 // --- MARK: STRUCTS
 
@@ -165,6 +171,12 @@ pub(crate) struct RenderRootState {
 
     /// Whether the next accessibility pass tree should be updated during `render()`.
     pub(crate) access_tree_active: bool,
+
+    /// Queue of pending widget timers.
+    pub(crate) timers: TimerQueue<WidgetId>,
+
+    /// Current host-provided timer time.
+    pub(crate) timer_now: TimerInstant,
 
     /// DPI scale factor.
     ///
@@ -375,6 +387,8 @@ impl RenderRoot {
                     hovered_widget: None,
                 },
                 access_tree_active: false,
+                timers: TimerQueue::new(),
+                timer_now: 0,
                 scale_factor,
                 debug_paint,
             },
@@ -961,6 +975,52 @@ impl RenderRoot {
         self.root_state().needs_anim
     }
 
+    /// Sets the current host-provided timer time.
+    ///
+    /// The time is measured from an origin chosen by the host. All calls to
+    /// this method and [`next_timer_deadline`](Self::next_timer_deadline) must
+    /// use the same origin.
+    pub fn set_timer_time(&mut self, time: Duration) {
+        self.global_state.timer_now = duration_to_timer_ticks(time);
+    }
+
+    /// Returns the next timer deadline, measured from the host's timer origin.
+    pub fn next_timer_deadline(&self) -> Option<Duration> {
+        self.global_state
+            .timers
+            .next_deadline()
+            .map(Duration::from_nanos)
+    }
+
+    /// Delivers all timers due at or before the current timer time.
+    ///
+    /// Returns the number of timers delivered. Timers targeting removed widgets
+    /// are discarded.
+    pub fn handle_timers(&mut self) -> usize {
+        let now = self.global_state.timer_now;
+        let mut fired = Vec::new();
+        // Pop the due set before dispatch. Widget updates may request or cancel
+        // timers; those mutations should not change which timers fire in this
+        // drain cycle.
+        while let Some(timer) = self.global_state.timers.pop_expired(now) {
+            let token = TimerToken(timer.id());
+            fired.push((timer.into_target(), token));
+        }
+
+        let mut delivered = 0;
+        for (target, token) in fired {
+            if !self.widget_arena.has(target) {
+                continue;
+            }
+            run_update_timer_pass(self, target, token);
+            delivered += 1;
+        }
+        if delivered != 0 {
+            self.run_rewrite_passes();
+        }
+        delivered
+    }
+
     /// Returns true if the accessibility tree needs to be rebuilt.
     ///
     /// This will be inhibited if `access_tree_active` is false.
@@ -1005,6 +1065,17 @@ impl RenderRootState {
     /// Sends a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         (self.signal_sink)(signal);
+    }
+
+    pub(crate) fn request_timer(&mut self, target: WidgetId, delay: Duration) -> TimerToken {
+        let id = self
+            .timers
+            .schedule_once(target, self.timer_now, duration_to_timer_ticks(delay));
+        TimerToken(id)
+    }
+
+    pub(crate) fn cancel_timer(&mut self, token: TimerToken) -> bool {
+        self.timers.cancel(token.0)
     }
 
     /// Does something in this state indicate that the rewrite passes need to be reran.

@@ -857,6 +857,18 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
+    /// Sets the simulated timer time.
+    pub fn set_timer_time(&mut self, time: Duration) {
+        self.render_root.set_timer_time(time);
+    }
+
+    /// Delivers all due simulated timers.
+    pub fn handle_timers(&mut self) -> usize {
+        let delivered = self.render_root.handle_timers();
+        self.process_signals();
+        delivered
+    }
+
     /// Helper method to directly enable/disable a widget.
     pub fn set_disabled(&mut self, widget: WidgetTag<impl Widget>, disabled: bool) {
         self.edit_widget(widget, |mut target| {
