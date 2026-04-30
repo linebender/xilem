@@ -195,6 +195,10 @@ pub trait Widget: AsDynWidget + Any {
     /// [`request_anim`](UpdateCtx::request_anim_frame) unless the animation
     /// has finished.
     ///
+    /// Use timers instead of animation frames for delayed one-shot UI behavior
+    /// such as cursor blinking, tooltip delays, debounce, or long press
+    /// recognition.
+    ///
     /// On the first frame when transitioning from idle to animating, `interval`
     /// will be 0. (This logic is presently per-window but might change to
     /// per-widget to make it more consistent). Otherwise it is in nanoseconds.
