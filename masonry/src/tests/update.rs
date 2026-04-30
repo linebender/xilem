@@ -16,6 +16,7 @@ use crate::testing::{
     assert_debug_panics,
 };
 use crate::theme::test_property_set;
+use crate::util::Duration;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 // TREE
@@ -62,6 +63,65 @@ fn new_widget() {
             Record::RegisterChildren,
             Record::Update(Update::WidgetAdded)
         ]
+    );
+}
+
+#[test]
+fn timer_update_targets_widget() {
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child).record()).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+
+    harness.flush_records_of(target_tag);
+    harness.flush_records_of(parent_tag);
+
+    harness.set_timer_time(Duration::from_millis(10));
+    assert_eq!(harness.handle_timers(), 1);
+
+    let records = harness.take_records_of(target_tag);
+    assert_any(
+        records,
+        |record| matches!(record, Record::Update(Update::Timer(seen)) if seen == token),
+    );
+
+    let records = harness.take_records_of(parent_tag);
+    assert!(
+        !records
+            .iter()
+            .any(|record| matches!(record, Record::Update(Update::Timer(_)))),
+        "timer update should not bubble to the parent"
+    );
+}
+
+#[test]
+fn cancelled_timer_does_not_fire() {
+    let target_tag = WidgetTag::named("target");
+    let widget = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+    harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.cancel_timer(token);
+    });
+    harness.flush_records_of(target_tag);
+
+    harness.set_timer_time(Duration::from_millis(10));
+    assert_eq!(harness.handle_timers(), 0);
+
+    let records = harness.take_records_of(target_tag);
+    assert!(
+        !records
+            .iter()
+            .any(|record| matches!(record, Record::Update(Update::Timer(_)))),
+        "cancelled timer should not be delivered"
     );
 }
 

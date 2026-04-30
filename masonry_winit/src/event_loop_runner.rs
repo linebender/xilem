@@ -27,8 +27,9 @@ use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
+use winit::event::StartCause;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
-use winit::event_loop::{ActiveEventLoop, OwnedDisplayHandle};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, OwnedDisplayHandle};
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
@@ -132,6 +133,7 @@ pub struct Window {
     pub(crate) accesskit_adapter: Adapter,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
+    timer_origin: Instant,
     pub(crate) base_color: Color,
 }
 
@@ -147,6 +149,7 @@ impl Window {
         size: PhysicalSize<u32>,
         scale_factor: f64,
     ) -> Self {
+        let timer_origin = Instant::now();
         Self {
             id: window_id,
             handle,
@@ -166,6 +169,7 @@ impl Window {
                     test_font: None,
                 },
             ),
+            timer_origin,
             base_color,
         }
     }
@@ -349,8 +353,9 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
         self.masonry_state.handle_about_to_wait(event_loop);
     }
 
-    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: StartCause) {
+        self.masonry_state
+            .handle_new_events(event_loop, cause, self.app_driver.as_mut());
     }
 
     fn exiting(&mut self, event_loop: &ActiveEventLoop) {
@@ -603,6 +608,41 @@ impl MasonryState {
         window.handle.set_ime_allowed(false);
     }
 
+    fn next_timer_wakeup(&self) -> Option<Instant> {
+        self.windows
+            .values()
+            .filter_map(|window| {
+                let delay = window
+                    .render_root
+                    .next_timer_deadline()?
+                    .saturating_sub(window.timer_origin.elapsed());
+                Instant::now().checked_add(delay)
+            })
+            .min()
+    }
+
+    fn arm_next_timer(&self, event_loop: &ActiveEventLoop) {
+        if let Some(deadline) = self.next_timer_wakeup() {
+            event_loop.set_control_flow(ControlFlow::WaitUntil(deadline));
+        } else {
+            event_loop.set_control_flow(ControlFlow::Wait);
+        }
+    }
+
+    fn drain_due_timers(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+        let mut delivered = 0;
+        for window in self.windows.values_mut() {
+            window
+                .render_root
+                .set_timer_time(window.timer_origin.elapsed());
+            delivered += window.render_root.handle_timers();
+        }
+
+        if delivered != 0 {
+            self.handle_signals(event_loop, app_driver);
+        }
+    }
+
     // --- MARK: REDRAW
     fn redraw(&mut self, handle_id: HandleId, app_driver: &mut dyn AppDriver) {
         let _span = info_span!("redraw");
@@ -853,6 +893,9 @@ impl MasonryState {
             self.frame = Some(tracing_tracy::client::non_continuous_frame!("Masonry"));
         }
         window
+            .render_root
+            .set_timer_time(window.timer_origin.elapsed());
+        window
             .accesskit_adapter
             .process_event(&window.handle, &event);
 
@@ -995,6 +1038,9 @@ impl MasonryState {
                 self.windows.get_mut(window_id).unwrap()
             }
         };
+        window
+            .render_root
+            .set_timer_time(window.timer_origin.elapsed());
         match event {
             MasonryUserEvent::AccessKit(_, event) => {
                 match event {
@@ -1029,10 +1075,19 @@ impl MasonryState {
 
     // --- MARK: EMPTY WINIT HANDLERS
     /// Delegate method for [`ApplicationHandler::about_to_wait()`].
-    pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
+    pub fn handle_about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        self.arm_next_timer(event_loop);
+    }
 
     /// Delegate method for [`ApplicationHandler::new_events()`].
-    pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
+    pub fn handle_new_events(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _: StartCause,
+        app_driver: &mut dyn AppDriver,
+    ) {
+        self.drain_due_timers(event_loop, app_driver);
+    }
 
     /// Delegate method for [`ApplicationHandler::exiting()`].
     pub fn handle_exiting(&mut self, _: &ActiveEventLoop) {}
@@ -1168,6 +1223,8 @@ impl MasonryState {
             let window = self.windows.get(&handle_id).unwrap();
             window.handle.request_redraw();
         }
+
+        self.arm_next_timer(event_loop);
     }
 
     fn handle_id(&self, window_id: WindowId) -> HandleId {
