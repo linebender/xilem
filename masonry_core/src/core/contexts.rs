@@ -1667,6 +1667,11 @@ impl_context_method!(
         }
 
         /// Requests an animation frame.
+        ///
+        /// Use this for visual state that should advance with frame cadence,
+        /// such as continuous motion or interpolation. For delayed one-shot UI
+        /// behavior like cursor blinking, tooltip delays, debounce, or long
+        /// press recognition, prefer [`request_timer`](Self::request_timer).
         pub fn request_anim_frame(&mut self) {
             trace!("request_anim_frame");
             self.widget_state.request_anim = true;
