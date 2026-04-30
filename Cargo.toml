@@ -65,6 +65,7 @@ imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "7
 imaging_skia = { git = "https://github.com/forest-rs/imaging.git", rev = "79f02aedf5b65b4cd151ef45d8b40013d7289ee2", features = [
     "gpu",
 ] }
+understory_timing = { git = "https://github.com/forest-rs/understory.git", rev = "f6482733ee3bbba9f65b6139c3d3ffddc0708966" }
 vello = { version = "0.8.0", default-features = false, features = ["wgpu"] }
 wgpu = "28.0.0"
 kurbo = "0.13.0"

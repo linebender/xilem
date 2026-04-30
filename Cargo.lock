@@ -2467,6 +2467,7 @@ dependencies = [
  "tracing_android_trace",
  "tree_arena",
  "ui-events",
+ "understory_timing",
  "web-time",
 ]
 
@@ -5058,6 +5059,11 @@ dependencies = [
  "web-time",
  "winit",
 ]
+
+[[package]]
+name = "understory_timing"
+version = "0.1.0"
+source = "git+https://github.com/forest-rs/understory.git?rev=f6482733ee3bbba9f65b6139c3d3ffddc0708966#f6482733ee3bbba9f65b6139c3d3ffddc0708966"
 
 [[package]]
 name = "unicase"
