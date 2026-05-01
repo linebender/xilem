@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 use masonry::core::{
     CollectionWidget, DefaultProperties, ErasedAction, NewWidget, Property, PropertySet,
-    PropertyStack, Selector, StyleProperty, Widget, WidgetId,
+    PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::dpi::LogicalSize;
 use masonry::layout::AsUnit;
@@ -58,6 +58,12 @@ impl Default for CalcAction {
         *Property::static_default()
     }
 }
+
+const DISPLAY_TAG: WidgetTag<Label> = WidgetTag::named("calc-display");
+const BTN_1: WidgetTag<Button> = WidgetTag::named("btn-1");
+const BTN_2: WidgetTag<Button> = WidgetTag::named("btn-2");
+const BTN_PLUS: WidgetTag<Button> = WidgetTag::named("btn-plus");
+const BTN_EQUALS: WidgetTag<Button> = WidgetTag::named("btn-equals");
 
 // ---
 
@@ -216,9 +222,10 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
 /// Build the widget tree
 pub fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
+    let display_widget = display.prepare().with_tag(DISPLAY_TAG);
     let display = Flex::column()
         .with_spacer(1.)
-        .with_fixed(display.prepare())
+        .with_fixed(display_widget)
         .with_spacer(1.)
         .cross_axis_alignment(CrossAxisAlignment::End);
 
@@ -243,14 +250,14 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         .with(digit_button(5), button_params(1, 3))
         .with(digit_button(6), button_params(2, 3))
         .with(op_button('−'), button_params(3, 3))
-        .with(digit_button(1), button_params(0, 4))
-        .with(digit_button(2), button_params(1, 4))
+        .with(digit_button(1).with_tag(BTN_1), button_params(0, 4))
+        .with(digit_button(2).with_tag(BTN_2), button_params(1, 4))
         .with(digit_button(3), button_params(2, 4))
-        .with(op_button('+'), button_params(3, 4))
+        .with(op_button('+').with_tag(BTN_PLUS), button_params(3, 4))
         .with(op_button('±'), button_params(0, 5))
         .with(digit_button(0), button_params(1, 5))
         .with(op_button('.'), button_params(2, 5))
-        .with(op_button('='), button_params(3, 5));
+        .with(op_button('=').with_tag(BTN_EQUALS), button_params(3, 5));
 
     NewWidget::new(root_widget).with_props(
         PropertySet::new()
@@ -335,6 +342,7 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry::core::PointerButton;
     use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
@@ -347,7 +355,51 @@ mod tests {
             TestHarnessParams::default(),
         );
         assert_render_snapshot!(harness, "example_calc_masonry_initial");
+    }
 
-        // TODO - Test clicking buttons
+    #[test]
+    fn click_buttons() {
+        let mut harness = TestHarness::create_with(
+            custom_property_set(),
+            build_calc(),
+            TestHarnessParams::default(),
+        );
+
+        let press = |harness: &mut TestHarness<_>, tag: WidgetTag<Button>| {
+            let id = harness.get_widget(tag).id();
+            harness.mouse_click_on(id, Some(PointerButton::Primary));
+            assert_eq!(
+                harness.pop_action::<ButtonPress>(),
+                Some((
+                    ButtonPress {
+                        button: Some(PointerButton::Primary),
+                    },
+                    id,
+                ))
+            );
+        };
+
+        press(&mut harness, BTN_1);
+        press(&mut harness, BTN_PLUS);
+        press(&mut harness, BTN_2);
+        press(&mut harness, BTN_EQUALS);
+
+        let mut state = CalcState {
+            value: "0".to_string(),
+            operand: 0.0,
+            operator: 'C',
+            in_num: false,
+            window_id: WindowId::next(),
+        };
+        state.digit(1);
+        state.op('+');
+        state.digit(2);
+        state.op('=');
+        assert_eq!(state.value, "3");
+
+        harness.edit_widget(DISPLAY_TAG, |mut label| {
+            Label::set_text(&mut label, &*state.value);
+        });
+        assert_render_snapshot!(harness, "example_calc_masonry_after_1_plus_2");
     }
 }
