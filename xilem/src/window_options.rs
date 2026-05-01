@@ -588,10 +588,10 @@ mod windows {
 
 #[cfg(target_os = "macos")]
 mod macos {
-    use winit::platform::macos::{WindowAttributesExtMacOS, WindowExtMacOS};
+    use winit::platform::macos::WindowAttributesExtMacOS;
     use winit::window::{Window, WindowAttributes};
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Default)]
     pub(crate) struct PlatformSpecificInitialWindowAttrs {
         pub(crate) titlebar_hidden: bool,
         pub(crate) title_hidden: bool,
@@ -648,18 +648,6 @@ mod macos {
         }
 
         pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
-    }
-
-    impl Default for PlatformSpecificInitialWindowAttrs {
-        fn default() -> Self {
-            Self {
-                titlebar_hidden: false,
-                title_hidden: false,
-                fullsize_content_view: false,
-                titlebar_transparent: false,
-                movable_by_window_background: false,
-            }
-        }
     }
 
     /// Extension setters for macOS-specific window options.

@@ -181,3 +181,6 @@ pub use window_view::{PodWindow, WindowView, window};
 
 #[cfg(windows)]
 pub use window_options::WindowOptionsExtWindows;
+
+#[cfg(target_os = "macos")]
+pub use window_options::WindowOptionsExtMacOS;
