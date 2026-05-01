@@ -20,6 +20,7 @@ use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::named("text-input");
 const LIST_TAG: WidgetTag<Flex> = WidgetTag::named("list");
+const ADD_BUTTON_TAG: WidgetTag<Button> = WidgetTag::named("add-button");
 const WIDGET_SPACING: Length = Length::const_px(5.0);
 
 struct Driver {
@@ -66,7 +67,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
         TextInput::new("").with_placeholder("ex: 'Do the dishes', 'File my taxes', ..."),
     )
     .with_tag(TEXT_INPUT_TAG);
-    let button = NewWidget::new(Button::with_text("Add task"));
+    let button = NewWidget::new(Button::with_text("Add task")).with_tag(ADD_BUTTON_TAG);
 
     let portal = Portal::new(
         NewWidget::new(Flex::column().cross_axis_alignment(CrossAxisAlignment::Start))
@@ -118,6 +119,7 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry::core::PointerButton;
     use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
@@ -125,10 +127,45 @@ mod tests {
     #[test]
     fn screenshot_test() {
         let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
-
         assert_render_snapshot!(harness, "example_to_do_list_initial");
+    }
 
-        // TODO - Test clicking buttons
-        // TODO - Test typing text
+    #[test]
+    fn add_tasks() {
+        let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
+        let text_input_id = harness.get_widget(TEXT_INPUT_TAG).id();
+        let add_btn_id = harness.get_widget(ADD_BUTTON_TAG).id();
+
+        // Type a task name, click Add, then replicate Driver::on_action's
+        // work (clear the input, append a label). Re-focus on each call:
+        // clicking Add can shift focus, so the next typed text would be lost.
+        let add_task = |harness: &mut TestHarness<_>, task: &str| {
+            harness.focus_on(Some(text_input_id));
+            harness.keyboard_type_chars(task);
+            harness.mouse_click_on(add_btn_id, Some(PointerButton::Primary));
+            assert_eq!(
+                harness.pop_action::<ButtonPress>(),
+                Some((
+                    ButtonPress {
+                        button: Some(PointerButton::Primary),
+                    },
+                    add_btn_id,
+                ))
+            );
+
+            harness.edit_widget(TEXT_INPUT_TAG, |mut text_input| {
+                let mut text_area = TextInput::text_mut(&mut text_input);
+                TextArea::reset_text(&mut text_area, "");
+            });
+            harness.edit_widget(LIST_TAG, |mut list| {
+                Flex::add_fixed(&mut list, Label::new(task.to_string()).prepare());
+            });
+        };
+
+        add_task(&mut harness, "Buy milk");
+        assert_render_snapshot!(harness, "example_to_do_list_after_add");
+
+        add_task(&mut harness, "Do laundry");
+        assert_render_snapshot!(harness, "example_to_do_list_two_tasks");
     }
 }
