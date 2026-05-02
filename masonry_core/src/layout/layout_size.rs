@@ -3,24 +3,24 @@
 
 use kurbo::{Axis, Size};
 
-use crate::util::Sanitize;
+use crate::layout::Length;
 
 /// Layout width and height.
 ///
 /// A length may be missing if it has not been computed yet, i.e. it depends on the child.
-///
-/// The lengths, if present, are always finite, non-negative, and in device pixels.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct LayoutSize {
-    width: Option<f64>,
-    height: Option<f64>,
+    width: Option<Length>,
+    height: Option<Length>,
 }
 
 impl From<Size> for LayoutSize {
+    #[track_caller]
     fn from(size: Size) -> Self {
-        let width = Some(size.width).sanitize("LayoutSize width");
-        let height = Some(size.height).sanitize("LayoutSize height");
-        Self { width, height }
+        Self {
+            width: Some(Length::px(size.width)),
+            height: Some(Length::px(size.height)),
+        }
     }
 }
 
@@ -32,52 +32,29 @@ impl LayoutSize {
     };
 
     /// Creates a new [`LayoutSize`] with the given lengths.
-    ///
-    /// The lengths must be finite, non-negative, and in device pixels.
-    /// Invalid lengths will result in `None`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `width` or `height` are non-finite or negative
-    /// and debug assertions are enabled.
-    pub fn new(width: f64, height: f64) -> Self {
-        let width = Some(width).sanitize("LayoutSize width");
-        let height = Some(height).sanitize("LayoutSize height");
-        Self { width, height }
+    pub fn new(width: Length, height: Length) -> Self {
+        Self {
+            width: Some(width),
+            height: Some(height),
+        }
     }
 
     /// Creates a new [`LayoutSize`] with only the given `axis` set to `length`.
-    ///
-    /// The length must be finite, non-negative, and in device pixels.
-    /// An invalid length will result in `None`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `length` is non-finite or negative and debug assertions are enabled.
-    pub fn one(axis: Axis, length: f64) -> Self {
-        let length = Some(length).sanitize("LayoutSize length");
+    pub fn one(axis: Axis, length: Length) -> Self {
         match axis {
             Axis::Horizontal => Self {
-                width: length,
+                width: Some(length),
                 height: None,
             },
             Axis::Vertical => Self {
                 width: None,
-                height: length,
+                height: Some(length),
             },
         }
     }
 
     /// Creates a new [`LayoutSize`] with only the given `axis` set to `length`.
-    ///
-    /// The length, if present, must be finite, non-negative, and in device pixels.
-    /// An invalid length will result in `None`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `length` is present but non-finite or negative
-    /// and debug assertions are enabled.
-    pub fn maybe(axis: Axis, length: Option<f64>) -> Self {
+    pub fn maybe(axis: Axis, length: Option<Length>) -> Self {
         let Some(length) = length else {
             return Self {
                 width: None,
@@ -88,11 +65,7 @@ impl LayoutSize {
     }
 
     /// Returns the [`Length`] of the provided `axis`.
-    ///
-    /// The returned value will be finite, non-negative, and in device pixels.
-    ///
-    /// [`Length`]: crate::layout::Length
-    pub const fn length(&self, axis: Axis) -> Option<f64> {
+    pub const fn length(&self, axis: Axis) -> Option<Length> {
         match axis {
             Axis::Horizontal => self.width,
             Axis::Vertical => self.height,

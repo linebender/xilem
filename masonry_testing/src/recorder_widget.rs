@@ -26,7 +26,7 @@ use masonry_core::core::{
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
-use masonry_core::layout::LenReq;
+use masonry_core::layout::{LenReq, Length};
 
 // TODO - Re-enable doc test.
 // Doc test is currently disabled because it depends on a parent crate.
@@ -85,7 +85,7 @@ pub enum Record {
     /// Property change.
     PropertyChange(TypeId),
     /// Measure. Records the length returned by the measure method.
-    Measure(f64),
+    Measure(Length),
     /// Layout. Records the size given to the layout method.
     Layout(Size),
     /// Compose.
@@ -235,8 +235,8 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let length = self.child.measure(ctx, props, axis, len_req, cross_length);
         self.recording.push(Record::Measure(length));
         length

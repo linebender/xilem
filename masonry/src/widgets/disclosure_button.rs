@@ -144,13 +144,9 @@ impl Widget for DisclosureButton {
         _props: &PropertiesRef<'_>,
         _axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let length = DEFAULT_LENGTH.dp(scale);
+        _cross_length: Option<Length>,
+    ) -> Length {
+        let length = DEFAULT_LENGTH;
 
         match len_req {
             LenReq::MinContent | LenReq::MaxContent => length,
@@ -166,9 +162,6 @@ impl Widget for DisclosureButton {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
         let cache = ctx.property_cache();
         let button_color = props.get::<ContentColor>(cache);
 
@@ -190,7 +183,7 @@ impl Widget for DisclosureButton {
         painter
             .stroke(
                 arrow,
-                &Stroke::new(2.0 * scale).with_join(Join::Miter),
+                &Stroke::new(2.0).with_join(Join::Miter),
                 button_color.color,
             )
             .transform(affine)
@@ -200,7 +193,7 @@ impl Widget for DisclosureButton {
             // TODO: Perhaps change the color of the arrow instead?
             let rect = ctx.border_box().to_rounded_rect(2.0);
             painter
-                .stroke(rect, &Stroke::new(1.0 * scale), BrushRef::Solid(LIGHT_BLUE))
+                .stroke(rect, &Stroke::new(1.0), BrushRef::Solid(LIGHT_BLUE))
                 .draw();
         }
     }

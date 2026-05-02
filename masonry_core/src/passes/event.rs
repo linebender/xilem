@@ -27,7 +27,6 @@ fn get_pointer_target(
     }
 
     if let Some(pointer_pos) = pointer_pos {
-        // TODO - Apply scale
         let pointer_pos = (pointer_pos.x, pointer_pos.y).into();
         return root
             .get_widget(root.root_id())

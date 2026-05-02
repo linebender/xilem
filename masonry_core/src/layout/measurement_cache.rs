@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::kurbo::Axis;
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 
 /// At the time of choosing this capacity,
 /// 10 * 48 bytes = 480 bytes for the whole buffer.
@@ -22,7 +22,7 @@ const CAPACITY: usize = 10;
 /// but even if there are that is fine, because we clear the cache regularly.
 #[derive(Clone, Debug)]
 pub(crate) struct MeasurementCache {
-    entries: Vec<(MeasurementInputs, f64)>,
+    entries: Vec<(MeasurementInputs, Length)>,
 }
 
 /// All the inputs that change [`measure`] output.
@@ -35,12 +35,12 @@ pub(crate) struct MeasurementCache {
 pub(crate) struct MeasurementInputs {
     axis: Axis,
     len_req: LenReq,
-    cross_length: Option<f64>,
+    cross_length: Option<Length>,
 }
 
 impl MeasurementInputs {
     /// Creates a new [`MeasurementInputs`] with the provided data.
-    pub(crate) const fn new(axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> Self {
+    pub(crate) const fn new(axis: Axis, len_req: LenReq, cross_length: Option<Length>) -> Self {
         Self {
             axis,
             len_req,
@@ -58,7 +58,7 @@ impl MeasurementCache {
     }
 
     /// Inserts the `result` for the given `inputs` into the cache.
-    pub(crate) fn insert(&mut self, inputs: MeasurementInputs, result: f64) {
+    pub(crate) fn insert(&mut self, inputs: MeasurementInputs, result: Length) {
         if let Some(index) = self.entries.iter().position(|e| e.0 == inputs) {
             if index > 0 {
                 // Keep recently referenced entries in front
@@ -78,7 +78,7 @@ impl MeasurementCache {
     }
 
     /// Gets the cached result for the given `inputs`.
-    pub(crate) fn get(&mut self, inputs: &MeasurementInputs) -> Option<f64> {
+    pub(crate) fn get(&mut self, inputs: &MeasurementInputs) -> Option<Length> {
         let index = self.entries.iter().position(|e| &e.0 == inputs)?;
         if index > 0 {
             // Keep recently referenced entries in front

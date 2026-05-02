@@ -11,7 +11,7 @@ use masonry::core::{
 };
 use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size};
-use masonry::layout::LenReq;
+use masonry::layout::{LenReq, Length};
 
 use crate::core::Mut;
 use crate::core::one_of::OneOf;
@@ -256,8 +256,8 @@ impl<
         _props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         match self {
             Self::A(w) => ctx.redirect_measurement(w, axis, cross_length),
             Self::B(w) => ctx.redirect_measurement(w, axis, cross_length),

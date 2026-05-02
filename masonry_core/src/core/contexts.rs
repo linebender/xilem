@@ -26,7 +26,7 @@ use crate::core::{
     WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
-use crate::layout::{LayoutSize, LenDef, SizeDef};
+use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
 use crate::util::{ParentLinkedList, get_debug_color};
@@ -504,8 +504,6 @@ impl EventCtx<'_> {
     /// Converts the given position from the window's coordinate space
     /// to this widget's content-box coordinate space.
     pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
-        // TODO: Remove this .to_logical() conversion when scale refactor work happens.
-        //       https://github.com/linebender/xilem/issues/1264
         let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
         self.to_local(Point { x, y })
     }
@@ -607,9 +605,7 @@ impl AccessCtx<'_> {
 
 // --- MARK: COMPUTE LENGTH
 impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
-    /// Computes the `child`'s preferred border-box length on the given `axis`.
-    ///
-    /// The returned length will be finite, non-negative, and in device pixels.
+    /// Computes the `child`'s preferred border-box [`Length`] on the given `axis`.
     ///
     /// Container widgets usually call this method as part of their [`measure`] logic,
     /// to help them calculate their own length on the given `axis`. They call it as part
@@ -624,10 +620,8 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     /// to ask the child to fit inside the available space. Sometimes a different fallback
     /// makes more sense, e.g. `Grid` uses [`LenDef::Fixed`] to fall back to the exact
     /// allocated child area size.
-    /// `auto_length` values must be finite, non-negative, and in device pixels.
-    /// An invalid `auto_length` will fall back to [`LenDef::MaxContent`].
     ///
-    /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
+    /// `context_size` is the size that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
     /// This is usually the container widget's content-box size, i.e. excluding borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
@@ -636,14 +630,6 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
     ///
     /// `cross_length` is the length of the cross axis and is critical information for certain
     /// widgets, e.g. for text max advance or to keep an aspect ratio.
-    /// If present, `cross_length` must be finite, non-negative, and in device pixels.
-    /// An invalid `cross_length` will fall back to `None`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `auto_length` is non-finite or negative and debug assertions are enabled.
-    ///
-    /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
     ///
     /// [`measure`]: Widget::measure
     /// [`layout`]: Widget::layout
@@ -656,8 +642,8 @@ impl_context_method!(MeasureCtx<'_>, LayoutCtx<'_>, {
         auto_length: LenDef,
         context_size: LayoutSize,
         axis: Axis,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let id = child.id();
         let node = self.children.item_mut(id).unwrap();
         resolve_length(
@@ -759,13 +745,6 @@ impl MeasureCtx<'_> {
     /// This is because the redirection introduces new inputs in the form of [`auto_length`]
     /// and [`context_size`] that are not part of the cache key.
     ///
-    /// If present, `cross_length` must be finite, non-negative, and in device pixels.
-    /// An invalid `cross_length` will fall back to `None`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
-    ///
     /// [`measure`]: Widget::measure
     /// [`compute_length`]: Self::compute_length
     /// [`auto_length`]: Self::auto_length
@@ -774,8 +753,8 @@ impl MeasureCtx<'_> {
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
         axis: Axis,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         // We're adding two new variables, auto_length and context_size, into the measure function,
         // which are not part of the cache key. Hence, we need to not cache.
         self.cache_result = false;
@@ -819,7 +798,7 @@ impl LayoutCtx<'_> {
 
     /// Computes the `child`'s preferred border-box size.
     ///
-    /// The returned size will be finite, non-negative, and in device pixels.
+    /// The returned size will be finite, non-negative, and in logical pixels.
     ///
     /// Container widgets usually call this method as part of their [`layout`] logic, but
     /// ultimately they can disregard the result and pass a different size to [`run_layout`].
@@ -830,7 +809,7 @@ impl LayoutCtx<'_> {
     /// available space. However sometimes a different fallback makes more sense, e.g.
     /// `Grid` uses [`SizeDef::fixed`] to fall back to the exact allocated child area size.
     ///
-    /// `context_size` is the size, in device pixels, that is used to resolve relative sizes.
+    /// `context_size` is the size that is used to resolve relative sizes.
     /// For example [`Ratio(0.5)`] will result in half the context size.
     /// This is usually the container widget's content-box size, i.e. excluding borders and padding.
     /// Examples of exceptions include `Grid` which will provide the child's area size,
@@ -869,7 +848,7 @@ impl LayoutCtx<'_> {
     /// If the chosen border-box `size` is smaller than what is required to fit the child's
     /// borders and padding, then the `size` will be expanded to meet those constraints.
     ///
-    /// The provided `size` must be finite, non-negative, and in device pixels.
+    /// The provided `size` must be finite, non-negative, and in logical pixels.
     /// Non-finite or negative size will fall back to zero with a logged warning.
     ///
     /// # Panics
@@ -1364,8 +1343,6 @@ impl_context_method!(
 );
 
 impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
-    // TODO - Once Masonry uses physical coordinates, add this method everywhere.
-    // See https://github.com/linebender/xilem/issues/1264
     /// Returns DPI scaling factor.
     ///
     /// This is not required for most widgets, and should be used only for precise

@@ -32,7 +32,7 @@ trait Widget {
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, interval: u64);
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update);
 
-    fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<f64>) -> f64;
+    fn measure(&mut self, ctx: &mut MeasureCtx<'_>, props: &PropertiesRef<'_>, axis: Axis, len_req: LenReq, cross_length: Option<Length>) -> Length;
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, painter: &mut Painter<'_>);
@@ -169,7 +169,7 @@ Next we implement layout:
 ```rust,ignore
 use masonry::core::{LayoutCtx, MeasureCtx, PropertiesRef};
 use masonry::kurbo::{Axis, Size};
-use masonry::layout::LenReq;
+use masonry::layout::{Length, LenReq};
 
 impl Widget for ColorRectangle {
     // ...
@@ -180,16 +180,13 @@ impl Widget for ColorRectangle {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
+        _cross_length: Option<Length>,
+    ) -> Length {
 
         match len_req {
             LenReq::MinContent | LenReq::MaxContent => match axis {
-                Axis::Horizontal => 200. * scale,
-                Axis::Vertical => 100. * scale,
+                Axis::Horizontal => 200.px(),
+                Axis::Vertical => 100.px(),
             }
             LenReq::FitContent(space) => space,
         }

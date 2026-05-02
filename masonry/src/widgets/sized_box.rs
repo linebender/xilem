@@ -225,22 +225,20 @@ impl Widget for SizedBox {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         let cache = ctx.property_cache();
         let border = props.get::<BorderWidth>(cache);
         let padding = props.get::<Padding>(cache);
 
-        let border_length = border.length(axis).dp(scale);
-        let padding_length = padding.length(axis).dp(scale);
+        let border_length = border.length(axis);
+        let padding_length = padding.length(axis);
 
         // First see if we have an explicitly defined length
         if let Some(length) = self.length(axis) {
-            return (length.dp(scale) - border_length - padding_length).max(0.);
+            return length
+                .saturating_sub(border_length)
+                .saturating_sub(padding_length);
         }
 
         // Otherwise measure the child
@@ -254,9 +252,9 @@ impl Widget for SizedBox {
                     Axis::Vertical => self.height,
                 };
                 length.map(|length| {
-                    let cross_border_length = border.length(cross).dp(scale);
-                    let cross_padding_length = padding.length(cross).dp(scale);
-                    (length.dp(scale) - cross_border_length - cross_padding_length).max(0.)
+                    length
+                        .saturating_sub(border.length(cross))
+                        .saturating_sub(padding.length(cross))
                 })
             });
 
@@ -265,7 +263,7 @@ impl Widget for SizedBox {
 
             ctx.compute_length(child, auto_length, context_size, axis, cross_length)
         } else {
-            0.
+            Length::ZERO
         }
     }
 

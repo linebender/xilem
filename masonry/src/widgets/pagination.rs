@@ -13,7 +13,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::widgets::{Button, ButtonPress, Label};
 
 /// Pagination for navigating between different page numbers.
@@ -315,9 +315,9 @@ impl Widget for Pagination {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        let mut length = 0.;
+        cross_length: Option<Length>,
+    ) -> Length {
+        let mut length = Length::ZERO;
 
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
@@ -331,7 +331,7 @@ impl Widget for Pagination {
                 cross_length,
             );
             length = match axis {
-                Axis::Horizontal => length + button_length,
+                Axis::Horizontal => length.saturating_add(button_length),
                 Axis::Vertical => length.max(button_length),
             };
         }

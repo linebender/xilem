@@ -13,9 +13,7 @@ pub enum Dim {
     /// [`measure`]: crate::core::Widget::measure
     #[default]
     Auto,
-    /// Specific fixed length.
-    ///
-    /// The value is in logical pixels, represented by a [`Length`].
+    /// Specific fixed [`Length`].
     Fixed(Length),
     /// Multiple of context length.
     ///
@@ -72,11 +70,17 @@ impl From<Length> for Dim {
 impl Dim {
     /// Resolves, if possible, into a [`LenDef`].
     ///
-    /// If `context_length` is provided, it must be in device pixels.
-    pub fn resolve(&self, scale: f64, context_length: Option<f64>) -> Option<LenDef> {
+    /// # Panics
+    ///
+    /// Panics if ratio resolves to a non-finite or negative value and debug assertions are enabled.
+    /// This can happen if the numbers are huge, e.g. a logical size of `f64::MAX` scaled by `1.5`.
+    pub fn resolve(&self, context_length: Option<Length>) -> Option<LenDef> {
         match self {
-            Self::Fixed(length) => Some(LenDef::Fixed(length.dp(scale))),
-            Self::Ratio(mul) => context_length.map(|cl| LenDef::Fixed(cl * *mul)),
+            Self::Fixed(length) => Some(LenDef::Fixed(*length)),
+            Self::Ratio(mul) => context_length.map(|cl| match Length::try_px(cl.get() * *mul) {
+                Some(length) => LenDef::Fixed(length),
+                None => LenDef::MaxContent,
+            }),
             Self::Stretch => context_length.map(LenDef::Fixed),
             Self::MinContent => Some(LenDef::MinContent),
             Self::MaxContent => Some(LenDef::MaxContent),
