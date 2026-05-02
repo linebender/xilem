@@ -140,7 +140,7 @@ impl Widget for CollapsePanel {
         let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
-        let header_x_padding_length = header_x_padding.saturating_mul(Length::const_px(2.));
+        let header_x_padding_length = header_x_padding.saturating_add(header_x_padding);
         let btn_length = BUTTON_LENGTH;
 
         let separator_height = border
