@@ -127,11 +127,4 @@ impl Length {
             value: (self.value - other.value).max(0.),
         }
     }
-
-    /// Multiplies by the `other` value but the result doesn't go above the maximum value.
-    pub const fn saturating_mul(self, other: Self) -> Self {
-        Self {
-            value: (self.value * other.value).min(f64::MAX),
-        }
-    }
 }

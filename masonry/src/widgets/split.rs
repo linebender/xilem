@@ -630,7 +630,7 @@ where
                 if cross == self.split_axis {
                     let cross_space = cross_length.saturating_sub(self.bar_thickness);
                     let split_point = self.calc_effective_split_point(cross_space.get());
-                    let child1_cross_space = cross_space.saturating_mul(split_point.px());
+                    let child1_cross_space = (cross_space.get() * split_point).px();
                     (
                         child1_cross_space,
                         cross_space.saturating_sub(child1_cross_space),
