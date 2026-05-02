@@ -3,7 +3,7 @@
 
 use crate::core::Property;
 use crate::kurbo::{Affine, Axis, Size};
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 use crate::util::Sanitize;
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
@@ -121,7 +121,7 @@ impl ObjectFit {
         Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
     }
 
-    /// Calculates the length of `axis`.
+    /// Calculates the [`Length`] of `axis`.
     ///
     /// `preferred_size` is the natural size that is used for
     /// both aspect ratio and minimum preferred size.
@@ -129,15 +129,15 @@ impl ObjectFit {
         self,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
+        cross_length: Option<Length>,
         preferred_size: Size,
-    ) -> f64 {
+    ) -> Length {
         let preferred_length = preferred_size.get_coord(axis);
 
         let (space, space_or_preferred) = match len_req {
-            LenReq::MinContent => return preferred_length,
+            LenReq::MinContent => return Length::px(preferred_length),
             LenReq::MaxContent => (f64::INFINITY, preferred_length),
-            LenReq::FitContent(space) => (space, space),
+            LenReq::FitContent(space) => (space.get(), space.get()),
         };
 
         let mut ar = preferred_size.get_coord(axis) / preferred_size.get_coord(axis.cross());
@@ -145,11 +145,11 @@ impl ObjectFit {
             ar = 1.;
         }
 
-        match self {
+        let length = match self {
             // Use all available space or if cross is known attempt to maintain AR,
             // but don't exceed available space (will letterbox cross).
             Self::Contain => cross_length
-                .map(|cl| (cl * ar).min(space))
+                .map(|cl| (cl.get() * ar).min(space))
                 .unwrap_or(space_or_preferred),
             // Always use all available space.
             Self::Cover | Self::Stretch => space_or_preferred,
@@ -157,7 +157,7 @@ impl ObjectFit {
             // Greedily take all horizontal space unless cross is known.
             Self::FitHeight => match axis {
                 Axis::Horizontal => cross_length
-                    .map(|cl| (cl * ar).min(space))
+                    .map(|cl| (cl.get() * ar).min(space))
                     .unwrap_or(space_or_preferred),
                 Axis::Vertical => space_or_preferred,
             },
@@ -166,16 +166,18 @@ impl ObjectFit {
             Self::FitWidth => match axis {
                 Axis::Horizontal => space_or_preferred,
                 Axis::Vertical => cross_length
-                    .map(|cl| (cl * ar).min(space))
+                    .map(|cl| (cl.get() * ar).min(space))
                     .unwrap_or(space_or_preferred),
             },
             // None == preferred size
             Self::None => preferred_length,
             // ScaleDown == min(Contain, None)
             Self::ScaleDown => cross_length
-                .map(|cl| (cl * ar).min(space))
+                .map(|cl| (cl.get() * ar).min(space))
                 .unwrap_or(space_or_preferred)
                 .min(preferred_length),
-        }
+        };
+
+        Length::px(length)
     }
 }

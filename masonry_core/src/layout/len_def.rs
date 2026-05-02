@@ -1,8 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::layout::LenReq;
-use crate::util::Sanitize;
+use crate::layout::{LenReq, Length};
 
 /// Widget border-box length definition.
 ///
@@ -11,16 +10,12 @@ use crate::util::Sanitize;
 ///
 /// This is how a parent specifies [`Dim::Auto`] behavior for its children.
 ///
-/// All the values must be finite, non-negative, and in device pixels.
-///
 /// [`Dim`]: crate::layout::Dim
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LenDef {
-    /// Specific fixed border-box length.
-    ///
-    /// The value must be finite, non-negative, and in device pixels.
-    Fixed(f64),
+    /// Specific fixed border-box [`Length`].
+    Fixed(Length),
     /// Minimum preferred border-box length.
     ///
     /// This will result in a [`measure`] invocation, which can be slow.
@@ -35,12 +30,10 @@ pub enum LenDef {
     MaxContent,
     /// The border-box should fit in the specified available space.
     ///
-    /// The value must be finite, non-negative, and in device pixels.
-    ///
     /// This will result in a [`measure`] invocation, which can be slow.
     ///
     /// [`measure`]: crate::core::Widget::measure
-    FitContent(f64),
+    FitContent(Length),
 }
 
 impl From<LenReq> for LenDef {
@@ -55,14 +48,7 @@ impl From<LenReq> for LenDef {
 
 impl LenDef {
     /// Returns the specific fixed border-box length if it is present.
-    ///
-    /// The length will be in device pixels.
-    ///
-    /// Whether the length can be non-finite or negative depends on whether
-    /// this [`LenDef`] has been [sanitized].
-    ///
-    /// [sanitized]: LenDef::sanitize
-    pub fn fixed(&self) -> Option<f64> {
+    pub fn fixed(&self) -> Option<Length> {
         match self {
             Self::Fixed(val) => Some(*val),
             _ => None,
@@ -74,62 +60,15 @@ impl LenDef {
     /// [`Fixed`] and [`FitContent`] will have their value reduced by `delta`, but clamped to zero.
     /// [`MinContent`] and [`MaxContent`] are returned as-is.
     ///
-    /// The provided `delta` must be in device pixels.
-    ///
     /// [`Fixed`]: Self::Fixed
     /// [`FitContent`]: Self::FitContent
     /// [`MinContent`]: Self::MinContent
     /// [`MaxContent`]: Self::MaxContent
-    pub fn reduce(self, delta: f64) -> Self {
+    pub fn reduce(self, delta: Length) -> Self {
         match self {
-            Self::Fixed(val) => Self::Fixed((val - delta).max(0.)),
+            Self::Fixed(val) => Self::Fixed(val.saturating_sub(delta)),
             Self::MinContent | Self::MaxContent => self,
-            Self::FitContent(space) => Self::FitContent((space - delta).max(0.)),
-        }
-    }
-}
-
-impl Sanitize for LenDef {
-    /// Returns a valid instance of [`LenDef`].
-    ///
-    /// It will return [`MaxContent`] if the [`Fixed`] or [`FitContent`]
-    /// values are non-finite or negative.
-    ///
-    /// This method is called by Masonry during the layout pass,
-    /// when a widget's length is being resolved.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the [`Fixed`] or [`FitContent`] values are non-finite or negative
-    /// and debug assertions are enabled.
-    ///
-    /// [`Fixed`]: Self::Fixed
-    /// [`FitContent`]: Self::FitContent
-    /// [`MaxContent`]: Self::MaxContent
-    #[track_caller]
-    fn sanitize(self, name: &str) -> Self {
-        match self {
-            Self::Fixed(val) => {
-                if val.is_finite() && val >= 0. {
-                    self
-                } else {
-                    debug_panic!(
-                        "{name} `Fixed` value must be finite and non-negative. Received: {val}"
-                    );
-                    Self::MaxContent
-                }
-            }
-            Self::MinContent | Self::MaxContent => self,
-            Self::FitContent(space) => {
-                if space.is_finite() && space >= 0. {
-                    self
-                } else {
-                    debug_panic!(
-                        "{name} `FitContent` value must be finite and non-negative. Received: {space}"
-                    );
-                    Self::MaxContent
-                }
-            }
+            Self::FitContent(space) => Self::FitContent(space.saturating_sub(delta)),
         }
     }
 }

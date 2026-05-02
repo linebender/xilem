@@ -16,7 +16,7 @@ use masonry_core::core::{
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
-use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
+use masonry_core::layout::{LayoutSize, LenReq, Length, SizeDef};
 
 /// A basic wrapper widget that can replace its child.
 pub struct WrapperWidget {
@@ -100,8 +100,8 @@ impl Widget for WrapperWidget {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 

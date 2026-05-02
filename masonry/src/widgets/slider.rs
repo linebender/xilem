@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::{Composite, GroupRef, Painter};
 use crate::kurbo::{Axis, Circle, Point, Rect, Size, Stroke};
-use crate::layout::LenReq;
+use crate::layout::{AsUnit, LenReq, Length};
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 
@@ -335,16 +335,12 @@ impl Widget for Slider {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        _cross_length: Option<Length>,
+    ) -> Length {
         match axis {
             Axis::Horizontal => match len_req {
                 // TODO: Move this 100. to theme?
-                LenReq::MinContent | LenReq::MaxContent => 100. * scale,
+                LenReq::MinContent | LenReq::MaxContent => Length::const_px(100.),
                 LenReq::FitContent(space) => space,
             },
             Axis::Vertical => {
@@ -352,12 +348,12 @@ impl Widget for Slider {
                 let thumb_radius = props.get::<ThumbRadius>(cache);
                 let track_thickness = props.get::<TrackThickness>(cache);
 
-                let thumb_length = thumb_radius.0 * 2.0 * scale;
-                let track_length = track_thickness.0 * scale;
+                let thumb_length = thumb_radius.0 * 2.0;
+                let track_length = track_thickness.0;
                 // TODO: Move the padding 16. to theme or make it otherwise configurable?
-                let padding_length = 16. * scale;
+                let padding_length = 16.;
 
-                thumb_length.max(track_length) + padding_length
+                (thumb_length.max(track_length) + padding_length).px()
             }
         }
     }

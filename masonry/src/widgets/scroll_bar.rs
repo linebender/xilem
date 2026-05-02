@@ -13,7 +13,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
-use crate::layout::LenReq;
+use crate::layout::{AsUnit, LenReq, Length};
 use crate::theme;
 
 // TODO
@@ -236,12 +236,8 @@ impl Widget for ScrollBar {
         if event.state != KeyState::Down {
             return;
         }
-
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-        let line = 120.0 * scale;
-        let page = self.portal_size * scale;
+        let line = 120.0;
+        let page = self.portal_size;
 
         let mut changed = false;
         match (&event.key, self.axis) {
@@ -310,17 +306,13 @@ impl Widget for ScrollBar {
         if !action_matches_axis {
             return;
         }
-
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
         let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
             *unit
         } else {
             accesskit::ScrollUnit::Item
         };
-        let line = 120.0 * scale;
-        let page = self.portal_size * scale;
+        let line = 120.0;
+        let page = self.portal_size;
         let amount = match unit {
             accesskit::ScrollUnit::Item => line,
             accesskit::ScrollUnit::Page => page,
@@ -352,23 +344,19 @@ impl Widget for ScrollBar {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        _cross_length: Option<Length>,
+    ) -> Length {
         if axis == self.axis {
-            // TODO: Consider .max(theme::SCROLLBAR_MIN_SIZE * scale)
+            // TODO: Consider .max(theme::SCROLLBAR_MIN_SIZE)
             match len_req {
-                LenReq::MinContent | LenReq::MaxContent => self.portal_size,
+                LenReq::MinContent | LenReq::MaxContent => self.portal_size.px(),
                 LenReq::FitContent(space) => space,
             }
         } else {
-            let scrollbar_width = theme::SCROLLBAR_WIDTH * scale;
-            let cursor_padding = theme::SCROLLBAR_PAD * scale;
+            let scrollbar_width = theme::SCROLLBAR_WIDTH;
+            let cursor_padding = theme::SCROLLBAR_PAD;
 
-            scrollbar_width + cursor_padding * 2.0
+            (scrollbar_width + cursor_padding * 2.0).px()
         }
     }
 

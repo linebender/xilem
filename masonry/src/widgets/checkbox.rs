@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, BezPath, Cap, Dashes, Join, Point, Size, Stroke};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::properties::{
     BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth, CornerRadius,
 };
@@ -187,25 +187,21 @@ impl Widget for Checkbox {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
-        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
+        cross_length: Option<Length>,
+    ) -> Length {
+        let check_side = theme::BASIC_WIDGET_HEIGHT;
+        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
         let calc_other_length = |axis| match axis {
-            Axis::Horizontal => check_side + check_padding,
-            Axis::Vertical => 0.,
+            Axis::Horizontal => check_side.saturating_add(check_padding),
+            Axis::Vertical => Length::ZERO,
         };
         let other_length = calc_other_length(axis);
 
         let cross = axis.cross();
         let cross_space = cross_length.map(|cross_length| {
             let cross_other_length = calc_other_length(cross);
-            (cross_length - cross_other_length).max(0.)
+            cross_length.saturating_sub(cross_other_length)
         });
 
         let auto_length = len_req.reduce(other_length).into();
@@ -220,18 +216,14 @@ impl Widget for Checkbox {
         );
 
         match axis {
-            Axis::Horizontal => label_length + other_length,
-            Axis::Vertical => label_length.max(check_side) + other_length,
+            Axis::Horizontal => label_length.saturating_add(other_length),
+            Axis::Vertical => label_length.max(check_side).saturating_add(other_length),
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
-        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.dp(scale);
+        let check_side = theme::BASIC_WIDGET_HEIGHT.get();
+        let check_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING.get();
 
         let space = Size::new(
             (size.width - (check_side + check_padding)).max(0.),
@@ -293,11 +285,7 @@ impl Widget for Checkbox {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        let check_side = theme::BASIC_WIDGET_HEIGHT.dp(scale);
+        let check_side = theme::BASIC_WIDGET_HEIGHT.get();
         let check_size = Size::new(check_side, check_side);
 
         let cache = ctx.property_cache();

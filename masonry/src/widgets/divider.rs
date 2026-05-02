@@ -21,7 +21,7 @@ use crate::layout::{LayoutSize, Length, SizeDef, UnitPoint};
 use crate::properties::ContentColor;
 use crate::widgets::Label;
 
-// TODO: Do proper hairline layout/paint after scale rework has happened.
+// TODO: Use snap-aware hairline layout/paint once Masonry has presentation snapping helpers.
 
 /// A line to divide your content.
 ///
@@ -606,27 +606,23 @@ impl Widget for Divider {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        const DEFAULT_LENGTH: f64 = 100.;
-        let thickness = self.thickness.map(|t| t.dp(scale)).unwrap_or(1.);
+        cross_length: Option<Length>,
+    ) -> Length {
+        const DEFAULT_LENGTH: Length = Length::const_px(100.);
+        let thickness = self.thickness.unwrap_or(Length::const_px(1.));
 
         let content_length = if let Some(content) = &mut self.content {
             let auto_length = len_req.into();
             let context_size = LayoutSize::maybe(axis.cross(), cross_length);
             ctx.compute_length(content, auto_length, context_size, axis, cross_length)
         } else {
-            0.
+            Length::ZERO
         };
 
         if axis == self.axis {
             match len_req {
                 LenReq::MinContent => content_length,
-                LenReq::MaxContent => (DEFAULT_LENGTH * scale).max(content_length),
+                LenReq::MaxContent => DEFAULT_LENGTH.max(content_length),
                 LenReq::FitContent(space) => space.max(content_length),
             }
         } else {
@@ -635,10 +631,6 @@ impl Widget for Divider {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         // Clear any previously laid out lines.
         self.lines.clear();
 
@@ -663,10 +655,9 @@ impl Widget for Divider {
             });
         }
 
-        let thickness = self.thickness.map(|t| t.dp(scale)).unwrap_or(1.);
+        let thickness = self.thickness.map(|t| t.get()).unwrap_or(1.);
         let cross_pos = size.get_coord(self.axis.cross()) * 0.5;
-        let mut dashes: SmallVec<[f64; 4]> =
-            self.dash_pattern.iter().map(|l| l.dp(scale)).collect();
+        let mut dashes: SmallVec<[f64; 4]> = self.dash_pattern.iter().map(|l| l.get()).collect();
 
         if let Some(content) = &mut self.content {
             let content_size = ctx.compute_size(content, SizeDef::fit(size), size.into());
@@ -688,7 +679,7 @@ impl Widget for Divider {
 
             ctx.derive_baselines(content);
 
-            let pad = self.pad.dp(scale);
+            let pad = self.pad.get();
             let mut line_space = size.get_coord(self.axis)
                 - self.total_cap_overhang(thickness)
                 - content_size.get_coord(self.axis)
@@ -745,16 +736,12 @@ impl Widget for Divider {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
-        // TODO: Remove HACK: After scale factor rework this can be a simple 1.
+        // TODO: Replace with snap-aware paint helper once that exists.
         let one_dp = 1. / ctx.get_scale_factor();
 
         let cache = ctx.property_cache();
         let color = props.get::<ContentColor>(cache);
-        let thickness = self.thickness.map(|t| t.dp(scale)).unwrap_or(one_dp);
+        let thickness = self.thickness.map(|t| t.get()).unwrap_or(one_dp);
 
         for line in &self.lines {
             let style = Stroke {

@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::util::Sanitize;
+use crate::layout::Length;
 
 /// Widget length measurement algorithm request.
 ///
@@ -13,9 +13,7 @@ pub enum LenReq {
     /// The widget should measure its maximum preferred length.
     MaxContent,
     /// The widget should attempt to fit into the specified available space.
-    ///
-    /// The space value must be finite, non-negative, and in device pixels.
-    FitContent(f64),
+    FitContent(Length),
 }
 
 impl LenReq {
@@ -24,44 +22,13 @@ impl LenReq {
     /// [`FitContent`] will have its value reduced by `delta`, but clamped to zero.
     /// [`MinContent`] and [`MaxContent`] are returned as-is.
     ///
-    /// The provided `delta` must be in device pixels.
-    ///
     /// [`FitContent`]: Self::FitContent
     /// [`MinContent`]: Self::MinContent
     /// [`MaxContent`]: Self::MaxContent
-    pub fn reduce(self, delta: f64) -> Self {
+    pub fn reduce(self, delta: Length) -> Self {
         match self {
             Self::MinContent | Self::MaxContent => self,
-            Self::FitContent(space) => Self::FitContent((space - delta).max(0.)),
-        }
-    }
-}
-
-impl Sanitize for LenReq {
-    /// Returns a valid instance of [`LenReq`].
-    ///
-    /// It will return [`MaxContent`] if the [`FitContent`] value is non-finite or negative.
-    ///
-    /// # Panics
-    ///
-    /// Panics if [`FitContent`] value is non-finite or negative and debug assertions are enabled.
-    ///
-    /// [`FitContent`]: Self::FitContent
-    /// [`MaxContent`]: Self::MaxContent
-    #[track_caller]
-    fn sanitize(self, name: &str) -> Self {
-        match self {
-            Self::MinContent | Self::MaxContent => self,
-            Self::FitContent(space) => {
-                if space.is_finite() && space >= 0. {
-                    self
-                } else {
-                    debug_panic!(
-                        "{name} `space` must be finite and non-negative. Received: {space}"
-                    );
-                    Self::MaxContent
-                }
-            }
+            Self::FitContent(space) => Self::FitContent(space.saturating_sub(delta)),
         }
     }
 }
