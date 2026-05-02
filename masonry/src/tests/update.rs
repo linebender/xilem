@@ -4,17 +4,17 @@
 use std::sync::mpsc;
 
 use assert_matches::assert_matches;
-use masonry_testing::{
-    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
-    assert_debug_panics,
-};
 
 use crate::core::pointer::PointerEvent;
 use crate::core::{
     CursorIcon, Ime, NewWidget, PropertySet, TextEvent, Update, Widget, WidgetId, WidgetPod,
     WidgetTag,
 };
-use crate::layout::Length;
+use crate::layout::{AsUnit, Length};
+use crate::testing::{
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
+    assert_debug_panics,
+};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
@@ -557,7 +557,7 @@ fn create_icon_widget() -> ModularWidget<()> {
             }
         })
         .cursor_icon(CursorIcon::Crosshair)
-        .measure_fn(|_, _, _, _, _, _| 10.)
+        .measure_fn(|_, _, _, _, _, _| 10.px())
 }
 
 #[test]
@@ -648,12 +648,11 @@ fn change_hovered_when_widget_changes() {
     let parent_tag = WidgetTag::named("parent");
 
     let child =
-        NewWidget::new(ModularWidget::new(BOX_SIZE).measure_fn(|size, _, _, _, _, _| size.get()))
+        NewWidget::new(ModularWidget::new(BOX_SIZE).measure_fn(|size, _, _, _, _, _| *size))
             .with_tag(child_tag);
-    let parent = NewWidget::new(
-        ModularWidget::new_parent(child).measure_fn(|_, _, _, _, _, _| BOX_SIZE.get()),
-    )
-    .with_tag(parent_tag);
+    let parent =
+        NewWidget::new(ModularWidget::new_parent(child).measure_fn(|_, _, _, _, _, _| BOX_SIZE))
+            .with_tag(parent_tag);
 
     let mut harness = TestHarness::create(test_property_set(), parent);
     let child_id = harness.get_widget(child_tag).id();
@@ -697,7 +696,7 @@ fn make_reporter_parent(
                 ctx.set_handled();
             }
         })
-        .measure_fn(|_, _, _, _, _, _| 100.)
+        .measure_fn(|_, _, _, _, _, _| 100.px())
         .update_fn(move |_, _, _, event| {
             sender.send((event.short_name().to_string(), n)).unwrap();
         })

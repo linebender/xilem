@@ -15,7 +15,7 @@ use masonry::core::{
 use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size, Vec2};
 use masonry::layers::Tooltip;
-use masonry::layout::{AsUnit, LayoutSize, LenReq, SizeDef};
+use masonry::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
 use masonry::parley::FontWeight;
 use masonry::peniko::Color;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
@@ -117,8 +117,8 @@ impl Widget for OverlayBox {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 

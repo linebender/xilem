@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
-use crate::layout::LenReq;
+use crate::layout::{AsUnit, LenReq, Length};
 use crate::parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
 use crate::properties::{ContentColor, LineBreaking};
 use crate::theme::default_text_styles;
@@ -499,8 +499,8 @@ impl Widget for Label {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
@@ -517,7 +517,7 @@ impl Widget for Label {
                     // This is a common optimization also present on the web.
                     match len_req {
                         // Zero space will get us the length of longest unbreakable word
-                        LenReq::MinContent => Some(0.),
+                        LenReq::MinContent => Some(Length::ZERO),
                         // Unbounded space will get us the length of the unwrapped string
                         LenReq::MaxContent => None,
                         // Attempt to wrap according to the parent's request
@@ -528,7 +528,7 @@ impl Widget for Label {
                     // If there is no explicit cross_length present, we fall back to inline defaults.
                     match len_req {
                         // Fallback is inline axis MinContent
-                        LenReq::MinContent => cross_length.or(Some(0.)),
+                        LenReq::MinContent => cross_length.or(Some(Length::ZERO)),
                         // Fallback is inline axis MaxContent, even for FitContent, because
                         // as we don't have the inline space bound we'll consider it unbounded.
                         LenReq::MaxContent | LenReq::FitContent(_) => cross_length,
@@ -538,7 +538,7 @@ impl Widget for Label {
             // If we're never wrapping, then there's no max advance.
             LineBreaking::Clip | LineBreaking::Overflow => None,
         }
-        .map(|v| v as f32);
+        .map(|v| v.get() as f32);
 
         let (font_ctx, layout_ctx) = ctx.text_contexts();
         let layout_idx = self.build_and_break(font_ctx, layout_ctx, max_advance);
@@ -550,7 +550,7 @@ impl Widget for Label {
             layout.layout.height() // Block length
         };
 
-        length as f64
+        length.px()
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {

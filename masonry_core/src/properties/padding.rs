@@ -136,76 +136,74 @@ impl Padding {
 
     /// Expands the `size` by the padding amount.
     ///
-    /// The returned [`Size`] will be non-negative and in device pixels.
+    /// The returned [`Size`] will be non-negative and in logical pixels.
     ///
-    /// The provided `size` must be in device pixels.
+    /// The provided `size` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn size_up(&self, size: Size, scale: f64) -> Size {
-        let width = size.width + Length::px(self.left + self.right).dp(scale);
-        let height = size.height + Length::px(self.top + self.bottom).dp(scale);
+    pub fn size_up(&self, size: Size) -> Size {
+        let width = size.width + self.left + self.right;
+        let height = size.height + self.top + self.bottom;
         Size::new(width, height)
     }
 
     /// Shrinks the `size` by the padding amount.
     ///
-    /// The returned [`Size`] will be non-negative and in device pixels.
+    /// The returned [`Size`] will be non-negative and in logical pixels.
     ///
-    /// The provided `size` must be in device pixels.
+    /// The provided `size` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn size_down(&self, size: Size, scale: f64) -> Size {
-        let width = (size.width - Length::px(self.left + self.right).dp(scale)).max(0.);
-        let height = (size.height - Length::px(self.top + self.bottom).dp(scale)).max(0.);
+    pub fn size_down(&self, size: Size) -> Size {
+        let width = (size.width - self.left - self.right).max(0.);
+        let height = (size.height - self.top - self.bottom).max(0.);
         Size::new(width, height)
     }
 
     /// Returns the [`Insets`] for deriving an area with this padding.
     ///
-    /// The returned [`Insets`] will be in device pixels.
+    /// The returned [`Insets`] will be in logical pixels.
     ///
-    /// The provided `insets` must be in device pixels.
-    pub fn insets_up(&self, insets: Insets, scale: f64) -> Insets {
+    /// The provided `insets` must be in logical pixels.
+    pub fn insets_up(&self, insets: Insets) -> Insets {
         Insets {
-            x0: insets.x0 + Length::px(self.left).dp(scale),
-            y0: insets.y0 + Length::px(self.top).dp(scale),
-            x1: insets.x1 + Length::px(self.right).dp(scale),
-            y1: insets.y1 + Length::px(self.bottom).dp(scale),
+            x0: insets.x0 + self.left,
+            y0: insets.y0 + self.top,
+            x1: insets.x1 + self.right,
+            y1: insets.y1 + self.bottom,
         }
     }
 
     /// Raises the `baseline` by the padding amount.
     ///
-    /// The returned baseline will be in device pixels.
+    /// The returned baseline will be in logical pixels.
     ///
-    /// The provided `baseline` must be in device pixels.
+    /// The provided `baseline` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
-        baseline + Length::px(self.bottom).dp(scale)
+    pub fn baseline_up(&self, baseline: f64) -> f64 {
+        baseline + self.bottom
     }
 
     /// Lowers the `baseline` by the padding amount.
     ///
-    /// The returned baseline will be in device pixels.
+    /// The returned baseline will be in logical pixels.
     ///
-    /// The provided `baseline` must be in device pixels.
+    /// The provided `baseline` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
-        baseline - Length::px(self.bottom).dp(scale)
+    pub fn baseline_down(&self, baseline: f64) -> f64 {
+        baseline - self.bottom
     }
 
     /// Lowers the position by the padding amount.
     ///
-    /// The returned [`Point`] will be in device pixels.
+    /// The returned [`Point`] will be in logical pixels.
     ///
-    /// The provided `origin` must be in device pixels.
+    /// The provided `origin` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
-        let x = Length::px(self.left).dp(scale);
-        let y = Length::px(self.top).dp(scale);
-        origin + Vec2::new(x, y)
+    pub fn origin_down(&self, origin: Point) -> Point {
+        origin + Vec2::new(self.left, self.top)
     }
 }

@@ -10,7 +10,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 
 /// A pass-through container that hosts exactly one child, which may be replaced dynamically.
 ///
@@ -93,8 +93,8 @@ impl Widget for Passthrough {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         ctx.redirect_measurement(&mut self.inner, axis, cross_length)
     }
 

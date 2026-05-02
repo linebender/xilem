@@ -8,7 +8,7 @@ use assert_matches::assert_matches;
 
 use crate::core::{ChildrenIds, Widget};
 use crate::kurbo::Point;
-use crate::layout::{AsUnit, LayoutSize};
+use crate::layout::{AsUnit, LayoutSize, Length};
 use crate::properties::Dimensions;
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::test_property_set;
@@ -61,7 +61,7 @@ fn action_source_removed() {
 
                 ctx.compute_length(child, auto_length, context_size, axis, cross_length)
             } else {
-                0.
+                Length::ZERO
             }
         })
         .layout_fn(move |child, ctx, _props, size| {

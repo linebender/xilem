@@ -25,13 +25,14 @@ use masonry::core::{Update, UpdateCtx};
 // ---
 use masonry::core::{LayoutCtx, MeasureCtx, PropertiesRef};
 use masonry::kurbo::{Axis, Size};
-use masonry::layout::LenReq;
+use masonry::layout::{LenReq, Length};
 // ---
 use masonry::accesskit::{Node, Role};
 use masonry::core::{AccessCtx, PaintCtx};
 use masonry::imaging::Painter;
 // ---
 use masonry::core::WidgetId;
+use masonry_core::layout::AsUnit;
 use tracing::{Span, trace_span};
 // ---
 use masonry::core::{ChildrenIds, RegisterCtx};
@@ -130,16 +131,12 @@ impl Widget for ColorRectangle {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        _cross_length: Option<Length>,
+    ) -> Length {
         match len_req {
             LenReq::MinContent | LenReq::MaxContent => match axis {
-                Axis::Horizontal => 200. * scale,
-                Axis::Vertical => 100. * scale,
+                Axis::Horizontal => 200.px(),
+                Axis::Vertical => 100.px(),
             },
             LenReq::FitContent(space) => space,
         }
