@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
-use masonry::layout::{AsUnit as _, UnitPoint};
+use masonry::layout::{AsUnit, UnitPoint};
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, Padding};
@@ -43,10 +43,10 @@ impl DemoPage for KitchenSinkDemo {
         let grid = NewWidget::new(SizedBox::new(grid.prepare())).with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x24, 0x24, 0x24)))
-                .with(Padding::all(12.0)),
+                .with(Padding::all(12.px())),
         );
 
-        let bg = NewWidget::new(SizedBox::empty().size(220.0.px(), 120.0.px())).with_props(
+        let bg = NewWidget::new(SizedBox::empty().size(220.px(), 120.px())).with_props(
             PropertySet::one(Background::Color(Color::from_rgb8(0x44, 0x22, 0x66))),
         );
 

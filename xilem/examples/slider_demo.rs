@@ -74,7 +74,7 @@ where
         label(format!("{:.0}% [{}]", value, u_value)).width(60.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
-    .gap(10.0.px())
+    .gap(10.px())
 }
 
 /// Convert 0-100 to 0-255 u8 value.
@@ -118,11 +118,11 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 .width(200.px())
                 .prop(BarColor(Color::from_rgb8(0x78, 0x71, 0x6c)))
                 .prop(ThumbColor(Color::WHITE))
-                .prop(ThumbRadius(10.0)),
+                .prop(ThumbRadius(10.px())),
                 label(format!("{:.0}% [{}]", state.alpha, color_alpha)).width(60.px()),
             ))
             .cross_axis_alignment(CrossAxisAlignment::Center)
-            .gap(10.0.px()),
+            .gap(10.px()),
             flex(
                 Axis::Horizontal,
                 (
@@ -143,10 +143,10 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 ),
             )
             .main_axis_alignment(MainAxisAlignment::Center)
-            .gap(20.0.px()),
+            .gap(20.px()),
             FlexSpacer::Flex(1.0),
         ))
-        .gap(15.0.px()),
+        .gap(15.px()),
         FlexSpacer::Fixed(10.px()),
         // Color preview box
         sized_box(
@@ -155,11 +155,11 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         )
         .dims(Dim::Stretch)
         .background(final_color)
-        .corner_radius(8.0)
+        .corner_radius(8.px())
         .flex(1.0),
     ))
-    .gap(20.0.px())
-    .padding(20.0)
+    .gap(20.px())
+    .padding(20.px())
 }
 
 // --- Application Entry Point ---

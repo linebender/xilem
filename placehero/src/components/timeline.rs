@@ -192,9 +192,9 @@ pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Timeline, Navi
     // Use a wrapping sized box for margin
     sized_box(
         sized_box(flex_col((info_line, base_status(primary_status))))
-            .border(css::WHITE, 2.0)
-            .padding(10.0)
-            .corner_radius(5.),
+            .border(css::WHITE, 2.px())
+            .padding(10.px())
+            .corner_radius(5.px()),
     )
-    .padding(Padding::from_vh(5., 4.))
+    .padding(Padding::from_vh(5.px(), 4.px()))
 }

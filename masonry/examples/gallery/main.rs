@@ -32,6 +32,7 @@ mod transforms;
 
 use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget as _, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
+use masonry::layout::Length;
 use masonry::parley::style::FontWeight;
 use masonry::properties::Padding;
 use masonry::properties::types::CrossAxisAlignment;
@@ -45,11 +46,11 @@ use masonry_winit::winit::window::Window;
 use crate::demo::{DemoPage, new_demo_shell_tags};
 use crate::switch::SwitchDemo;
 
-const SIDEBAR_WIDTH: masonry::layout::Length = masonry::layout::Length::const_px(240.0);
-const SIDEBAR_SCROLLBAR_INSET: f64 = 12.0;
-const LEFT_PANE_TOP_PADDING: f64 = 12.0;
-const LEFT_PANE_LEFT_PADDING: f64 = 12.0;
-const RIGHT_PANE_PADDING: f64 = 12.0;
+const SIDEBAR_WIDTH: Length = Length::const_px(240.0);
+const SIDEBAR_SCROLLBAR_INSET: Length = Length::const_px(12.0);
+const LEFT_PANE_TOP_PADDING: Length = Length::const_px(12.0);
+const LEFT_PANE_LEFT_PADDING: Length = Length::const_px(12.0);
+const RIGHT_PANE_PADDING: Length = Length::const_px(12.0);
 
 const DEMO_TITLE_FONT_SIZE: f32 = 20.0;
 
@@ -222,7 +223,7 @@ fn main() {
     // scrollbar doesn't sit on top of the buttons.
     let list = NewWidget::new(SizedBox::new(list.prepare())).with_props(Padding {
         top: LEFT_PANE_TOP_PADDING,
-        bottom: 0.0,
+        bottom: Length::ZERO,
         left: LEFT_PANE_LEFT_PADDING,
         right: SIDEBAR_SCROLLBAR_INSET,
     });

@@ -72,7 +72,7 @@ impl DemoPage for StepInputDemo {
 
         stack.push(
             Selector::new(),
-            (BorderWidth::all(2.), CornerRadius::all(20.)),
+            (BorderWidth::all(2.px()), CornerRadius::all(20.px())),
         );
 
         stack.push(

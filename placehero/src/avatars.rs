@@ -73,7 +73,7 @@ impl Avatars {
                         )
                         .with_stops([css::YELLOW, css::LIME]),
                     )
-                    .padding(4.0),
+                    .padding(4.px()),
             )
         })
     }

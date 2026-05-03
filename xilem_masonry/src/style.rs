@@ -4,7 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::UsesProperty;
-use masonry::layout::Dim;
+use masonry::layout::{Dim, Length};
 use masonry::peniko::Color;
 pub use masonry::properties::types::{Gradient, GradientShape};
 pub use masonry::properties::{
@@ -90,7 +90,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     fn border(
         self,
         color: Color,
-        width: f64,
+        width: Length,
     ) -> Prop<BorderWidth, Prop<BorderColor, Self, State, Action>, State, Action>
     where
         Self::Widget: UsesProperty<BorderColor> + UsesProperty<BorderWidth>,
@@ -107,7 +107,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     }
 
     /// Sets the element's border width.
-    fn border_width(self, width: f64) -> Prop<BorderWidth, Self, State, Action>
+    fn border_width(self, width: Length) -> Prop<BorderWidth, Self, State, Action>
     where
         Self::Widget: UsesProperty<BorderWidth>,
     {
@@ -123,7 +123,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
     }
 
     /// Sets the element's corner radius.
-    fn corner_radius(self, radius: f64) -> Prop<CornerRadius, Self, State, Action>
+    fn corner_radius(self, radius: Length) -> Prop<CornerRadius, Self, State, Action>
     where
         Self::Widget: UsesProperty<CornerRadius>,
     {

@@ -953,8 +953,8 @@ mod tests {
     #[test]
     fn fraction_clamps_when_set() {
         let widget = Split::new(
-            Label::new("Hello").prepare().with_props(Padding::all(0.)),
-            Label::new("World").prepare().with_props(Padding::all(0.)),
+            Label::new("Hello").prepare().with_props(Padding::ZERO),
+            Label::new("World").prepare().with_props(Padding::ZERO),
         )
         .prepare();
 

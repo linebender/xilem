@@ -620,28 +620,28 @@ mod tests {
         let grid = Grid::with_dimensions(3, 3)
             .with(
                 Label::new("A\nB").prepare().with_props((
-                    Padding::from_vh(0., 0.),
+                    Padding::from_vh(0.px(), 0.px()),
                     Background::Color(palette::css::ORANGE),
                 )),
                 GridParams::new(1, 0, 1, 1),
             )
             .with(
                 Label::new("C\nD").prepare().with_props((
-                    Padding::from_vh(8., 0.),
+                    Padding::from_vh(8.px(), 0.px()),
                     Background::Color(palette::css::DARK_BLUE),
                 )),
                 GridParams::new(0, 0, 1, 2),
             )
             .with(
                 Label::new("E\nF").prepare().with_props((
-                    Padding::from_vh(16., 0.),
+                    Padding::from_vh(16.px(), 0.px()),
                     Background::Color(palette::css::DARK_SALMON),
                 )),
                 GridParams::new(2, 0, 1, 3),
             )
             .with(
                 Label::new("G\nH").prepare().with_props((
-                    Padding::from_vh(24., 0.),
+                    Padding::from_vh(24.px(), 0.px()),
                     Background::Color(palette::css::DARK_SLATE_BLUE),
                 )),
                 GridParams::new(1, 1, 1, 2),
@@ -654,7 +654,7 @@ mod tests {
             .with_fixed(Label::new("Out").prepare())
             .with_fixed(grid)
             .prepare()
-            .with_props(Padding::all(10.));
+            .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (150, 200));
 

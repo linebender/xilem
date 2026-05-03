@@ -6,7 +6,7 @@ use masonry::core::{
     ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::kurbo::Vec2;
-use masonry::layout::Length;
+use masonry::layout::{AsUnit, Length};
 use masonry::parley::style::FontWeight;
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
@@ -93,7 +93,7 @@ impl DemoPage for BadgeDemo {
         let outline_badge = NewWidget::new(Badge::with_text("99+")).with_props(
             PropertySet::new()
                 .with(Background::Color(Color::TRANSPARENT))
-                .with(BorderWidth { width: 1.0 })
+                .with(BorderWidth { width: 1.px() })
                 .with(BorderColor {
                     color: Color::from_rgb8(0x71, 0x71, 0x7a),
                 }),
@@ -155,8 +155,8 @@ impl DemoPage for BadgeDemo {
         .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x3f, 0x3f, 0x46)))
-                .with(CornerRadius { radius: 999.0 })
-                .with(Padding::all(0.0)),
+                .with(CornerRadius { radius: 999.px() })
+                .with(Padding::ZERO),
         );
 
         let online_dot = NewWidget::new(Badge::new(
@@ -166,9 +166,9 @@ impl DemoPage for BadgeDemo {
         ))
         .with_props(
             PropertySet::new()
-                .with(Padding::all(0.0))
-                .with(CornerRadius { radius: 999.0 })
-                .with(BorderWidth { width: 0.0 })
+                .with(Padding::ZERO)
+                .with(CornerRadius { radius: 999.px() })
+                .with(BorderWidth { width: 0.px() })
                 .with(Background::Color(Color::from_rgb8(0x22, 0xc5, 0x5e))),
         );
 
