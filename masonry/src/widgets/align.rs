@@ -258,7 +258,7 @@ mod tests {
             .with_tag(align_tag)
             .with_props((
                 Dimensions::fixed(50.px(), 50.px()),
-                BorderWidth::all(2.),
+                BorderWidth::all(2.px()),
                 BorderColor::new(palette::css::BLACK),
             ));
         let root = Align::centered(align).prepare();

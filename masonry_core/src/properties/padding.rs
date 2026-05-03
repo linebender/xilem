@@ -11,14 +11,14 @@ impl<W: Widget> UsesProperty<Padding> for W {}
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Padding {
-    /// The amount of padding in logical pixels for the left edge.
-    pub left: f64,
-    /// The amount of padding in logical pixels for the right edge.
-    pub right: f64,
-    /// The amount of padding in logical pixels for the top edge.
-    pub top: f64,
-    /// The amount of padding in logical pixels for the bottom edge.
-    pub bottom: f64,
+    /// The amount of padding for the left edge.
+    pub left: Length,
+    /// The amount of padding for the right edge.
+    pub right: Length,
+    /// The amount of padding for the top edge.
+    pub top: Length,
+    /// The amount of padding for the bottom edge.
+    pub bottom: Length,
 }
 
 impl Property for Padding {
@@ -28,19 +28,19 @@ impl Property for Padding {
     }
 }
 
-impl From<f64> for Padding {
+impl From<Length> for Padding {
     /// Converts the value to a `Padding` object with that amount of padding on all edges.
-    fn from(value: f64) -> Self {
+    fn from(value: Length) -> Self {
         Self::all(value)
     }
 }
 
 impl Padding {
     /// A padding of zero for all edges.
-    pub const ZERO: Self = Self::all(0.);
+    pub const ZERO: Self = Self::all(Length::ZERO);
 
     /// Creates a new `Padding` with equal amount of padding for all edges.
-    pub const fn all(padding: f64) -> Self {
+    pub const fn all(padding: Length) -> Self {
         Self {
             top: padding,
             bottom: padding,
@@ -51,10 +51,10 @@ impl Padding {
 
     /// Creates a new `Padding` with the same amount of padding for the horizontal edges,
     /// and zero padding for the vertical edges.
-    pub const fn horizontal(padding: f64) -> Self {
+    pub const fn horizontal(padding: Length) -> Self {
         Self {
-            top: 0.,
-            bottom: 0.,
+            top: Length::ZERO,
+            bottom: Length::ZERO,
             left: padding,
             right: padding,
         }
@@ -62,17 +62,17 @@ impl Padding {
 
     /// Creates a new `Padding` with the same amount of padding for the vertical edges,
     /// and zero padding for the horizontal edges.
-    pub const fn vertical(padding: f64) -> Self {
+    pub const fn vertical(padding: Length) -> Self {
         Self {
             top: padding,
             bottom: padding,
-            left: 0.,
-            right: 0.,
+            left: Length::ZERO,
+            right: Length::ZERO,
         }
     }
 
     /// Creates a new `Padding` with the same padding from both vertical edges, then both horizontal edges.
-    pub const fn from_vh(vertical: f64, horizontal: f64) -> Self {
+    pub const fn from_vh(vertical: Length, horizontal: Length) -> Self {
         Self {
             top: vertical,
             bottom: vertical,
@@ -82,41 +82,41 @@ impl Padding {
     }
 
     /// Creates a new `Padding` with padding only at the top edge and zero padding for all other edges.
-    pub const fn top(padding: f64) -> Self {
+    pub const fn top(padding: Length) -> Self {
         Self {
             top: padding,
-            bottom: 0.,
-            left: 0.,
-            right: 0.,
+            bottom: Length::ZERO,
+            left: Length::ZERO,
+            right: Length::ZERO,
         }
     }
 
     /// Creates a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
-    pub const fn bottom(padding: f64) -> Self {
+    pub const fn bottom(padding: Length) -> Self {
         Self {
-            top: 0.,
+            top: Length::ZERO,
             bottom: padding,
-            left: 0.,
-            right: 0.,
+            left: Length::ZERO,
+            right: Length::ZERO,
         }
     }
 
-    /// Creates a new `Padding` with padding only at the leleftading edge and zero padding for all other edges.
-    pub const fn left(padding: f64) -> Self {
+    /// Creates a new `Padding` with padding only at the left edge and zero padding for all other edges.
+    pub const fn left(padding: Length) -> Self {
         Self {
-            top: 0.,
-            bottom: 0.,
+            top: Length::ZERO,
+            bottom: Length::ZERO,
             left: padding,
-            right: 0.,
+            right: Length::ZERO,
         }
     }
 
     /// Creates a new `Padding` with padding only at the right edge and zero padding for all other edges.
-    pub const fn right(padding: f64) -> Self {
+    pub const fn right(padding: Length) -> Self {
         Self {
-            top: 0.,
-            bottom: 0.,
-            left: 0.,
+            top: Length::ZERO,
+            bottom: Length::ZERO,
+            left: Length::ZERO,
             right: padding,
         }
     }
@@ -129,8 +129,8 @@ impl Padding {
     /// For [`Axis::Vertical`] it will return the sum of the top and bottom padding height.
     pub fn length(&self, axis: Axis) -> Length {
         match axis {
-            Axis::Horizontal => Length::px(self.left + self.right),
-            Axis::Vertical => Length::px(self.top + self.bottom),
+            Axis::Horizontal => self.left.saturating_add(self.right),
+            Axis::Vertical => self.top.saturating_add(self.bottom),
         }
     }
 
@@ -142,8 +142,8 @@ impl Padding {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn size_up(&self, size: Size) -> Size {
-        let width = size.width + self.left + self.right;
-        let height = size.height + self.top + self.bottom;
+        let width = size.width + self.left.get() + self.right.get();
+        let height = size.height + self.top.get() + self.bottom.get();
         Size::new(width, height)
     }
 
@@ -155,8 +155,8 @@ impl Padding {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn size_down(&self, size: Size) -> Size {
-        let width = (size.width - self.left - self.right).max(0.);
-        let height = (size.height - self.top - self.bottom).max(0.);
+        let width = (size.width - self.left.get() - self.right.get()).max(0.);
+        let height = (size.height - self.top.get() - self.bottom.get()).max(0.);
         Size::new(width, height)
     }
 
@@ -167,10 +167,10 @@ impl Padding {
     /// The provided `insets` must be in logical pixels.
     pub fn insets_up(&self, insets: Insets) -> Insets {
         Insets {
-            x0: insets.x0 + self.left,
-            y0: insets.y0 + self.top,
-            x1: insets.x1 + self.right,
-            y1: insets.y1 + self.bottom,
+            x0: insets.x0 + self.left.get(),
+            y0: insets.y0 + self.top.get(),
+            x1: insets.x1 + self.right.get(),
+            y1: insets.y1 + self.bottom.get(),
         }
     }
 
@@ -182,7 +182,7 @@ impl Padding {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_up(&self, baseline: f64) -> f64 {
-        baseline + self.bottom
+        baseline + self.bottom.get()
     }
 
     /// Lowers the `baseline` by the padding amount.
@@ -193,7 +193,7 @@ impl Padding {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_down(&self, baseline: f64) -> f64 {
-        baseline - self.bottom
+        baseline - self.bottom.get()
     }
 
     /// Lowers the position by the padding amount.
@@ -204,6 +204,6 @@ impl Padding {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn origin_down(&self, origin: Point) -> Point {
-        origin + Vec2::new(self.left, self.top)
+        origin + Vec2::new(self.left.get(), self.top.get())
     }
 }

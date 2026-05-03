@@ -133,7 +133,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
     let list = Flex::column()
         .with_fixed(
             NewWidget::new(Flex::row().with(text_input, 1.0).with_fixed(button))
-                .with_props(PropertySet::new().with(Padding::all(WIDGET_SPACING.get()))),
+                .with_props(PropertySet::new().with(Padding::all(WIDGET_SPACING))),
         )
         .with_fixed_spacer(WIDGET_SPACING);
 

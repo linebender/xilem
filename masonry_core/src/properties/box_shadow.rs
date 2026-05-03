@@ -4,6 +4,7 @@
 use crate::core::{Property, UsesProperty, Widget};
 use crate::imaging::{BlurredRoundedRect, Composite, Painter};
 use crate::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _};
+use crate::layout::Length;
 use crate::peniko::color::{AlphaColor, Srgb};
 
 // TODO - This is a first implementation of box shadows. A full version would need
@@ -30,9 +31,8 @@ pub struct BoxShadow {
 
     /// The distance between the shadow's "inner edge" and the closest fully-transparent point.
     ///
-    /// A value of zero means the shadow's edge will be shard.
-    /// Negative values will be treated as zero.
-    pub blur_radius: f64,
+    /// A value of zero means the shadow's edge will be sharp.
+    pub blur_radius: Length,
 }
 
 impl Property for BoxShadow {
@@ -40,7 +40,7 @@ impl Property for BoxShadow {
         static DEFAULT: BoxShadow = BoxShadow {
             color: AlphaColor::TRANSPARENT,
             offset: Point::ZERO,
-            blur_radius: 0.,
+            blur_radius: Length::ZERO,
         };
         &DEFAULT
     }
@@ -58,12 +58,12 @@ impl BoxShadow {
         Self {
             color,
             offset: offset.into(),
-            blur_radius: 0.,
+            blur_radius: Length::ZERO,
         }
     }
 
     /// Builder method to change the shadow's blur radius.
-    pub const fn blur(self, blur_radius: f64) -> Self {
+    pub const fn blur(self, blur_radius: Length) -> Self {
         Self {
             blur_radius,
             ..self
@@ -85,7 +85,7 @@ impl BoxShadow {
         }
 
         let transform = transform.pre_translate(self.offset.to_vec2());
-        let blur_radius = self.blur_radius.max(0.);
+        let blur_radius = self.blur_radius.get();
 
         let radius = (rect.radii().bottom_left
             + rect.radii().bottom_right
@@ -120,7 +120,7 @@ impl BoxShadow {
     ///
     /// The returned [`Insets`] are guaranteed to be non-negative.
     pub fn get_insets(&self) -> Insets {
-        let blur_radius = self.blur_radius.max(0.);
+        let blur_radius = self.blur_radius.get();
         Insets {
             x0: (blur_radius - self.offset.x).max(0.),
             y0: (blur_radius - self.offset.y).max(0.),

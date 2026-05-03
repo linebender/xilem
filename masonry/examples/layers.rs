@@ -178,7 +178,7 @@ fn main() {
                 .with_props(PropertySet::one(ContentColor::new(Color::BLACK))),
         ))
         .with_props(PropertySet::from((
-            BorderWidth::all(1.),
+            BorderWidth::all(1.px()),
             BorderColor::new(Color::BLACK),
             Background::Color(Color::WHITE),
         )))

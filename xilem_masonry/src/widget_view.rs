@@ -60,13 +60,13 @@ pub trait WidgetView<State: 'static, Action = ()>:
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use xilem::{masonry::properties::CornerRadius, view::{text_button, label}, WidgetView};
+    /// use xilem::{masonry::{layout::AsUnit, properties::CornerRadius}, view::{text_button, label}, WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
     /// text_button("click me", |_| {})
-    ///     .prop(CornerRadius { radius: 20.0 })
-    ///     .prop(CornerRadius { radius: 5.0 })
-    /// // The corner radius of this button will be 5.0
+    ///     .prop(CornerRadius { radius: 20.px() })
+    ///     .prop(CornerRadius { radius: 5.px() })
+    /// // The corner radius of this button will be 5px.
     /// # }
     ///
     /// ```

@@ -87,7 +87,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         data.size.try_into().unwrap(),
     )
     .gap(10.px())
-    .padding(20.0)
+    .padding(20.px())
 }
 
 fn paginate(

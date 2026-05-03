@@ -255,7 +255,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     NewWidget::new(root_widget).with_props(
         PropertySet::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-            .with(Padding::all(2.0))
+            .with(Padding::all(2.px()))
             .with(Gap::new(1.px())),
     )
 }
@@ -274,7 +274,7 @@ fn custom_property_set() -> DefaultProperties {
         PropertySet::new()
             .with(Background::Color(BLUE))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0)),
+            .with(BorderWidth::all(2.px())),
     );
     stack.push(
         Selector::classes(&["op_button"]).with_active(true),
@@ -285,7 +285,7 @@ fn custom_property_set() -> DefaultProperties {
         PropertySet::new()
             .with(Background::Color(GRAY))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0)),
+            .with(BorderWidth::all(2.px())),
     );
     stack.push(
         Selector::classes(&["digit_button"]).with_active(true),

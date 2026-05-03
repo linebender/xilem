@@ -11,7 +11,7 @@ use masonry::core::{
     ErasedAction, NewWidget, PointerButton, PropertySet, StyleProperty, Widget as _, WidgetId,
 };
 use masonry::dpi::LogicalSize;
-use masonry::layout::Length;
+use masonry::layout::{AsUnit, Length};
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth, Gap};
 use masonry::theme::default_property_set;
@@ -69,7 +69,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
 
     let props = PropertySet::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
-        .with(BorderWidth::all(1.0));
+        .with(BorderWidth::all(1.px()));
     let label = SizedBox::new(NewWidget::new(label).with_props(props));
 
     let button_inputs = vec![
