@@ -513,10 +513,6 @@ mod tests {
     // or a with a keyboard shortcut indicator.
 
     #[test]
-    #[should_panic = "is not visible"]
-    // FIXME: Somehow the harness can't find the button under the coordinates it gets
-    // for the button center.
-    // See https://github.com/linebender/xilem/issues/1756
     fn textless_button() {
         let tag = WidgetTag::unique();
         let button = Button::with_text("").prepare().with_tag(tag);
