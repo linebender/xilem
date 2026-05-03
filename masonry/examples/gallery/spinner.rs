@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{NewWidget, Widget};
-use masonry::layout::AsUnit as _;
+use masonry::layout::AsUnit;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, SizedBox, Spinner};
 
@@ -32,7 +32,7 @@ impl DemoPage for SpinnerDemo {
             .cross_axis_alignment(CrossAxisAlignment::Center)
             .with_fixed(
                 SizedBox::new(Spinner::new().prepare())
-                    .size(80.0.px(), 80.0.px())
+                    .size(80.px(), 80.px())
                     .prepare(),
             );
 

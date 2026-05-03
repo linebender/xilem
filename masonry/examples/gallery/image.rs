@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{NewWidget, PropertySet, StyleProperty, Widget};
-use masonry::layout::AsUnit as _;
+use masonry::layout::AsUnit;
 use masonry::peniko::{ImageAlphaType, ImageData, ImageFormat};
 use masonry::properties::ObjectFit;
 use masonry::properties::types::CrossAxisAlignment;
@@ -54,7 +54,7 @@ impl DemoPage for ImageDemo {
                     .prepare(),
             )
             .with_fixed_spacer(CONTENT_GAP)
-            .with_fixed(SizedBox::new(image).size(420.0.px(), 280.0.px()).prepare());
+            .with_fixed(SizedBox::new(image).size(420.px(), 280.px()).prepare());
 
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }

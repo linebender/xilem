@@ -17,7 +17,7 @@ use masonry_core::core::{
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
-use masonry_core::layout::{LayoutSize, LenReq, SizeDef};
+use masonry_core::layout::{LayoutSize, LenReq, Length, SizeDef};
 use tracing::trace_span;
 
 pub(crate) type PointerEventFn<S> =
@@ -33,8 +33,14 @@ pub(crate) type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
 pub(crate) type UpdateFn<S> =
     dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
 pub(crate) type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
-pub(crate) type MeasureFn<S> =
-    dyn FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64;
+pub(crate) type MeasureFn<S> = dyn FnMut(
+    &mut S,
+    &mut MeasureCtx<'_>,
+    &PropertiesRef<'_>,
+    Axis,
+    LenReq,
+    Option<Length>,
+) -> Length;
 pub(crate) type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx<'_>, &PropertiesRef<'_>, Size);
 pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
 pub(crate) type PaintFn<S> =
@@ -147,7 +153,7 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 let auto_length = len_req.into();
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-                let mut length: f64 = 0.;
+                let mut length = Length::ZERO;
                 for child in children {
                     if ctx.child_is_stashed(child) {
                         continue;
@@ -299,7 +305,14 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::measure`]
     pub fn measure_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut MeasureCtx<'_>, &PropertiesRef<'_>, Axis, LenReq, Option<f64>) -> f64
+        f: impl FnMut(
+            &mut S,
+            &mut MeasureCtx<'_>,
+            &PropertiesRef<'_>,
+            Axis,
+            LenReq,
+            Option<Length>,
+        ) -> Length
         + 'static,
     ) -> Self {
         self.measure = Some(Box::new(f));
@@ -454,8 +467,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let Self { state, measure, .. } = self;
         measure
             .as_mut()

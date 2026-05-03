@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::Widget as _;
-use crate::layout::AsUnit as _;
+use crate::layout::AsUnit;
 use crate::palette::css::BLUE;
 use crate::properties::{ContentColor, Dimensions, Gap};
 use crate::widgets::Button;

@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-use masonry::layout::{Dim, Length};
+use masonry::layout::{AsUnit, Dim, Length};
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
 use xilem::kurbo::{Axis, Size};
@@ -144,7 +144,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 text_button("Reset", |data: &mut AppData| data.count = 0),
                 flex(axis, (fizz_buzz_flex_sequence, flex_sequence)),
             ))
-            .padding(8.0),
+            .padding(8.px()),
             // The following `task` view only exists whilst the example is in the "active" state, so
             // the updates it performs will only be running whilst we are in that state.
             data.active.then(|| {

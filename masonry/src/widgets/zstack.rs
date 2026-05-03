@@ -11,7 +11,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Rect, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef, UnitPoint};
 
 struct Child {
     widget: WidgetPod<dyn Widget>,
@@ -218,12 +218,12 @@ impl Widget for ZStack {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
-        let mut length: f64 = 0.;
+        let mut length = Length::ZERO;
         for child in &mut self.children {
             let child_length = ctx.compute_length(
                 &mut child.widget,
@@ -327,12 +327,12 @@ mod tests {
         let mut bg_props = PropertySet::new();
         bg_props.insert(Background::Color(palette::css::BLUE));
         bg_props.insert(BorderColor::new(palette::css::TEAL));
-        bg_props.insert(BorderWidth::all(2.0));
+        bg_props.insert(BorderWidth::all(2.px()));
 
         let mut fg_props = PropertySet::new();
         fg_props.insert(Background::Color(palette::css::RED));
         fg_props.insert(BorderColor::new(palette::css::PINK));
-        fg_props.insert(BorderWidth::all(2.0));
+        fg_props.insert(BorderWidth::all(2.px()));
 
         let widget = ZStack::new()
             .with(

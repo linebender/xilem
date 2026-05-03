@@ -9,7 +9,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Line, Point, Size, Stroke};
-use crate::layout::{LayoutSize, LenDef, LenReq, Length, SizeDef};
+use crate::layout::{AsUnit, LayoutSize, LenDef, LenReq, Length, SizeDef};
 use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
 use crate::widgets::{DisclosureButton, Label};
 use crate::{accesskit, theme};
@@ -18,10 +18,10 @@ use crate::{accesskit, theme};
 const BUTTON_LENGTH: Length = Length::const_px(16.);
 /// Padding around the separator line.
 const SEPARATOR_PAD: Padding = Padding {
-    top: 4.,
-    left: 1.,
-    right: 1.,
-    bottom: 0.,
+    top: Length::const_px(4.),
+    left: Length::const_px(1.),
+    right: Length::const_px(1.),
+    bottom: Length::ZERO,
 };
 
 /// A collapsible panel with a header that contains a child widget.
@@ -134,29 +134,29 @@ impl Widget for CollapsePanel {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         let cache = ctx.property_cache();
         let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
-        let header_x_padding_length = header_x_padding.dp(scale) * 2.;
-        let btn_length = BUTTON_LENGTH.dp(scale);
+        let header_x_padding_length = header_x_padding.saturating_add(header_x_padding);
+        let btn_length = BUTTON_LENGTH;
 
-        let separator_height =
-            border.width * scale + SEPARATOR_PAD.length(Axis::Vertical).dp(scale);
+        let separator_height = border
+            .width
+            .saturating_add(SEPARATOR_PAD.length(Axis::Vertical));
 
         let space: LenDef = len_req.into();
 
         let cross = axis.cross();
         let label_cross_space = match cross {
             // If we know the horizontal space, then we can derive the label's horizontal space.
-            Axis::Horizontal => cross_length
-                .map(|cross_length| (cross_length - header_x_padding_length - btn_length).max(0.)),
+            Axis::Horizontal => cross_length.map(|cross_length| {
+                cross_length
+                    .saturating_sub(header_x_padding_length)
+                    .saturating_sub(btn_length)
+            }),
             // Even if we know our vertical space, we don't know the child's height.
             // So we can't provide an accurate height for the label.
             Axis::Vertical => None,
@@ -164,7 +164,7 @@ impl Widget for CollapsePanel {
         // We don't give any special context to the label, just our full size
         let label_context_size = LayoutSize::maybe(cross, cross_length);
         let label_auto_length = match axis {
-            Axis::Horizontal => space.reduce(header_x_padding_length + btn_length),
+            Axis::Horizontal => space.reduce(header_x_padding_length.saturating_add(btn_length)),
             Axis::Vertical => space,
         };
         let label_length = ctx.compute_length(
@@ -176,7 +176,9 @@ impl Widget for CollapsePanel {
         );
 
         let header_length = match axis {
-            Axis::Horizontal => btn_length + label_length + header_x_padding_length,
+            Axis::Horizontal => btn_length
+                .saturating_add(label_length)
+                .saturating_add(header_x_padding_length),
             Axis::Vertical => btn_length.max(label_length),
         };
 
@@ -195,7 +197,7 @@ impl Widget for CollapsePanel {
             let child_context_size = LayoutSize::maybe(cross, child_cross_space);
             let child_auto_length = match axis {
                 Axis::Horizontal => space,
-                Axis::Vertical => space.reduce(header_length + separator_height),
+                Axis::Vertical => space.reduce(header_length.saturating_add(separator_height)),
             };
             ctx.compute_length(
                 &mut self.child,
@@ -205,7 +207,7 @@ impl Widget for CollapsePanel {
                 child_cross_space,
             )
         } else {
-            0.
+            Length::ZERO
         };
 
         match axis {
@@ -213,7 +215,9 @@ impl Widget for CollapsePanel {
             Axis::Vertical => {
                 let mut length = header_length;
                 if !is_collapsed {
-                    length += child_length + separator_height;
+                    length = length
+                        .saturating_add(child_length)
+                        .saturating_add(separator_height);
                 }
                 length
             }
@@ -221,19 +225,15 @@ impl Widget for CollapsePanel {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         let cache = ctx.property_cache();
         let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
-        let separator_height =
-            border.width * scale + SEPARATOR_PAD.length(Axis::Vertical).dp(scale);
+        let border_width = border.width.get();
+        let separator_height = border_width + SEPARATOR_PAD.length(Axis::Vertical).get();
 
-        let button_width = BUTTON_LENGTH.dp(scale);
-        let header_padding_width = header_x_padding.dp(scale);
+        let button_width = BUTTON_LENGTH.get();
+        let header_padding_width = header_x_padding.get();
 
         // Square button
         let button_size = Size::new(button_width, button_width);
@@ -241,9 +241,11 @@ impl Widget for CollapsePanel {
 
         let label_auto_size = SizeDef::new(
             LenDef::FitContent(
-                (size.width - header_padding_width * 2. - button_size.width).max(0.),
+                (size.width - header_padding_width * 2. - button_size.width)
+                    .max(0.)
+                    .px(),
             ),
-            LenDef::FitContent(size.height),
+            LenDef::FitContent(size.height.px()),
         );
         let label_size = ctx.compute_size(&mut self.header_label, label_auto_size, size.into());
 
@@ -284,7 +286,7 @@ impl Widget for CollapsePanel {
             ctx.place_child(&mut self.child, child_origin);
 
             self.separator_line_y =
-                Some(header_height + SEPARATOR_PAD.top * scale + border.width * scale * 0.5);
+                Some(header_height + SEPARATOR_PAD.top.get() + border_width * 0.5);
         } else {
             self.separator_line_y = None;
         }
@@ -298,10 +300,6 @@ impl Widget for CollapsePanel {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         if let Some(y) = self.separator_line_y {
             let cache = ctx.property_cache();
             let border_width = *props.get::<BorderWidth>(cache);
@@ -310,12 +308,16 @@ impl Widget for CollapsePanel {
             let border_box = ctx.border_box();
 
             // Only paint the line if it would have a positive width
-            if SEPARATOR_PAD.length(Axis::Horizontal).dp(scale) < border_box.width() {
-                let x1 = border_box.x0 + SEPARATOR_PAD.left * scale;
-                let x2 = border_box.x1 - SEPARATOR_PAD.right * scale;
+            if SEPARATOR_PAD.length(Axis::Horizontal).get() < border_box.width() {
+                let x1 = border_box.x0 + SEPARATOR_PAD.left.get();
+                let x2 = border_box.x1 - SEPARATOR_PAD.right.get();
                 let line = Line::new((x1, y), (x2, y));
                 painter
-                    .stroke(line, &Stroke::new(border_width.width), border_color.color)
+                    .stroke(
+                        line,
+                        &Stroke::new(border_width.width.get()),
+                        border_color.color,
+                    )
                     .draw();
             }
         }

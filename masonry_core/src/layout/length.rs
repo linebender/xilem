@@ -4,7 +4,7 @@
 /// A value representing a width, height, or similar distance value.
 ///
 /// It is always finite and non-negative.
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct Length {
     value: f64,
 }
@@ -49,6 +49,16 @@ impl Length {
 
     /// Creates a length, in logical pixels.
     ///
+    /// Returns `None` if the provided `value` is non-finite or negative.
+    pub const fn try_px(value: f64) -> Option<Self> {
+        if value < 0. || !value.is_finite() {
+            return None;
+        }
+        Some(Self { value })
+    }
+
+    /// Creates a length, in logical pixels.
+    ///
     /// Can be called from const contexts.
     ///
     /// # Panics
@@ -89,6 +99,32 @@ impl Length {
             self
         } else {
             other
+        }
+    }
+
+    /// Returns `max` if `self` is greater than `max`, and `min` if `self` is less than `min`.
+    /// Otherwise this returns `self`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `min` is greater than `max`.
+    pub const fn clamp(self, min: Self, max: Self) -> Self {
+        Self {
+            value: self.value.clamp(min.value, max.value),
+        }
+    }
+
+    /// Adds the `other` value but the result doesn't go above the maximum value.
+    pub const fn saturating_add(self, other: Self) -> Self {
+        Self {
+            value: (self.value + other.value).min(f64::MAX),
+        }
+    }
+
+    /// Subtracts the `other` value but the result doesn't go below zero.
+    pub const fn saturating_sub(self, other: Self) -> Self {
+        Self {
+            value: (self.value - other.value).max(0.),
         }
     }
 }

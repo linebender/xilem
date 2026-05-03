@@ -4,16 +4,17 @@
 use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
+use crate::layout::Length;
 use crate::peniko::Color;
 use crate::theme;
 
-/// The thickness of a slider's track, in logical pixels.
+/// The thickness of a slider's track.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
-pub struct TrackThickness(pub f64);
+pub struct TrackThickness(pub Length);
 
 impl Property for TrackThickness {
     fn static_default() -> &'static Self {
-        static DEFAULT: TrackThickness = TrackThickness(4.);
+        static DEFAULT: TrackThickness = TrackThickness(Length::const_px(4.));
         &DEFAULT
     }
 }
@@ -27,13 +28,13 @@ impl TrackThickness {
     }
 }
 
-/// The radius of a slider's thumb, in logical pixels.
+/// The radius of a slider's thumb.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
-pub struct ThumbRadius(pub f64);
+pub struct ThumbRadius(pub Length);
 
 impl Property for ThumbRadius {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbRadius = ThumbRadius(6.);
+        static DEFAULT: ThumbRadius = ThumbRadius(Length::const_px(6.));
         &DEFAULT
     }
 }

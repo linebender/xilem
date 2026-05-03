@@ -18,7 +18,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::theme;
 use crate::widgets::Label;
 
@@ -178,12 +178,8 @@ impl Widget for Button {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
@@ -202,7 +198,7 @@ impl Widget for Button {
         // we make sure we will have at least the same height as the default text input.
         match axis {
             Axis::Horizontal => length,
-            Axis::Vertical => length.max(theme::BASIC_WIDGET_HEIGHT.dp(scale)),
+            Axis::Vertical => length.max(theme::BASIC_WIDGET_HEIGHT),
         }
     }
 
@@ -373,9 +369,9 @@ mod tests {
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
-            button.insert_prop(BorderWidth { width: 5.0 });
-            button.insert_prop(CornerRadius { radius: 20.0 });
-            button.insert_prop(Padding::from_vh(3., 8.));
+            button.insert_prop(BorderWidth { width: 5.px() });
+            button.insert_prop(CornerRadius { radius: 20.px() });
+            button.insert_prop(Padding::from_vh(3.px(), 8.px()));
 
             let mut label = Button::child_mut(&mut button);
             label.insert_prop(ContentColor::new(red));
@@ -407,7 +403,7 @@ mod tests {
             );
         let root_widget = NewWidget::new(grid).with_props(
             PropertySet::new()
-                .with(Padding::all(20.0))
+                .with(Padding::all(20.px()))
                 .with(Gap::new(40.px())),
         );
 
@@ -427,19 +423,19 @@ mod tests {
             {
                 let mut button = Grid::get_mut(&mut grid, 1);
                 let mut button = button.downcast::<Button>();
-                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(5.0));
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(5.px()));
             }
 
             {
                 let mut button = Grid::get_mut(&mut grid, 2);
                 let mut button = button.downcast::<Button>();
-                button.insert_prop(BoxShadow::new(ORANGE, (-10., -10.)).blur(-5.0));
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., -10.)).blur(0.px()));
             }
 
             {
                 let mut button = Grid::get_mut(&mut grid, 3);
                 let mut button = button.downcast::<Button>();
-                button.insert_prop(BoxShadow::new(ORANGE, (0., 0.)).blur(5.0));
+                button.insert_prop(BoxShadow::new(ORANGE, (0., 0.)).blur(5.px()));
             }
         });
 
@@ -452,7 +448,7 @@ mod tests {
             {
                 let mut button = Grid::get_mut(&mut grid, 1);
                 let mut button = button.downcast::<Button>();
-                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(2.5));
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(2.5.px()));
             }
         });
         assert_failing_render_snapshot!(harness, "button_shadows");
@@ -464,7 +460,7 @@ mod tests {
     fn validate_noninteractive_child<W: Widget>(child: NewWidget<W>) {
         let child_id = child.id();
         let mut button = Button::new(child).prepare();
-        button.properties.insert(Padding::all(10.));
+        button.properties.insert(Padding::all(10.px()));
         let button_id = button.id();
         let mut harness = TestHarness::create(test_property_set(), button);
 

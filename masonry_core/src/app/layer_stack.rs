@@ -12,7 +12,7 @@ use crate::core::{
     RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
-use crate::layout::{LenReq, SizeDef};
+use crate::layout::{LenReq, Length, SizeDef};
 
 /// A widget representing the top-level stack of visible layers owned by [`RenderRoot`](crate::app::RenderRoot).
 ///
@@ -180,12 +180,12 @@ impl Widget for LayerStack {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         // First child is the base layer, for which we do measure passthrough.
         let Some(base_layer) = self.layers.first_mut() else {
             debug_panic!("Missing first layer");
-            return 0.;
+            return Length::ZERO;
         };
         // Let the base layer handle the response
         ctx.redirect_measurement(&mut base_layer.root, axis, cross_length)

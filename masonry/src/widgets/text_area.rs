@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
-use crate::layout::LenReq;
+use crate::layout::{AsUnit, LenReq, Length};
 use crate::parley::PlainEditor;
 use crate::parley::editing::{Generation, SplitString};
 use crate::properties::{CaretColor, ContentColor, SelectionColor};
@@ -876,8 +876,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         // Currently we only support the common horizontal-tb writing mode,
         // so we hardcode the assumption that inline axis is horizontal.
         let inline = Axis::Horizontal;
@@ -894,7 +894,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     // This is a common optimization also present on the web.
                     match len_req {
                         // Zero space will get us the length of longest unbreakable word
-                        LenReq::MinContent => Some(0.),
+                        LenReq::MinContent => Some(Length::ZERO),
                         // Unbounded space will get us the length of the unwrapped string
                         LenReq::MaxContent => None,
                         // Attempt to wrap according to the parent's request
@@ -905,7 +905,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     // If there is no explicit cross_length present, we fall back to inline defaults.
                     match len_req {
                         // Fallback is inline axis MinContent
-                        LenReq::MinContent => cross_length.or(Some(0.)),
+                        LenReq::MinContent => cross_length.or(Some(Length::ZERO)),
                         // Fallback is inline axis MaxContent, even for FitContent, because
                         // as we don't have the inline space bound we'll consider it unbounded.
                         LenReq::MaxContent | LenReq::FitContent(_) => cross_length,
@@ -915,7 +915,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             // If we're never wrapping, then there's no max advance.
             false => None,
         }
-        .map(|v| v as f32);
+        .map(|v| v.get() as f32);
 
         let mut reset_max_advance = None;
         if self.last_max_advance != max_advance {
@@ -944,7 +944,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.refresh_layout(fctx, lctx);
         }
 
-        length
+        length.px()
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {

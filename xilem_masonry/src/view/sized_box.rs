@@ -22,13 +22,14 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::view::{sized_box, button};
 /// use xilem::palette;
 /// use kurbo::RoundedRectRadii;
+/// use masonry::layout::AsUnit;
 /// use masonry::properties::Padding;
 ///
 /// sized_box(button("Button", |data: &mut i32| *data+=1))
 ///     .background(palette::css::RED)
-///     .border(palette::css::YELLOW, 20.)
+///     .border(palette::css::YELLOW, 20.px())
 ///     .rounded(RoundedRectRadii::from_single_radius(5.))
-///     .padding(Padding::from(5.))
+///     .padding(Padding::from(5.px()))
 /// ```
 pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V, State, Action>
 where

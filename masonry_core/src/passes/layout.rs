@@ -17,7 +17,7 @@ use crate::core::{
     WidgetState,
 };
 use crate::kurbo::{Axis, Insets, Point, Size};
-use crate::layout::{LayoutSize, LenDef, LenReq, MeasurementInputs, SizeDef};
+use crate::layout::{LayoutSize, LenDef, LenReq, Length, MeasurementInputs, SizeDef};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::properties::{BorderWidth, BoxShadow, Dimensions, Padding};
 use crate::util::Sanitize;
@@ -25,64 +25,40 @@ use crate::util::Sanitize;
 // --- MARK: COMPUTE SIZE
 
 /// Measures the preferred border-box length of `widget` on the given `axis`.
-///
-/// The returned length will be in device pixels.
-/// Given that it will be the result of measuring,
-/// it must be [sanitized] before passing it back to a widget.
-///
-/// `len_req` must be [sanitized] before being passed to this function.
-///
-/// `cross_length`, if present, must be [sanitized] and in device pixels.
-///
-/// [sanitized]: Sanitize
 fn measure_border_box(
     widget: &mut dyn Widget,
     ctx: &mut MeasureCtx<'_>,
     props: &PropertiesRef<'_>,
     axis: Axis,
     len_req: LenReq,
-    cross_length: Option<f64>,
-) -> f64 {
-    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-    //       https://github.com/linebender/xilem/issues/1264
-    let scale = 1.0;
-
+    cross_length: Option<Length>,
+) -> Length {
     let cache = ctx.property_cache();
     let border = props.get::<BorderWidth>(cache);
     let padding = props.get::<Padding>(cache);
 
-    let border_length = border.length(axis).dp(scale);
-    let padding_length = padding.length(axis).dp(scale);
+    let border_and_padding_length = border.length(axis).saturating_add(padding.length(axis));
 
     // Reduce the border-box length by the border and padding length to get the content-box length.
-    let len_req = len_req.reduce(border_length + padding_length);
+    let len_req = len_req.reduce(border_and_padding_length);
     let cross_length = cross_length.map(|cross_length| {
         let cross = axis.cross();
-        let cross_border_length = border.length(cross).dp(scale);
-        let cross_padding_length = padding.length(cross).dp(scale);
-        (cross_length - cross_border_length - cross_padding_length).max(0.)
+        cross_length
+            .saturating_sub(border.length(cross))
+            .saturating_sub(padding.length(cross))
     });
 
     // Measure the content-box length.
     let content_length = widget.measure(ctx, props, axis, len_req, cross_length);
 
     // Add border and padding to the content-box length to return the border-box length.
-    content_length + border_length + padding_length
+    content_length.saturating_add(border_and_padding_length)
 }
 
 /// Resolves the [`LenDef`] of the provided `axis`.
 ///
 /// Unless `Fixed`, this will result in a [`measure`] invocation.
 ///
-/// The returned length will be in device pixels.
-/// Given that it can be the result of measuring,
-/// it must be [sanitized] before passing it back to a widget.
-///
-/// `len_def` must be [sanitized] before being passed to this function.
-///
-/// `cross_length`, if present, must be [sanitized] and in device pixels.
-///
-/// [sanitized]: Sanitize
 /// [`measure`]: Widget::measure
 fn resolve_len_def(
     widget: &mut dyn Widget,
@@ -90,8 +66,8 @@ fn resolve_len_def(
     props: &PropertiesRef<'_>,
     axis: Axis,
     len_def: LenDef,
-    cross_length: Option<f64>,
-) -> f64 {
+    cross_length: Option<Length>,
+) -> Length {
     let len_req = match len_def {
         LenDef::Fixed(val) => return val,
         LenDef::MinContent => LenReq::MinContent,
@@ -139,27 +115,13 @@ fn resolve_len_def(
 
 /// Resolves the widget's preferred border-box length on the given `axis`.
 ///
-/// The returned length will be finite, non-negative, and in device pixels.
-///
 /// `auto_length` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
 ///
-/// `context_size` must be in device pixels.
-///
-/// `cross_length`, if present, must be finite, non-negative, and in device pixels.
-/// Invalid `cross_length` value is fall back to `None`.
-///
 /// # Panics
-///
-/// Panics if `auto_length` has a non-finite or negative value and debug assertions are enabled.
-///
-/// Panics if `cross_length` is non-finite or negative and debug assertions are enabled.
 ///
 /// Panics if a dimension resolves to a non-finite or negative value
 /// and debug assertions are enabled. This can happen if the involved numbers are huge,
 /// e.g. a logical size of `f64::MAX` scaled by `1.5`.
-///
-/// Panics if [`Widget::measure`] returned a non-finite or negative length
-/// and debug assertions are enabled.
 ///
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_length(
@@ -169,18 +131,8 @@ pub(crate) fn resolve_length(
     auto_length: LenDef,
     context_size: LayoutSize,
     axis: Axis,
-    cross_length: Option<f64>,
-) -> f64 {
-    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-    //       https://github.com/linebender/xilem/issues/1264
-    let scale = 1.0;
-
-    // Sanitize inputs early & always, to quickly catch bugs,
-    // because not every code path will use these values.
-    let auto_length = auto_length.sanitize("auto_length");
-    let cross_length = cross_length.sanitize("cross_length");
-    // LayoutSize encapsulates sanitization already.
-
+    cross_length: Option<Length>,
+) -> Length {
     // Get the dimensions
     let class_set = &node.item.class_set;
     let cache = &mut node.item.state.property_cache;
@@ -199,9 +151,8 @@ pub(crate) fn resolve_length(
     // Resolve the dimension on the given axis
     let len_def = dims
         .dim(axis)
-        .resolve(scale, context_size.length(axis))
-        .unwrap_or(auto_length)
-        .sanitize("len_def");
+        .resolve(context_size.length(axis))
+        .unwrap_or(auto_length);
 
     // Return immediately if we already have a fixed length
     if let LenDef::Fixed(length) = len_def {
@@ -224,31 +175,25 @@ pub(crate) fn resolve_length(
     let cross_length = cross_length.or_else(|| {
         let cross = axis.cross();
         dims.dim(cross)
-            .resolve(scale, context_size.length(cross))
-            .and_then(|cross_len_def| cross_len_def.sanitize("cross_len_def").fixed())
+            .resolve(context_size.length(cross))
+            .and_then(|cross_len_def| cross_len_def.fixed())
     });
 
     // Measure
-    let length = resolve_len_def(widget, &mut ctx, &props, axis, len_def, cross_length);
-    length.sanitize("measured length")
+    resolve_len_def(widget, &mut ctx, &props, axis, len_def, cross_length)
 }
 
 /// Resolves the widget's preferred border-box size.
 ///
-/// The returned size will be finite, non-negative, and in device pixels.
+/// The returned size will be finite, non-negative, and in logical pixels.
 ///
-/// `size_def` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
-///
-/// `context_size` must be in device pixels.
+/// `auto_size` specifies the fallback behavior if a widget's dimension is [`Dim::Auto`].
 ///
 /// # Panics
 ///
 /// Panics if a dimension resolves to a non-finite or negative value
 /// and debug assertions are enabled. This can happen if the involved numbers are huge,
 /// e.g. a logical size of `f64::MAX` scaled by `1.5`.
-///
-/// Panics if [`Widget::measure`] returned a non-finite or negative length
-/// and debug assertions are enabled.
 ///
 /// [`Dim::Auto`]: crate::layout::Dim::Auto
 pub(crate) fn resolve_size(
@@ -258,12 +203,6 @@ pub(crate) fn resolve_size(
     auto_size: SizeDef,
     context_size: LayoutSize,
 ) -> Size {
-    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-    //       https://github.com/linebender/xilem/issues/1264
-    let scale = 1.0;
-
-    // Input sanitization is not required, because SizeDef and LayoutSize encapsulate it.
-
     // Currently we only support the common horizontal-tb writing mode,
     // so the assignments are hardcoded here, but the rest of the function adapts.
     let (inline, block) = (Axis::Horizontal, Axis::Vertical);
@@ -287,15 +226,13 @@ pub(crate) fn resolve_size(
     let inline_auto = auto_size.dim(inline);
     let inline_def = dims
         .dim(inline)
-        .resolve(scale, context_size.length(inline))
-        .unwrap_or(inline_auto)
-        .sanitize("inline_def");
+        .resolve(context_size.length(inline))
+        .unwrap_or(inline_auto);
     let block_auto = auto_size.dim(block);
     let block_def = dims
         .dim(block)
-        .resolve(scale, context_size.length(block))
-        .unwrap_or(block_auto)
-        .sanitize("block_def");
+        .resolve(context_size.length(block))
+        .unwrap_or(block_auto);
 
     // Return immediately if we already have a fixed size
     let inline_length = inline_def.fixed();
@@ -303,7 +240,7 @@ pub(crate) fn resolve_size(
     if let Some(inline_length) = inline_length
         && let Some(block_length) = block_length
     {
-        return inline.pack_size(inline_length, block_length);
+        return inline.pack_size(inline_length.get(), block_length.get());
     }
 
     // Otherwise fall back to measurement
@@ -320,7 +257,6 @@ pub(crate) fn resolve_size(
 
     let inline_length = inline_length.unwrap_or_else(|| {
         resolve_len_def(widget, &mut ctx, &props, inline, inline_def, block_length)
-            .sanitize("measured inline length")
     });
 
     // Update the auto length
@@ -338,10 +274,9 @@ pub(crate) fn resolve_size(
             block_def,
             Some(inline_length),
         )
-        .sanitize("measured block length")
     });
 
-    inline.pack_size(inline_length, block_length)
+    inline.pack_size(inline_length.get(), block_length.get())
 }
 
 // --- MARK: RUN LAYOUT
@@ -353,7 +288,7 @@ pub(crate) fn resolve_size(
 /// If the chosen border-box `size` is smaller than what is required to fit the widget's
 /// borders and padding, then the `size` will be expanded to meet those constraints.
 ///
-/// The provided `size` must be finite, non-negative, and in device pixels.
+/// The provided `size` must be finite, non-negative, and in logical pixels.
 /// Non-finite or negative length will fall back to zero with a logged warning.
 ///
 /// # Panics
@@ -400,10 +335,6 @@ pub(crate) fn run_layout_on(
         return;
     }
 
-    // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-    //       https://github.com/linebender/xilem/issues/1264
-    let scale = 1.0;
-
     let stack = property_arena.get(state.property_stack_id, widget.type_id());
     let props = PropertiesRef {
         local: properties,
@@ -419,8 +350,8 @@ pub(crate) fn run_layout_on(
 
     // Force the border-box size to be large enough to actually contain the border and padding.
     let minimum_size = Size::ZERO;
-    let minimum_size = border_width.size_up(minimum_size, scale);
-    let minimum_size = padding.size_up(minimum_size, scale);
+    let minimum_size = border_width.size_up(minimum_size);
+    let minimum_size = padding.size_up(minimum_size);
     let border_box_size = minimum_size.max(chosen_size);
 
     if !state.needs_layout() && state.layout_border_box_size == border_box_size {
@@ -475,13 +406,13 @@ pub(crate) fn run_layout_on(
     state.paint_insets = Insets::ZERO;
 
     // Compute the insets for deriving the content-box from the border-box
-    let border_box_insets = border_width.insets_up(Insets::ZERO, scale);
-    let border_box_insets = padding.insets_up(border_box_insets, scale);
+    let border_box_insets = border_width.insets_up(Insets::ZERO);
+    let border_box_insets = padding.insets_up(border_box_insets);
     state.border_box_insets = border_box_insets;
 
     // Compute the content-box size
-    let content_box_size = border_width.size_down(border_box_size, scale);
-    let content_box_size = padding.size_down(content_box_size, scale);
+    let content_box_size = border_width.size_down(border_box_size);
+    let content_box_size = padding.size_down(content_box_size);
 
     let mut ctx = LayoutCtx {
         global_state,
@@ -634,8 +565,6 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     if let WindowSizePolicy::Content = root.global_state.size_policy {
         // We use the aligned border-box size, which means that transforms won't affect window size.
         let size = root_node.item.state.border_box_size();
-        // TODO: Remove HACK: Until scale factor rework happens, we still need to scale here.
-        //       https://github.com/linebender/xilem/issues/1264
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
         if root.global_state.size != new_size {

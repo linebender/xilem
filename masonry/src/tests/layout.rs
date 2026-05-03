@@ -53,7 +53,7 @@ fn layout_simple() {
 #[test]
 fn forget_to_recurse_layout() {
     let widget = ModularWidget::new_parent(Flex::row().prepare())
-        .measure_fn(|_, _, _, _, _, _| 0.)
+        .measure_fn(|_, _, _, _, _, _| Length::ZERO)
         .layout_fn(|_child, _ctx, _, _| {
             // We forget to call ctx.run_layout();
         })
@@ -83,7 +83,7 @@ fn forget_to_call_place_child() {
 #[test]
 fn call_place_child_before_layout() {
     let widget = ModularWidget::new_parent(Flex::row().prepare())
-        .measure_fn(|_, _, _, _, _, _| 0.)
+        .measure_fn(|_, _, _, _, _, _| Length::ZERO)
         .layout_fn(|child, ctx, _, _| {
             // We call ctx.place_child(), but forget run_layout
             ctx.place_child(child, Point::ORIGIN);
@@ -229,7 +229,7 @@ fn layout_insets() {
     let parent_tag = WidgetTag::named("parent");
 
     let child_widget = ModularWidget::new(())
-        .measure_fn(|_, _, _, _, _, _| BOX_WIDTH)
+        .measure_fn(|_, _, _, _, _, _| BOX_WIDTH.px())
         .layout_fn(|_, ctx, _, _| {
             // this widget paints twenty points above and below its layout bounds
             ctx.set_paint_insets(Insets::uniform_xy(0., 20.));
@@ -274,12 +274,12 @@ fn content_box() {
     let props = (
         Dimensions::fixed(100.px(), 100.px()),
         Padding {
-            left: 1.,
-            right: 2.,
-            top: 3.,
-            bottom: 4.,
+            left: 1.px(),
+            right: 2.px(),
+            top: 3.px(),
+            bottom: 4.px(),
         },
-        BorderWidth::all(1.),
+        BorderWidth::all(1.px()),
     );
 
     let hero = NewWidget::new(Button::with_text("Hero"))

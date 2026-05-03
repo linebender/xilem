@@ -91,11 +91,11 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
                 let delete_button = text_button("Delete", move |data: &mut TaskList| {
                     data.tasks.remove(i);
                 })
-                .padding(5.0);
+                .padding(5.px());
                 Some(
                     flex_row((checkbox, FlexSpacer::Flex(1.), delete_button))
-                        .padding(DEFAULT_GAP.get())
-                        .border(ZYNC_800, 1.0),
+                        .padding(DEFAULT_GAP)
+                        .border(ZYNC_800, 1.px()),
                 )
             }
         })
@@ -134,7 +134,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         footer,
     ))
     .gap(Length::px(4.))
-    .padding(50.0)
+    .padding(50.px())
 }
 
 pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

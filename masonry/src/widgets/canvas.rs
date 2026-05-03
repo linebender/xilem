@@ -92,16 +92,12 @@ impl Widget for Canvas {
         _props: &PropertiesRef<'_>,
         _axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        _cross_length: Option<Length>,
+    ) -> Length {
         // We use all the available space or fall back to our const preferred size.
         match len_req {
             LenReq::FitContent(space) => space,
-            _ => DEFAULT_LENGTH.dp(scale),
+            _ => DEFAULT_LENGTH,
         }
     }
 

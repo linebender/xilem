@@ -17,7 +17,7 @@ use crate::core::{
 use crate::core::{MeasureCtx, WidgetMut};
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Rect, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef, UnitPoint};
+use crate::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef, UnitPoint};
 
 // TODO - Have child widget type as generic argument
 
@@ -125,8 +125,8 @@ impl Widget for Align {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
@@ -152,7 +152,7 @@ impl Widget for Align {
             Axis::Horizontal => self.width_factor,
             Axis::Vertical => self.height_factor,
         } {
-            length = child_length * factor;
+            length = (child_length.get() * factor).px();
         }
 
         // Never return a length larger than the bounds
@@ -258,7 +258,7 @@ mod tests {
             .with_tag(align_tag)
             .with_props((
                 Dimensions::fixed(50.px(), 50.px()),
-                BorderWidth::all(2.),
+                BorderWidth::all(2.px()),
                 BorderColor::new(palette::css::BLACK),
             ));
         let root = Align::centered(align).prepare();

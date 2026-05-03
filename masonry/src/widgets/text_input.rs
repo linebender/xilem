@@ -15,7 +15,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::{LayoutSize, LenReq};
+use crate::layout::{LayoutSize, LenReq, Length};
 use crate::properties::{CaretColor, ContentColor, LineBreaking, PlaceholderColor, SelectionColor};
 use crate::widgets::{Label, TextArea};
 
@@ -268,8 +268,8 @@ impl Widget for TextInput {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         match len_req {
             LenReq::MaxContent | LenReq::MinContent => {
                 let auto_length = len_req.into();

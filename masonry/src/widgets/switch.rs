@@ -15,7 +15,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Circle, Join, Point, Rect, Size, Stroke};
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 use crate::properties::{
     Background, BorderColor, BorderWidth, CornerRadius, ThumbColor, ThumbRadius, TrackThickness,
 };
@@ -80,14 +80,11 @@ impl Switch {
     /// Calculates the track dimensions based on properties.
     ///
     /// Returns `(track_width, track_height)`.
-    fn track_dimensions(track_thickness: f64, thumb_radius: f64, scale: f64) -> (f64, f64) {
-        let track_thickness = track_thickness * scale;
-        let thumb_radius = thumb_radius * scale;
-
+    fn track_dimensions(track_thickness: Length, thumb_radius: Length) -> (Length, Length) {
         // The track height is the larger of track_thickness or thumb diameter
-        let track_height = track_thickness.max(thumb_radius * 2.0);
+        let track_height = track_thickness.max(thumb_radius.saturating_add(thumb_radius));
         // The track width is approximately 2x the height (pill shape)
-        let track_width = track_height * 2.0;
+        let track_width = track_height.saturating_add(track_height);
 
         (track_width, track_height)
     }
@@ -193,17 +190,12 @@ impl Widget for Switch {
         props: &PropertiesRef<'_>,
         axis: Axis,
         _len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        _cross_length: Option<Length>,
+    ) -> Length {
         let cache = ctx.property_cache();
         let track_thickness = props.get::<TrackThickness>(cache).0;
         let thumb_radius = props.get::<ThumbRadius>(cache).0;
-        let (track_width, track_height) =
-            Self::track_dimensions(track_thickness, thumb_radius, scale);
+        let (track_width, track_height) = Self::track_dimensions(track_thickness, thumb_radius);
 
         match axis {
             Axis::Horizontal => track_width,
@@ -228,10 +220,6 @@ impl Widget for Switch {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         let is_disabled = ctx.is_disabled();
 
         let size = ctx.border_box_size();
@@ -241,10 +229,12 @@ impl Widget for Switch {
         let track_thickness_val = props.get::<TrackThickness>(cache).0;
         let thumb_radius_val = props.get::<ThumbRadius>(cache).0;
         let (track_width, track_height) =
-            Self::track_dimensions(track_thickness_val, thumb_radius_val, scale);
-        let thumb_radius = thumb_radius_val * scale;
-        let border_width = props.get::<BorderWidth>(cache).width * scale;
-        let corner_radius = props.get::<CornerRadius>(cache).radius * scale;
+            Self::track_dimensions(track_thickness_val, thumb_radius_val);
+        let track_width = track_width.get();
+        let track_height = track_height.get();
+        let thumb_radius = thumb_radius_val.get();
+        let border_width = props.get::<BorderWidth>(cache).width.get();
+        let corner_radius = props.get::<CornerRadius>(cache).radius.get();
         let thumb_color = props.get::<ThumbColor>(cache).0;
 
         // Center the track within the available space
@@ -407,7 +397,7 @@ mod tests {
     #[test]
     fn measure_dimensions() {
         // Test that the switch measures to expected dimensions based on theme properties.
-        // Theme defaults: ThumbRadius(8.0), TrackThickness(20.0), BorderWidth(1.0)
+        // Theme defaults: ThumbRadius(8px), TrackThickness(20px), BorderWidth(1px)
         // Expected: track_height = max(20, 8*2) = 20, track_width = 20*2 = 40
         // With borders: width = 42, height = 22
         let switch = Switch::new(false).prepare();

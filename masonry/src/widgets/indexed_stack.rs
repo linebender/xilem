@@ -13,7 +13,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 
 // TODO - Rename "active" widget to "visible" widget?
 // Active already means something else.
@@ -231,8 +231,8 @@ impl Widget for IndexedStack {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         if !self.children.is_empty() {
             let auto_length = len_req.into();
             let context_size = LayoutSize::maybe(axis.cross(), cross_length);
@@ -245,7 +245,7 @@ impl Widget for IndexedStack {
                 cross_length,
             )
         } else {
-            0.
+            Length::ZERO
         }
     }
 
