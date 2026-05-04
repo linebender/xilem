@@ -693,7 +693,8 @@ impl<W: Widget> TestHarness<W> {
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
-        let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
+        let local_widget_center = widget.ctx().border_box().center();
+
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         // TODO - Add reachable_by_pointer() method.
@@ -731,7 +732,7 @@ impl<W: Widget> TestHarness<W> {
     #[track_caller]
     pub fn mouse_move_to_unchecked(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
-        let local_widget_center = (widget.ctx().border_box_size() / 2.0).to_vec2().to_point();
+        let local_widget_center = widget.ctx().border_box().center();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         if widget.ctx().is_stashed() {
