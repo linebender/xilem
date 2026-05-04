@@ -791,6 +791,10 @@ impl RenderRoot {
     ///
     /// See the [passes documentation](crate::doc::pass_system) for details.
     pub(crate) fn run_rewrite_passes(&mut self) {
+        // Capture this frame's events for the panic-log dump.
+        #[cfg(not(target_arch = "wasm32"))]
+        let _guard = crate::app::panic_log_buffer::start_frame_recording();
+
         const REWRITE_PASSES_MAX: usize = 4;
 
         for _ in 0..REWRITE_PASSES_MAX {

@@ -4,6 +4,8 @@
 //! Types needed for running a Masonry app.
 
 mod layer_stack;
+#[cfg(not(target_arch = "wasm32"))]
+mod panic_log_buffer;
 mod render_root;
 mod tracing_backend;
 mod visual_layers;

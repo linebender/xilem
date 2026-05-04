@@ -3,8 +3,15 @@
 
 //! Configures a suitable default [`tracing`] implementation for a Masonry application.
 //!
-//! This uses a custom log format specialised for GUI applications,
-//! and will write all logs to a temporary file in debug mode.
+//! This uses a custom log format specialised for GUI applications.
+//! In debug mode, tracing events emitted during the per-frame rewrite passes
+//! (the layout/compose/paint cycle driven by [`RenderRoot`]) are buffered in
+//! memory and only written to a temporary file if the process panics. This
+//! avoids file I/O on every log line during normal operation while preserving
+//! full diagnostics for crashes.
+//!
+//! [`RenderRoot`]: crate::app::RenderRoot
+//!
 //! This also uses a default filter, which can be overwritten using `RUST_LOG`.
 //! This will include all [`DEBUG`](tracing::Level::DEBUG) messages in debug mode,
 //! and all [`INFO`](tracing::Level::INFO) level messages in release mode.
@@ -16,11 +23,6 @@
 use std::error::Error;
 use std::fmt;
 #[cfg(not(target_arch = "wasm32"))]
-use std::fs::File;
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::UNIX_EPOCH;
-
-#[cfg(not(target_arch = "wasm32"))]
 use time::macros::format_description;
 use tracing::Subscriber;
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,6 +31,16 @@ use tracing_subscriber::filter::LevelFilter;
 #[cfg(not(target_arch = "wasm32"))]
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
+
+#[cfg(not(target_arch = "wasm32"))]
+use super::panic_log_buffer::BufferWriter;
+
+/// Install the panic-log hook once a subscriber has been set globally.
+/// Compiles to nothing in release builds and on wasm.
+fn install_panic_log_hook() {
+    #[cfg(all(not(target_arch = "wasm32"), debug_assertions))]
+    super::panic_log_buffer::register_panic_hook();
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 /// Get the tracing subscriber we wish to set-up for a non-web platform with the given `default_level`.
@@ -63,36 +75,18 @@ fn default_tracing_subscriber_native(
         .with_target(false)
         .with_filter(env_filter);
 
-    // We skip the layer which stores to a file in `--release` mode for performance.
-    let log_file_layer = if cfg!(debug_assertions) {
-        // TODO - Replace with a more targeted subscriber.
-        // See https://github.com/linebender/xilem/issues/1556
-
-        let id = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-        let tmp_path = std::env::temp_dir().join(format!("masonry-{id:016}-dense.log"));
-        // If modifying, also update the module level docs
-        let log_file_layer = tracing_subscriber::fmt::layer()
-            .with_timer(timer)
-            .with_writer(File::create(&tmp_path).unwrap())
-            // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
-            .with_ansi(false);
-        // Note that this layer does not use the provided filter, and instead logs all events.
-
-        #[allow(clippy::print_stderr, reason = "Can only use stderr")]
-        {
-            // We print this message to stderr (rather than through `tracing`), because:
-            // 1) Tracing hasn't been set up yet
-            // 2) The tracing logs could have been configured to eat this message, and we think this is still important to have visible.
-            // 3) This message is only sent in debug mode, so won't be exposed to end-users.
-            eprintln!("---");
-            eprintln!("Writing full logs to {}", tmp_path.display());
-            eprintln!("---");
-        }
-
-        Some(log_file_layer)
+    // Captures all events at all levels (no env filter), but only events
+    // emitted during `run_rewrite_passes` are retained.
+    let panic_buffer_layer = if cfg!(debug_assertions) {
+        // If you change the writer or formatting here, also update the
+        // module-level docs above which describe the buffering behaviour.
+        Some(
+            tracing_subscriber::fmt::layer()
+                .with_timer(timer)
+                // TODO - For some reason, `.with_ansi(false)` still leaves some italics in the output.
+                .with_ansi(false)
+                .with_writer(BufferWriter),
+        )
     } else {
         None
     };
@@ -102,7 +96,7 @@ fn default_tracing_subscriber_native(
 
     let registry = tracing_subscriber::registry()
         .with(console_layer)
-        .with(log_file_layer);
+        .with(panic_buffer_layer);
 
     #[cfg(target_os = "android")]
     let registry = registry.with(android_trace_layer);
@@ -178,7 +172,7 @@ fn verify_subscriber_has_not_been_set() -> Result<(), TracingSubscriberHasBeenSe
 }
 
 /// Initialise tracing with a default subscriber for a unit test.
-/// This ignores most messages to limit noise (but will still log all messages to a file).
+/// This ignores most messages to limit noise.
 pub fn try_init_test_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
     // For unit tests we want to suppress most messages.
     let default_level = LevelFilter::WARN;
@@ -189,6 +183,8 @@ pub fn try_init_test_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
+    install_panic_log_hook();
+
     if let Some(err) = err {
         tracing::error!(err, "Logging init had recoverable error");
     }
@@ -213,6 +209,8 @@ pub fn try_init_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
+    install_panic_log_hook();
+
     if let Some(err) = err {
         tracing::error!("Initialising logging encountered recoverable error: {err}");
     }
