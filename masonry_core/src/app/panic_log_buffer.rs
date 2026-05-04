@@ -247,6 +247,7 @@ pub(crate) fn start_frame_recording() -> FrameRecordingGuard {
 /// Use as `.with_writer(BufferWriter)` on a `fmt::layer()`. Writes are
 /// no-ops when [`IS_RECORDING`] is `false`. When [`MAX_BUFFER_LINES`] or
 /// [`MAX_BUFFER_BYTES`] is exceeded, the oldest entries are evicted.
+#[derive(Debug)]
 pub(crate) struct BufferWriter;
 
 impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for BufferWriter {
