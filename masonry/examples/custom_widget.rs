@@ -113,10 +113,9 @@ impl Widget for CustomWidget {
         painter: &mut Painter<'_>,
     ) {
         // Clear the whole widget with the color of your choice
-        // (ctx.content_box_size() returns the size of the content rect we're painting in)
-        let size = ctx.content_box_size();
-        let rect = ctx.content_box();
-        painter.fill(rect, palette::css::WHITE).draw();
+        let content_box = ctx.content_box();
+        let size = content_box.size();
+        painter.fill(content_box, palette::css::WHITE).draw();
 
         // Create an arbitrary bezier path
         let mut path = BezPath::new();
@@ -166,7 +165,7 @@ impl Widget for CustomWidget {
             width: 256,
             height: 256,
         });
-        let transform = ObjectFit::Stretch.affine(size, Size::new(256., 256.));
+        let transform = ObjectFit::Stretch.affine(content_box, Rect::new(0., 0., 256., 256.));
         painter.draw_image(&image_data, transform);
     }
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::Property;
-use crate::kurbo::{Affine, Axis, Size};
+use crate::kurbo::{Affine, Axis, Rect, Size};
 use crate::layout::{LenReq, Length};
 use crate::util::Sanitize;
 
@@ -67,8 +67,6 @@ impl Default for ObjectFit {
     }
 }
 
-// TODO - Need to write tests for this, in a way that's relatively easy to visualize.
-
 impl ObjectFit {
     /// Calculates an [`Affine`] transform to fit `content` inside `container`.
     ///
@@ -76,25 +74,22 @@ impl ObjectFit {
     ///
     /// # Panics
     ///
-    /// Panics if either `content` or `container` is non-finite or negative
+    /// Panics if either `content` or `container` has non-finite or negative size
     /// and debug assertions are enabled.
-    pub fn affine(self, container: Size, content: Size) -> Affine {
+    pub fn affine(self, container: Rect, content: Rect) -> Affine {
         // Guard against invalid input
-        let container = Size::new(
-            container.width.sanitize("container width"),
-            container.height.sanitize("container height"),
-        );
-        let content = Size::new(
-            content.width.sanitize("content width"),
-            content.height.sanitize("content height"),
-        );
+        let container_width = container.width().sanitize("container width");
+        let container_height = container.height().sanitize("container height");
+        let content_width = content.width().sanitize("content width");
+        let content_height = content.height().sanitize("content height");
+
         // Guard against division by zero
-        if content.width == 0. || content.height == 0. {
+        if content_width == 0. || content_height == 0. {
             return Affine::IDENTITY;
         }
 
-        let raw_scalex = container.width / content.width;
-        let raw_scaley = container.height / content.height;
+        let raw_scalex = container_width / content_width;
+        let raw_scaley = container_height / content_height;
 
         let (scalex, scaley) = match self {
             Self::Contain => {
@@ -115,10 +110,17 @@ impl ObjectFit {
             Self::Stretch => (raw_scalex, raw_scaley),
         };
 
-        let origin_x = (container.width - (content.width * scalex)) * 0.5;
-        let origin_y = (container.height - (content.height * scaley)) * 0.5;
+        let origin_x = container.x0 + (container_width - (content_width * scalex)) * 0.5;
+        let origin_y = container.y0 + (container_height - (content_height * scaley)) * 0.5;
 
-        Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
+        Affine::new([
+            scalex,
+            0.,
+            0.,
+            scaley,
+            origin_x - content.x0 * scalex,
+            origin_y - content.y0 * scaley,
+        ])
     }
 
     /// Calculates the [`Length`] of `axis`.

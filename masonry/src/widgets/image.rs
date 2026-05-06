@@ -179,7 +179,7 @@ impl Widget for Image {
             self.image_data.image.width as f64,
             self.image_data.image.height as f64,
         );
-        let transform = object_fit.affine(content_box.size(), image_size);
+        let transform = object_fit.affine(content_box, image_size.to_rect());
 
         painter.with_fill_clip(content_box, |painter| {
             painter.draw_image(&self.image_data, transform);
