@@ -10,9 +10,9 @@ use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
-    WidgetMut,
+    AccessCtx, ArcStr, ChildrenIds, ComposeCtx, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget,
+    WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Size};
@@ -160,6 +160,18 @@ impl Widget for Svg {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {
         self.rasterized = None;
+    }
+
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
+        // Clear the image cache if the size changed.
+        if let Some(rasterized) = &self.rasterized {
+            let content_box = ctx.content_box();
+            let pixmap_width = content_box.width().ceil() as u32;
+            let pixmap_height = content_box.height().ceil() as u32;
+            if rasterized.image.width != pixmap_width || rasterized.image.height != pixmap_height {
+                self.rasterized = None;
+            }
+        }
     }
 
     fn paint(

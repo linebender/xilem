@@ -398,7 +398,7 @@ impl Widget for Grid {
             min_row_children.sort_by_key(|c| c.x);
             let min_row_child = min_row_children.first().unwrap();
             let min_row_child_origin = ctx.child_origin(&min_row_child.widget);
-            let (first_baseline, _) = ctx.child_aligned_baselines(&min_row_child.widget);
+            let (first_baseline, _) = ctx.child_baselines(&min_row_child.widget);
             let first_baseline = min_row_child_origin.y + first_baseline;
 
             // Find the last occupied cell
@@ -410,7 +410,7 @@ impl Widget for Grid {
             max_row_children.sort_by_key(|c| c.x + c.width);
             let max_row_child = max_row_children.last().unwrap();
             let max_row_child_origin = ctx.child_origin(&max_row_child.widget);
-            let (_, last_baseline) = ctx.child_aligned_baselines(&max_row_child.widget);
+            let (_, last_baseline) = ctx.child_baselines(&max_row_child.widget);
             let last_baseline = max_row_child_origin.y + last_baseline;
 
             // Set the container baselines

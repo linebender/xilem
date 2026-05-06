@@ -124,10 +124,12 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 /// These trait methods are provided with a corresponding context. The widget can
 /// request things and cause actions by calling methods on that context.
 ///
-/// Generally all coordinates given to the widget and taken as input by context methods
-/// are going to be in the widget's local content-box coordinate space. Exceptions are documented
-/// for the relevant methods, e.g. mouse events will arrive in the window's coordinate space.
-/// There are helper methods on the context to convert these to the local coordinate space.
+/// Coordinates in [`measure`](Self::measure) and [`layout`](Self::layout) are in the
+/// widget's layout content-box coordinate space. Coordinates in other `Widget` methods and
+/// in geometry-oriented context methods are generally in the widget's visual content-box
+/// coordinate space. Exceptions are documented for the relevant methods, e.g. mouse events
+/// arrive in the window's coordinate space. Context helper methods can convert between the
+/// window and the widget-local coordinate space used by the current method.
 ///
 /// Widgets also have a [`children_ids`](Self::children_ids) method. Leaf widgets return an empty array,
 /// whereas container widgets return an array of [`WidgetId`].
@@ -581,7 +583,7 @@ pub fn find_widget_under_pointer<'c>(
         return None;
     }
 
-    let local_pos = ctx.window_transform().inverse() * pos;
+    let local_pos = ctx.to_local(pos);
 
     if let Some(clip) = ctx.clip_path()
         && !clip.contains(local_pos)

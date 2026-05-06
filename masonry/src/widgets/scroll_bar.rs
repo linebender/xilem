@@ -186,7 +186,7 @@ impl Widget for ScrollBar {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
-                let size = ctx.content_box_size();
+                let size = ctx.content_box().size();
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.cursor_rect(size, cursor_min_length);
                 let mouse_pos = ctx.local_position(state.position);
@@ -209,7 +209,7 @@ impl Widget for ScrollBar {
                 if ctx.is_active()
                     && let Some(grab_anchor) = self.grab_anchor
                 {
-                    let size = ctx.content_box_size();
+                    let size = ctx.content_box().size();
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     let progress = self.progress_from_mouse_pos(
                         size,
@@ -380,7 +380,7 @@ impl Widget for ScrollBar {
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
-        let size = ctx.content_box_size();
+        let size = ctx.content_box().size();
         let inset_start = if !collapsible || ctx.is_hovered() || self.grab_anchor.is_some() {
             cursor_padding
         } else {

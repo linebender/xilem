@@ -177,7 +177,7 @@ impl WidgetRef<'_, dyn Widget> {
 
     /// Recursively finds the innermost widget at the given position, using
     /// [`Widget::find_widget_under_pointer`] to descend the widget tree. If `self` does not contain the
-    /// given position in its aligned border-box or clip path, this returns `None`.
+    /// given position in its visual border-box or clip path, this returns `None`.
     ///
     /// **pos** - the position is in the window's coordinate space,
     /// e.g. `(0,0)` is the top-left corner of the window.

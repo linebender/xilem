@@ -112,7 +112,7 @@ pub(crate) struct RenderRootState {
     /// The `WidgetId` is the id of the widget that made the request.
     ///
     /// The `Rect` is the area it wants to be scrolled into view,
-    /// in its border-box coordinate space.
+    /// in its layout border-box coordinate space.
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
 
     /// List of ancestors of the currently hovered widget.
@@ -475,7 +475,8 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.global_state.scale_factor = scale_factor;
-                self.request_render_all();
+                self.request_compose_and_render_all();
+                self.run_rewrite_passes();
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
@@ -880,27 +881,31 @@ impl RenderRoot {
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
-    pub(crate) fn request_render_all(&mut self) {
-        fn request_render_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+    pub(crate) fn request_compose_and_render_all(&mut self) {
+        fn request_compose_and_render_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
             let children = node.children;
             let widget = &mut *node.item.widget;
             let state = &mut node.item.state;
 
+            state.needs_compose = true;
+            state.request_compose = true;
+
             state.needs_paint = true;
-            state.needs_accessibility = true;
             state.request_pre_paint = true;
             state.request_paint = true;
-            state.request_accessibility = true;
             state.request_post_paint = true;
+
+            state.needs_accessibility = true;
+            state.request_accessibility = true;
 
             let id = state.id;
             recurse_on_children(id, widget, children, |node| {
-                request_render_all_in(node);
+                request_compose_and_render_all_in(node);
             });
         }
 
         let root_node = self.widget_arena.get_node_mut(self.root_id());
-        request_render_all_in(root_node);
+        request_compose_and_render_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
     }

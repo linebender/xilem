@@ -1061,13 +1061,15 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
+        let text_origin_in_layout_border_box_space =
+            Point::ORIGIN + ctx.visual_translation() + ctx.border_box_translation();
 
         let updated = self.editor.try_accessibility(
             ctx.tree_update(),
             node,
             AccessCtx::next_node_id,
-            0.,
-            0.,
+            text_origin_in_layout_border_box_space.x,
+            text_origin_in_layout_border_box_space.y,
             |node, style| set_accesskit_brush_properties(node, style, &[text_color.color.into()]),
         );
 

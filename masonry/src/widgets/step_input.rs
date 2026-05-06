@@ -1106,9 +1106,9 @@ impl<T: Steppable> Widget for StepInput<T> {
             PointerEvent::Move(pu) => {
                 // If we're hovered, highlight the correct side's button.
                 if ctx.is_hovered() {
-                    let size = ctx.content_box_size();
+                    let content_box_center_x = ctx.content_box().center().x;
                     let local_x = ctx.local_position(pu.current.position).x;
-                    let hover_backward = local_x <= size.width * 0.5;
+                    let hover_backward = local_x <= content_box_center_x;
                     if hover_backward != self.hover_backward {
                         self.hover_backward = hover_backward;
                         ctx.request_paint_only();
@@ -1214,7 +1214,7 @@ impl<T: Steppable> Widget for StepInput<T> {
                 // * The button was previously pressed down on us (active)
                 // * The pointer is still on us (hovered)
                 if self.slide_last.is_none() && ctx.is_active() && ctx.is_hovered() {
-                    let size = ctx.content_box_size();
+                    let content_box_center_x = ctx.content_box().center().x;
                     let local_x = ctx.local_position(pbe.state.position).x;
 
                     // Snap based on modifier
@@ -1225,7 +1225,7 @@ impl<T: Steppable> Widget for StepInput<T> {
                     };
 
                     // Update the active value based on which side was clicked
-                    let value_changed = if local_x <= size.width * 0.5 {
+                    let value_changed = if local_x <= content_box_center_x {
                         if snap {
                             self.prev_snap()
                         } else {
@@ -1531,7 +1531,7 @@ impl<T: Steppable> StepInput<T> {
         let color_backward = *props.get::<BackwardColor>(cache);
         let color_forward = *props.get::<ForwardColor>(cache);
 
-        let size = ctx.content_box_size();
+        let size = ctx.content_box().size();
         let (_, forward, backward) = self.visual_speed();
 
         let (btn_length, btn_edge_pad) = Self::basic_button_length(size.height, Some(size.width));
@@ -1604,7 +1604,7 @@ impl<T: Steppable> StepInput<T> {
         let color_forward = *props.get::<ForwardColor>(cache);
         let color_heat = *props.get::<HeatColor>(cache);
 
-        let size = ctx.content_box_size();
+        let size = ctx.content_box().size();
         let (speed, forward, backward) = self.visual_speed();
         let sliding = forward || backward;
 

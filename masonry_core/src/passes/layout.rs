@@ -16,7 +16,7 @@ use crate::core::{
     ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget, WidgetArenaNode,
     WidgetState,
 };
-use crate::kurbo::{Axis, Insets, Point, Size};
+use crate::kurbo::{Axis, Insets, Point, Rect, Size};
 use crate::layout::{LayoutSize, LenDef, LenReq, Length, MeasurementInputs, SizeDef};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::properties::{BorderWidth, BoxShadow, Dimensions, Padding};
@@ -329,9 +329,9 @@ pub(crate) fn run_layout_on(
             widget.short_type_name(),
             id,
         );
-        state.origin = Point::ZERO;
-        state.end_point = Point::ZERO;
+        state.layout_origin = Point::ZERO;
         state.layout_border_box_size = Size::ZERO;
+        state.visual_border_box = Rect::ZERO;
         return;
     }
 
@@ -403,7 +403,7 @@ pub(crate) fn run_layout_on(
         }
     });
 
-    state.paint_insets = Insets::ZERO;
+    state.paint_box_insets = Insets::ZERO;
 
     // Compute the insets for deriving the content-box from the border-box
     let border_box_insets = border_width.insets_up(Insets::ZERO);
@@ -428,18 +428,18 @@ pub(crate) fn run_layout_on(
     let shadow = props.get::<BoxShadow>(&mut state.property_cache);
     if shadow.is_visible() {
         let shadow_insets = shadow.get_insets();
-        state.paint_insets = Insets {
-            x0: state.paint_insets.x0.max(shadow_insets.x0),
-            y0: state.paint_insets.y0.max(shadow_insets.y0),
-            x1: state.paint_insets.x1.max(shadow_insets.x1),
-            y1: state.paint_insets.y1.max(shadow_insets.y1),
+        state.paint_box_insets = Insets {
+            x0: state.paint_box_insets.x0.max(shadow_insets.x0),
+            y0: state.paint_box_insets.y0.max(shadow_insets.y0),
+            x1: state.paint_box_insets.x1.max(shadow_insets.x1),
+            y1: state.paint_box_insets.y1.max(shadow_insets.y1),
         };
     }
 
     if trace {
         trace!(
             "Computed layout: border-box={}, first_baseline={}, last_baseline={} insets={:?}",
-            border_box_size, state.first_baseline, state.last_baseline, state.paint_insets,
+            border_box_size, state.first_baseline, state.last_baseline, state.paint_box_insets,
         );
     }
 
@@ -507,20 +507,13 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 }
 
 // --- MARK: PLACE WIDGET
-/// Places the child at `origin` in its parent's border-box coordinate space.
+/// Places the child at `origin` in its parent's layout border-box coordinate space.
 pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
-    let end_point = origin + child_state.layout_border_box_size.to_vec2();
-    // TODO - Account for display scale in pixel snapping
-    // See https://github.com/linebender/xilem/issues/1264
-    let origin = origin.round();
-    let end_point = end_point.round();
-
     // TODO - We may want to invalidate in other cases as well
-    if origin != child_state.origin {
+    if origin != child_state.layout_origin {
         child_state.transform_changed = true;
     }
-    child_state.origin = origin;
-    child_state.end_point = end_point;
+    child_state.layout_origin = origin;
 
     child_state.is_expecting_place_child_call = false;
 }
@@ -563,8 +556,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     place_widget(&mut root_node.item.state, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.global_state.size_policy {
-        // We use the aligned border-box size, which means that transforms won't affect window size.
-        let size = root_node.item.state.border_box_size();
+        // We use the layout border-box size, which means that transforms won't affect window size.
+        let size = root_node.item.state.layout_border_box_size;
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
         if root.global_state.size != new_size {

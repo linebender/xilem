@@ -172,7 +172,7 @@ impl Widget for Slider {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
-                let width = ctx.content_box_size().width;
+                let width = ctx.content_box().size().width;
                 let is_focused = ctx.is_focus_target();
                 let cache = ctx.property_cache();
                 if self.update_value_from_position(
@@ -186,7 +186,7 @@ impl Widget for Slider {
             }
             PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
                 let local_pos = ctx.local_position(current.position);
-                let width = ctx.content_box_size().width;
+                let width = ctx.content_box().size().width;
                 let is_focused = ctx.is_focus_target();
                 let cache = ctx.property_cache();
                 if self.update_value_from_position(
@@ -381,7 +381,7 @@ impl Widget for Slider {
         let thumb_border_width = 2.0;
 
         // Calculate geometry based on state
-        let size = ctx.content_box_size();
+        let size = ctx.content_box().size();
         let thumb_radius = if ctx.is_active() {
             base_thumb_radius + 2.0
         } else if ctx.is_hovered() || ctx.is_focus_target() {

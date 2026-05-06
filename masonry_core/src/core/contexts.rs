@@ -221,11 +221,12 @@ impl_context_method!(
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Returns the local transform of this widget.
         ///
-        /// This transform is used during the mapping of this widget's border-box coordinate space
-        /// to the parent's border-box coordinate space.
+        /// This transform is used during the mapping of this widget's layout border-box
+        /// coordinate space to the parent's layout border-box coordinate space.
         ///
-        /// When calculating the effective border-box of this widget, first this transform
-        /// will be applied and then `scroll_translation` and `origin` applied on top.
+        /// When mapping this widget's visual border-box into the window's coordinate space,
+        /// first this transform will be applied and then `scroll_translation` and `origin`
+        /// applied on top.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
         }
@@ -440,11 +441,11 @@ impl EventCtx<'_> {
     /// capture the pointer during any other event.
     ///
     /// A widget normally only receives pointer events when the pointer is inside the widget's
-    /// layout box. Pointer capture causes widget layout boxes to be ignored: when the pointer is
-    /// captured by a widget, that widget will continue receiving pointer events when the pointer
-    /// is outside the widget's layout box. Other widgets the pointer is over will not receive
-    /// events. Events that are not marked as handled by the capturing widget, bubble up to the
-    /// widget's ancestors, ignoring their layout boxes as well.
+    /// visual border-box. Pointer capture causes widget layout boxes to be ignored: when the
+    /// pointer is captured by a widget, that widget will continue receiving pointer events when
+    /// the pointer is outside the widget's visual border-box. Other widgets the pointer is over
+    /// will not receive events. Events that are not marked as handled by the capturing widget,
+    /// bubble up to the widget's ancestors, ignoring their visual border-boxes as well.
     ///
     /// The pointer cannot be captured by multiple widgets at the same time. If a widget has
     /// captured the pointer and another widget captures it, the first widget loses the pointer
@@ -502,7 +503,7 @@ impl EventCtx<'_> {
     }
 
     /// Converts the given position from the window's coordinate space
-    /// to this widget's content-box coordinate space.
+    /// to this widget's visual content-box coordinate space.
     pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
         let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
         self.to_local(Point { x, y })
@@ -511,9 +512,9 @@ impl EventCtx<'_> {
 
 // Methods shared by event and action handling.
 impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
-    /// Sends a signal to parent widgets to scroll this widget's border-box into view.
+    /// Sends a signal to parent widgets to scroll this widget's visual border-box into view.
     pub fn request_scroll_to_this(&mut self) {
-        let rect = self.widget_state.border_box_size().to_rect();
+        let rect = self.widget_state.visual_border_box;
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
@@ -521,10 +522,12 @@ impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
 
     /// Sends a signal to parent widgets to scroll the provided `rect` into view.
     ///
-    /// The `rect` must be in this widget's content-box coordinate space.
+    /// The `rect` must be in this widget's visual content-box coordinate space.
     pub fn request_scroll_to(&mut self, rect: Rect) {
-        // Convert from this widget's content-box space to border-box space.
-        let rect = rect + self.widget_state.border_box_translation();
+        // Convert from this widget's visual content-box space to layout border-box space.
+        let rect = rect
+            + self.widget_state.visual_translation()
+            + self.widget_state.border_box_translation();
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
@@ -867,7 +870,7 @@ impl LayoutCtx<'_> {
         self.widget_state.merge_up(state_mut);
     }
 
-    /// Sets the position of the `child` widget, in this widget's content-box coordinate space.
+    /// Sets the position of the `child` widget, in this widget's layout content-box coordinate space.
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// [`layout`] method, after calling `ctx.run_layout(child, size)`.
@@ -894,7 +897,8 @@ impl LayoutCtx<'_> {
             );
         }
 
-        // Convert child's origin from this widget's content-box space to border-box space.
+        // Convert the child's origin from this widget's layout content-box space
+        // to this widget's layout border-box space.
         let translation = self.widget_state.border_box_translation();
         let child_origin = origin + translation;
         let child_state = self.get_child_state_mut(child);
@@ -909,7 +913,7 @@ impl LayoutCtx<'_> {
     /// [`layout`] method.
     ///
     /// You are only required to notify of painting that actually overflows the layout border-box.
-    /// The insets will still be relative to the content-box, it's just that Masonry doesn't
+    /// The insets will still be relative to the layout content-box, it's just that Masonry doesn't
     /// really need to be notified if you're just painting over your padding or borders.
     ///
     /// You are only required to notify of painting done directly by this widget.
@@ -924,7 +928,7 @@ impl LayoutCtx<'_> {
             insets.x1 - self.widget_state.border_box_insets.x1,
             insets.y1 - self.widget_state.border_box_insets.y1,
         );
-        self.widget_state.paint_insets = insets.nonnegative();
+        self.widget_state.paint_box_insets = insets.nonnegative();
     }
 
     /// Sets explicit baselines for this widget.
@@ -935,38 +939,42 @@ impl LayoutCtx<'_> {
     /// relative to neighbouring text, such as switches or checkboxes.
     ///
     /// The provided values must be the distance from the top of this
-    /// widget's content-box to its baseline. If there aren't multiple
+    /// widget's layout content-box to its baseline. If there aren't multiple
     /// baselines then set the same baseline as both `first` and `last`.
     ///
     /// Most container widgets can use [`derive_baselines`] instead.
-    /// Multi-child containers should derive their baselines using [`child_aligned_baselines`].
+    /// Multi-child containers should derive their baselines using [`child_baselines`]
+    /// and [`child_origin`].
     ///
     /// [`derive_baselines`]: Self::derive_baselines
-    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    /// [`child_baselines`]: Self::child_baselines
+    /// [`child_origin`]: Self::child_origin
     pub fn set_baselines(&mut self, first_baseline: f64, last_baseline: f64) {
         self.widget_state.first_baseline = first_baseline + self.widget_state.border_box_insets.y0;
         self.widget_state.last_baseline = last_baseline + self.widget_state.border_box_insets.y0;
     }
 
-    /// Sets explicit baselines for this widget such that they match the child's aligned baselines.
+    /// Sets explicit baselines for this widget such that they match the child's baselines.
     ///
     /// Most container widgets should use this method to derive their baselines from their child.
-    /// More complex containers can use [`child_aligned_baselines`] in multi-child scenarios.
+    /// More complex containers can use [`child_baselines`] and [`child_origin`]
+    /// in multi-child scenarios.
     ///
     /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] or [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     ///
-    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    /// [`child_baselines`]: Self::child_baselines
+    /// [`child_origin`]: Self::child_origin
     #[track_caller]
     pub fn derive_baselines(&mut self, child: &WidgetPod<impl Widget + ?Sized>) {
         self.assert_layout_done(child, "derive_baselines");
         self.assert_placed(child, "derive_baselines");
 
         let child_state = self.get_child_state(child);
-        let first_baseline = child_state.origin.y + child_state.aligned_first_baseline();
-        let last_baseline = child_state.origin.y + child_state.aligned_last_baseline();
+        let first_baseline = child_state.layout_origin.y + child_state.layout_first_baseline();
+        let last_baseline = child_state.layout_origin.y + child_state.layout_last_baseline();
         self.widget_state.first_baseline = first_baseline;
         self.widget_state.last_baseline = last_baseline;
     }
@@ -1002,7 +1010,8 @@ impl LayoutCtx<'_> {
     /// The distances are from the top of the child widget's layout border-box to its baseline.
     ///
     /// Call this if the child's baseline plays a role in choosing its placement.
-    /// For deriving this widget's baselines call [`child_aligned_baselines`] instead,
+    /// For deriving this widget's baselines call [`child_baselines`] with
+    /// [`child_origin`] instead,
     /// or better yet use [`derive_baselines`] if possible.
     ///
     /// # Panics
@@ -1010,7 +1019,8 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     ///
-    /// [`child_aligned_baselines`]: Self::child_aligned_baselines
+    /// [`child_baselines`]: Self::child_baselines
+    /// [`child_origin`]: Self::child_origin
     /// [`derive_baselines`]: Self::derive_baselines
     #[track_caller]
     pub fn child_layout_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
@@ -1023,12 +1033,12 @@ impl LayoutCtx<'_> {
         )
     }
 
-    /// Returns the `child` widget's `(first, last)` aligned baselines.
+    /// Returns the `child` widget's `(first, last)` baselines.
     ///
-    /// The distances are from the top of the child widget's aligned border-box to its baseline.
+    /// The distances are from the top of the child widget's layout border-box to its baseline.
     ///
-    /// This aligned version should be used for deriving this widget's own baselines based
-    /// on the child's baselines. That is if [`derive_baselines`] can't be used.
+    /// This should be used together with [`child_origin`] for deriving this widget's own
+    /// baselines based on placed children. That is if [`derive_baselines`] can't be used.
     /// For deciding where to place the child based on its baselines,
     /// you need to use [`child_layout_baselines`] instead.
     ///
@@ -1039,20 +1049,21 @@ impl LayoutCtx<'_> {
     ///
     /// [`derive_baselines`]: Self::derive_baselines
     /// [`child_layout_baselines`]: Self::child_layout_baselines
+    /// [`child_origin`]: Self::child_origin
     #[track_caller]
-    pub fn child_aligned_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
-        self.assert_layout_done(child, "child_aligned_baselines");
-        self.assert_placed(child, "child_aligned_baselines");
+    pub fn child_baselines(&self, child: &WidgetPod<impl Widget + ?Sized>) -> (f64, f64) {
+        self.assert_layout_done(child, "child_baselines");
+        self.assert_placed(child, "child_baselines");
 
         let child_state = self.get_child_state(child);
         (
-            child_state.aligned_first_baseline(),
-            child_state.aligned_last_baseline(),
+            child_state.layout_first_baseline(),
+            child_state.layout_last_baseline(),
         )
     }
 
-    /// Returns the given child's aligned border-box origin
-    /// in this widget's content-box coordinate space.
+    /// Returns the given child's layout border-box origin
+    /// in this widget's layout content-box coordinate space.
     ///
     /// # Panics
     ///
@@ -1062,7 +1073,7 @@ impl LayoutCtx<'_> {
     pub fn child_origin(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Point {
         self.assert_layout_done(child, "child_origin");
         self.assert_placed(child, "child_origin");
-        self.get_child_state(child).origin - self.widget_state.border_box_translation()
+        self.get_child_state(child).layout_origin - self.widget_state.border_box_translation()
     }
 
     /// Returns the given child's layout border-box size.
@@ -1077,7 +1088,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_border_box_size
     }
 
-    /// Sets the widget's clip path in the widget's content-box coordinate space.
+    /// Sets the widget's clip path in the widget's layout content-box coordinate space.
     ///
     /// A widget's clip path will have two effects:
     /// - It serves as a mask for painting operations of this widget and its children.
@@ -1090,7 +1101,7 @@ impl LayoutCtx<'_> {
     /// [`pre_paint`]: Widget::pre_paint
     /// [`post_paint`]: Widget::post_paint
     pub fn set_clip_path(&mut self, path: Rect) {
-        // Translate the clip path to the widget's border-box coordinate space.
+        // Translate the clip path to the widget's layout border-box coordinate space.
         let path = path + self.widget_state.border_box_translation();
         // We intentionally always log this because clip paths are:
         // 1) Relatively rare in the tree
@@ -1128,9 +1139,6 @@ impl ComposeCtx<'_> {
     /// Sets the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    ///
-    /// The given translation may be quantized so the child's final position
-    /// stays pixel-perfect.
     pub fn set_child_scroll_translation(
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
@@ -1150,40 +1158,6 @@ impl ComposeCtx<'_> {
             );
         }
 
-        let translation = translation.round();
-
-        let child = self.get_child_state_mut(child);
-        if translation != child.scroll_translation {
-            child.scroll_translation = translation;
-            child.transform_changed = true;
-        }
-    }
-
-    /// Sets the scroll translation for the child widget.
-    ///
-    /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    ///
-    /// Unlike [`Self::set_child_scroll_translation`], doesn't perform pixel-snapping.
-    /// This method should be used for intermediary scroll values during scroll animations.
-    pub fn set_animated_child_scroll_translation(
-        &mut self,
-        child: &mut WidgetPod<impl Widget + ?Sized>,
-        translation: Vec2,
-    ) {
-        if translation.x.is_nan()
-            || translation.x.is_infinite()
-            || translation.y.is_nan()
-            || translation.y.is_infinite()
-        {
-            debug_panic!(
-                "Error in {}: trying to call 'set_animated_child_scroll_translation' with child '{}' {} with invalid translation {:?}",
-                self.widget_id(),
-                self.get_child_dyn(child).short_type_name(),
-                child.id(),
-                translation,
-            );
-        }
-
         let child = self.get_child_state_mut(child);
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
@@ -1192,9 +1166,9 @@ impl ComposeCtx<'_> {
     }
 }
 
-// --- MARK: GET LAYOUT
+// --- MARK: GET GEOMETRY
 // Methods on all context types except MeasureCtx and LayoutCtx
-// These methods access layout info calculated during the layout pass.
+// These methods access geometry resolved during layout and compose.
 impl_context_method!(
     MutateCtx<'_>,
     ActionCtx<'_>,
@@ -1205,63 +1179,70 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// Returns the aligned content-box size of this widget.
-        pub fn content_box_size(&self) -> Size {
-            let border_box_size = self.widget_state.border_box_size();
-            Size::new(
-                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
-        }
-
-        /// Returns the aligned border-box size of this widget.
-        pub fn border_box_size(&self) -> Size {
-            self.widget_state.border_box_size()
-        }
-
-        /// Returns the aligned paint-box size of this widget.
-        pub fn paint_box_size(&self) -> Size {
-            self.widget_state.paint_box().size()
-        }
-
-        /// Returns the aligned content-box rect of this widget
-        /// in this widget's content-box coordinate space.
+        /// Returns the visual content-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
         pub fn content_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            Rect::new(
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
+            self.widget_state.visual_content_box() - translation
+        }
+
+        /// Returns the layout content-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
+        pub fn layout_content_box(&self) -> Rect {
+            // Create the layout content-box in layout content-box coordinate space
+            let border_box_size = self.widget_state.layout_border_box_size;
+            let layout_content_box = Rect::new(
                 0.,
                 0.,
                 (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
                 (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
-        }
-
-        /// Returns the aligned border-box rect of this widget
-        /// in this widget's content-box coordinate space.
-        pub fn border_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            let origin = Point::new(
-                -self.widget_state.border_box_insets.x0,
-                -self.widget_state.border_box_insets.y0,
             );
-            Rect::from_origin_size(origin, border_box_size)
+            // Convert it into visual content-box coordinate space
+            layout_content_box - self.widget_state.visual_translation()
         }
 
-        /// Returns the aligned paint-box rect of this widget
-        /// in this widget's content-box coordinate space.
+        /// Returns the visual border-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
+        pub fn border_box(&self) -> Rect {
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
+            self.widget_state.visual_border_box - translation
+        }
+
+        /// Returns the layout border-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
+        pub fn layout_border_box(&self) -> Rect {
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
+            self.widget_state.layout_border_box() - translation
+        }
+
+        /// Returns the visual paint-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
         ///
         /// Covers the area we expect to be invalidated when the widget is painted.
         pub fn paint_box(&self) -> Rect {
-            let translation = self.widget_state.border_box_translation();
-            self.widget_state.paint_box() - translation
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
+            self.widget_state.visual_paint_box() - translation
+        }
+
+        /// Returns the layout paint-box rect of this widget
+        /// in this widget's visual content-box coordinate space.
+        ///
+        /// Covers the area we expect to be invalidated when the widget is painted.
+        pub fn layout_paint_box(&self) -> Rect {
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
+            self.widget_state.layout_paint_box() - translation
         }
 
         /// Returns the widget's bounding-box rect in the window's coordinate space.
         ///
         /// It contains this widget and all of its descendents.
         ///
-        /// This is the union of clipped effective paint-box rects, i.e. the union of
-        /// globally transformed aligned border-box rects with paint insets applied.
+        /// This is the union of clipped visual paint-box rects in the window's coordinate space.
         ///
         /// See [bounding box documentation] for more details.
         ///
@@ -1270,28 +1251,38 @@ impl_context_method!(
             self.widget_state.bounding_box
         }
 
-        /// Returns the first baseline relative to the top of the widget's aligned content-box.
+        /// Returns the first baseline relative to the top of the widget's layout content-box.
         pub fn first_baseline(&self) -> f64 {
-            let border_box_baseline = self.widget_state.aligned_first_baseline();
+            let border_box_baseline = self.widget_state.layout_first_baseline();
             border_box_baseline - self.widget_state.border_box_insets.y0
         }
 
-        /// Returns the last baseline relative to the top of the widget's aligned content-box.
+        /// Returns the last baseline relative to the top of the widget's layout content-box.
         pub fn last_baseline(&self) -> f64 {
-            let border_box_baseline = self.widget_state.aligned_last_baseline();
+            let border_box_baseline = self.widget_state.layout_last_baseline();
             border_box_baseline - self.widget_state.border_box_insets.y0
         }
 
         /// The clip path of the widget, if any was set.
         ///
-        /// The returned clip path will be in this widget's content-box coordinate space.
+        /// The returned clip path will be in this widget's visual content-box coordinate space.
         ///
         /// For more information, see
         /// [`LayoutCtx::set_clip_path`](crate::core::LayoutCtx::set_clip_path).
         pub fn clip_path(&self) -> Option<Rect> {
-            // Translate the clip path to the widget's content-box coordinate space.
-            let translation = self.widget_state.border_box_translation();
+            // Translate the clip path to the widget's visual content-box coordinate space.
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
             self.widget_state.clip_path.map(|path| path - translation)
+        }
+
+        /// Returns the [`Vec2`] for translating between this widget's
+        /// layout and visual coordinate spaces.
+        ///
+        /// Add this [`Vec2`] to translate from visual to layout,
+        /// and subtract this [`Vec2`] to translate from layout to visual.
+        pub fn visual_translation(&self) -> Vec2 {
+            self.widget_state.visual_translation()
         }
 
         /// Returns the [`Vec2`] for translating between this widget's
@@ -1303,61 +1294,50 @@ impl_context_method!(
             self.widget_state.border_box_translation()
         }
 
-        /// Returns the widget's effective border-box origin in the window's coordinate space.
-        pub fn window_origin(&self) -> Point {
-            self.widget_state.border_box_window_origin()
-        }
-
-        /// Returns the global transform mapping this widget's content-box coordinate space
+        /// Returns the global transform mapping this widget's visual content-box coordinate space
         /// to the window's coordinate space.
         ///
         /// Computed from all `transform`, `scroll_translation`, and `origin` values
         /// from this widget all the way up to the window.
         ///
-        /// Multiply by this to convert from this widget's content-box coordinate space to the window's,
-        /// or use the inverse of this transform to go from window's space to this widget's content-box.
+        /// Multiply by this to convert from this widget's visual content-box coordinate space to
+        /// the window's, or use the inverse of this transform to go from window's space to this
+        /// widget's visual content-box.
         pub fn window_transform(&self) -> Affine {
-            let translation = self.widget_state.border_box_translation();
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
             self.widget_state
                 .window_transform
                 .pre_translate(translation)
         }
 
         /// Converts the `point` from the window's coordinate space
-        /// to this widget's content-box coordinate space.
+        /// to this widget's visual content-box coordinate space.
         pub fn to_local(&self, point: Point) -> Point {
             let to_border_box = self.widget_state.window_transform.inverse();
+            let to_visual = -self.widget_state.visual_translation();
             let to_content_box = -self.widget_state.border_box_translation();
-            to_border_box.then_translate(to_content_box) * point
+            to_border_box.then_translate(to_visual + to_content_box) * point
         }
 
-        /// Converts the `point` from this widget's content-box coordinate space
+        /// Converts the `point` from this widget's visual content-box coordinate space
         /// to the window's coordinate space.
         ///
         /// The returned point is relative to the window's content area; it excludes window chrome.
         pub fn to_window(&self, point: Point) -> Point {
-            let translation = self.widget_state.border_box_translation();
+            let translation =
+                self.widget_state.visual_translation() + self.widget_state.border_box_translation();
             self.widget_state.window_transform * (point + translation)
+        }
+
+        /// Returns the DPI scaling factor.
+        ///
+        /// This can be useful for loading image resources meant for a specific scale.
+        pub fn scale_factor(&self) -> f64 {
+            self.global_state.scale_factor
         }
     }
 );
-
-impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
-    /// Returns DPI scaling factor.
-    ///
-    /// This is not required for most widgets, and should be used only for precise
-    /// rendering, such as rendering single pixel lines or selecting image variants.
-    /// This is currently only provided in the render stages, as these are the only passes which
-    /// are re-run when the scale factor changes, except [`EventCtx`] where it is necessary to
-    /// translate pointer events which are currently in physical coordinates.
-    ///
-    /// Note that accessibility nodes and paint results will automatically be scaled by Masonry.
-    /// This also doesn't account for the widget's current transform, which cannot currently be
-    /// accessed by widgets directly.
-    pub fn get_scale_factor(&self) -> f64 {
-        self.global_state.scale_factor
-    }
-});
 
 // --- MARK: GET STATUS
 
@@ -1377,7 +1357,7 @@ impl_context_method!(
     {
         /// The "hovered" status of a widget.
         ///
-        /// A widget is "hovered" when a pointer is hovering over its border-box.
+        /// A widget is "hovered" when a pointer is hovering over its visual border-box.
         /// Widgets will often change their appearance as a visual indication that they
         /// will respond to pointer (usually mouse) interaction.
         ///
@@ -1712,8 +1692,8 @@ impl_context_method!(
 
         /// Sets the local transform for this widget.
         ///
-        /// This maps this widget's border-box coordinate space
-        /// to the parent's border-box coordinate space.
+        /// This maps this widget's layout border-box coordinate space
+        /// to the parent's layout border-box coordinate space.
         ///
         /// It behaves similarly as CSS transforms.
         pub fn set_transform(&mut self, transform: Affine) {
@@ -1921,13 +1901,13 @@ impl_context_method!(
                 .push((action, self.widget_state.id));
         }
 
-        /// Sets the IME cursor area in the widget's content-box coordinate space.
+        /// Sets the IME cursor area in the widget's layout content-box coordinate space.
         ///
         /// When this widget is [focused] and [accepts text input], the reported IME area is sent
         /// to the platform. The area can be used by the platform to, for example, place a
         /// candidate box near that area, while ensuring the area is not obscured.
         ///
-        /// If no IME area is set, then Masonry will use the widget's aligned border-box rect.
+        /// If no IME area is set, then Masonry will use the widget's visual border-box rect.
         ///
         /// [focused]: EventCtx::request_focus
         /// [accepts text input]: Widget::accepts_text_input
@@ -1938,7 +1918,9 @@ impl_context_method!(
 
         /// Removes the IME cursor area.
         ///
-        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        /// See [`set_ime_area`] for more details.
+        ///
+        /// [`set_ime_area`]: Self::set_ime_area
         pub fn clear_ime_area(&mut self) {
             self.widget_state.ime_area = None;
         }

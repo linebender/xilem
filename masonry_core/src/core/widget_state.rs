@@ -72,24 +72,12 @@ pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
-    /// The origin (top-left) of the widget's aligned border-box
-    /// in the parent's border-box coordinate space.
+    /// The origin (top-left) of the widget's layout border-box
+    /// in the parent's layout border-box coordinate space.
+    pub(crate) layout_origin: Point,
+    /// The size of the widget's layout border-box.
     ///
-    /// Together with `end_point`, these constitute the widget's aligned border-box.
-    pub(crate) origin: Point,
-    /// The bottom right of the widget's aligned border-box
-    /// in the parent's border-box coordinate space.
-    ///
-    /// Computed from the widget's `origin` and `layout_border_box_size`, with some pixel snapping.
-    pub(crate) end_point: Point,
-    /// The widget's layout border-box size.
-    ///
-    /// This is the chosen border-box size with min/max constraints applied.
-    ///
-    /// It is used to:
-    /// * Determine layout cache validity.
-    /// * Derive the widget's layout content-box size that will be given to `Widget::layout`.
-    /// * Compute `end_point` when the widget is placed to an `origin` by its parent.
+    /// This is also used to determine layout cache validity.
     pub(crate) layout_border_box_size: Size,
     /// The insets for converting between content-box and border-box rects.
     ///
@@ -105,12 +93,17 @@ pub(crate) struct WidgetState {
     ///
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
-    pub(crate) paint_insets: Insets,
+    pub(crate) paint_box_insets: Insets,
+    /// The widget's visual border-box in the widget's layout border-box coordinate space.
+    ///
+    /// This is resolved during compose from the layout border-box. It may be pixel-snapped using
+    /// the widget's full transform to the window's coordinate space and the current scale factor.
+    /// When snapping is not supported for the transform, then this matches the layout border-box.
+    pub(crate) visual_border_box: Rect,
     /// An axis aligned bounding rect (AABB in 2D),
     /// containing itself and all its descendents in the window's coordinate space.
     ///
-    /// This is the union of clipped effective paint-box rects, i.e. the union of
-    /// globally transformed aligned border-box rects with paint insets applied.
+    /// This is the union of clipped visual paint-box rects in the window's coordinate space.
     pub(crate) bounding_box: Rect,
 
     /// The offset of the first baseline relative to the top of the widget's layout border-box.
@@ -129,26 +122,28 @@ pub(crate) struct WidgetState {
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
     // efficiently hold an arbitrary shape.
-    /// The widget's clip path in the widget's border-box coordinate space.
+    /// The widget's clip path in the widget's layout border-box coordinate space.
     ///
     /// This clips the painting of `Widget::paint` and all the painting of children.
     /// It does not clip this widget's `Widget::pre_paint` nor `Widget::post_paint`.
     pub(crate) clip_path: Option<Rect>,
 
-    /// Local transform used during the mapping of this widget's border-box coordinate space
-    /// to the parent's border-box coordinate space.
+    /// Local transform used during the mapping of this widget's layout border-box coordinate
+    /// space to the parent's layout border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// When mapping this widget's visual border-box into the window's coordinate space,
+    /// first this transform will be applied and then `scroll_translation` and `origin`
+    /// applied on top.
     pub(crate) transform: Affine,
-    /// Global transform mapping this widget's border-box coordinate space
+    /// Global transform mapping this widget's layout border-box coordinate space
     /// to the window's coordinate space.
     ///
     /// Computed from all `transform`, `scroll_translation`, and `origin` values
     /// from this widget all the way up to the window.
     ///
-    /// Multiply by this to convert from this widget's border-box coordinate space to the window's,
-    /// or use the inverse of this transform to go from window's space to this widget's border-box.
+    /// Multiply by this to convert from this widget's layout border-box coordinate space to the
+    /// window's coordinate space, or use the inverse of this transform to go from window's space
+    /// to this widget's layout border-box coordinate space.
     pub(crate) window_transform: Affine,
     /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
@@ -173,7 +168,7 @@ pub(crate) struct WidgetState {
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) accepts_text_input: bool,
     /// The area of the widget that is being edited by an IME,
-    /// in the widget's border-box coordinate space.
+    /// in the widget's layout border-box coordinate space.
     pub(crate) ime_area: Option<Rect>,
 
     // --- PASSES ---
@@ -293,11 +288,11 @@ impl WidgetState {
         Self {
             id,
 
-            origin: Point::ORIGIN,
-            end_point: Point::ORIGIN,
+            layout_origin: Point::ORIGIN,
             layout_border_box_size: Size::ZERO,
             border_box_insets: Insets::ZERO,
-            paint_insets: Insets::ZERO,
+            paint_box_insets: Insets::ZERO,
+            visual_border_box: Rect::ZERO,
             bounding_box: Rect::ZERO,
             first_baseline: f64::NAN,
             last_baseline: f64::NAN,
@@ -400,14 +395,37 @@ impl WidgetState {
         self.needs_layout = needs_layout;
     }
 
-    /// The aligned border-box size of this widget.
-    pub(crate) fn border_box_size(&self) -> Size {
-        (self.end_point - self.origin).to_size()
+    /// Returns the widget's layout border-box in the widget's layout border-box coordinate space.
+    pub(crate) fn layout_border_box(&self) -> Rect {
+        self.layout_border_box_size.to_rect()
     }
 
-    /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
-    pub(crate) fn paint_box(&self) -> Rect {
-        self.border_box_size().to_rect() + self.paint_insets
+    /// Returns the widget's visual content-box in the widget's layout border-box coordinate space.
+    pub(crate) fn visual_content_box(&self) -> Rect {
+        let x0 = self.visual_border_box.x0 + self.border_box_insets.x0;
+        let y0 = self.visual_border_box.y0 + self.border_box_insets.y0;
+        let x1 = (self.visual_border_box.x1 - self.border_box_insets.x1).max(x0);
+        let y1 = (self.visual_border_box.y1 - self.border_box_insets.y1).max(y0);
+        Rect::new(x0, y0, x1, y1)
+    }
+
+    /// Returns the widget's layout paint-box in the widget's layout border-box coordinate space.
+    pub(crate) fn layout_paint_box(&self) -> Rect {
+        self.layout_border_box() + self.paint_box_insets
+    }
+
+    /// Returns the widget's visual paint-box in the widget's layout border-box coordinate space.
+    pub(crate) fn visual_paint_box(&self) -> Rect {
+        self.visual_border_box + self.paint_box_insets
+    }
+
+    /// Returns the [`Vec2`] for translating between this widget's
+    /// layout and visual coordinate spaces.
+    ///
+    /// Add this [`Vec2`] to translate from visual to layout,
+    /// and subtract this [`Vec2`] to translate from layout to visual.
+    pub(crate) fn visual_translation(&self) -> Vec2 {
+        Vec2::new(self.visual_border_box.x0, self.visual_border_box.y0)
     }
 
     /// Returns the [`Vec2`] for translating between this widget's
@@ -417,12 +435,6 @@ impl WidgetState {
     /// and subtract this [`Vec2`] to translate from border-box to content-box.
     pub(crate) fn border_box_translation(&self) -> Vec2 {
         Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
-    }
-
-    /// Returns the widget's effective border-box origin in the window's coordinate space.
-    pub(crate) fn border_box_window_origin(&self) -> Point {
-        // We can just use the translation for (0,0)
-        self.window_transform.translation().to_point()
     }
 
     /// Returns the first baseline relative to the top of the widget's layout border-box.
@@ -443,34 +455,15 @@ impl WidgetState {
         }
     }
 
-    /// Returns the first baseline relative to the top of the widget's aligned border-box.
-    pub(crate) fn aligned_first_baseline(&self) -> f64 {
-        if self.first_baseline.is_nan() {
-            self.end_point.y - self.origin.y
-        } else {
-            self.first_baseline
-        }
-    }
-
-    /// Returns the last baseline relative to the top of the widget's aligned border-box.
-    pub(crate) fn aligned_last_baseline(&self) -> f64 {
-        if self.last_baseline.is_nan() {
-            self.end_point.y - self.origin.y
-        } else {
-            self.last_baseline
-        }
-    }
-
     /// Returns the area being edited by an IME, in the window's coordinate space.
     ///
-    /// If no explicit `ime_area` has been defined this will return the effective border-box area.
+    /// If no explicit `ime_area` has been defined this will return the visual border-box
+    /// area in the window's coordinate space.
     pub(crate) fn get_ime_area(&self) -> Rect {
         // Note: this returns sensible values for a widget that is translated and/or rescaled.
         // Other transformations like rotation may produce weird IME areas.
-        self.window_transform.transform_rect_bbox(
-            self.ime_area
-                .unwrap_or_else(|| self.border_box_size().to_rect()),
-        )
+        self.window_transform
+            .transform_rect_bbox(self.ime_area.unwrap_or(self.visual_border_box))
     }
 
     /// Returns the result of intersecting the widget's clip path (if any) with the given rect.

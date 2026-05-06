@@ -189,6 +189,7 @@ Not doing so is a logical bug, and may trigger debug assertions.
 ### Compose pass
 
 The **compose** pass runs top-down and assigns transforms to children.
+It will also snap widget border-boxes to the pixel grid when the transform allows it.
 Transform-only layout changes (e.g. scrolling) should request compose instead of requesting layout.
 
 Compose is meant to be a cheaper way to position widgets than layout.
@@ -229,7 +230,7 @@ External mutation is how Xilem applies any changes to the widget tree produced b
 Some notes about pass context types:
 
 - Render passes should be pure and can be skipped occasionally, therefore their context types ([`PaintCtx`] and [`AccessCtx`]) can't set invalidation flags or send signals.
-- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot access the size and position of the `self` widget.
+- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`MeasureCtx`], [`LayoutCtx`] cannot access the size and position of the `self` widget.
 They can access the layout of children if they have already been laid out.
 - For the same reason, [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot create a `WidgetRef` reference to a child.
 - [`MutateCtx`], [`EventCtx`] and [`UpdateCtx`] can let you add and remove children.
