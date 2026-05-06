@@ -62,7 +62,7 @@ enum TaffyCtx<'w, 'a> {
 impl Taffy {
     /// Creates a new taffy layout with the given container style.
     pub fn new(style: taffy::Style) -> Self {
-        Taffy {
+        Self {
             children: Vec::new(),
             style,
             cache: taffy::Cache::new(),
@@ -85,16 +85,16 @@ impl Taffy {
 }
 
 impl Child {
-    fn new(widget: NewWidget<impl Widget + ?Sized>, style: impl Into<taffy::Style>) -> Child {
-        Child::Widget {
+    fn new(widget: NewWidget<impl Widget + ?Sized>, style: impl Into<taffy::Style>) -> Self {
+        Self::Widget {
             widget: widget.erased().to_pod(),
             style: style.into(),
             cache: taffy::Cache::new(),
         }
     }
 
-    fn spacer(style: impl Into<taffy::Style>) -> Child {
-        Child::Spacer {
+    fn spacer(style: impl Into<taffy::Style>) -> Self {
+        Self::Spacer {
             style: style.into(),
             cache: taffy::Cache::new(),
         }
@@ -257,7 +257,7 @@ impl<'w, 'a> TaffyCtx<'w, 'a> {
 
 impl Child {
     fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
-        if let Child::Widget { widget, .. } = self {
+        if let Self::Widget { widget, .. } = self {
             Some(widget)
         } else {
             None
@@ -265,7 +265,7 @@ impl Child {
     }
 
     fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
-        if let Child::Widget { widget, .. } = self {
+        if let Self::Widget { widget, .. } = self {
             Some(widget)
         } else {
             None
@@ -274,19 +274,19 @@ impl Child {
 
     fn style(&self) -> &taffy::Style {
         match self {
-            Child::Widget { style, .. } | Child::Spacer { style, .. } => style,
+            Self::Widget { style, .. } | Self::Spacer { style, .. } => style,
         }
     }
 
     fn cache(&self) -> &taffy::Cache {
         match self {
-            Child::Widget { cache, .. } | Child::Spacer { cache, .. } => cache,
+            Self::Widget { cache, .. } | Self::Spacer { cache, .. } => cache,
         }
     }
 
     fn cache_mut(&mut self) -> &mut taffy::Cache {
         match self {
-            Child::Widget { cache, .. } | Child::Spacer { cache, .. } => cache,
+            Self::Widget { cache, .. } | Self::Spacer { cache, .. } => cache,
         }
     }
 }
@@ -429,7 +429,7 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
         if node_id == usize::MAX {
             &self.widget().style
         } else {
-            &self.widget().children[node_id].style()
+            self.widget().children[node_id].style()
         }
     }
 
@@ -440,7 +440,7 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
             ctx.place_child(
                 widget,
                 (layout.location.x as f64, layout.location.y as f64).into(),
-            )
+            );
         }
     }
 
@@ -450,14 +450,16 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
         inputs: taffy::LayoutInput,
     ) -> taffy::LayoutOutput {
         let idx = usize::from(node_id);
-        match (self, inputs.run_mode) {
-            (_, taffy::RunMode::PerformHiddenLayout) => {
+        match (
+            self,
+            inputs.run_mode,
+            convert::to_size(inputs.known_dimensions),
+        ) {
+            (_, taffy::RunMode::PerformHiddenLayout, _) => {
                 // TODO: set size of widget to zero
                 taffy::LayoutOutput::HIDDEN
             }
-            (Self::Layout { widget, ctx }, taffy::RunMode::PerformLayout)
-                if let Some(size) = convert::to_size(inputs.known_dimensions) =>
-            {
+            (Self::Layout { widget, ctx }, taffy::RunMode::PerformLayout, Some(size)) => {
                 if let Some(widget) = widget.children[idx].widget_mut() {
                     ctx.run_layout(widget, size);
                 }
@@ -467,10 +469,10 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
                 };
                 taffy::LayoutOutput::from_outer_size(taffy_size)
             }
-            (Self::Layout { .. }, taffy::RunMode::PerformLayout) => {
+            (Self::Layout { .. }, taffy::RunMode::PerformLayout, _) => {
                 panic!("layout should have known size")
             }
-            (Self::Layout { widget, ctx }, taffy::RunMode::ComputeSize) => {
+            (Self::Layout { widget, ctx }, taffy::RunMode::ComputeSize, _) => {
                 let size = if let Some(widget) = widget.children[idx].widget_mut() {
                     let (auto_size, context_size) = convert::to_measure_size_params(&inputs);
                     let size = ctx.compute_size(widget, auto_size, context_size);
@@ -486,7 +488,7 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
                 };
                 taffy::LayoutOutput::from_outer_size(size)
             }
-            (Self::Measure { widget, ctx }, taffy::RunMode::ComputeSize) => {
+            (Self::Measure { widget, ctx }, taffy::RunMode::ComputeSize, _) => {
                 let size = if let Some(widget) = widget.children[idx].widget_mut() {
                     let (auto_length, context_size, axis, cross_length) =
                         convert::to_measure_len_params(&inputs);
@@ -511,7 +513,7 @@ impl<'w, 'a> taffy::LayoutPartialTree for TaffyCtx<'w, 'a> {
                 };
                 taffy::LayoutOutput::from_outer_size(size)
             }
-            (Self::Measure { .. }, _) => panic!("measure run requires MeasureCtx"),
+            (Self::Measure { .. }, _, _) => panic!("measure run requires MeasureCtx"),
         }
     }
 }
@@ -567,14 +569,14 @@ impl<'w, 'a> taffy::LayoutFlexboxContainer for TaffyCtx<'w, 'a> {
     ) -> Self::FlexboxContainerStyle<'_> {
         match usize::from(node_id) {
             usize::MAX => &self.widget().style,
-            idx => &self.widget().children[idx].style(),
+            idx => self.widget().children[idx].style(),
         }
     }
 
     fn get_flexbox_child_style(&self, node_id: taffy::NodeId) -> Self::FlexboxItemStyle<'_> {
         match usize::from(node_id) {
             usize::MAX => &self.widget().style,
-            idx => &self.widget().children[idx].style(),
+            idx => self.widget().children[idx].style(),
         }
     }
 }
@@ -593,14 +595,14 @@ impl<'w, 'a> taffy::LayoutGridContainer for TaffyCtx<'w, 'a> {
     fn get_grid_container_style(&self, node_id: taffy::NodeId) -> Self::GridContainerStyle<'_> {
         match usize::from(node_id) {
             usize::MAX => &self.widget().style,
-            idx => &self.widget().children[idx].style(),
+            idx => self.widget().children[idx].style(),
         }
     }
 
     fn get_grid_child_style(&self, node_id: taffy::NodeId) -> Self::GridItemStyle<'_> {
         match usize::from(node_id) {
             usize::MAX => &self.widget().style,
-            idx => &self.widget().children[idx].style(),
+            idx => self.widget().children[idx].style(),
         }
     }
 }

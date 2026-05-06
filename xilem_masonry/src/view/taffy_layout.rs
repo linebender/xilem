@@ -41,7 +41,7 @@ pub fn taffy_grid<State, Action, Seq: TaffySequence<State, Action>>(
 ) -> Taffy<GridContainerParams, Seq, State, Action> {
     Taffy {
         sequence,
-        params: Default::default(),
+        params: GridContainerParams::default(),
         phantom: PhantomData,
     }
 }
@@ -90,15 +90,15 @@ impl GridTrackSize {
     fn to_taffy_track_sizing_fn(self) -> taffy::TrackSizingFunction {
         use masonry::widgets::taffy::style_helpers::*;
         match self {
-            GridTrackSize::Auto => taffy::TrackSizingFunction::AUTO,
-            GridTrackSize::MinContent => taffy::TrackSizingFunction::MIN_CONTENT,
-            GridTrackSize::MaxContent => taffy::TrackSizingFunction::MAX_CONTENT,
-            GridTrackSize::FitContent(s) => {
+            Self::Auto => taffy::TrackSizingFunction::AUTO,
+            Self::MinContent => taffy::TrackSizingFunction::MIN_CONTENT,
+            Self::MaxContent => taffy::TrackSizingFunction::MAX_CONTENT,
+            Self::FitContent(s) => {
                 taffy::TrackSizingFunction::fit_content(taffy::LengthPercentage::length(s))
             }
-            GridTrackSize::Fixed(s) => taffy::TrackSizingFunction::from_length(s),
-            GridTrackSize::Percentage(s) => taffy::TrackSizingFunction::from_percent(s),
-            GridTrackSize::Fraction(s) => taffy::TrackSizingFunction::from_fr(s),
+            Self::Fixed(s) => taffy::TrackSizingFunction::from_length(s),
+            Self::Percentage(s) => taffy::TrackSizingFunction::from_percent(s),
+            Self::Fraction(s) => taffy::TrackSizingFunction::from_fr(s),
         }
     }
     fn to_taffy_template(template: &[Self]) -> Vec<taffy::GridTemplateComponent<String>> {
@@ -562,14 +562,14 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Taffy
 // Used for building and rebuilding the ViewSequence
 impl ElementSplice<TaffyElement> for TaffySplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<TaffyElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             match element {
                 TaffyElement::Child(child, style) => {
-                    widgets::Taffy::insert(&mut self.element, self.idx, child.new_widget, style)
+                    widgets::Taffy::insert(&mut self.element, self.idx, child.new_widget, style);
                 }
                 TaffyElement::Spacer(style) => {
-                    widgets::Taffy::insert_spacer(&mut self.element, self.idx, style)
+                    widgets::Taffy::insert_spacer(&mut self.element, self.idx, style);
                 }
             };
             self.idx += 1;
@@ -580,10 +580,10 @@ impl ElementSplice<TaffyElement> for TaffySplice<'_, '_> {
     fn insert(&mut self, element: TaffyElement) {
         match element {
             TaffyElement::Child(child, style) => {
-                widgets::Taffy::insert(&mut self.element, self.idx, child.new_widget, style)
+                widgets::Taffy::insert(&mut self.element, self.idx, child.new_widget, style);
             }
             TaffyElement::Spacer(style) => {
-                widgets::Taffy::insert_spacer(&mut self.element, self.idx, style)
+                widgets::Taffy::insert_spacer(&mut self.element, self.idx, style);
             }
         };
         self.idx += 1;
@@ -939,7 +939,11 @@ pub struct TaffySpacer(FlexChildParams);
 impl TaffySpacer {
     /// Makes a spacer of fixed size.
     pub fn fixed(length: Length) -> Self {
-        TaffySpacer(FlexChildParams {
+        Self(FlexChildParams {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "length is expected to be within f32 precision"
+            )]
             basis: Some(length.get() as _),
             grow: 0.,
             shrink: 0.,
@@ -948,7 +952,7 @@ impl TaffySpacer {
     }
     /// Makes a flexible spacer.
     pub fn flex(flex: f32) -> Self {
-        TaffySpacer(FlexChildParams {
+        Self(FlexChildParams {
             basis: None,
             grow: flex,
             shrink: 0.,
