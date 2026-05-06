@@ -32,7 +32,7 @@ smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 include_doc_path.workspace = true
 resvg.workspace = true
-taffy = { version= "0.10.1", default-features = false, features = ["std", "flexbox", "grid"] }
+taffy = { version = "0.10.1", default-features = false, features = ["std", "flexbox", "grid"] }
 
 [dev-dependencies]
 accesskit_consumer.workspace = true

@@ -703,7 +703,7 @@ pub trait TaffyExt<State: 'static, Action>: WidgetView<State, Action> {
         self.taffy_grid(GridChildParams::default()).col(col)
     }
 
-    /// Applies the starting row numer to this view, can be used as child of a [`Taffy`] grid [`View`].
+    /// Applies the starting row number to this view, can be used as child of a [`Taffy`] grid [`View`].
     fn row(self, row: i16) -> TaffyItem<GridChildParams, Self, State, Action>
     where
         Action: 'static,
