@@ -1,6 +1,8 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
@@ -9,7 +11,7 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, UsesProperty, Widget, WidgetId, WidgetMut,
+    Property, RegisterCtx, TextEvent, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
@@ -340,6 +342,12 @@ impl Widget for ScrollBar {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if Collapsible::matches(property_type) {
+            ctx.request_paint_only();
+        }
+    }
 
     fn measure(
         &mut self,
