@@ -53,15 +53,6 @@ impl Default for TrackColor {
     }
 }
 
-impl TrackColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type == TypeId::of::<Self>() {
-            ctx.request_paint_only();
-        }
-    }
-}
-
 /// The radius of a slider's thumb.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct ThumbRadius(pub Length);

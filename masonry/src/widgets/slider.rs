@@ -12,7 +12,7 @@ use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx,
     PointerButtonEvent, PointerEvent, PointerUpdate, PrePaintProps, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
+    Property, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
     paint_background, paint_box_shadow,
 };
 use crate::imaging::{Composite, GroupRef, Painter};
@@ -295,9 +295,11 @@ impl Widget for Slider {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         TrackThickness::prop_changed(ctx, property_type);
-        TrackColor::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
+        if TrackColor::matches(property_type) {
+            ctx.request_paint_only();
+        }
     }
 
     fn measure(
