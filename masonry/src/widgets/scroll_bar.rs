@@ -9,11 +9,12 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
+    RegisterCtx, TextEvent, UsesProperty, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
+use crate::properties::Collapsible;
 use crate::theme;
 
 // TODO
@@ -166,6 +167,8 @@ impl ScrollBar {
         this.ctx.request_render();
     }
 }
+
+impl UsesProperty<Collapsible> for ScrollBar {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for ScrollBar {
@@ -369,9 +372,12 @@ impl Widget for ScrollBar {
     fn paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
+        let cache = ctx.property_cache();
+        let collapsible = props.get::<Collapsible>(cache).0;
+
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -379,7 +385,7 @@ impl Widget for ScrollBar {
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
         let size = ctx.content_box_size();
-        let inset_start = if ctx.is_hovered() || self.grab_anchor.is_some() {
+        let inset_start = if !collapsible || ctx.is_hovered() || self.grab_anchor.is_some() {
             cursor_padding
         } else {
             cursor_padding + scrollbar_width / 2.
@@ -480,9 +486,6 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
-        harness.mouse_move((5., 50.));
-        assert_render_snapshot!(harness, "scrollbar_hovered");
-
         assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(scrollbar_id, None);
@@ -501,6 +504,17 @@ mod tests {
     }
 
     #[test]
+    fn collapsible_scrollbar() {
+        let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0))
+            .with_props(Collapsible(true))
+            .with_props(Dimensions::FIT);
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (20, 200));
+
+        assert_render_snapshot!(harness, "scrollbar_collapsed");
+    }
+
+    #[test]
     fn horizontal_scrollbar() {
         let widget = NewWidget::new(ScrollBar::new(Axis::Horizontal, 200.0, 600.0))
             .with_props(Dimensions::FIT);
@@ -509,9 +523,6 @@ mod tests {
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
-
-        harness.mouse_move((50., 5.));
-        assert_render_snapshot!(harness, "scrollbar_horizontal_hovered");
 
         assert!(harness.pop_action_erased().is_none());
 
