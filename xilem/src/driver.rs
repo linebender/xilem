@@ -31,6 +31,8 @@ pub struct MasonryDriver<State: 'static, Logic> {
     default_base_color: Color,
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
+    // Optional callback invoked once on startup, after windows creation.
+    start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
 }
 
 struct Window<State: 'static> {
@@ -54,6 +56,7 @@ where
         runtime: Arc<tokio::runtime::Runtime>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
+        start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
     ) -> (Self, Vec<NewWindow>) {
         let mut driver = Self {
             state,
@@ -63,6 +66,7 @@ where
             runtime,
             default_base_color,
             fonts,
+            start_callback,
         };
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
             .map(|view| driver.build_window(view))
@@ -366,6 +370,11 @@ where
                 // because we don't have an easy way to return this to the application.
                 drop(root.register_fonts(font.clone()));
             }
+        }
+
+        // Calls callback functions after windows creation.
+        if let Some(cb) = self.start_callback.take() {
+            cb(state);
         }
     }
 
