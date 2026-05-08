@@ -24,7 +24,7 @@ use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BorderColor, BorderWidth, Gap, Padding};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, GridTrackSize, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -222,35 +222,33 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         .with_spacer(1.)
         .cross_axis_alignment(CrossAxisAlignment::End);
 
-    fn button_params(x: i32, y: i32) -> GridParams {
-        GridParams::new(x, y, 1, 1)
-    }
-
-    let root_widget = Grid::with_dimensions(4, 6)
-        .with(display.prepare(), GridParams::new(0, 0, 4, 1))
+    let root_widget = Grid::new()
+        .with_columns([GridTrackSize::FRACTION; 4])
+        .with_rows([GridTrackSize::FRACTION; 6])
+        .with(display.prepare(), (0, 0, 4, 1))
         .with(
             op_button_with_label('c', "CE".to_string()),
-            button_params(0, 1),
+            GridParams::pos(0, 1),
         )
-        .with(op_button('C'), button_params(1, 1))
-        .with(op_button('⌫'), button_params(2, 1))
-        .with(op_button('÷'), button_params(3, 1))
-        .with(digit_button(7), button_params(0, 2))
-        .with(digit_button(8), button_params(1, 2))
-        .with(digit_button(9), button_params(2, 2))
-        .with(op_button('×'), button_params(3, 2))
-        .with(digit_button(4), button_params(0, 3))
-        .with(digit_button(5), button_params(1, 3))
-        .with(digit_button(6), button_params(2, 3))
-        .with(op_button('−'), button_params(3, 3))
-        .with(digit_button(1), button_params(0, 4))
-        .with(digit_button(2), button_params(1, 4))
-        .with(digit_button(3), button_params(2, 4))
-        .with(op_button('+'), button_params(3, 4))
-        .with(op_button('±'), button_params(0, 5))
-        .with(digit_button(0), button_params(1, 5))
-        .with(op_button('.'), button_params(2, 5))
-        .with(op_button('='), button_params(3, 5));
+        .with(op_button('C'), GridParams::pos(1, 1))
+        .with(op_button('⌫'), GridParams::pos(2, 1))
+        .with(op_button('÷'), GridParams::pos(3, 1))
+        .with(digit_button(7), GridParams::pos(0, 2))
+        .with(digit_button(8), GridParams::pos(1, 2))
+        .with(digit_button(9), GridParams::pos(2, 2))
+        .with(op_button('×'), GridParams::pos(3, 2))
+        .with(digit_button(4), GridParams::pos(0, 3))
+        .with(digit_button(5), GridParams::pos(1, 3))
+        .with(digit_button(6), GridParams::pos(2, 3))
+        .with(op_button('−'), GridParams::pos(3, 3))
+        .with(digit_button(1), GridParams::pos(0, 4))
+        .with(digit_button(2), GridParams::pos(1, 4))
+        .with(digit_button(3), GridParams::pos(2, 4))
+        .with(op_button('+'), GridParams::pos(3, 4))
+        .with(op_button('±'), GridParams::pos(0, 5))
+        .with(digit_button(0), GridParams::pos(1, 5))
+        .with(op_button('.'), GridParams::pos(2, 5))
+        .with(op_button('='), GridParams::pos(3, 5));
 
     NewWidget::new(root_widget).with_props(
         PropertySet::new()

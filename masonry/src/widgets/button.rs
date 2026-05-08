@@ -271,7 +271,7 @@ mod tests {
     };
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
-    use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
+    use crate::widgets::{Flex, Grid, GridParams, GridTrackSize, Label, SizedBox};
 
     #[test]
     fn simple_button() {
@@ -384,23 +384,13 @@ mod tests {
     fn with_shadows() {
         use crate::palette::css::ORANGE;
 
-        let grid = Grid::with_dimensions(2, 2)
-            .with(
-                Button::with_text("A").prepare(),
-                GridParams::new(0, 0, 1, 1),
-            )
-            .with(
-                Button::with_text("B").prepare(),
-                GridParams::new(1, 0, 1, 1),
-            )
-            .with(
-                Button::with_text("C").prepare(),
-                GridParams::new(0, 1, 1, 1),
-            )
-            .with(
-                Button::with_text("D").prepare(),
-                GridParams::new(1, 1, 1, 1),
-            );
+        let grid = Grid::new()
+            .with_columns([GridTrackSize::FRACTION; 2])
+            .with_rows([GridTrackSize::FRACTION; 2])
+            .with(Button::with_text("A").prepare(), GridParams::pos(0, 0))
+            .with(Button::with_text("B").prepare(), GridParams::pos(1, 0))
+            .with(Button::with_text("C").prepare(), GridParams::pos(0, 1))
+            .with(Button::with_text("D").prepare(), GridParams::pos(1, 1));
         let root_widget = NewWidget::new(grid).with_props(
             PropertySet::new()
                 .with(Padding::all(20.px()))
