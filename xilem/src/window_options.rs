@@ -586,10 +586,131 @@ mod windows {
     }
 }
 
+#[cfg(target_os = "macos")]
+mod macos {
+    use winit::platform::macos::WindowAttributesExtMacOS;
+    use winit::window::{Window, WindowAttributes};
+
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificInitialWindowAttrs {
+        pub(crate) titlebar_hidden: bool,
+        pub(crate) title_hidden: bool,
+        pub(crate) fullsize_content_view: bool,
+        pub(crate) titlebar_transparent: bool,
+        pub(crate) movable_by_window_background: bool,
+    }
+
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificReactiveWindowAttrs {}
+
+    impl PlatformSpecificInitialWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            attrs
+                .with_titlebar_hidden(self.titlebar_hidden)
+                .with_title_hidden(self.title_hidden)
+                .with_fullsize_content_view(self.fullsize_content_view)
+                .with_titlebar_transparent(self.titlebar_transparent)
+                .with_movable_by_window_background(self.movable_by_window_background)
+        }
+
+        pub(crate) fn warn(&self, prev: &Self) {
+            if self.titlebar_hidden != prev.titlebar_hidden {
+                tracing::warn!(
+                    "attempted to change titlebar_hidden after window creation, this is not supported"
+                );
+            }
+            if self.title_hidden != prev.title_hidden {
+                tracing::warn!(
+                    "attempted to change title_hidden after window creation, this is not supported"
+                );
+            }
+            if self.fullsize_content_view != prev.fullsize_content_view {
+                tracing::warn!(
+                    "attempted to change fullsize_content_view after window creation, this is not supported"
+                );
+            }
+            if self.titlebar_transparent != prev.titlebar_transparent {
+                tracing::warn!(
+                    "attempted to change titlebar_transparent after window creation, this is not supported"
+                );
+            }
+            if self.movable_by_window_background != prev.movable_by_window_background {
+                tracing::warn!(
+                    "attempted to change movable_by_window_background after window creation, this is not supported"
+                );
+            }
+        }
+    }
+
+    impl PlatformSpecificReactiveWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            attrs
+        }
+
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+    }
+
+    /// Extension setters for macOS-specific window options.
+    pub trait WindowOptionsExtMacOS {
+        /// Hides the window titlebar while keeping the traffic-light buttons and border.
+        ///
+        /// Combine with [`with_fullsize_content_view`] and [`with_title_hidden`] to get a
+        /// clean window that still has native decorations.
+        fn with_titlebar_hidden(self, hidden: bool) -> Self;
+
+        /// Hides the window title.
+        fn with_title_hidden(self, hidden: bool) -> Self;
+
+        /// Allows the window content to extend into the titlebar area.
+        fn with_fullsize_content_view(self, enabled: bool) -> Self;
+
+        /// Makes the titlebar background transparent so content shows through it.
+        fn with_titlebar_transparent(self, transparent: bool) -> Self;
+
+        /// Lets the user drag the window by clicking anywhere on the background.
+        fn with_movable_by_window_background(self, movable: bool) -> Self;
+    }
+
+    impl<S> WindowOptionsExtMacOS for super::WindowOptions<S> {
+        #[inline]
+        fn with_titlebar_hidden(mut self, hidden: bool) -> Self {
+            self.initial.platform_specific.titlebar_hidden = hidden;
+            self
+        }
+
+        #[inline]
+        fn with_title_hidden(mut self, hidden: bool) -> Self {
+            self.initial.platform_specific.title_hidden = hidden;
+            self
+        }
+
+        #[inline]
+        fn with_fullsize_content_view(mut self, enabled: bool) -> Self {
+            self.initial.platform_specific.fullsize_content_view = enabled;
+            self
+        }
+
+        #[inline]
+        fn with_titlebar_transparent(mut self, transparent: bool) -> Self {
+            self.initial.platform_specific.titlebar_transparent = transparent;
+            self
+        }
+
+        #[inline]
+        fn with_movable_by_window_background(mut self, movable: bool) -> Self {
+            self.initial.platform_specific.movable_by_window_background = movable;
+            self
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub use macos::*;
+
 #[cfg(windows)]
 pub use windows::*;
 
-#[cfg(not(windows))]
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 mod dummy_platform {
     use winit::window::{Window, WindowAttributes};
 
@@ -616,5 +737,5 @@ mod dummy_platform {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub(crate) use dummy_platform::*;
