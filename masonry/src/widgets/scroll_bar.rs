@@ -1,6 +1,8 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
 use tracing::{Span, trace_span};
@@ -9,11 +11,12 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NoAction,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    Property, RegisterCtx, TextEvent, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
 use crate::layout::LenReq;
+use crate::properties::Collapsible;
 use crate::theme;
 
 // TODO
@@ -166,6 +169,8 @@ impl ScrollBar {
         this.ctx.request_render();
     }
 }
+
+impl UsesProperty<Collapsible> for ScrollBar {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for ScrollBar {
@@ -338,12 +343,10 @@ impl Widget for ScrollBar {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if Collapsible::matches(property_type) {
+            ctx.request_paint_only();
+        }
     }
 
     fn measure(
@@ -377,19 +380,29 @@ impl Widget for ScrollBar {
     fn paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
+        let cache = ctx.property_cache();
+        let collapsible = props.get::<Collapsible>(cache).0;
+
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
         let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
+        let scrollbar_width = theme::SCROLLBAR_WIDTH;
 
         let size = ctx.content_box_size();
-        let (inset_x, inset_y) = self.axis.pack_xy(0.0, cursor_padding);
+        let inset_start = if !collapsible || ctx.is_hovered() || self.grab_anchor.is_some() {
+            cursor_padding
+        } else {
+            cursor_padding + scrollbar_width / 2.
+        };
+        let (inset_x0, inset_y0) = self.axis.pack_xy(0.0, inset_start);
+        let (inset_x1, inset_y1) = self.axis.pack_xy(0.0, cursor_padding);
         let cursor_rect = self
             .cursor_rect(size, cursor_min_length)
-            .inset((-inset_x, -inset_y))
+            .inset((-inset_x0, -inset_y0, -inset_x1, -inset_y1))
             .to_rounded_rect(radius);
 
         painter.fill(cursor_rect, theme::SCROLLBAR_COLOR).draw();
@@ -496,6 +509,17 @@ mod tests {
 
         harness.mouse_move(Point::new(30.0, 300.0));
         assert_render_snapshot!(harness, "scrollbar_bottom");
+    }
+
+    #[test]
+    fn collapsible_scrollbar() {
+        let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0))
+            .with_props(Collapsible(true))
+            .with_props(Dimensions::FIT);
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (20, 200));
+
+        assert_render_snapshot!(harness, "scrollbar_collapsed");
     }
 
     #[test]
