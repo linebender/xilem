@@ -6,7 +6,7 @@ use masonry::layout::{AsUnit, UnitPoint};
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, Padding};
-use masonry::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
+use masonry::widgets::{Align, ChildAlignment, Flex, Grid, GridTrackSize, Label, SizedBox, ZStack};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 
@@ -34,11 +34,13 @@ impl DemoPage for KitchenSinkDemo {
             .with_style(StyleProperty::FontSize(14.0))
             .prepare();
 
-        let grid = Grid::with_dimensions(2, 2)
-            .with(Label::new("Grid 0").prepare(), GridParams::new(0, 0, 1, 1))
-            .with(Label::new("Grid 1").prepare(), GridParams::new(1, 0, 1, 1))
-            .with(Label::new("Grid 2").prepare(), GridParams::new(0, 1, 1, 1))
-            .with(Label::new("Grid 3").prepare(), GridParams::new(1, 1, 1, 1));
+        let grid = Grid::new()
+            .with_columns([GridTrackSize::FRACTION; 2])
+            .with_rows([GridTrackSize::FRACTION; 2])
+            .with(Label::new("Grid 0").prepare(), (0, 0))
+            .with(Label::new("Grid 1").prepare(), (1, 0))
+            .with(Label::new("Grid 2").prepare(), (0, 1))
+            .with(Label::new("Grid 3").prepare(), (1, 1));
 
         let grid = NewWidget::new(SizedBox::new(grid.prepare())).with_props(
             PropertySet::new()
