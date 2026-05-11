@@ -71,7 +71,7 @@ pub fn paint_box_shadow(
     if !box_shadow.is_visible() {
         return;
     }
-    let box_shadow_rect = border_box.to_rounded_rect(corner_radius.radius);
+    let box_shadow_rect = border_box.to_rounded_rect(corner_radius.radius.get());
     box_shadow.paint(painter, Affine::IDENTITY, box_shadow_rect);
 }
 
@@ -102,13 +102,14 @@ pub fn paint_border(
     border_width: &BorderWidth,
     corner_radius: &CornerRadius,
 ) {
-    if border_width.width == 0. || !border_color.is_visible() {
+    let border_width_value = border_width.width.get();
+    if border_width_value == 0. || !border_color.is_visible() {
         return;
     }
     let border_rect = border_width.border_rect(border_box, corner_radius);
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let border_style = Stroke {
-        width: border_width.width,
+        width: border_width_value,
         join: Join::Miter,
         ..Default::default()
     };

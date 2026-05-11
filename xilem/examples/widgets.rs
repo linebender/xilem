@@ -80,7 +80,7 @@ fn border_box<State: 'static, Action: 'static>(
         FlexSpacer::Flex(1.),
     ))
     .dims((450.px(), 200.px()))
-    .border(Color::WHITE, 2.)
+    .border(Color::WHITE, 2.px())
 }
 
 /// Top-level view
@@ -121,7 +121,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
         ))
         .gap(SPACER_WIDTH),
     )
-    .padding(SPACER_WIDTH.get())
+    .padding(SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

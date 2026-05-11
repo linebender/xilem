@@ -297,7 +297,7 @@ impl Widget for Checkbox {
         let border_color = *props.get::<BorderColor>(cache);
 
         // Paint the checkbox box border
-        let border_stroke = Stroke::new(border_width.width).with_join(Join::Miter);
+        let border_stroke = Stroke::new(border_width.width.get()).with_join(Join::Miter);
         painter
             .stroke(border_rect, &border_stroke, border_color.color)
             .draw();
@@ -365,6 +365,7 @@ impl Widget for Checkbox {
 mod tests {
     use super::*;
     use crate::core::{PropertySet, StyleProperty};
+    use crate::layout::AsUnit;
     use crate::properties::{ContentColor, Padding};
     use crate::testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
@@ -425,8 +426,8 @@ mod tests {
 
     #[test]
     fn checkbox_with_padding() {
-        let checkbox =
-            NewWidget::new(Checkbox::new(true, "Padding")).with_props(Padding::from_vh(8., 16.));
+        let checkbox = NewWidget::new(Checkbox::new(true, "Padding"))
+            .with_props(Padding::from_vh(8.px(), 16.px()));
         let checkbox_id = checkbox.id();
         let params =
             TestHarnessParams::size_and_padding((180, 72), TestHarnessParams::ROOT_PADDING);

@@ -8,7 +8,7 @@
 use crate::core::{
     DefaultProperties, PropertySet, PropertyStack, Selector, StyleProperty, StyleSet,
 };
-use crate::layout::Length;
+use crate::layout::{AsUnit, Length};
 use crate::palette::css::DIM_GRAY;
 use crate::parley::{GenericFamily, LineHeight};
 use crate::peniko::Color;
@@ -23,7 +23,7 @@ use crate::widgets::*;
 /// it should clear with this color by default.
 pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x1D, 0x1D, 0x1D);
 
-pub const BORDER_WIDTH: f64 = 1.;
+pub const BORDER_WIDTH: Length = Length::const_px(1.);
 
 // Zync color variations from https://tailwindcss.com/docs/colors
 pub const ZYNC_900: Color = Color::from_rgb8(0x18, 0x18, 0x1b);
@@ -59,9 +59,9 @@ pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
     // Badge
-    properties.insert::<Badge, _>(Padding::from_vh(3., 5.));
-    properties.insert::<Badge, _>(CornerRadius { radius: 999. });
-    properties.insert::<Badge, _>(BorderWidth { width: 0. });
+    properties.insert::<Badge, _>(Padding::from_vh(3.px(), 5.px()));
+    properties.insert::<Badge, _>(CornerRadius { radius: 999.px() });
+    properties.insert::<Badge, _>(BorderWidth { width: 0.px() });
     properties.insert::<Badge, _>(Background::Color(ACCENT_COLOR));
     properties.insert::<Badge, _>(BorderColor { color: ZYNC_700 });
     {
@@ -74,8 +74,8 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // Button
-    properties.insert::<Button, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Button, _>(CornerRadius { radius: 6. });
+    properties.insert::<Button, _>(Padding::from_vh(6.px(), 16.px()));
+    properties.insert::<Button, _>(CornerRadius { radius: 6.px() });
     properties.insert::<Button, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -103,7 +103,7 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // Checkbox
-    properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
+    properties.insert::<Checkbox, _>(CornerRadius { radius: 4.px() });
     properties.insert::<Checkbox, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -142,21 +142,21 @@ pub fn default_property_set() -> DefaultProperties {
         Length::const_px(16.),
         Length::const_px(16.),
     ));
-    properties.insert::<DisclosureButton, _>(Padding::all(4.));
+    properties.insert::<DisclosureButton, _>(Padding::all(4.px()));
 
     // Divider
     properties.insert::<Divider, _>(ContentColor::new(ZYNC_500));
 
     // Switch
-    properties.insert::<Switch, _>(CornerRadius { radius: 10. }); // Full pill shape
+    properties.insert::<Switch, _>(CornerRadius { radius: 10.px() }); // Full pill shape
     properties.insert::<Switch, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
     properties.insert::<Switch, _>(Background::Color(ZYNC_700));
     properties.insert::<Switch, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Switch, _>(ThumbColor(Color::WHITE));
-    properties.insert::<Switch, _>(ThumbRadius(8.0));
-    properties.insert::<Switch, _>(TrackThickness(20.0));
+    properties.insert::<Switch, _>(ThumbRadius(8.px()));
+    properties.insert::<Switch, _>(TrackThickness(20.px()));
     {
         let mut stack = PropertyStack::new();
         stack.push(
@@ -186,8 +186,8 @@ pub fn default_property_set() -> DefaultProperties {
     use crate::widgets::Selector as SelectorButton;
 
     // Selector
-    properties.insert::<SelectorButton, _>(Padding::from_vh(6., 16.));
-    properties.insert::<SelectorButton, _>(CornerRadius { radius: 2. });
+    properties.insert::<SelectorButton, _>(Padding::from_vh(6.px(), 16.px()));
+    properties.insert::<SelectorButton, _>(CornerRadius { radius: 2.px() });
     properties.insert::<SelectorButton, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -216,7 +216,7 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // SelectorItem
-    properties.insert::<SelectorItem, _>(Padding::from_vh(6., 16.));
+    properties.insert::<SelectorItem, _>(Padding::from_vh(6.px(), 16.px()));
     properties.insert::<SelectorItem, _>(Background::Color(ZYNC_900));
     {
         let mut stack = PropertyStack::new();
@@ -238,8 +238,8 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Grid, _>(Gap::ZERO);
 
     // TextInput
-    properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
-    properties.insert::<TextInput, _>(CornerRadius { radius: 4. });
+    properties.insert::<TextInput, _>(Padding::from_vh(6.px(), 12.px()));
+    properties.insert::<TextInput, _>(CornerRadius { radius: 4.px() });
     properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -309,7 +309,7 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // ProgressBar
-    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
+    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2.px() });
     properties.insert::<ProgressBar, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -381,8 +381,8 @@ pub fn default_text_styles(styles: &mut StyleSet) {
 }
 
 fn default_step_input_style<T: Steppable>(properties: &mut DefaultProperties) {
-    properties.insert::<StepInput<T>, _>(Padding::from_vh(6., 0.));
-    properties.insert::<StepInput<T>, _>(CornerRadius { radius: 6. });
+    properties.insert::<StepInput<T>, _>(Padding::from_vh(6.px(), 0.px()));
+    properties.insert::<StepInput<T>, _>(CornerRadius { radius: 6.px() });
     properties.insert::<StepInput<T>, _>(BorderWidth {
         width: BORDER_WIDTH,
     });

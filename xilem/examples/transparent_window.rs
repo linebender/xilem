@@ -40,7 +40,7 @@ fn app_logic(state: &mut AppState) -> impl Iterator<Item = WindowView<AppState>>
         .gap(10.px()),
         FlexSpacer::Flex(1.),
     ))
-    .padding(20.);
+    .padding(20.px());
 
     std::iter::once(
         xilem::window(state.window_id, "Transparency Demo", root_view)

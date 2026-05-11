@@ -344,11 +344,11 @@ impl Widget for RadioButton {
 
         let border_circle = Circle::new(
             check_size.to_rect().center(),
-            (check_side - border_width.width) * 0.5,
+            (check_side - border_width.width.get()) * 0.5,
         );
 
         // Paint the radio button border
-        let border_stroke = Stroke::new(border_width.width);
+        let border_stroke = Stroke::new(border_width.width.get());
         painter
             .stroke(border_circle, &border_stroke, border_color.color)
             .draw();

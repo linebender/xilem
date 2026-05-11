@@ -2375,7 +2375,7 @@ mod tests {
             ))
             .with_fixed(si(500, (StepInputStyle::Flow, Dimensions::width(100.px()))))
             .prepare()
-            .with_props(Padding::all(10.));
+            .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (150, 525));
 
@@ -2401,7 +2401,7 @@ mod tests {
             .with_fixed(lines_backward)
             .with_fixed(lines_forward)
             .prepare()
-            .with_props(Padding::all(10.));
+            .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (270, 200));
 
@@ -2456,7 +2456,7 @@ mod tests {
             .with_fixed(basic(1234, (Dimensions::fixed(100.px(), 200.px())).into()))
             .with_fixed(flow(1234, (Dimensions::fixed(100.px(), 200.px())).into()))
             .prepare()
-            .with_props(Padding::all(10.));
+            .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (320, 650));
 

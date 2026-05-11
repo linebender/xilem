@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::{Composite, GroupRef, Painter};
 use crate::kurbo::{Axis, Circle, Point, Rect, Size, Stroke};
-use crate::layout::{AsUnit, LenReq, Length};
+use crate::layout::{LenReq, Length};
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 
@@ -73,6 +73,7 @@ impl Slider {
         ThumbRadius(base_thumb_radius): ThumbRadius,
         is_focused: bool,
     ) -> bool {
+        let base_thumb_radius = base_thumb_radius.get();
         let thumb_radius = if is_focused {
             base_thumb_radius + 2.0
         } else {
@@ -348,12 +349,14 @@ impl Widget for Slider {
                 let thumb_radius = props.get::<ThumbRadius>(cache);
                 let track_thickness = props.get::<TrackThickness>(cache);
 
-                let thumb_length = thumb_radius.0 * 2.0;
+                let thumb_length = thumb_radius.0.saturating_add(thumb_radius.0);
                 let track_length = track_thickness.0;
                 // TODO: Move the padding 16. to theme or make it otherwise configurable?
-                let padding_length = 16.;
+                let padding_length = Length::const_px(16.);
 
-                (thumb_length.max(track_length) + padding_length).px()
+                thumb_length
+                    .max(track_length)
+                    .saturating_add(padding_length)
             }
         }
     }
@@ -372,8 +375,8 @@ impl Widget for Slider {
         let cache = ctx.property_cache();
         let active_track_color = props.get::<BarColor>(cache).0;
         let thumb_color = props.get::<ThumbColor>(cache).0;
-        let track_thickness = props.get::<TrackThickness>(cache).0;
-        let base_thumb_radius = props.get::<ThumbRadius>(cache).0;
+        let track_thickness = props.get::<TrackThickness>(cache).0.get();
+        let base_thumb_radius = props.get::<ThumbRadius>(cache).0.get();
         let track_color = props.get::<Background>(cache);
         let thumb_border_width = 2.0;
 

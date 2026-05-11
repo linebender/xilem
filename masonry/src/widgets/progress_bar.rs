@@ -207,7 +207,7 @@ impl Widget for ProgressBar {
         let progress = self.progress.unwrap_or(1.);
         if progress > 0. {
             // The bar width is without the borders.
-            let bar_width = border_box.width() - 2. * border_width.width;
+            let bar_width = border_box.width() - 2. * border_width.width.get();
             if bar_width > 0. {
                 let bar_color = props.get::<BarColor>(cache).0;
                 // Paint with a gradient so we get a straight line slice of the rounded rect.
@@ -271,6 +271,7 @@ impl Widget for ProgressBar {
 mod tests {
     use super::*;
     use crate::core::{NewWidget, PropertySet};
+    use crate::layout::AsUnit;
     use crate::palette;
     use crate::properties::{BorderColor, CornerRadius};
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -288,8 +289,8 @@ mod tests {
     #[test]
     fn _5_percent_styled_progressbar() {
         let widget = ProgressBar::new(Some(0.05)).prepare().with_props((
-            CornerRadius::all(50.),
-            BorderWidth::all(10.),
+            CornerRadius::all(50.px()),
+            BorderWidth::all(10.px()),
             BorderColor::new(palette::css::PINK),
         ));
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 60));
@@ -300,8 +301,8 @@ mod tests {
     #[test]
     fn _95_percent_styled_progressbar() {
         let widget = ProgressBar::new(Some(0.95)).prepare().with_props((
-            CornerRadius::all(50.),
-            BorderWidth::all(10.),
+            CornerRadius::all(50.px()),
+            BorderWidth::all(10.px()),
             BorderColor::new(palette::css::PINK),
         ));
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (150, 60));

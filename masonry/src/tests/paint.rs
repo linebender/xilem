@@ -330,7 +330,7 @@ fn paint_transparency() {
         GridParams::new(13, 0, 3, 1),
     );
 
-    let props = (Padding::all(20.), Gap::new(10.px()));
+    let props = (Padding::all(20.px()), Gap::new(10.px()));
     let grid_a = grid_a.prepare().with_props(props);
     let grid_b = grid_b.prepare().with_props(props);
 

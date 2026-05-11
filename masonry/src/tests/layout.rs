@@ -274,12 +274,12 @@ fn content_box() {
     let props = (
         Dimensions::fixed(100.px(), 100.px()),
         Padding {
-            left: 1.,
-            right: 2.,
-            top: 3.,
-            bottom: 4.,
+            left: 1.px(),
+            right: 2.px(),
+            top: 3.px(),
+            bottom: 4.px(),
         },
-        BorderWidth::all(1.),
+        BorderWidth::all(1.px()),
     );
 
     let hero = NewWidget::new(Button::with_text("Hero"))

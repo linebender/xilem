@@ -9,11 +9,11 @@ use crate::properties::CornerRadius;
 // Every widget has a border width.
 impl<W: Widget> UsesProperty<BorderWidth> for W {}
 
-/// The width of a widget's border, in logical pixels.
+/// The width of a widget's border.
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct BorderWidth {
-    pub width: f64,
+    pub width: Length,
 }
 
 // TODO - To match CSS, we should use a non-zero default width
@@ -21,14 +21,16 @@ pub struct BorderWidth {
 
 impl Property for BorderWidth {
     fn static_default() -> &'static Self {
-        static DEFAULT: BorderWidth = BorderWidth { width: 0. };
+        static DEFAULT: BorderWidth = BorderWidth {
+            width: Length::ZERO,
+        };
         &DEFAULT
     }
 }
 
 impl BorderWidth {
     /// Creates new `BorderWidth` with given value.
-    pub const fn all(width: f64) -> Self {
+    pub const fn all(width: Length) -> Self {
         Self { width }
     }
 
@@ -37,7 +39,7 @@ impl BorderWidth {
     /// For [`Axis::Horizontal`] it will return the sum of the left and right border width.
     /// For [`Axis::Vertical`] it will return the sum of the top and bottom border height.
     pub fn length(&self, _axis: Axis) -> Length {
-        Length::px(self.width * 2.)
+        self.width.saturating_add(self.width)
     }
 
     /// Expands the `size` by the border width.
@@ -48,8 +50,9 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn size_up(&self, size: Size) -> Size {
-        let width = size.width + self.width * 2.;
-        let height = size.height + self.width * 2.;
+        let border_width = self.width.get();
+        let width = size.width + border_width * 2.;
+        let height = size.height + border_width * 2.;
         Size::new(width, height)
     }
 
@@ -61,8 +64,9 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn size_down(&self, size: Size) -> Size {
-        let width = (size.width - self.width * 2.).max(0.);
-        let height = (size.height - self.width * 2.).max(0.);
+        let border_width = self.width.get();
+        let width = (size.width - border_width * 2.).max(0.);
+        let height = (size.height - border_width * 2.).max(0.);
         Size::new(width, height)
     }
 
@@ -72,11 +76,12 @@ impl BorderWidth {
     ///
     /// The provided `insets` must be in logical pixels.
     pub fn insets_up(&self, insets: Insets) -> Insets {
+        let border_width = self.width.get();
         Insets {
-            x0: insets.x0 + self.width,
-            y0: insets.y0 + self.width,
-            x1: insets.x1 + self.width,
-            y1: insets.y1 + self.width,
+            x0: insets.x0 + border_width,
+            y0: insets.y0 + border_width,
+            x1: insets.x1 + border_width,
+            y1: insets.y1 + border_width,
         }
     }
 
@@ -88,7 +93,7 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_up(&self, baseline: f64) -> f64 {
-        baseline + self.width
+        baseline + self.width.get()
     }
 
     /// Lowers the `baseline` by the border width.
@@ -99,7 +104,7 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn baseline_down(&self, baseline: f64) -> f64 {
-        baseline - self.width
+        baseline - self.width.get()
     }
 
     /// Lowers the position by the border width.
@@ -110,7 +115,8 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::layout`].
     pub fn origin_down(&self, origin: Point) -> Point {
-        origin + Vec2::new(self.width, self.width)
+        let border_width = self.width.get();
+        origin + Vec2::new(border_width, border_width)
     }
 
     /// Creates a rounded rectangle that is inset by the border width.
@@ -119,9 +125,10 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::paint`].
     pub fn bg_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        let border_width = self.width.get();
         border_box
-            .inset(-self.width)
-            .to_rounded_rect((border_radius.radius - self.width).max(0.))
+            .inset(-border_width)
+            .to_rounded_rect(border_radius.radius.saturating_sub(self.width).get())
     }
 
     /// Creates a rounded rectangle that is inset by half the border width.
@@ -130,8 +137,9 @@ impl BorderWidth {
     ///
     /// Helper function to be called in [`Widget::paint`].
     pub fn border_rect(&self, border_box: Rect, border_radius: &CornerRadius) -> RoundedRect {
+        let border_width = self.width.get();
         border_box
-            .inset(-self.width / 2.0)
-            .to_rounded_rect(border_radius.radius)
+            .inset(-border_width / 2.0)
+            .to_rounded_rect(border_radius.radius.get())
     }
 }

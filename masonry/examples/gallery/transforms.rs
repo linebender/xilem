@@ -6,7 +6,7 @@ use masonry::core::{
     ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::kurbo::{Affine, Vec2};
-use masonry::layout::AsUnit as _;
+use masonry::layout::AsUnit;
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, Padding};
@@ -108,13 +108,13 @@ impl DemoPage for TransformsDemo {
                     .with_style(StyleProperty::FontSize(14.0))
                     .prepare(),
             )
-            .size(160.0.px(), 160.0.px()),
+            .size(160.px(), 160.px()),
         )
         .with_tag(self.target)
         .with_props(
             PropertySet::new()
                 .with(Background::Color(Color::from_rgb8(0x35, 0x35, 0x35)))
-                .with(Padding::all(12.0)),
+                .with(Padding::all(12.px())),
         );
 
         let body = Flex::column()

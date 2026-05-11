@@ -1393,7 +1393,7 @@ mod tests {
                 .with_fixed(Label::new("foo").prepare())
                 .with_fixed(Label::new("bar").prepare()),
         )
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
@@ -1441,7 +1441,7 @@ mod tests {
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
         )
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
@@ -1488,7 +1488,7 @@ mod tests {
                 .with_fixed(Label::new("foo").prepare())
                 .with(Label::new("bar").prepare(), CrossAxisAlignment::Start),
         )
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
@@ -1537,7 +1537,7 @@ mod tests {
                     FlexParams::new(2.0, None, CrossAxisAlignment::Start),
                 ),
         )
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
@@ -1584,7 +1584,7 @@ mod tests {
                 .with_fixed(Label::new("foo").prepare())
                 .with(Label::new("bar").prepare(), CrossAxisAlignment::Start),
         )
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 150));
 
@@ -1628,10 +1628,10 @@ mod tests {
                 Padding {
                     top,
                     bottom,
-                    left: 0.,
-                    right: 0.,
+                    left: Length::ZERO,
+                    right: Length::ZERO,
                 },
-                BorderWidth::all(1.),
+                BorderWidth::all(1.px()),
                 BorderColor::new(palette::css::CYAN),
             )
         };
@@ -1641,34 +1641,50 @@ mod tests {
         let flex = NewWidget::new(
             Flex::row()
                 .cross_axis_alignment(CrossAxisAlignment::Center)
-                .with_fixed(Label::new("Left").prepare().with_props(props(0., 0.)))
-                .with_fixed(Label::new("A\nB").prepare().with_props(props(30., 10.)))
-                .with_fixed(Label::new("C\nD\nE").prepare().with_props(props(20., 115.)))
+                .with_fixed(
+                    Label::new("Left")
+                        .prepare()
+                        .with_props(props(0.px(), 0.px())),
+                )
+                .with_fixed(
+                    Label::new("A\nB")
+                        .prepare()
+                        .with_props(props(30.px(), 10.px())),
+                )
+                .with_fixed(
+                    Label::new("C\nD\nE")
+                        .prepare()
+                        .with_props(props(20.px(), 115.px())),
+                )
                 .with_fixed(
                     Label::new("F\nG\nH\nI")
                         .prepare()
-                        .with_props(props(20., 20.)),
+                        .with_props(props(20.px(), 20.px())),
                 )
                 .with_fixed(
                     Label::new("J\nK\nL\nM\nN")
                         .prepare()
-                        .with_props(props(0., 30.)),
+                        .with_props(props(0.px(), 30.px())),
                 )
                 .with_fixed(
                     Label::new("Right\nToo")
                         .prepare()
-                        .with_props(props(50., 50.)),
+                        .with_props(props(50.px(), 50.px())),
                 ),
         )
         .with_tag(flex_tag)
-        .with_props((BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)));
+        .with_props((BorderWidth::all(2.px()), BorderColor::new(ACCENT_COLOR)));
 
         let root = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::FirstBaseline)
-            .with_fixed(Label::new("Out").prepare().with_props(props(10., 10.)))
+            .with_fixed(
+                Label::new("Out")
+                    .prepare()
+                    .with_props(props(10.px(), 10.px())),
+            )
             .with(flex, 1.0)
             .prepare()
-            .with_props((Gap::new(0.px()), Padding::all(20.)));
+            .with_props((Gap::new(0.px()), Padding::all(20.px())));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (240, 240));
 
@@ -1798,7 +1814,7 @@ mod tests {
 
         let props = (
             Gap::new(0.px()),
-            BorderWidth::all(1.),
+            BorderWidth::all(1.px()),
             BorderColor::new(palette::css::DARK_GRAY),
             Dimensions::height(14.px()),
         );
@@ -1808,7 +1824,7 @@ mod tests {
             .with_fixed(first.prepare().with_props(props))
             .with_fixed(last.prepare().with_props(props))
             .prepare()
-            .with_props((Gap::new(2.px()), Padding::all(10.)));
+            .with_props((Gap::new(2.px()), Padding::all(10.px())));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (450, 50));
 

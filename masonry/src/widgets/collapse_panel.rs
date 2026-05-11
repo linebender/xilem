@@ -18,10 +18,10 @@ use crate::{accesskit, theme};
 const BUTTON_LENGTH: Length = Length::const_px(16.);
 /// Padding around the separator line.
 const SEPARATOR_PAD: Padding = Padding {
-    top: 4.,
-    left: 1.,
-    right: 1.,
-    bottom: 0.,
+    top: Length::const_px(4.),
+    left: Length::const_px(1.),
+    right: Length::const_px(1.),
+    bottom: Length::ZERO,
 };
 
 /// A collapsible panel with a header that contains a child widget.
@@ -145,7 +145,6 @@ impl Widget for CollapsePanel {
 
         let separator_height = border
             .width
-            .px()
             .saturating_add(SEPARATOR_PAD.length(Axis::Vertical));
 
         let space: LenDef = len_req.into();
@@ -230,7 +229,8 @@ impl Widget for CollapsePanel {
         let border = props.get::<BorderWidth>(cache);
         let header_x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
-        let separator_height = border.width + SEPARATOR_PAD.length(Axis::Vertical).get();
+        let border_width = border.width.get();
+        let separator_height = border_width + SEPARATOR_PAD.length(Axis::Vertical).get();
 
         let button_width = BUTTON_LENGTH.get();
         let header_padding_width = header_x_padding.get();
@@ -285,7 +285,8 @@ impl Widget for CollapsePanel {
             let child_origin = Point::new(0.0, header_height + separator_height);
             ctx.place_child(&mut self.child, child_origin);
 
-            self.separator_line_y = Some(header_height + SEPARATOR_PAD.top + border.width * 0.5);
+            self.separator_line_y =
+                Some(header_height + SEPARATOR_PAD.top.get() + border_width * 0.5);
         } else {
             self.separator_line_y = None;
         }
@@ -308,11 +309,15 @@ impl Widget for CollapsePanel {
 
             // Only paint the line if it would have a positive width
             if SEPARATOR_PAD.length(Axis::Horizontal).get() < border_box.width() {
-                let x1 = border_box.x0 + SEPARATOR_PAD.left;
-                let x2 = border_box.x1 - SEPARATOR_PAD.right;
+                let x1 = border_box.x0 + SEPARATOR_PAD.left.get();
+                let x2 = border_box.x1 - SEPARATOR_PAD.right.get();
                 let line = Line::new((x1, y), (x2, y));
                 painter
-                    .stroke(line, &Stroke::new(border_width.width), border_color.color)
+                    .stroke(
+                        line,
+                        &Stroke::new(border_width.width.get()),
+                        border_color.color,
+                    )
                     .draw();
             }
         }

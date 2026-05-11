@@ -277,7 +277,7 @@ fn one_button(
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     button(content, callback)
         .background_color(BLUE)
-        .corner_radius(10.)
+        .corner_radius(10.px())
 }
 
 /// Returns a button that triggers the calculator's operator handler,
@@ -299,7 +299,7 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
         data.on_entered_digit(digit);
     })
     .background_color(GRAY)
-    .corner_radius(10.)
+    .corner_radius(10.px())
 }
 
 pub(crate) fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

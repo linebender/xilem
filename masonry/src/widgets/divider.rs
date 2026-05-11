@@ -890,7 +890,7 @@ mod tests {
                 .prepare(),
         )
         .prepare()
-        .with_props(Padding::all(10.));
+        .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (150, 120));
 
@@ -921,7 +921,7 @@ mod tests {
                 .with_props(Background::Color(palette::css::MIDNIGHT_BLUE)),
         )
         .prepare()
-        .with_props(Padding::all(10.));
+        .with_props(Padding::all(10.px()));
 
         let mut harness = TestHarness::create_with_size(test_property_set(), root, (155, 90));
 
