@@ -15,7 +15,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::peniko::{Color, Gradient};
 use crate::properties::{BarColor, BorderColor, BorderWidth, CornerRadius, LineBreaking};
 use crate::theme;
@@ -139,14 +139,10 @@ impl Widget for ProgressBar {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         // TODO: Move this to theme?
-        const DEFAULT_WIDTH: f64 = 400.; // In logical pixels
-
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
+        const DEFAULT_WIDTH: Length = Length::const_px(400.);
 
         let auto_length = len_req.into();
         let context_size = LayoutSize::maybe(axis.cross(), cross_length);
@@ -161,10 +157,10 @@ impl Widget for ProgressBar {
 
         let potential_length = match axis {
             Axis::Horizontal => match len_req {
-                LenReq::MinContent | LenReq::MaxContent => DEFAULT_WIDTH * scale,
+                LenReq::MinContent | LenReq::MaxContent => DEFAULT_WIDTH,
                 LenReq::FitContent(space) => space,
             },
-            Axis::Vertical => theme::BASIC_WIDGET_HEIGHT.dp(scale),
+            Axis::Vertical => theme::BASIC_WIDGET_HEIGHT,
         };
 
         // Make sure we always report a length big enough to fit our painting

@@ -76,7 +76,7 @@ fn paint_order() {
     let children = vec![child1, child2, child3];
     let parent = NewWidget::new(
         ModularWidget::new_multi_parent(children)
-            .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE * 2.)
+            .measure_fn(|_, _, _, _, _, _| (SQUARE_SIZE * 2.).px())
             .layout_fn(move |children, ctx, _props, size| {
                 let mut pos = Point::ZERO;
                 for child in children {
@@ -122,7 +122,7 @@ fn paint_clipping() {
 
     let parent = NewWidget::new(
         ModularWidget::new(())
-            .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE)
+            .measure_fn(|_, _, _, _, _, _| SQUARE_SIZE.px())
             .layout_fn(|_, ctx, _, size| {
                 ctx.set_clip_path(size.to_rect());
             })
@@ -159,14 +159,14 @@ fn paint_clipping() {
 fn make_layer_split_tree(isolate_trailing_box: bool) -> NewWidget<impl Widget> {
     let leading = NewWidget::new(
         ModularWidget::new(())
-            .measure_fn(|_, _, _, _, _, _| 20.)
+            .measure_fn(|_, _, _, _, _, _| 20.px())
             .paint_fn(|_, ctx, _, scene| {
                 scene.fill(ctx.content_box(), RED).draw();
             }),
     );
     let trailing = NewWidget::new(
         ModularWidget::new(isolate_trailing_box)
-            .measure_fn(|_, _, _, _, _, _| 20.)
+            .measure_fn(|_, _, _, _, _, _| 20.px())
             .paint_fn(|isolate, ctx, _, scene| {
                 if *isolate {
                     ctx.set_paint_layer_mode(PaintLayerMode::IsolatedScene);
@@ -184,14 +184,14 @@ fn make_layer_split_tree(isolate_trailing_box: bool) -> NewWidget<impl Widget> {
 fn make_external_placeholder_tree() -> NewWidget<impl Widget> {
     let leading = NewWidget::new(
         ModularWidget::new(())
-            .measure_fn(|_, _, _, _, _, _| 20.)
+            .measure_fn(|_, _, _, _, _, _| 20.px())
             .paint_fn(|_, ctx, _, scene| {
                 scene.fill(ctx.content_box(), RED).draw();
             }),
     );
     let placeholder = NewWidget::new(
         ModularWidget::new(())
-            .measure_fn(|_, _, _, _, _, _| 20.)
+            .measure_fn(|_, _, _, _, _, _| 20.px())
             .layout_fn(|_, ctx, _, size| {
                 ctx.set_clip_path(size.to_rect());
             })
@@ -201,7 +201,7 @@ fn make_external_placeholder_tree() -> NewWidget<impl Widget> {
     );
     let trailing = NewWidget::new(
         ModularWidget::new(())
-            .measure_fn(|_, _, _, _, _, _| 20.)
+            .measure_fn(|_, _, _, _, _, _| 20.px())
             .paint_fn(|_, ctx, _, scene| {
                 scene.fill(ctx.content_box(), BLUE).draw();
             }),

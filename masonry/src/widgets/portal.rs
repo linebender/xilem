@@ -15,7 +15,7 @@ use crate::core::{
 use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Rect, Size, Vec2};
-use crate::layout::{LayoutSize, LenDef, LenReq, SizeDef};
+use crate::layout::{AsUnit, LayoutSize, LenDef, LenReq, Length, SizeDef};
 use crate::widgets::ScrollBar;
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -414,8 +414,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
         match *event {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
-                // TODO - Remove reference to scale factor.
-                // See https://github.com/linebender/xilem/issues/1264
                 let scale_factor = ctx.get_scale_factor();
                 let line_px = PhysicalPosition {
                     x: 120.0 * scale_factor,
@@ -470,12 +468,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             // the arrow/page/home/end keys.
             && !scrollbar_target
         {
-            // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-            //       https://github.com/linebender/xilem/issues/1264
-            let scale = 1.0;
-
-            let line = 120.0 * scale;
-            let page_y = portal_size.height * scale;
+            let line = 120.0;
+            let page_y = portal_size.height;
 
             use crate::core::keyboard::{Key, NamedKey};
             let mut did_scroll = false;
@@ -580,23 +574,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     | accesskit::Action::ScrollRight
             )
         {
-            // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-            //       https://github.com/linebender/xilem/issues/1264
-            let scale = 1.0;
-
             let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
                 *unit
             } else {
                 accesskit::ScrollUnit::Item
             };
-            let line = 120.0 * scale;
+            let line = 120.0;
             let amount = match unit {
                 accesskit::ScrollUnit::Item => line,
                 accesskit::ScrollUnit::Page => match event.action {
                     accesskit::Action::ScrollLeft | accesskit::Action::ScrollRight => {
-                        portal_size.width * scale
+                        portal_size.width
                     }
-                    _ => portal_size.height * scale,
+                    _ => portal_size.height,
                 },
             };
 
@@ -662,10 +652,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
+        cross_length: Option<Length>,
+    ) -> Length {
         match len_req {
-            LenReq::MinContent => 0.,
+            LenReq::MinContent => Length::ZERO,
             LenReq::MaxContent => {
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
                 let auto_length = len_req.into();
@@ -691,11 +681,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let auto_size = SizeDef::new(
             match self.constrain_horizontal {
-                true => LenDef::FitContent(size.width),
+                true => LenDef::FitContent(size.width.px()),
                 false => LenDef::MaxContent,
             },
             match self.constrain_vertical {
-                true => LenDef::FitContent(size.height),
+                true => LenDef::FitContent(size.height.px()),
                 false => LenDef::MaxContent,
             },
         );
@@ -882,11 +872,12 @@ mod tests {
                 let context_size = LayoutSize::maybe(axis.cross(), cross_length);
 
                 let other = match axis {
-                    Axis::Horizontal => 0.,
-                    Axis::Vertical => top_pad,
+                    Axis::Horizontal => Length::ZERO,
+                    Axis::Vertical => top_pad.px(),
                 };
 
-                ctx.compute_length(child, auto_length, context_size, axis, cross_length) + other
+                ctx.compute_length(child, auto_length, context_size, axis, cross_length)
+                    .saturating_add(other)
             })
             .layout_fn(move |child, ctx, _props, size| {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());

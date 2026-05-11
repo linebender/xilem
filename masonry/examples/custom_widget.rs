@@ -16,7 +16,7 @@ use masonry::core::{
 };
 use masonry::imaging::Painter;
 use masonry::kurbo::{Affine, Axis, BezPath, Point, Rect, Size, Stroke};
-use masonry::layout::LenReq;
+use masonry::layout::{AsUnit, LenReq, Length};
 use masonry::parley::FontFamilyName;
 use masonry::parley::style::{FontFamily, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, ImageBrush, ImageFormat};
@@ -80,16 +80,16 @@ impl Widget for CustomWidget {
         _props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        _cross_length: Option<f64>,
-    ) -> f64 {
+        _cross_length: Option<Length>,
+    ) -> Length {
         // We currently just define our preferred min/max,
         // but often it takes actual work to derive these.
         let min_size = Size::new(100., 50.);
         let max_size = Size::new(200., 200.);
 
         // Measurement is per axis, so we only care about a single dimension right now
-        let min_length = min_size.get_coord(axis);
-        let max_length = max_size.get_coord(axis);
+        let min_length = min_size.get_coord(axis).px();
+        let max_length = max_size.get_coord(axis).px();
 
         // Return a result based on the parent's request
         match len_req {

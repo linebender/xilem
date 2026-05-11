@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 
 use crate::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
 use crate::kurbo::{Affine, Point, Vec2};
-use crate::layout::SizeDef;
+use crate::layout::{Length, SizeDef};
+use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 
@@ -29,7 +29,7 @@ fn request_compose() {
     };
 
     let parent = ModularWidget::new(child)
-        .measure_fn(|_state, _ctx, _props, _axis, _len_req, _cross_length| 0.)
+        .measure_fn(|_state, _ctx, _props, _axis, _len_req, _cross_length| Length::ZERO)
         .layout_fn(|state, ctx, _props, size| {
             let child_size = ctx.compute_size(&mut state.child, SizeDef::fit(size), size.into());
             ctx.run_layout(&mut state.child, child_size);

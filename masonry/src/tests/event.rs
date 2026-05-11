@@ -28,7 +28,7 @@ fn create_capture_target() -> ModularWidget<()> {
                 ctx.capture_pointer();
             }
         })
-        .measure_fn(|_, _, _, _, _, _| 10.)
+        .measure_fn(|_, _, _, _, _, _| 10.px())
 }
 
 #[test]

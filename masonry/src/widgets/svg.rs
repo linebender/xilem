@@ -16,7 +16,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Size};
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 use crate::peniko::{ImageAlphaType, ImageBrush, ImageData, ImageFormat};
 use crate::properties::ObjectFit;
 
@@ -108,19 +108,15 @@ impl Svg {
 impl Svg {
     /// Returns the preferred size of the SVG.
     ///
-    /// The returned size is in device pixels.
+    /// The returned size is in logical pixels.
     ///
-    /// This takes into account both [`SVG_SCALE`] and `scale`, and so the result
-    /// isn't just the SVG data size which would be const across scale factors.
-    ///
-    /// This method's result will be stable in relation to other widgets at any scale factor.
-    ///
-    /// Basically it provides logical pixels in device pixel space.
-    fn preferred_size(&self, scale: f64) -> Size {
+    /// This takes into account [`SVG_SCALE`], so rasterization can use a stable
+    /// preferred logical size.
+    fn preferred_size(&self) -> Size {
         let size = self.tree.size();
         Size::new(
-            size.width() as f64 * scale / SVG_SCALE,
-            size.height() as f64 * scale / SVG_SCALE,
+            size.width() as f64 / SVG_SCALE,
+            size.height() as f64 / SVG_SCALE,
         )
     }
 }
@@ -153,15 +149,11 @@ impl Widget for Svg {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         let cache = ctx.property_cache();
         let object_fit = props.get::<ObjectFit>(cache);
-        let preferred_size = self.preferred_size(scale);
+        let preferred_size = self.preferred_size();
 
         object_fit.measure(axis, len_req, cross_length, preferred_size)
     }

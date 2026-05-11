@@ -13,7 +13,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
-use crate::layout::{LayoutSize, LenReq, SizeDef};
+use crate::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
 use crate::properties::Gap;
 use crate::util::debug_panic;
 
@@ -302,25 +302,21 @@ impl Widget for Grid {
         props: &PropertiesRef<'_>,
         axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         let cache = ctx.property_cache();
         let gap = props.get::<Gap>(cache);
 
-        let gap_length = gap.gap.dp(scale);
+        let gap_length = gap.gap.get();
 
         let cross = axis.cross();
         let cross_track_cells = self.track_cells(cross) as f64;
         let cross_cell_length = cross_length
             .filter(|_| cross_track_cells > 0.) // Guard against div by zero
-            .map(|cross_length| (cross_length + gap_length) / cross_track_cells);
+            .map(|cross_length| (cross_length.get() + gap_length) / cross_track_cells);
 
         let (len_req, min_result) = match len_req {
-            LenReq::MinContent | LenReq::MaxContent => (len_req, 0.),
+            LenReq::MinContent | LenReq::MaxContent => (len_req, Length::ZERO),
             // We always want to use up all offered space but may need even more,
             // so we implement FitContent as space.max(MinContent).
             LenReq::FitContent(space) => (LenReq::MinContent, space),
@@ -336,7 +332,7 @@ impl Widget for Grid {
                     let length = cross_area_cells * cross_cell_length - gap_length;
                     // Guard against the derived area length becoming negative,
                     // which can happen if total space can't fit all cells and gaps.
-                    length.max(0.)
+                    length.max(0.).px()
                 });
 
                 let auto_length = len_req.into();
@@ -350,26 +346,22 @@ impl Widget for Grid {
                     cross_area_length,
                 );
 
-                (child_length + gap_length) / area_cells
+                (child_length.get() + gap_length) / area_cells
             };
             cell_length = cell_length.max(desired_cell_length);
         }
 
         let track_cells = self.track_cells(axis) as f64;
-        let length = track_cells * cell_length - gap_length;
+        let length = (track_cells * cell_length - gap_length).px();
 
         min_result.max(length)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
         let cache = ctx.property_cache();
         let gap = props.get::<Gap>(cache);
 
-        let gap_length = gap.gap.dp(scale);
+        let gap_length = gap.gap.get();
 
         let cell_width = (size.width + gap_length) / self.grid_column_count as f64;
         let cell_height = (size.height + gap_length) / self.grid_row_count as f64;

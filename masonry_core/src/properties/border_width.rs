@@ -42,77 +42,75 @@ impl BorderWidth {
 
     /// Expands the `size` by the border width.
     ///
-    /// The returned [`Size`] will be non-negative and in device pixels.
+    /// The returned [`Size`] will be non-negative and in logical pixels.
     ///
-    /// The provided `size` must be in device pixels.
+    /// The provided `size` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn size_up(&self, size: Size, scale: f64) -> Size {
-        let width = size.width + Length::px(self.width).dp(scale) * 2.;
-        let height = size.height + Length::px(self.width).dp(scale) * 2.;
+    pub fn size_up(&self, size: Size) -> Size {
+        let width = size.width + self.width * 2.;
+        let height = size.height + self.width * 2.;
         Size::new(width, height)
     }
 
     /// Shrinks the `size` by the border width.
     ///
-    /// The returned [`Size`] will be non-negative and in device pixels.
+    /// The returned [`Size`] will be non-negative and in logical pixels.
     ///
-    /// The provided `size` must be in device pixels.
+    /// The provided `size` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn size_down(&self, size: Size, scale: f64) -> Size {
-        let width = (size.width - Length::px(self.width).dp(scale) * 2.).max(0.);
-        let height = (size.height - Length::px(self.width).dp(scale) * 2.).max(0.);
+    pub fn size_down(&self, size: Size) -> Size {
+        let width = (size.width - self.width * 2.).max(0.);
+        let height = (size.height - self.width * 2.).max(0.);
         Size::new(width, height)
     }
 
     /// Returns the [`Insets`] for deriving an area with this border.
     ///
-    /// The returned [`Insets`] will be in device pixels.
+    /// The returned [`Insets`] will be in logical pixels.
     ///
-    /// The provided `insets` must be in device pixels.
-    pub fn insets_up(&self, insets: Insets, scale: f64) -> Insets {
-        let width = Length::px(self.width).dp(scale);
+    /// The provided `insets` must be in logical pixels.
+    pub fn insets_up(&self, insets: Insets) -> Insets {
         Insets {
-            x0: insets.x0 + width,
-            y0: insets.y0 + width,
-            x1: insets.x1 + width,
-            y1: insets.y1 + width,
+            x0: insets.x0 + self.width,
+            y0: insets.y0 + self.width,
+            x1: insets.x1 + self.width,
+            y1: insets.y1 + self.width,
         }
     }
 
     /// Raises the `baseline` by the border width.
     ///
-    /// The returned baseline will be in device pixels.
+    /// The returned baseline will be in logical pixels.
     ///
-    /// The provided `baseline` must be in device pixels.
+    /// The provided `baseline` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn baseline_up(&self, baseline: f64, scale: f64) -> f64 {
-        baseline + Length::px(self.width).dp(scale)
+    pub fn baseline_up(&self, baseline: f64) -> f64 {
+        baseline + self.width
     }
 
     /// Lowers the `baseline` by the border width.
     ///
-    /// The returned baseline will be in device pixels.
+    /// The returned baseline will be in logical pixels.
     ///
-    /// The provided `baseline` must be in device pixels.
+    /// The provided `baseline` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn baseline_down(&self, baseline: f64, scale: f64) -> f64 {
-        baseline - Length::px(self.width).dp(scale)
+    pub fn baseline_down(&self, baseline: f64) -> f64 {
+        baseline - self.width
     }
 
     /// Lowers the position by the border width.
     ///
-    /// The returned [`Point`] will be in device pixels.
+    /// The returned [`Point`] will be in logical pixels.
     ///
-    /// The provided `origin` must be in device pixels.
+    /// The provided `origin` must be in logical pixels.
     ///
     /// Helper function to be called in [`Widget::layout`].
-    pub fn origin_down(&self, origin: Point, scale: f64) -> Point {
-        let width = Length::px(self.width).dp(scale);
-        origin + Vec2::new(width, width)
+    pub fn origin_down(&self, origin: Point) -> Point {
+        origin + Vec2::new(self.width, self.width)
     }
 
     /// Creates a rounded rectangle that is inset by the border width.

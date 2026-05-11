@@ -14,7 +14,7 @@ use crate::core::{
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Cap, Line, Point, Size, Stroke, Vec2};
-use crate::layout::LenReq;
+use crate::layout::{LenReq, Length};
 use crate::properties::ContentColor;
 use crate::theme;
 
@@ -87,17 +87,13 @@ impl Widget for Spinner {
         _props: &PropertiesRef<'_>,
         _axis: Axis,
         len_req: LenReq,
-        cross_length: Option<f64>,
-    ) -> f64 {
-        // TODO: Remove HACK: Until scale factor rework happens, just pretend it's always 1.0.
-        //       https://github.com/linebender/xilem/issues/1264
-        let scale = 1.0;
-
+        cross_length: Option<Length>,
+    ) -> Length {
         match len_req {
             // For preferred length we try to keep a square aspect ratio,
             // and when the cross length is unknown we fall back to the theme's default.
             LenReq::MinContent | LenReq::MaxContent => {
-                cross_length.unwrap_or(theme::BASIC_WIDGET_HEIGHT.dp(scale))
+                cross_length.unwrap_or(theme::BASIC_WIDGET_HEIGHT)
             }
             LenReq::FitContent(space) => space,
         }
