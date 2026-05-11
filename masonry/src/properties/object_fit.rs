@@ -70,6 +70,9 @@ impl Default for ObjectFit {
 impl ObjectFit {
     /// Calculates an [`Affine`] transform to fit `content` inside `container`.
     ///
+    /// Both `content` and `container` can have arbitrary origins, which will be
+    /// correctly translated in the returned `Affine`.
+    ///
     /// See [`ObjectFit`] variant documentation for fitting details.
     ///
     /// # Panics
