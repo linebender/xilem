@@ -161,9 +161,9 @@ fn paint_widget(
         PaintLayerMode::IsolatedScene | PaintLayerMode::External => id,
     };
 
-    let border_box_to_layer_transform = *window_to_layer_transform * state.window_transform;
-    let content_box_to_layer_transform =
-        border_box_to_layer_transform.pre_translate(state.border_box_translation());
+    let layout_border_box_to_layer_transform = *window_to_layer_transform * state.window_transform;
+    let visual_content_box_to_layer_transform = layout_border_box_to_layer_transform
+        .pre_translate(state.visual_translation() + state.border_box_translation());
     let has_clip = state.clip_path.is_some();
     let paint_as_external = paint_layer_mode == PaintLayerMode::External;
 
@@ -177,12 +177,12 @@ fn paint_widget(
 
         layer_collector
             .scene_mut()
-            .append_transformed(pre_scene, content_box_to_layer_transform);
+            .append_transformed(pre_scene, visual_content_box_to_layer_transform);
 
         if let Some(clip) = state.clip_path {
-            // The clip path is stored in border-box space, so need to use that transform.
+            // The clip path is stored in layout border-box space, so need to use that transform.
             layer_collector.scene_mut().push_clip(Clip::Fill {
-                transform: border_box_to_layer_transform,
+                transform: layout_border_box_to_layer_transform,
                 shape: Geometry::Rect(clip),
                 fill_rule: Fill::NonZero,
             });
@@ -190,7 +190,7 @@ fn paint_widget(
 
         layer_collector
             .scene_mut()
-            .append_transformed(scene, content_box_to_layer_transform);
+            .append_transformed(scene, visual_content_box_to_layer_transform);
     }
 
     let parent_state = &mut *state;
@@ -224,11 +224,14 @@ fn paint_widget(
 
             // Draw the widget's explicit baselines
             let mut draw_baseline = |baseline| {
-                let line = Line::new((0., baseline), (state.end_point.x, baseline));
+                let line = Line::new(
+                    (state.visual_border_box.x0, baseline),
+                    (state.visual_border_box.x1, baseline),
+                );
                 let baseline_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
                 painter
                     .stroke(line, &baseline_style, color)
-                    .transform(border_box_to_layer_transform)
+                    .transform(layout_border_box_to_layer_transform)
                     .draw();
             };
             if !state.first_baseline.is_nan() {
@@ -252,20 +255,20 @@ fn paint_widget(
 
         layer_collector
             .scene_mut()
-            .append_transformed(post_scene, content_box_to_layer_transform);
+            .append_transformed(post_scene, visual_content_box_to_layer_transform);
 
         if global_state.inspector_state.hovered_widget == Some(id) {
             const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
-            let rect = state.border_box_size().to_rect();
+            let rect = state.visual_border_box;
             Painter::new(layer_collector.scene_mut())
                 .fill(rect, HOVER_FILL_COLOR)
-                .transform(border_box_to_layer_transform)
+                .transform(layout_border_box_to_layer_transform)
                 .draw();
         }
     }
 
     if paint_as_external {
-        layer_collector.push_external_layer(id, state.border_box_size().to_rect());
+        layer_collector.push_external_layer(id, state.visual_border_box);
     }
 
     if matches!(

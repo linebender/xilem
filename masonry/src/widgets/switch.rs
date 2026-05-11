@@ -222,7 +222,7 @@ impl Widget for Switch {
     ) {
         let is_disabled = ctx.is_disabled();
 
-        let size = ctx.border_box_size();
+        let size = ctx.border_box().size();
 
         let border_box_translation = ctx.border_box_translation();
         let cache = ctx.property_cache();
@@ -416,7 +416,8 @@ mod tests {
         let size = harness
             .get_widget_with_id(switch_id)
             .ctx()
-            .border_box_size();
+            .layout_border_box()
+            .size();
 
         // Switch should maintain its intrinsic size, not fill available space
         assert_eq!(

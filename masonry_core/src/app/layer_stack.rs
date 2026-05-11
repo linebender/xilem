@@ -39,7 +39,7 @@ pub(crate) struct LayerStack {
 struct LayerEntry {
     /// Root widget owned by this top-level layer entry.
     root: WidgetPod<dyn Widget>,
-    /// Position of this layer entry in the `LayerStack`'s content-box coordinates.
+    /// Position of this layer entry in the `LayerStack`'s layout content-box coordinates.
     position: Point,
 }
 
@@ -75,7 +75,7 @@ impl LayerStack {
 impl LayerStack {
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
     ///
-    /// The given `pos` must be in this `LayerStack`'s content-box coordinate space.
+    /// The given `pos` must be in this `LayerStack`'s layout content-box coordinate space.
     /// If this `LayerStack` is used as the root widget with no borders, padding, or transforms,
     /// then that coordinate space will exactly match the window's coordinate space.
     pub(crate) fn add_layer(
@@ -131,7 +131,7 @@ impl LayerStack {
 
     /// Repositions the layer with the given widget as root.
     ///
-    /// The given `new_origin` must be in this `LayerStack`'s content-box coordinate space.
+    /// The given `new_origin` must be in this `LayerStack`'s layout content-box coordinate space.
     /// If this `LayerStack` is used as the root widget with no borders, padding, or transforms,
     /// then that coordinate space will exactly match the window's coordinate space.
     ///

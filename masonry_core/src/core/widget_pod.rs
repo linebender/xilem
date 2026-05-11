@@ -80,11 +80,12 @@ impl<W: Widget + ?Sized> std::fmt::Debug for NewWidget<W> {
 /// The options a new widget will be created with.
 #[derive(Default, Debug)]
 pub struct WidgetOptions {
-    /// Local transform used during the mapping of this widget's border-box coordinate space
-    /// to the parent's border-box coordinate space.
+    /// Local transform used during the mapping of this widget's layout border-box
+    /// coordinate space to the parent's layout border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// When mapping this widget's visual border-box into the window's coordinate space,
+    /// first this transform will be applied and then `scroll_translation` and `origin`
+    /// applied on top.
     pub transform: Affine,
     /// The disabled state the widget will be created with.
     pub disabled: bool,

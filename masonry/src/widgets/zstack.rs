@@ -260,7 +260,7 @@ impl Widget for ZStack {
 
             let child_origin = ctx.child_origin(&child.widget);
 
-            let (first_baseline, last_baseline) = ctx.child_aligned_baselines(&child.widget);
+            let (first_baseline, last_baseline) = ctx.child_baselines(&child.widget);
             min_baseline = min_baseline.min(child_origin.y + first_baseline);
             max_baseline = max_baseline.max(child_origin.y + last_baseline);
         }

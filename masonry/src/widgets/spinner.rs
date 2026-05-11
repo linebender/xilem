@@ -13,7 +13,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
 };
 use crate::imaging::Painter;
-use crate::kurbo::{Axis, Cap, Line, Point, Size, Stroke, Vec2};
+use crate::kurbo::{Axis, Cap, Line, Size, Stroke, Vec2};
 use crate::layout::{LenReq, Length};
 use crate::properties::ContentColor;
 use crate::theme;
@@ -111,8 +111,9 @@ impl Widget for Spinner {
         let color = props.get::<ContentColor>(cache);
 
         let t = self.t;
-        let size = ctx.content_box_size();
-        let center = Point::new(size.width / 2.0, size.height / 2.0);
+        let content_box = ctx.content_box();
+        let size = content_box.size();
+        let center = content_box.center();
         let scale_factor = size.width.min(size.height) / 40.0;
 
         for step in 1..=12 {

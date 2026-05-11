@@ -353,7 +353,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     ///
     /// A position of zero means no scrolling at all.
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
-        let portal_size = this.ctx.content_box_size();
+        let portal_size = this.ctx.layout_content_box().size();
         let content_size = this.widget.content_size;
 
         let pos_changed = this
@@ -381,7 +381,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     /// `target` is in the child's border-box coordinate space, meaning a target
     /// of `(0, 0, 10, 10)` will scroll an item at the top-left of the child into view.
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
-        let portal_size = this.ctx.content_box_size();
+        let portal_size = this.ctx.layout_content_box().size();
         let viewport = Rect::from_origin_size(this.widget.viewport_pos, portal_size);
 
         let new_pos_x = compute_pan_range(
@@ -409,12 +409,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.layout_content_box().size();
         let content_size = self.content_size;
 
         match *event {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
-                let scale_factor = ctx.get_scale_factor();
+                let scale_factor = ctx.scale_factor();
                 let line_px = PhysicalPosition {
                     x: 120.0 * scale_factor,
                     y: 120.0 * scale_factor,
@@ -455,7 +455,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.layout_content_box().size();
         let content_size = self.content_size;
         let target = ctx.target();
         let scrollbar_target =
@@ -559,7 +559,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.layout_content_box().size();
         let content_size = self.content_size;
         let target = ctx.target();
         let scrollbar_target =
@@ -619,7 +619,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::RequestPanToChild(target) => {
-                let portal_size = ctx.content_box_size();
+                let portal_size = ctx.layout_content_box().size();
                 let content_size = self.content_size;
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
@@ -788,7 +788,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     ) {
         node.set_clips_children();
 
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.layout_content_box().size();
         let content_size = self.content_size;
         let scroll_range = (content_size - portal_size).max(Size::ZERO);
 

@@ -162,7 +162,7 @@ where
             None => match message.take_message::<LayoutChanged>() {
                 Some(_) => MessageResult::Action((self.on_resize)(
                     app_state,
-                    element.ctx.content_box_size(),
+                    element.ctx.layout_content_box().size(),
                 )),
                 None => {
                     // TODO: Panic?

@@ -10,9 +10,9 @@ use resvg::usvg::Tree;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx, PropertiesMut,
-    PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
-    WidgetMut,
+    AccessCtx, ArcStr, ChildrenIds, ComposeCtx, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, Property, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget,
+    WidgetId, WidgetMut,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Size};
@@ -162,6 +162,18 @@ impl Widget for Svg {
         self.rasterized = None;
     }
 
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
+        // Clear the image cache if the size changed.
+        if let Some(rasterized) = &self.rasterized {
+            let content_box = ctx.content_box();
+            let pixmap_width = content_box.width().ceil() as u32;
+            let pixmap_height = content_box.height().ceil() as u32;
+            if rasterized.image.width != pixmap_width || rasterized.image.height != pixmap_height {
+                self.rasterized = None;
+            }
+        }
+    }
+
     fn paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
@@ -189,7 +201,9 @@ impl Widget for Svg {
             let svg_size = self.tree.size();
             let svg_size = Size::new(svg_size.width() as f64, svg_size.height() as f64);
 
-            let coeffs = object_fit.affine(content_box.size(), svg_size).as_coeffs();
+            let coeffs = object_fit
+                .affine(content_box.size().to_rect(), svg_size.to_rect())
+                .as_coeffs();
             let transform = tiny_skia::Transform::from_row(
                 coeffs[0] as f32,
                 coeffs[1] as f32,

@@ -1190,7 +1190,7 @@ impl Widget for Flex {
                         .unwrap()
                         .widget()
                         .unwrap();
-                    let (first_baseline, _) = ctx.child_aligned_baselines(first_child);
+                    let (first_baseline, _) = ctx.child_baselines(first_child);
                     let first_child_origin = ctx.child_origin(first_child);
                     let first_baseline = first_child_origin.y + first_baseline;
 
@@ -1201,7 +1201,7 @@ impl Widget for Flex {
                         .unwrap()
                         .widget()
                         .unwrap();
-                    let (_, last_baseline) = ctx.child_aligned_baselines(last_child);
+                    let (_, last_baseline) = ctx.child_baselines(last_child);
                     let last_child_origin = ctx.child_origin(last_child);
                     let last_baseline = last_child_origin.y + last_baseline;
 

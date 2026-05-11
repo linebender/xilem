@@ -179,8 +179,8 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                 }
 
                 if let Some(child) = children.first() {
-                    let (first_baseline, _) = ctx.child_aligned_baselines(child);
-                    let (_, last_baseline) = ctx.child_aligned_baselines(children.last().unwrap());
+                    let (first_baseline, _) = ctx.child_baselines(child);
+                    let (_, last_baseline) = ctx.child_baselines(children.last().unwrap());
                     ctx.set_baselines(first_baseline, last_baseline);
                 } else {
                     ctx.clear_baselines();

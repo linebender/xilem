@@ -623,7 +623,8 @@ impl Widget for Label {
         props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();
+        let text_origin_in_layout_border_box_space =
+            Point::ORIGIN + ctx.visual_translation() + ctx.border_box_translation();
 
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
@@ -636,8 +637,8 @@ impl Widget for Label {
             ctx.tree_update(),
             node,
             AccessCtx::next_node_id,
-            text_origin_in_border_box_space.x,
-            text_origin_in_border_box_space.y,
+            text_origin_in_layout_border_box_space.x,
+            text_origin_in_layout_border_box_space.y,
             |node, style| set_accesskit_brush_properties(node, style, &[text_color.color.into()]),
         );
     }

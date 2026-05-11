@@ -16,7 +16,7 @@ use crate::layout::{LenReq, Length};
 /// It reports the child's length as its own in [`measure`], syncing its size with the child's.
 ///
 /// The size of this widget can be accessed through [`MutateCtx`] methods like
-/// [`border_box_size`] and [`content_box_size`].
+/// [`layout_border_box`] and [`layout_content_box`].
 ///
 /// Ensure that `ResizeObserver` has [`Dimensions`] set via props to [`Dimensions::MAX`].
 /// Max preferred size of `ResizeObserver` means that the question of size
@@ -44,8 +44,8 @@ use crate::layout::{LenReq, Length};
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
 /// [`MutateCtx`]: crate::core::MutateCtx
-/// [`border_box_size`]: crate::core::MutateCtx::border_box_size
-/// [`content_box_size`]: crate::core::MutateCtx::content_box_size
+/// [`layout_border_box`]: crate::core::MutateCtx::layout_border_box
+/// [`layout_content_box`]: crate::core::MutateCtx::layout_content_box
 // TODO: It would be nice to at least catch these loops.
 // We could see how many times layout is executed without us being painted, and setting a threshold.
 // The response if that gets too high (100?) could be debug_panicking, then stopping
@@ -100,11 +100,11 @@ impl ResizeObserver {
 /// Currently only used by [`ResizeObserver`].
 /// Note that this event does not itself include the final size.
 /// That should instead be accessed through [`MutateCtx`] methods like
-/// [`border_box_size`] and [`content_box_size`].
+/// [`layout_border_box`] and [`layout_content_box`].
 ///
 /// [`MutateCtx`]: crate::core::MutateCtx
-/// [`border_box_size`]: crate::core::MutateCtx::border_box_size
-/// [`content_box_size`]: crate::core::MutateCtx::content_box_size
+/// [`layout_border_box`]: crate::core::MutateCtx::layout_border_box
+/// [`layout_content_box`]: crate::core::MutateCtx::layout_content_box
 #[derive(Debug)]
 pub struct LayoutChanged;
 
@@ -201,7 +201,8 @@ mod tests {
             harness
                 .get_widget_with_id(observer_id)
                 .ctx()
-                .border_box_size(),
+                .layout_border_box()
+                .size(),
             Size {
                 width: 100.,
                 height: 100.,
@@ -218,7 +219,8 @@ mod tests {
             harness
                 .get_widget_with_id(observer_id)
                 .ctx()
-                .border_box_size(),
+                .layout_border_box()
+                .size(),
             Size {
                 width: 100.,
                 height: 200.,
@@ -250,7 +252,8 @@ mod tests {
             harness
                 .get_widget_with_id(observer_id)
                 .ctx()
-                .border_box_size(),
+                .layout_border_box()
+                .size(),
             Size {
                 width: 200.,
                 height: 200.,
@@ -267,7 +270,8 @@ mod tests {
             harness
                 .get_widget_with_id(observer_id)
                 .ctx()
-                .border_box_size(),
+                .layout_border_box()
+                .size(),
             Size {
                 width: 100.,
                 height: 150.,

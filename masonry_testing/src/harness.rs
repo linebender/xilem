@@ -694,7 +694,6 @@ impl<W: Widget> TestHarness<W> {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
         let local_widget_center = widget.ctx().border_box().center();
-
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         // TODO - Add reachable_by_pointer() method.
@@ -1046,7 +1045,8 @@ impl<W: Widget> TestHarness<W> {
 
     /// Returns the rectangle of the IME session.
     ///
-    /// This is usually the effective border-box rectangle of the focused widget.
+    /// This is usually the visual border-box rectangle of the focused widget,
+    /// transformed into the window's coordinate space.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
         self.ime_rect
     }
