@@ -5,11 +5,11 @@
 
 use masonry::layout::{AsUnit, Dim};
 use winit::error::EventLoopError;
-use xilem::core::map_state;
-use xilem::style::Style as _;
+use xilem::core::View;
+use xilem::style::Style;
 use xilem::view::{
-    FlexExt, FlexSpacer, GridExt, MainAxisAlignment, button, flex_col, flex_row, grid, label,
-    prose, sized_box, text_button,
+    FlexExt, FlexSpacer, MainAxisAlignment, button, flex_col, flex_row, grid, label, prose,
+    text_button, unit_fractions,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
@@ -30,14 +30,12 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
         ))
         .main_axis_alignment(MainAxisAlignment::Center),
         picker(data).flex(1.0),
-        map_state(
-            paginate(
-                data.start_index,
-                (data.size * data.size) as usize,
-                data.emoji.len(),
-            ),
-            |state: &mut EmojiPagination| &mut state.start_index,
-        ),
+        paginate(
+            data.start_index,
+            (data.size * data.size) as usize,
+            data.emoji.len(),
+        )
+        .map_state(|state: &mut EmojiPagination| &mut state.start_index),
         data.last_selected
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
         FlexSpacer::Fixed(10.px()),
@@ -57,37 +55,33 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
             };
             let view = flex_col((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
-                sized_box(button(
+                button(
                     label(emoji.display).text_size(200.0 / data.size as f32),
                     move |data: &mut EmojiPagination| {
                         data.last_selected = Some(idx);
                     },
-                ))
-                .width(Dim::Stretch),
-                sized_box(
-                    prose(emoji.name)
-                        .text_alignment(TextAlign::Center)
-                        .text_color(if data.last_selected.is_some_and(|it| it == idx) {
-                            // TODO: Ensure this selection indicator color is accessible
-                            // TODO: Expose selected state to accessibility tree
-                            palette::css::BLUE
-                        } else {
-                            Color::WHITE
-                        }),
                 )
                 .width(Dim::Stretch),
+                prose(emoji.name)
+                    .text_alignment(TextAlign::Center)
+                    .text_color(if data.last_selected.is_some_and(|it| it == idx) {
+                        // TODO: Ensure this selection indicator color is accessible
+                        // TODO: Expose selected state to accessibility tree
+                        palette::css::BLUE
+                    } else {
+                        Color::WHITE
+                    })
+                    .width(Dim::Stretch),
             ));
-            grid_items.push(view.grid_pos(x.try_into().unwrap(), y.try_into().unwrap()));
+            grid_items.push(view);
         }
     }
 
-    grid(
-        grid_items,
-        data.size.try_into().unwrap(),
-        data.size.try_into().unwrap(),
-    )
-    .gap(10.px())
-    .padding(20.px())
+    grid(grid_items)
+        .columns(unit_fractions(data.size.try_into().unwrap()))
+        .rows(unit_fractions(data.size.try_into().unwrap()))
+        .gap(10.px())
+        .padding(20.px())
 }
 
 fn paginate(

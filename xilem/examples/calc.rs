@@ -7,12 +7,12 @@ use masonry::core::{PropertyStack, Selector};
 use masonry::layout::{AsUnit, Length};
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::theme::default_property_set;
-use masonry::widgets::GridParams;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::{BorderColor, Style};
 use xilem::view::{
     FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, text_button,
+    unit_fractions,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
@@ -192,64 +192,56 @@ impl Calculator {
     }
 }
 
-fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
-    let mut views: Vec<_> = vec![];
-    for (i, num) in nums.iter().enumerate() {
-        views.push(digit_button(num).grid_pos(i32::try_from(i).unwrap(), row));
-    }
-    views
+fn num_row(nums: [&'static str; 3]) -> impl GridSequence<Calculator> {
+    nums.map(digit_button)
 }
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: Length = Length::const_px(2.);
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
-    grid(
-        (
-            // Display
-            centered_flex_row((
-                FlexSpacer::Flex(0.1),
-                display_label(data.numbers[0].as_ref()),
-                data.operation
-                    .map(|operation| display_label(operation.as_str())),
-                display_label(data.numbers[1].as_ref()),
-                data.result.is_some().then(|| display_label("=")),
-                data.result
-                    .as_ref()
-                    .map(|result| display_label(result.as_ref())),
-                FlexSpacer::Flex(0.1),
-            ))
-            .grid_item(GridParams::new(0, 0, 4, 1)),
-            // Top row
-            one_button(
-                label("CE").color(if data.get_current_number().is_empty() {
-                    palette::css::MEDIUM_VIOLET_RED
-                } else {
-                    palette::css::WHITE
-                }),
-                Calculator::clear_entry,
-            )
-            .grid_pos(0, 1),
-            one_button(label("C"), Calculator::clear_all).grid_pos(1, 1),
-            one_button(label("DEL"), Calculator::on_delete).grid_pos(2, 1),
-            operator_button(MathOperator::Divide).grid_pos(3, 1),
-            num_row(["7", "8", "9"], 2),
-            operator_button(MathOperator::Multiply).grid_pos(3, 2),
-            num_row(["4", "5", "6"], 3),
-            operator_button(MathOperator::Subtract).grid_pos(3, 3),
-            num_row(["1", "2", "3"], 4),
-            operator_button(MathOperator::Add).grid_pos(3, 4),
-            // bottom row
-            one_button(label("±"), Calculator::negate).grid_pos(0, 5),
-            digit_button("0").grid_pos(1, 5),
-            one_button(label("."), |data: &mut Calculator| {
-                data.on_entered_digit(".");
-            })
-            .grid_pos(2, 5),
-            one_button(label("="), Calculator::on_equals).grid_pos(3, 5),
+    grid((
+        // Display
+        centered_flex_row((
+            FlexSpacer::Flex(0.1),
+            display_label(data.numbers[0].as_ref()),
+            data.operation
+                .map(|operation| display_label(operation.as_str())),
+            display_label(data.numbers[1].as_ref()),
+            data.result.is_some().then(|| display_label("=")),
+            data.result
+                .as_ref()
+                .map(|result| display_label(result.as_ref())),
+            FlexSpacer::Flex(0.1),
+        ))
+        .grid(((), (), 4, ())),
+        // Top row
+        one_button(
+            label("CE").color(if data.get_current_number().is_empty() {
+                palette::css::MEDIUM_VIOLET_RED
+            } else {
+                palette::css::WHITE
+            }),
+            Calculator::clear_entry,
         ),
-        4,
-        6,
-    )
+        one_button(label("C"), Calculator::clear_all),
+        one_button(label("DEL"), Calculator::on_delete),
+        operator_button(MathOperator::Divide),
+        num_row(["7", "8", "9"]),
+        operator_button(MathOperator::Multiply),
+        num_row(["4", "5", "6"]),
+        operator_button(MathOperator::Subtract),
+        num_row(["1", "2", "3"]),
+        operator_button(MathOperator::Add),
+        // bottom row
+        one_button(label("±"), Calculator::negate),
+        digit_button("0"),
+        one_button(label("."), |data: &mut Calculator| {
+            data.on_entered_digit(".");
+        }),
+        one_button(label("="), Calculator::on_equals),
+    ))
+    .columns(unit_fractions(4))
+    .rows(unit_fractions(6))
     .gap(GRID_GAP)
 }
 
