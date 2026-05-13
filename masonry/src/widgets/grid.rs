@@ -302,8 +302,8 @@ impl Grid {
             return Vec::new();
         }
 
-        let context_length =
-            context_length.map(|l| (l.get() - gap.get() * (tracks.len() - 1) as f64).px());
+        let context_length = context_length
+            .and_then(|l| Length::try_px(l.get() - gap.get() * (tracks.len() - 1) as f64));
 
         let (track_auto_lengths, mut track_lengths): (Vec<_>, Vec<_>) = tracks
             .iter()
@@ -968,7 +968,8 @@ impl Widget for Grid {
                     .get(row + height)
                     .map_or(size.height, |o| o - gap_length)
                     - row_offsets[row],
-            );
+            )
+            .max(Size::ZERO);
 
             ctx.run_layout(&mut child.widget, size);
 
