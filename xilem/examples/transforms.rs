@@ -8,8 +8,8 @@ use std::f64::consts::{PI, TAU};
 use winit::error::EventLoopError;
 use xilem::core::one_of::Either;
 use xilem::masonry::kurbo::{Affine, Vec2};
-use xilem::style::Style as _;
-use xilem::view::{GridExt as _, grid, label, sized_box, text_button, transformed};
+use xilem::style::Style;
+use xilem::view::{GridExt, grid, label, sized_box, text_button, transformed, unit_fractions};
 use xilem::{Color, EventLoop, WidgetView, WindowOptions, Xilem};
 
 struct TransformsGame {
@@ -63,39 +63,41 @@ impl TransformsGame {
             text_button("↶", |this: &mut Self| {
                 this.rotation -= PI * 0.125;
             })
-            .grid_pos(0, 0),
+            .grid((0, 0)),
             text_button("↑", |this: &mut Self| {
                 this.translation.y -= 10.0;
             })
-            .grid_pos(1, 0),
+            .grid((1, 0)),
             text_button("↷", |this: &mut Self| {
                 this.rotation += PI * 0.125;
             })
-            .grid_pos(2, 0),
+            .grid((2, 0)),
             text_button("←", |this: &mut Self| {
                 this.translation.x -= 10.0;
             })
-            .grid_pos(0, 1),
+            .grid((0, 1)),
             text_button("→", |this: &mut Self| {
                 this.translation.x += 10.0;
             })
-            .grid_pos(2, 1),
+            .grid((2, 1)),
             text_button("-", |this: &mut Self| {
                 // 2 ^ (1/3) for 3 clicks to reach the target.
                 this.scale /= 1.2599210498948732;
             })
-            .grid_pos(0, 2),
+            .grid((0, 2)),
             text_button("↓", |this: &mut Self| {
                 this.translation.y += 10.0;
             })
-            .grid_pos(1, 2),
+            .grid((1, 2)),
             text_button("+", |this: &mut Self| {
                 this.scale *= 1.2599210498948732;
             })
-            .grid_pos(2, 2),
+            .grid((2, 2)),
         );
 
-        grid((controls, transformed_status.grid_pos(1, 1)), 3, 3)
+        grid((controls, transformed_status.grid((1, 1))))
+            .columns(unit_fractions(3))
+            .rows(unit_fractions(3))
     }
 }
 
