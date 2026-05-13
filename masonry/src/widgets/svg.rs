@@ -189,7 +189,9 @@ impl Widget for Svg {
             let svg_size = self.tree.size();
             let svg_size = Size::new(svg_size.width() as f64, svg_size.height() as f64);
 
-            let coeffs = object_fit.affine(content_box.size(), svg_size).as_coeffs();
+            let coeffs = object_fit
+                .affine(content_box.size().to_rect(), svg_size.to_rect())
+                .as_coeffs();
             let transform = tiny_skia::Transform::from_row(
                 coeffs[0] as f32,
                 coeffs[1] as f32,
