@@ -9,7 +9,7 @@ use xilem::peniko::color::AlphaColor;
 use xilem::style::Style;
 use xilem::view::{
     CrossAxisAlignment, GridExt, MainAxisAlignment, flex_col, flex_row, grid, label, portal,
-    sized_box, text_button,
+    sized_box, text_button, unit_fractions,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::one_of::Either;
@@ -30,8 +30,8 @@ enum BlocksLayout {
 }
 
 struct AppState {
-    vertical_count: i32,
-    horizontal_count: i32,
+    vertical_count: u16,
+    horizontal_count: u16,
     blocks_layout: BlocksLayout,
 }
 
@@ -46,10 +46,10 @@ impl Default for AppState {
 }
 
 fn color_block(
-    row_idx: i32,
-    col_idx: i32,
-    vertical_count: i32,
-    horizontal_count: i32,
+    row_idx: u16,
+    col_idx: u16,
+    vertical_count: u16,
+    horizontal_count: u16,
 ) -> impl WidgetView<AppState> + use<> {
     let row_idx = row_idx as f32;
     let col_idx = col_idx as f32;
@@ -74,13 +74,13 @@ fn grid_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             .flat_map(|row_idx| {
                 (0..horizontal_count).map(move |col_idx| {
                     color_block(row_idx, col_idx, vertical_count, horizontal_count)
-                        .grid_pos(row_idx, col_idx)
+                        .grid((row_idx, col_idx))
                 })
             })
             .collect::<Vec<_>>(),
-        horizontal_count,
-        vertical_count,
     )
+    .columns(unit_fractions(horizontal_count as _))
+    .rows(unit_fractions(vertical_count as _))
     .gap(10.px())
 }
 
