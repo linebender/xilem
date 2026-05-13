@@ -12,7 +12,8 @@ use crate::core::{
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
-pub use masonry::widgets::GridParams;
+pub use masonry::widgets::{GridParams, GridTrackSize};
+
 /// A Grid layout divides a window into regions and defines the relationship
 /// between inner elements in terms of size and position.
 ///
@@ -21,7 +22,7 @@ pub use masonry::widgets::GridParams;
 /// # use xilem_masonry as xilem;
 /// use masonry::widgets::GridParams;
 /// use xilem::view::{
-///     text_button, grid, label, GridExt,
+///     text_button, grid, label, unit_fractions, GridExt,
 /// };
 ///
 /// const GRID_GAP: f64 = 2.;
@@ -33,40 +34,43 @@ pub use masonry::widgets::GridParams;
 ///
 /// let mut state = State::default();
 ///
-/// grid(
-///     (
-///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
-///         text_button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
-///         text_button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
-///         text_button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
-///     ),
-///     3,
-///     2,
-/// )
+/// grid((
+///     label(state.int.to_string()).grid((0, 0, 3, ())),
+///     text_button("Decrease by 1", |state: &mut State| state.int -= 1).grid((1, 1)),
+///     text_button("To zero", |state: &mut State| state.int = 0).grid((2, 1)),
+///     text_button("Increase by 1", |state: &mut State| state.int += 1).grid((3, 1)),
+/// ))
+/// .columns(unit_fractions(3))
+/// .rows(unit_fractions(2))
 /// .gap(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State: 'static, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
-    col_count: i32,
-    row_count: i32,
-) -> Grid<Seq, State, Action> {
+) -> Grid<Seq, (), (), State, Action> {
     Grid {
         sequence,
-        col_count,
-        row_count,
+        columns: (),
+        rows: (),
         phantom: PhantomData,
     }
+}
+
+/// Helper function for quickly creating `n` tracks with which divides length equally between them.
+///
+/// Similar to CSS `repeat(n, 1fr)`.
+pub fn unit_fractions(n: usize) -> impl GridTracks {
+    hidden::CloneTracks(std::iter::repeat_n(GridTrackSize::FRACTION, n))
 }
 
 /// The [`View`] created by [`grid`] from a sequence.
 ///
 /// See `grid` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Grid<Seq, State, Action = ()> {
+pub struct Grid<Seq, Col, Row, State, Action = ()> {
     sequence: Seq,
-    col_count: i32,
-    row_count: i32,
+    columns: Col,
+    rows: Row,
 
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
@@ -74,8 +78,30 @@ pub struct Grid<Seq, State, Action = ()> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
+impl<Seq, Col, Row, State, Action> Grid<Seq, Col, Row, State, Action> {
+    /// Sets the column widths. See [`GridTrackSize`] for more info.
+    pub fn columns<NewCol>(self, columns: NewCol) -> Grid<Seq, NewCol, Row, State, Action> {
+        Grid {
+            sequence: self.sequence,
+            columns,
+            rows: self.rows,
+            phantom: PhantomData,
+        }
+    }
+
+    /// Sets the row heights. See [`GridTrackSize`] for more info.
+    pub fn rows<NewRow>(self, rows: NewRow) -> Grid<Seq, Col, NewRow, State, Action> {
+        Grid {
+            sequence: self.sequence,
+            columns: self.columns,
+            rows,
+            phantom: PhantomData,
+        }
+    }
+}
+
 mod hidden {
-    use super::GridElement;
+    use super::{GridElement, GridTrackSize};
     use crate::core::AppendVec;
 
     #[doc(hidden)]
@@ -87,16 +113,98 @@ mod hidden {
         pub(crate) seq_state: SeqState,
         pub(crate) scratch: AppendVec<GridElement>,
     }
+
+    #[doc(hidden)]
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
+    pub trait GridTracks {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize>;
+    }
+
+    impl GridTracks for GridTrackSize {
+        fn to_tracks(&self) -> impl Iterator<Item = Self> {
+            std::iter::once(*self)
+        }
+    }
+
+    impl<const N: usize> GridTracks for [GridTrackSize; N] {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+            self.iter().copied()
+        }
+    }
+
+    impl GridTracks for Vec<GridTrackSize> {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+            self.iter().copied()
+        }
+    }
+
+    pub(super) struct CloneTracks<T>(pub(super) T);
+
+    impl<T: Clone + IntoIterator<Item = GridTrackSize>> GridTracks for CloneTracks<T> {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+            self.0.clone().into_iter()
+        }
+    }
+
+    impl GridTracks for () {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+            std::iter::empty()
+        }
+    }
+
+    impl<A: GridTracks> GridTracks for (A,) {
+        fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+            self.0.to_tracks()
+        }
+    }
+
+    macro_rules! impl_grid_tracks {
+        (
+            // We could use the ${index} metavariable here once it's stable
+            // https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
+            $($marker: ident, $seq: ident, $idx: tt);+
+        ) => {
+            impl<$($seq: GridTracks,)+> GridTracks for ($($seq,)+) {
+                fn to_tracks(&self) -> impl Iterator<Item = GridTrackSize> {
+                    std::iter::empty()
+                    $(.chain(self.$idx.to_tracks()))+
+                }
+            }
+        };
+    }
+
+    // We implement for tuples of length up to 16. 0 and 1 are special cased to be more efficient
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14);
+    impl_grid_tracks!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14; M15, Seq15, 15);
 }
 
-use hidden::GridState;
+use hidden::{GridState, GridTracks};
 
-impl<Seq, State, Action> ViewMarker for Grid<Seq, State, Action> {}
+impl<Seq, Col, Row, State, Action> ViewMarker for Grid<Seq, Col, Row, State, Action> {}
 
-impl<State, Action, Seq> View<State, Action, ViewCtx> for Grid<Seq, State, Action>
+impl<State, Action, Seq, Col, Row> View<State, Action, ViewCtx>
+    for Grid<Seq, Col, Row, State, Action>
 where
     State: 'static,
     Action: 'static,
+    Col: GridTracks + 'static,
+    Row: GridTracks + 'static,
     Seq: GridSequence<State, Action>,
 {
     type Element = Pod<widgets::Grid>;
@@ -105,7 +213,9 @@ where
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widgets::Grid::with_dimensions(self.col_count, self.row_count);
+        let mut widget = widgets::Grid::new()
+            .with_columns(self.columns.to_tracks())
+            .with_rows(self.rows.to_tracks());
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.drain() {
             widget = widget.with(element.child.new_widget, element.params);
@@ -128,11 +238,11 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        if prev.row_count != self.row_count {
-            widgets::Grid::set_row_count(&mut element, self.row_count);
+        if !prev.rows.to_tracks().eq(self.rows.to_tracks()) {
+            widgets::Grid::set_rows(&mut element, self.rows.to_tracks().collect());
         }
-        if prev.col_count != self.col_count {
-            widgets::Grid::set_column_count(&mut element, self.col_count);
+        if !prev.columns.to_tracks().eq(self.columns.to_tracks()) {
+            widgets::Grid::set_columns(&mut element, self.columns.to_tracks().collect());
         }
 
         let mut splice = GridSplice::new(element, scratch);
@@ -197,15 +307,11 @@ impl SuperElement<Self, ViewCtx> for GridElement {
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        // Getting here means that the widget didn't use .grid_item or .grid_pos.
-        // This currently places the widget in the top left cell.
-        // There is not much else, beyond purposefully failing, that can be done here,
-        // because there isn't enough information to determine an appropriate spot
-        // for the widget.
+        // Getting here means that the widget didn't use .grid.
         Self {
             child: child.erased(),
             // TODO - Should be 0, 0?
-            params: GridParams::new(1, 1, 1, 1),
+            params: GridParams::new(),
         }
     }
 
@@ -302,49 +408,24 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// ```
     /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
-    /// use xilem::view::{text_button, prose, grid, GridExt};
+    /// use xilem::view::{text_button, prose, grid, unit_fractions, GridExt};
     /// # use xilem::WidgetView;
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     text_button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
-    ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
-    /// ), 2, 2)
+    ///     text_button("click me", |_| ()).grid((0, 0, 2, ())),
+    ///     prose("a prose").grid((1, 1)),
+    /// ))
+    /// .columns(unit_fractions(2))
+    /// .rows(unit_fractions(2))
     /// # }
     /// ```
-    fn grid_item(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
+    fn grid(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
     where
         Action: 'static,
         Self: Sized,
     {
         grid_item(self, params)
-    }
-
-    /// Applies a [`impl Into<GridParams>`](`GridParams`) with the specified position to this view.
-    /// This allows the view to be placed as a child within a [`Grid`] [`View`].
-    /// For instances where a grid item is expected to take up multiple cell units,
-    /// use [`GridExt::grid_item`]
-    ///
-    /// # Examples
-    /// ```
-    /// # use xilem_masonry as xilem;
-    /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{text_button, prose, grid, GridExt}};
-    /// # use xilem::WidgetView;
-    ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// grid((
-    ///     text_button("click me", |_| ()).grid_pos(0, 0),
-    ///     prose("a prose").grid_pos(1, 1),
-    /// ), 2, 2)
-    /// # }
-    /// ```
-    fn grid_pos(self, x: i32, y: i32) -> GridItem<Self, State, Action>
-    where
-        Action: 'static,
-        Self: Sized,
-    {
-        grid_item(self, GridParams::new(x, y, 1, 1))
     }
 }
 
