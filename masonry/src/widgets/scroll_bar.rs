@@ -13,14 +13,14 @@ use crate::core::{
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
     Property, RegisterCtx, TextEvent, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
 };
-use crate::imaging::Painter;
+use crate::imaging::{Composite, GroupRef, Painter};
 use crate::kurbo::{Axis, Point, Rect, Size, Stroke};
 use crate::layout::{AsUnit, LenReq, Length};
 use crate::properties::Collapsible;
 use crate::theme;
+use crate::widgets::AnimatedF32;
 
 // TODO
-// - Fade scrollbars? Find out how Linux/macOS/Windows do it
 // - Rename cursor to oval/rect/bar/grabber/grabbybar
 // - Rename progress to something more descriptive
 // - Document names
@@ -48,6 +48,7 @@ pub struct ScrollBar {
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
+    pub(crate) opacity: AnimatedF32,
     grab_anchor: Option<f64>,
 }
 
@@ -64,6 +65,7 @@ impl ScrollBar {
             moved: false,
             portal_size,
             content_size,
+            opacity: AnimatedF32::stable(1.),
             grab_anchor: None,
         }
     }
@@ -333,6 +335,30 @@ impl Widget for ScrollBar {
         }
     }
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        let cache = ctx.property_cache();
+        let collapsible = props.get::<Collapsible>(cache).0;
+
+        if !collapsible {
+            self.opacity.move_to(1., 0.);
+            ctx.request_paint_only();
+            return;
+        }
+
+        let millis = (interval as f64 * 1e-6) as f32;
+        let result = self.opacity.advance(millis);
+        ctx.request_paint_only();
+
+        if !result.is_completed() {
+            ctx.request_anim_frame();
+        }
+    }
+
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
@@ -374,6 +400,14 @@ impl Widget for ScrollBar {
         let cache = ctx.property_cache();
         let collapsible = props.get::<Collapsible>(cache).0;
 
+        if self.opacity.value() != 1. {
+            painter.push_fill_clip(ctx.border_box());
+            painter.push_group(GroupRef::new().with_composite(Composite::new(
+                crate::peniko::BlendMode::default(),
+                self.opacity.value(),
+            )));
+        }
+
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -401,6 +435,11 @@ impl Widget for ScrollBar {
                 theme::SCROLLBAR_BORDER_COLOR,
             )
             .draw();
+
+        if self.opacity.value() != 1. {
+            painter.pop_group();
+            painter.pop_clip();
+        }
     }
 
     fn accessibility_role(&self) -> Role {
