@@ -643,24 +643,33 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let cache = ctx.property_cache();
         let auto_hide_scroll_bar = props.get::<AutoHideScrollBar>(cache).0;
 
-        if auto_hide_scroll_bar
-            && let Some(mut since_last_move) = self.nanos_since_last_pointer_move.take()
-        {
-            since_last_move += interval;
-
-            // TODO: make this configurable or move to theme
-            const VISIBILITY_TIMEOUT: u64 = 400_000_000;
-            if since_last_move >= VISIBILITY_TIMEOUT {
-                let f = |mut bar: WidgetMut<'_, ScrollBar>| {
-                    bar.widget.opacity.move_to(0., SCROLLBAR_ANIM_OVER_MILLIS);
-                    bar.ctx.request_anim_frame();
+        match self.nanos_since_last_pointer_move.take() {
+            None => {
+                let rest_opacity = if auto_hide_scroll_bar { 0. } else { 1. };
+                let f = move |bar: WidgetMut<'_, ScrollBar>| {
+                    bar.widget.opacity.move_to(rest_opacity, 0.);
                 };
                 ctx.mutate_child_later(&mut self.scrollbar_horizontal, f);
                 ctx.mutate_child_later(&mut self.scrollbar_vertical, f);
-            } else {
-                self.nanos_since_last_pointer_move = Some(since_last_move);
-                ctx.request_anim_frame();
             }
+            Some(mut since_last_move) if auto_hide_scroll_bar => {
+                since_last_move += interval;
+
+                // TODO: make this configurable or move to theme
+                const VISIBILITY_TIMEOUT: u64 = 400_000_000;
+                if since_last_move >= VISIBILITY_TIMEOUT {
+                    let f = |mut bar: WidgetMut<'_, ScrollBar>| {
+                        bar.widget.opacity.move_to(0., SCROLLBAR_ANIM_OVER_MILLIS);
+                        bar.ctx.request_anim_frame();
+                    };
+                    ctx.mutate_child_later(&mut self.scrollbar_horizontal, f);
+                    ctx.mutate_child_later(&mut self.scrollbar_vertical, f);
+                } else {
+                    self.nanos_since_last_pointer_move = Some(since_last_move);
+                    ctx.request_anim_frame();
+                }
+            }
+            Some(since_last_move) => self.nanos_since_last_pointer_move = Some(since_last_move),
         }
     }
 
@@ -702,7 +711,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if AutoHideScrollBar::matches(property_type) {
-            ctx.request_layout();
+            ctx.request_anim_frame();
         }
     }
 
@@ -738,19 +747,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size) {
-        // TODO: should it be possible to do this in `property_changed`?
-        let cache = ctx.property_cache();
-        let auto_hide_scroll_bar = props.get::<AutoHideScrollBar>(cache).0;
-
-        if self.nanos_since_last_pointer_move.is_none() {
-            let rest_opacity = if auto_hide_scroll_bar { 0. } else { 1. };
-            let f =
-                move |bar: WidgetMut<'_, ScrollBar>| bar.widget.opacity.move_to(rest_opacity, 0.);
-            ctx.mutate_child_later(&mut self.scrollbar_horizontal, f);
-            ctx.mutate_child_later(&mut self.scrollbar_vertical, f);
-        }
-
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let auto_size = SizeDef::new(
             match self.constrain_horizontal {
                 true => LenDef::FitContent(size.width.px()),
