@@ -12,12 +12,12 @@ use masonry::kurbo::Axis;
 use masonry::layout::{AsUnit, Dim};
 use masonry::peniko::Color;
 use masonry::properties::types::CrossAxisAlignment;
-use masonry::properties::{BarColor, ThumbColor, ThumbRadius};
+use masonry::properties::{ThumbColor, ThumbRadius, TrackColor};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    FlexExt, FlexSpacer, MainAxisAlignment, checkbox, flex, flex_col, flex_row, label, sized_box,
+    FlexExt, FlexSpacer, MainAxisAlignment, canvas, checkbox, flex, flex_col, flex_row, label,
     slider, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -116,7 +116,10 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 .step(5.0)
                 .disabled(!state.use_transparency)
                 .width(200.px())
-                .prop(BarColor(Color::from_rgb8(0x78, 0x71, 0x6c)))
+                .prop(TrackColor {
+                    active: Color::from_rgb8(0x78, 0x71, 0x6c),
+                    ..Default::default()
+                })
                 .prop(ThumbColor(Color::WHITE))
                 .prop(ThumbRadius(10.px())),
                 label(format!("{:.0}% [{}]", state.alpha, color_alpha)).width(60.px()),
@@ -149,14 +152,11 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         .gap(15.px()),
         FlexSpacer::Fixed(10.px()),
         // Color preview box
-        sized_box(
-            // An empty label to create a view with a background.
-            label(""),
-        )
-        .dims(Dim::Stretch)
-        .background(final_color)
-        .corner_radius(8.px())
-        .flex(1.0),
+        canvas(|_, _, _, _| {})
+            .dims(Dim::Stretch)
+            .background(final_color)
+            .corner_radius(8.px())
+            .flex(1.0),
     ))
     .gap(20.px())
     .padding(20.px())

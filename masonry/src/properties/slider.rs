@@ -6,7 +6,6 @@ use std::any::TypeId;
 use crate::core::{Property, UpdateCtx};
 use crate::layout::Length;
 use crate::peniko::Color;
-use crate::theme;
 
 /// The thickness of a slider's track.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
@@ -14,7 +13,7 @@ pub struct TrackThickness(pub Length);
 
 impl Property for TrackThickness {
     fn static_default() -> &'static Self {
-        static DEFAULT: TrackThickness = TrackThickness(Length::const_px(4.));
+        static DEFAULT: TrackThickness = TrackThickness(Length::ZERO);
         &DEFAULT
     }
 }
@@ -28,13 +27,39 @@ impl TrackThickness {
     }
 }
 
+/// Colors of a slider's track.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TrackColor {
+    /// Color of the active portion.
+    pub active: Color,
+
+    /// Color of the inactive portion.
+    pub inactive: Color,
+}
+
+impl Property for TrackColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: TrackColor = TrackColor {
+            active: Color::WHITE,
+            inactive: Color::WHITE.with_alpha(0.5),
+        };
+        &DEFAULT
+    }
+}
+
+impl Default for TrackColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
 /// The radius of a slider's thumb.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct ThumbRadius(pub Length);
 
 impl Property for ThumbRadius {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbRadius = ThumbRadius(Length::const_px(6.));
+        static DEFAULT: ThumbRadius = ThumbRadius(Length::ZERO);
         &DEFAULT
     }
 }
@@ -49,13 +74,12 @@ impl ThumbRadius {
 }
 
 /// The color of a slider's thumb.
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ThumbColor(pub Color);
 
 impl Property for ThumbColor {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbColor = ThumbColor(theme::TEXT_COLOR);
+        static DEFAULT: ThumbColor = ThumbColor(Color::WHITE);
         &DEFAULT
     }
 }

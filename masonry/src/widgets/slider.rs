@@ -11,13 +11,15 @@ use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, PaintCtx,
-    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, Property,
-    RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PrePaintProps, PropertiesMut, PropertiesRef,
+    Property, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut,
+    paint_background, paint_box_shadow,
 };
 use crate::imaging::{Composite, GroupRef, Painter};
-use crate::kurbo::{Axis, Circle, Point, Rect, Size, Stroke};
+use crate::kurbo::{Axis, Circle, Rect, Size, Stroke};
 use crate::layout::{LenReq, Length};
-use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
+use crate::peniko;
+use crate::properties::{ThumbColor, ThumbRadius, TrackColor, TrackThickness};
 use crate::theme;
 
 /// A widget that allows a user to select a value from a continuous range.
@@ -66,23 +68,8 @@ impl Slider {
         };
     }
 
-    fn update_value_from_position(
-        &mut self,
-        x: f64,
-        width: f64,
-        ThumbRadius(base_thumb_radius): ThumbRadius,
-        is_focused: bool,
-    ) -> bool {
-        let base_thumb_radius = base_thumb_radius.get();
-        let thumb_radius = if is_focused {
-            base_thumb_radius + 2.0
-        } else {
-            base_thumb_radius
-        };
-        let track_start_x = thumb_radius;
-        let track_width = (width - thumb_radius * 2.0).max(0.0);
-        let relative_x = x - track_start_x;
-        let progress = (relative_x / track_width).clamp(0.0, 1.0);
+    fn update_value_from_position(&mut self, x: f64, width: f64) -> bool {
+        let progress = (x / width).clamp(0.0, 1.0);
         let new_value = self.min + progress * (self.max - self.min);
         let old_value = self.value;
         let final_value = if let Some(step) = self.step {
@@ -134,8 +121,8 @@ impl Slider {
     }
 }
 
-impl UsesProperty<BarColor> for Slider {}
 impl UsesProperty<TrackThickness> for Slider {}
+impl UsesProperty<TrackColor> for Slider {}
 impl UsesProperty<ThumbColor> for Slider {}
 impl UsesProperty<ThumbRadius> for Slider {}
 
@@ -157,7 +144,7 @@ impl Widget for Slider {
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
-        props: &mut PropertiesMut<'_>,
+        _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
         if ctx.is_disabled() {
@@ -173,28 +160,14 @@ impl Widget for Slider {
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
                 let width = ctx.content_box_size().width;
-                let is_focused = ctx.is_focus_target();
-                let cache = ctx.property_cache();
-                if self.update_value_from_position(
-                    local_pos.x,
-                    width,
-                    *props.get(cache),
-                    is_focused,
-                ) {
+                if self.update_value_from_position(local_pos.x, width) {
                     ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
             }
             PointerEvent::Move(PointerUpdate { current, .. }) if ctx.is_active() => {
                 let local_pos = ctx.local_position(current.position);
                 let width = ctx.content_box_size().width;
-                let is_focused = ctx.is_focus_target();
-                let cache = ctx.property_cache();
-                if self.update_value_from_position(
-                    local_pos.x,
-                    width,
-                    *props.get(cache),
-                    is_focused,
-                ) {
+                if self.update_value_from_position(local_pos.x, width) {
                     ctx.submit_action::<Self::Action>(SliderMoved { value: self.value });
                 }
                 ctx.request_render();
@@ -321,11 +294,10 @@ impl Widget for Slider {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        BarColor::prop_changed(ctx, property_type);
         TrackThickness::prop_changed(ctx, property_type);
         ThumbColor::prop_changed(ctx, property_type);
         ThumbRadius::prop_changed(ctx, property_type);
-        if Background::matches(property_type) {
+        if TrackColor::matches(property_type) {
             ctx.request_paint_only();
         }
     }
@@ -351,8 +323,7 @@ impl Widget for Slider {
 
                 let thumb_length = thumb_radius.0.saturating_add(thumb_radius.0);
                 let track_length = track_thickness.0;
-                // TODO: Move the padding 16. to theme or make it otherwise configurable?
-                let padding_length = Length::const_px(16.);
+                let padding_length = theme::WIDGET_CONTROL_COMPONENT_PADDING;
 
                 thumb_length
                     .max(track_length)
@@ -363,6 +334,37 @@ impl Widget for Slider {
 
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, _size: Size) {}
 
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
+        let bbox = ctx.border_box();
+        let cache = ctx.property_cache();
+        let p = PrePaintProps::fetch(props, cache);
+
+        paint_box_shadow(painter, bbox, p.box_shadow, p.corner_radius);
+        paint_background(painter, bbox, p.background, p.border_width, p.corner_radius);
+
+        if ctx.is_focus_target() || ctx.is_hovered() {
+            // TODO: Replace this custom implementation with the general paint_border()
+
+            let focus_rect = bbox.inset(2.);
+
+            let focus_color = p.border_color.color;
+            let focus_width = 2.;
+            let focus_radius = 4.;
+
+            let focus_path = focus_rect.to_rounded_rect(focus_radius);
+            let focus_stroke = Stroke::new(focus_width).with_miter_limit(10.);
+
+            painter
+                .stroke(focus_path, &focus_stroke, focus_color)
+                .draw();
+        }
+    }
+
     fn paint(
         &mut self,
         ctx: &mut PaintCtx<'_>,
@@ -370,102 +372,65 @@ impl Widget for Slider {
         painter: &mut Painter<'_>,
     ) {
         // Get parameters and resolve colors
-        // TODO: Create a dedicated TrackColor property
 
         let cache = ctx.property_cache();
-        let active_track_color = props.get::<BarColor>(cache).0;
+        let track_color = props.get::<TrackColor>(cache);
         let thumb_color = props.get::<ThumbColor>(cache).0;
         let track_thickness = props.get::<TrackThickness>(cache).0.get();
-        let base_thumb_radius = props.get::<ThumbRadius>(cache).0.get();
-        let track_color = props.get::<Background>(cache);
-        let thumb_border_width = 2.0;
+        let thumb_radius = props.get::<ThumbRadius>(cache).0.get();
+        let thumb_border_width = if ctx.is_active() {
+            2.5
+        } else if ctx.is_hovered() {
+            1.5
+        } else {
+            2.
+        };
 
         // Calculate geometry based on state
         let size = ctx.content_box_size();
-        let thumb_radius = if ctx.is_active() {
-            base_thumb_radius + 2.0
-        } else if ctx.is_hovered() || ctx.is_focus_target() {
-            base_thumb_radius + 1.0
-        } else {
-            base_thumb_radius
-        };
-        let track_start_x = thumb_radius;
-        let track_width = (size.width - thumb_radius * 2.0).max(0.0);
         let track_y = (size.height - track_thickness) / 2.0;
         let border_box = ctx.border_box();
 
+        // TODO: replace with proper disabled colors
         // Push semitransparent layer if disabled
         if ctx.is_disabled() {
             const DISABLED_ALPHA: f32 = 0.4;
             // Paint through a semitransparent isolated group when disabled.
             painter.push_fill_clip(border_box);
-            painter.push_group(GroupRef::new().with_composite(Composite::new(
-                crate::peniko::BlendMode::default(),
-                DISABLED_ALPHA,
-            )));
-        }
-
-        // Paint inactive track
-        let track_rect = Rect::new(
-            track_start_x,
-            track_y,
-            track_start_x + track_width,
-            track_y + track_thickness,
-        );
-        painter
-            .fill(
-                track_rect.to_rounded_rect(track_thickness / 2.0),
-                &track_color.get_peniko_brush_for_rect(track_rect),
-            )
-            .draw();
-
-        // Paint active track
-        let progress = (self.value - self.min) / (self.max - self.min).max(f64::EPSILON);
-        let active_track_width = progress * track_width;
-        if active_track_width > 0.0 {
-            let active_track_rect = Rect::new(
-                track_start_x,
-                track_y,
-                track_start_x + active_track_width,
-                track_y + track_thickness,
+            painter.push_group(
+                GroupRef::new()
+                    .with_composite(Composite::new(peniko::BlendMode::default(), DISABLED_ALPHA)),
             );
-            painter
-                .fill(
-                    active_track_rect.to_rounded_rect(track_thickness / 2.0),
-                    active_track_color,
-                )
-                .draw();
         }
+
+        let progress = (self.value - self.min) / (self.max - self.min).max(0.);
+        let track_rect = Rect::new(0., track_y, size.width, track_y + track_thickness)
+            .to_rounded_rect(track_thickness / 2.);
+        let track_active_frac =
+            progress * (1. - thumb_radius * 2. / size.width) + thumb_radius / size.width;
+
+        // Paint with a gradient so we get a straight line slice of the rounded rect.
+        let gradient = peniko::Gradient::new_linear((0., 0.), (size.width, 0.)).with_stops([
+            (0., track_color.active),
+            (track_active_frac as f32, track_color.active),
+            (track_active_frac as f32, track_color.inactive),
+            (1., track_color.inactive),
+        ]);
+        painter.fill(track_rect, &gradient).draw();
 
         // Paint thumb
-        let thumb_x = track_start_x + active_track_width;
-        let thumb_y = size.height / 2.0;
-        let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
+        let thumb_x = thumb_radius + progress * (size.width - thumb_radius * 2.).max(0.);
+        let thumb_y = size.height / 2.;
+        let thumb_circle = Circle::new((thumb_x, thumb_y), thumb_radius - thumb_border_width / 2.);
 
         painter.fill(thumb_circle, thumb_color).draw();
         painter
             .stroke(
                 thumb_circle,
                 &Stroke::new(thumb_border_width),
-                active_track_color,
+                track_color.active,
             )
             .draw();
-
-        // Paint focus ring
-        if ctx.is_focus_target() && !ctx.is_disabled() {
-            // TODO: Either stop painting the focus outside border-box bounds
-            //       or correctly set paint insets in layout.
-            let focus_rect = border_box.inset(2.0);
-            let focus_color =
-                theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
-            painter
-                .stroke(
-                    focus_rect.to_rounded_rect(4.0),
-                    &Stroke::new(1.0),
-                    focus_color,
-                )
-                .draw();
-        }
 
         // Pop the semitransparent layer
         if ctx.is_disabled() {
@@ -532,7 +497,7 @@ mod tests {
         assert_render_snapshot!(harness, "slider_drag_initial_at_25");
 
         // 1. Move the mouse to the thumb position (25%) BEFORE clicking.
-        harness.mouse_move(Point::new(53.0, 16.0));
+        harness.mouse_move(Point::new(50.0, 16.0));
 
         // 2. Press the mouse button.
         // This should not emit an action because the value does not change.
@@ -540,8 +505,7 @@ mod tests {
         assert!(harness.pop_action::<SliderMoved>().is_none());
 
         // 3. Move to the new position (75%).
-        // PosX for 75.0 = 8.0 + (184.0 * 0.75) = 146.0
-        harness.mouse_move(Point::new(146.0, 16.0));
+        harness.mouse_move(Point::new(150.0, 16.0));
 
         assert_eq!(
             harness.pop_action::<SliderMoved>(),
