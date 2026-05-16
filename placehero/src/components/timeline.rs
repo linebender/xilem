@@ -31,9 +31,6 @@ struct TimelineContinuationRequest {
 pub(crate) struct Timeline {
     /// The currently loaded statuses in the timeline.
     statuses: Vec<Status>,
-    /// The virtual scroll index which `statuses` starts at (for when we
-    /// support loading forward in time)
-    start_index: i64,
     /// Whether we're currently expecting a response.
     pending_id: bool,
     /// Whether we've reached the end of this timeline
@@ -51,7 +48,6 @@ impl Timeline {
     pub(crate) fn new_for_account(account: Account) -> Self {
         Self {
             statuses: Vec::default(),
-            start_index: 0,
             pending_id: false,
             requests: None,
             user_id: account.id.into(),
@@ -69,12 +65,10 @@ impl Timeline {
                 // We currently never unload previous statuses (note that the widgets but not the remainder are)
                 // +1 to allow room for the spinner.
                 // Note that we also launch the very first initial request from the spinner
-                self.start_index
-                    ..(self.start_index + i64::try_from(self.statuses.len()).unwrap() + 1),
+                self.statuses.len(),
                 |timeline: &mut Self, idx| {
-                    let local_idx = usize::try_from(idx - timeline.start_index).unwrap();
                     // If we're "close" to the last downloaded item.
-                    if local_idx + BUFFER >= timeline.statuses.len()
+                    if idx + BUFFER >= timeline.statuses.len()
                         // And don't already have a request in flight
                         && !timeline.pending_id
                         && !timeline.at_end
@@ -93,7 +87,7 @@ impl Timeline {
                             })
                             .unwrap();
                     }
-                    if local_idx == timeline.statuses.len() {
+                    if idx == timeline.statuses.len() {
                         if timeline.at_end {
                             OneOf3::A(prose("End of timeline.").text_alignment(TextAlign::Center))
                         } else {
@@ -112,7 +106,7 @@ impl Timeline {
                         //         .insert(Arc::new(timeline_status(&timeline.statuses[local_idx])))
                         //         .clone(),
                         // }
-                        OneOf::C(timeline_status(&timeline.statuses[local_idx]))
+                        OneOf::C(timeline_status(&timeline.statuses[idx]))
                     }
                 },
             ),
