@@ -40,8 +40,9 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        let scroll_id = ctx
-            .render_root(window_id)
+        let (app_ctx, render_root) = ctx.render_root(window_id);
+
+        let scroll_id = render_root
             .get_widget_with_tag(self.scroll_tag)
             .map(|w| w.id());
 
@@ -51,7 +52,8 @@ impl AppDriver for Driver {
             let action = action
                 .downcast::<VirtualScrollAction>()
                 .expect("Only expected Virtual Scroll actions");
-            ctx.render_root(window_id).edit_base_layer(|mut root| {
+
+            render_root.edit_base_layer(app_ctx, |mut root| {
                 let mut scroll = root.downcast::<VirtualScroll>();
                 // We need to tell the `VirtualScroll` which request this is associated with
                 // This is so that the controller knows which actions have been handled.

@@ -74,11 +74,11 @@ impl Driver {
     ) {
         let shell = self.demos[demo_idx].shell_tags();
 
-        let render_root = ctx.render_root(window_id);
-        render_root.edit_widget_with_tag(shell.disabled_toggle, |mut checkbox| {
+        let (app_ctx, render_root) = ctx.render_root(window_id);
+        render_root.edit_widget_with_tag(app_ctx, shell.disabled_toggle, |mut checkbox| {
             Checkbox::set_checked(&mut checkbox, disabled);
         });
-        render_root.edit_widget_with_tag(shell.content_wrapper, |mut content| {
+        render_root.edit_widget_with_tag(app_ctx, shell.content_wrapper, |mut content| {
             content.ctx.set_disabled(disabled);
         });
     }
@@ -92,11 +92,11 @@ impl Driver {
 
         {
             let name = self.demos[idx].name();
-            let render_root = ctx.render_root(window_id);
-            render_root.edit_widget_with_tag(self.title_tag, |mut label| {
+            let (app_ctx, render_root) = ctx.render_root(window_id);
+            render_root.edit_widget_with_tag(app_ctx, self.title_tag, |mut label| {
                 Label::set_text(&mut label, name);
             });
-            render_root.edit_widget_with_tag(self.stack_tag, |mut stack| {
+            render_root.edit_widget_with_tag(app_ctx, self.stack_tag, |mut stack| {
                 IndexedStack::set_active_child(&mut stack, idx);
             });
         }
@@ -105,8 +105,8 @@ impl Driver {
         self.apply_demo_disabled(ctx, window_id, idx, disabled);
 
         {
-            let render_root = ctx.render_root(window_id);
-            self.demos[idx].on_selected(render_root);
+            let (app_ctx, render_root) = ctx.render_root(window_id);
+            self.demos[idx].on_selected(app_ctx, render_root);
         }
     }
 }
@@ -121,11 +121,12 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
+        let (app_ctx, render_root) = ctx.render_root(window_id);
+
         // Sidebar button pressed: select demo.
         if action.is::<ButtonPress>() {
             // Sidebar: match by tagged ids.
             let selected_idx = {
-                let render_root = ctx.render_root(window_id);
                 self.sidebar_buttons
                     .iter()
                     .enumerate()
@@ -145,7 +146,6 @@ impl AppDriver for Driver {
         if let Some(toggled) = action.downcast_ref::<CheckboxToggled>() {
             let toggled = toggled.0;
             let disabled_demo = {
-                let render_root = ctx.render_root(window_id);
                 self.demos.iter().enumerate().find_map(|(idx, demo)| {
                     let shell = demo.shell_tags();
                     let id = render_root
@@ -164,9 +164,11 @@ impl AppDriver for Driver {
         }
 
         // Forward everything else to demos.
-        let render_root = ctx.render_root(window_id);
         for demo in &mut self.demos {
-            if demo.on_action(render_root, &action, widget_id).is_handled() {
+            if demo
+                .on_action(app_ctx, render_root, &action, widget_id)
+                .is_handled()
+            {
                 return;
             }
         }

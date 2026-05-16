@@ -10,9 +10,8 @@ use accesskit_winit::Adapter;
 use copypasta::nop_clipboard::NopClipboardContext;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, WindowSizePolicy,
+    AppCtx, RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, WindowSizePolicy,
 };
-use masonry_core::core::keyboard::{Key, KeyState};
 use masonry_core::core::{
     DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WindowEvent,
 };
@@ -137,6 +136,7 @@ pub struct Window {
 
 impl Window {
     pub(crate) fn new(
+        app_ctx: &mut AppCtx,
         window_id: WindowId,
         handle: Arc<WindowHandle>,
         accesskit_adapter: Adapter,
@@ -153,6 +153,7 @@ impl Window {
             accesskit_adapter,
             event_reducer: WindowEventReducer::default(),
             render_root: RenderRoot::new(
+                app_ctx,
                 root_widget,
                 move |signal| {
                     signal_sender.clone().send((window_id, signal)).unwrap();
@@ -204,6 +205,8 @@ impl Debug for Window {
 /// `MasonryState` via [`MasonryState::new`] and forward events to it via the appropriate method (e.g.,
 /// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
 pub struct MasonryState<'a> {
+    pub(crate) app_ctx: AppCtx,
+
     /// The event loop is suspended when the app is e.g. in the background on Android.
     /// We aren't allowed to have any `Surface`s, and we also don't expect to receive any events.
     /// See [`ApplicationHandler::suspended()`] for details.
@@ -219,12 +222,10 @@ pub struct MasonryState<'a> {
     window_id_to_handle_id: HashMap<WindowId, HandleId>,
 
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
-    windows: HashMap<HandleId, Window>,
+    pub(crate) windows: HashMap<HandleId, Window>,
     /// On Metal, we need to track the state of resize requests to avoid jitter.
     #[cfg(target_os = "macos")]
     resized_window: Option<HandleId>,
-
-    clipboard_cx: Box<dyn ClipboardProvider>,
 
     // Is `Some` if the most recently displayed frame was an animation frame.
     last_anim: Option<Instant>,
@@ -411,7 +412,11 @@ impl MasonryState<'_> {
             clipboard_cx.unwrap()
         };
 
+        let app_ctx = AppCtx::new(clipboard_cx);
+
         MasonryState {
+            app_ctx,
+
             is_suspended: true,
             render_cx,
             renderer: ImagingRenderer::new(),
@@ -426,8 +431,6 @@ impl MasonryState<'_> {
             surfaces: HashMap::new(),
             #[cfg(target_os = "macos")]
             resized_window: None,
-
-            clipboard_cx,
 
             signal_sender,
             default_properties: Arc::new(default_properties),
@@ -497,7 +500,7 @@ impl MasonryState<'_> {
             }
             // TODO: This is wrong in the case where the driver tries to create a window whilst suspended
             // The on_start would be called twice.
-            app_driver.on_start(self);
+            app_driver.on_start(&mut DriverCtx::new(self, event_loop));
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -569,6 +572,7 @@ impl MasonryState<'_> {
         let size = handle.inner_size();
 
         let window = Window::new(
+            &mut self.app_ctx,
             new_window.id,
             handle,
             adapter,
@@ -656,7 +660,7 @@ impl MasonryState<'_> {
 
         window
             .render_root
-            .handle_window_event(WindowEvent::AnimFrame(elapsed));
+            .handle_window_event(&mut self.app_ctx, WindowEvent::AnimFrame(elapsed));
 
         // If this animation will continue, store the time.
         // If a new animation starts, then it will have zero reported elapsed time.
@@ -668,7 +672,7 @@ impl MasonryState<'_> {
             self.render_cx.on_window_resize_state_change(surface, true);
         }
 
-        let (visual_layers, tree_update) = window.render_root.redraw();
+        let (visual_layers, tree_update) = window.render_root.redraw(&mut self.app_ctx);
         let overlays: Vec<_> = visual_layers
             .overlay_layers()
             .map(|layer| {
@@ -850,28 +854,14 @@ impl MasonryState<'_> {
         {
             match wet {
                 WindowEventTranslation::Keyboard(k) => {
-                    // TODO - Detect in Masonry code instead
-                    let action_mod = if cfg!(target_os = "macos") {
-                        k.modifiers.meta()
-                    } else {
-                        k.modifiers.ctrl()
-                    };
-                    if let Key::Character(c) = &k.key
-                        && c.as_str().eq_ignore_ascii_case("v")
-                        && action_mod
-                        && k.state == KeyState::Down
-                    {
-                        window
-                            .render_root
-                            .handle_text_event(TextEvent::ClipboardPaste(
-                                self.clipboard_cx.get_contents().unwrap(),
-                            ));
-                    } else {
-                        window.render_root.handle_text_event(TextEvent::Keyboard(k));
-                    }
+                    window
+                        .render_root
+                        .handle_text_event(&mut self.app_ctx, TextEvent::Keyboard(k));
                 }
                 WindowEventTranslation::Pointer(p) => {
-                    window.render_root.handle_pointer_event(p);
+                    window
+                        .render_root
+                        .handle_pointer_event(&mut self.app_ctx, p);
                 }
             }
         }
@@ -896,7 +886,7 @@ impl MasonryState<'_> {
             WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 window
                     .render_root
-                    .handle_window_event(WindowEvent::Rescale(scale_factor));
+                    .handle_window_event(&mut self.app_ctx, WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
                 self.redraw(handle_id, app_driver);
@@ -915,16 +905,18 @@ impl MasonryState<'_> {
 
                 window
                     .render_root
-                    .handle_window_event(WindowEvent::Resize(size));
+                    .handle_window_event(&mut self.app_ctx, WindowEvent::Resize(size));
             }
             WinitWindowEvent::Ime(ime) => {
                 let ime = winit_ime_to_masonry(ime);
-                window.render_root.handle_text_event(TextEvent::Ime(ime));
+                window
+                    .render_root
+                    .handle_text_event(&mut self.app_ctx, TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
                 window
                     .render_root
-                    .handle_text_event(TextEvent::WindowFocusChange(new_focus));
+                    .handle_text_event(&mut self.app_ctx, TextEvent::WindowFocusChange(new_focus));
             }
             _ => (),
         }
@@ -978,15 +970,17 @@ impl MasonryState<'_> {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
                         window
                             .render_root
-                            .handle_window_event(WindowEvent::EnableAccessTree);
+                            .handle_window_event(&mut self.app_ctx, WindowEvent::EnableAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                        window.render_root.handle_access_event(action_request);
+                        window
+                            .render_root
+                            .handle_access_event(&mut self.app_ctx, action_request);
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {
                         window
                             .render_root
-                            .handle_window_event(WindowEvent::DisableAccessTree);
+                            .handle_window_event(&mut self.app_ctx, WindowEvent::DisableAccessTree);
                     }
                 }
             }
@@ -1061,9 +1055,6 @@ impl MasonryState<'_> {
                 RenderRootSignal::ImeMoved(position, size) => {
                     handle.set_ime_cursor_area(position, size);
                 }
-                RenderRootSignal::ClipboardStore(text) => {
-                    self.clipboard_cx.set_contents(text).unwrap();
-                }
                 RenderRootSignal::RequestRedraw => {
                     need_redraw.insert(*handle_id);
                 }
@@ -1118,11 +1109,15 @@ impl MasonryState<'_> {
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
                 }
                 RenderRootSignal::NewLayer(_type, root, pos) => {
-                    window.render_root.add_layer(root, pos);
+                    window.render_root.add_layer(&mut self.app_ctx, root, pos);
                 }
-                RenderRootSignal::RemoveLayer(root_id) => window.render_root.remove_layer(root_id),
+                RenderRootSignal::RemoveLayer(root_id) => {
+                    window.render_root.remove_layer(&mut self.app_ctx, root_id);
+                }
                 RenderRootSignal::RepositionLayer(root_id, new_pos) => {
-                    window.render_root.reposition_layer(root_id, new_pos);
+                    window
+                        .render_root
+                        .reposition_layer(&mut self.app_ctx, root_id, new_pos);
                 }
             }
         }
@@ -1143,16 +1138,11 @@ impl MasonryState<'_> {
         }
     }
 
-    fn handle_id(&self, window_id: WindowId) -> HandleId {
+    pub(crate) fn handle_id(&self, window_id: WindowId) -> HandleId {
         *self
             .window_id_to_handle_id
             .get(&window_id)
             .unwrap_or_else(|| panic!("could not find window for id {window_id:?}"))
-    }
-
-    pub(crate) fn window_mut(&mut self, window_id: WindowId) -> &mut Window {
-        let handle_id = self.handle_id(window_id);
-        self.windows.get_mut(&handle_id).unwrap()
     }
 
     /// Returns true if app is currently suspended.
@@ -1164,15 +1154,6 @@ impl MasonryState<'_> {
     /// Suspended apps have no surfaces and receive no events.
     pub fn is_suspended(&self) -> bool {
         self.is_suspended
-    }
-
-    // TODO: Remove this method.
-    // It's currently used to call register_fonts and set_focus_fallback.
-    #[doc(hidden)]
-    pub fn roots(&mut self) -> impl Iterator<Item = &mut RenderRoot> {
-        self.windows
-            .values_mut()
-            .map(|window| &mut window.render_root)
     }
 
     /// Sets how frames are presented to the user.

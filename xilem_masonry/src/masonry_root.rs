@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::widgets::Passthrough;
 
 use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
@@ -19,7 +19,7 @@ pub(crate) type MasonryRootState = <Box<AnyWidgetView<(), ()>> as View<(), (), V
 pub struct InitialRootWidget(pub Pod<Passthrough>);
 
 impl ViewElement for InitialRootWidget {
-    type Mut<'a> = &'a mut RenderRoot;
+    type Mut<'a> = (&'a mut AppCtx, &'a mut RenderRoot);
 }
 
 impl<State: 'static> MasonryRoot<State> {
@@ -47,11 +47,11 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         prev: &Self,
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        render_root: Mut<'_, Self::Element>,
+        (app_ctx, render_root): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         let mut root_id = None;
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_base_layer(app_ctx, |mut root| {
             let mut root = root.downcast();
             ctx.reset_changed_props();
             self.root_widget_view.rebuild(
@@ -73,9 +73,9 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        render_root: Mut<'_, Self::Element>,
+        (app_ctx, render_root): Mut<'_, Self::Element>,
     ) {
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_base_layer(app_ctx, |mut root| {
             self.root_widget_view
                 .teardown(view_state, ctx, root.downcast());
         });
@@ -85,10 +85,10 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         &self,
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
-        render_root: Mut<'_, Self::Element>,
+        (app_ctx, render_root): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_base_layer(app_ctx, |mut root| {
             self.root_widget_view
                 .message(view_state, message, root.downcast(), app_state)
         })

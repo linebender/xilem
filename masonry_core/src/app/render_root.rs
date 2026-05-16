@@ -15,8 +15,8 @@ use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 
-use crate::app::VisualLayerPlan;
 use crate::app::layer_stack::LayerStack;
+use crate::app::{AppCtx, VisualLayerPlan};
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
     Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
@@ -236,8 +236,6 @@ pub enum RenderRootSignal {
     EndIme,
     /// The IME area has been moved.
     ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
-    /// A user interaction has sent something to the clipboard.
-    ClipboardStore(String),
     /// The window needs to be redrawn.
     RequestRedraw,
     /// The window should be redrawn for an animation frame. Currently this isn't really different from `RequestRedraw`.
@@ -313,6 +311,7 @@ impl RenderRoot {
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
+        app_ctx: &mut AppCtx,
         root_widget: NewWidget<impl Widget + ?Sized>,
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
@@ -403,7 +402,7 @@ impl RenderRoot {
         }
 
         // We run a set of passes to initialize the widget tree
-        root.run_rewrite_passes();
+        root.run_rewrite_passes(app_ctx);
 
         root
     }
@@ -471,7 +470,7 @@ impl RenderRoot {
 
     // --- MARK: WINDOW_EVENT
     /// Handles a window event.
-    pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
+    pub fn handle_window_event(&mut self, app_ctx: &mut AppCtx, event: WindowEvent) -> Handled {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.global_state.scale_factor = scale_factor;
@@ -482,12 +481,12 @@ impl RenderRoot {
                 self.global_state.size = size;
                 self.root_state_mut().request_layout = true;
                 self.root_state_mut().set_needs_layout(true);
-                self.run_rewrite_passes();
+                self.run_rewrite_passes(app_ctx);
                 Handled::Yes
             }
             WindowEvent::AnimFrame(duration) => {
-                run_update_anim_pass(self, duration.as_nanos() as u64);
-                self.run_rewrite_passes();
+                run_update_anim_pass(app_ctx, self, duration.as_nanos() as u64);
+                self.run_rewrite_passes(app_ctx);
 
                 Handled::Yes
             }
@@ -509,33 +508,33 @@ impl RenderRoot {
 
     // --- MARK: PUB FUNCTIONS
     /// Handles a pointer event.
-    pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
+    pub fn handle_pointer_event(&mut self, app_ctx: &mut AppCtx, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
-        let handled = run_on_pointer_event_pass(self, &event);
-        run_update_pointer_pass(self);
-        self.run_rewrite_passes();
+        let handled = run_on_pointer_event_pass(app_ctx, self, &event);
+        run_update_pointer_pass(app_ctx, self);
+        self.run_rewrite_passes(app_ctx);
 
         handled
     }
 
     /// Handles a text event.
-    pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
+    pub fn handle_text_event(&mut self, app_ctx: &mut AppCtx, event: TextEvent) -> Handled {
         let _span = info_span!("text_event");
-        let handled = run_on_text_event_pass(self, &event);
-        run_update_focus_pass(self);
+        let handled = run_on_text_event_pass(app_ctx, self, &event);
+        run_update_focus_pass(app_ctx, self);
 
         if matches!(event, TextEvent::Ime(Ime::Enabled)) {
             // Reset the last sent IME area, as the platform reset the IME state and may have
             // forgotten it.
             self.global_state.last_sent_ime_area = INVALID_IME_AREA;
         }
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
 
         handled
     }
 
     /// Handles an accesskit event.
-    pub fn handle_access_event(&mut self, event: ActionRequest) {
+    pub fn handle_access_event(&mut self, app_ctx: &mut AppCtx, event: ActionRequest) {
         let _span = info_span!("access_event");
         if event.target_tree != TreeId::ROOT {
             warn!(
@@ -553,36 +552,40 @@ impl RenderRoot {
             data: event.data,
         };
 
-        run_on_access_event_pass(self, &event, WidgetId(id));
-        self.run_rewrite_passes();
+        run_on_access_event_pass(app_ctx, self, &event, WidgetId(id));
+        self.run_rewrite_passes(app_ctx);
     }
 
     /// Registers all fonts that exist in the given data.
     ///
     /// Returns a list of pairs each containing the family identifier and fonts
     /// added to that family.
-    pub fn register_fonts(&mut self, data: Blob<u8>) -> Vec<(FamilyId, Vec<FontInfo>)> {
+    pub fn register_fonts(
+        &mut self,
+        app_ctx: &mut AppCtx,
+        data: Blob<u8>,
+    ) -> Vec<(FamilyId, Vec<FontInfo>)> {
         let ret = self
             .global_state
             .font_context
             .collection
             .register_fonts(data, None);
-        run_update_fonts_pass(self);
+        run_update_fonts_pass(app_ctx, self);
         ret
     }
 
     /// Redraws the window.
     ///
     /// Returns the current visual-layer plan and, if accessibility is active, a tree update.
-    pub fn redraw(&mut self) -> (VisualLayerPlan, Option<TreeUpdate>) {
-        self.run_rewrite_passes();
+    pub fn redraw(&mut self, app_ctx: &mut AppCtx) -> (VisualLayerPlan, Option<TreeUpdate>) {
+        self.run_rewrite_passes(app_ctx);
 
         let access_tree_active = self.global_state.access_tree_active;
 
         // TODO - Handle invalidation regions
-        let visual_layers = run_paint_pass(self);
+        let visual_layers = run_paint_pass(app_ctx, self);
         let tree_update = access_tree_active
-            .then(|| run_accessibility_pass(self, self.global_state.scale_factor));
+            .then(|| run_accessibility_pass(app_ctx, self, self.global_state.scale_factor));
         (visual_layers, tree_update)
     }
 
@@ -648,11 +651,15 @@ impl RenderRoot {
     /// Returns a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_base_layer<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+    pub fn edit_base_layer<R>(
+        &mut self,
+        app_ctx: &mut AppCtx,
+        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+    ) -> R {
         let layer_id = self.layer_root_id(0);
-        let res = mutate_widget(self, layer_id, f);
+        let res = mutate_widget(app_ctx, self, layer_id, f);
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
 
         res
     }
@@ -666,13 +673,14 @@ impl RenderRoot {
     /// Panics if `idx` is out of bounds.
     pub fn edit_layer<R>(
         &mut self,
+        app_ctx: &mut AppCtx,
         layer_idx: usize,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
         let layer_id = self.layer_root_id(layer_idx);
-        let res = mutate_widget(self, layer_id, f);
+        let res = mutate_widget(app_ctx, self, layer_id, f);
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
 
         res
     }
@@ -687,6 +695,7 @@ impl RenderRoot {
     #[track_caller]
     pub fn edit_widget<R>(
         &mut self,
+        app_ctx: &mut AppCtx,
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
@@ -694,9 +703,9 @@ impl RenderRoot {
             panic!("Could not find widget {id} in tree.");
         }
 
-        let res = mutate_widget(self, id, f);
+        let res = mutate_widget(app_ctx, self, id, f);
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
 
         res
     }
@@ -707,6 +716,7 @@ impl RenderRoot {
     #[track_caller]
     pub fn edit_widget_with_tag<R, W: Widget + FromDynWidget + ?Sized>(
         &mut self,
+        app_ctx: &mut AppCtx,
         tag: WidgetTag<W>,
         f: impl FnOnce(WidgetMut<'_, W>) -> R,
     ) -> R {
@@ -714,9 +724,9 @@ impl RenderRoot {
             panic!("Could not find widget with tag '{tag}' in widget tree.");
         };
 
-        let res = mutate_widget(self, id, |mut widget_mut| f(widget_mut.downcast()));
+        let res = mutate_widget(app_ctx, self, id, |mut widget_mut| f(widget_mut.downcast()));
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
 
         res
     }
@@ -724,14 +734,19 @@ impl RenderRoot {
     /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
     ///
     /// The given `pos` must be in the window's coordinate space.
-    pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
+    pub fn add_layer(
+        &mut self,
+        app_ctx: &mut AppCtx,
+        root: NewWidget<impl Widget + ?Sized>,
+        pos: Point,
+    ) {
         debug!("added layer to stack");
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
+        mutate_widget(app_ctx, self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::add_layer(&mut layer_stack, root, pos);
         });
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
     }
 
     /// Removes the layer with the given widget as root.
@@ -742,13 +757,13 @@ impl RenderRoot {
     ///
     /// Panics in debug mode if the intended layer is the base layer or
     /// is not found.
-    pub fn remove_layer(&mut self, root_id: WidgetId) {
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
+    pub fn remove_layer(&mut self, app_ctx: &mut AppCtx, root_id: WidgetId) {
+        mutate_widget(app_ctx, self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::remove_layer(&mut layer_stack, root_id);
         });
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
     }
 
     /// Repositions the layer with the given widget as root.
@@ -761,13 +776,13 @@ impl RenderRoot {
     ///
     /// Panics in debug mode if the intended layer is the base layer or
     /// is not found.
-    pub fn reposition_layer(&mut self, root_id: WidgetId, new_origin: Point) {
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
+    pub fn reposition_layer(&mut self, app_ctx: &mut AppCtx, root_id: WidgetId, new_origin: Point) {
+        mutate_widget(app_ctx, self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::reposition_layer(&mut layer_stack, root_id, new_origin);
         });
 
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
     }
 
     /// Returns the current size of the window.
@@ -790,7 +805,7 @@ impl RenderRoot {
     /// update flags and internal values to a consistent state.
     ///
     /// See the [passes documentation](crate::doc::pass_system) for details.
-    pub(crate) fn run_rewrite_passes(&mut self) {
+    pub(crate) fn run_rewrite_passes(&mut self, app_ctx: &mut AppCtx) {
         const REWRITE_PASSES_MAX: usize = 4;
 
         for _ in 0..REWRITE_PASSES_MAX {
@@ -798,18 +813,18 @@ impl RenderRoot {
             // expected to have its own early exits.
             // Calling a run_xxx_pass should always be very fast if the pass doesn't need to do anything.
 
-            run_mutate_pass(self);
-            run_action_pass(self);
-            run_update_widget_tree_pass(self);
-            run_update_disabled_pass(self);
-            run_update_stashed_pass(self);
+            run_mutate_pass(app_ctx, self);
+            run_action_pass(app_ctx, self);
+            run_update_widget_tree_pass(app_ctx, self);
+            run_update_disabled_pass(app_ctx, self);
+            run_update_stashed_pass(app_ctx, self);
             run_update_focusable_pass(self);
-            run_update_focus_pass(self);
-            run_layout_pass(self);
-            run_update_scroll_pass(self);
-            run_compose_pass(self);
-            run_update_pointer_pass(self);
-            run_update_props_pass(self);
+            run_update_focus_pass(app_ctx, self);
+            run_layout_pass(app_ctx, self);
+            run_update_scroll_pass(app_ctx, self);
+            run_compose_pass(app_ctx, self);
+            run_update_pointer_pass(app_ctx, self);
+            run_update_props_pass(app_ctx, self);
 
             if !self.needs_rewrite_passes() {
                 break;
@@ -931,7 +946,7 @@ impl RenderRoot {
     /// and the [focus anchor](crate::doc::masonry_concepts#focus-anchor).
     ///
     /// Returns false if the widget is not found in the tree or can't be focused.
-    pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {
+    pub fn focus_on(&mut self, app_ctx: &mut AppCtx, id: Option<WidgetId>) -> bool {
         if let Some(id) = id
             && !self.is_still_interactive(id)
         {
@@ -939,7 +954,7 @@ impl RenderRoot {
         }
         self.global_state.next_focused_widget = id;
         self.global_state.focus_anchor = id;
-        self.run_rewrite_passes();
+        self.run_rewrite_passes(app_ctx);
         true
     }
 

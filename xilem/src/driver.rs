@@ -7,9 +7,7 @@ use std::sync::Arc;
 
 use masonry::core::{ErasedAction, WidgetId};
 use masonry::peniko::Blob;
-use masonry_winit::app::{
-    AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
-};
+use masonry_winit::app::{AppDriver, DriverCtx, MasonryUserEvent, NewWindow, WindowId};
 
 use crate::core::{
     DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
@@ -351,11 +349,13 @@ where
         self.handle_message_result(window_id, masonry_ctx, message_result);
     }
 
-    fn on_start(&mut self, state: &mut MasonryState<'_>) {
+    fn on_start(&mut self, ctx: &mut DriverCtx<'_, '_>) {
         // self.fonts is never used again, so we may as well deallocate it.
         let fonts = std::mem::take(&mut self.fonts);
 
-        for root in state.roots() {
+        let (app_ctx, roots) = ctx.render_roots();
+
+        for root in roots {
             if let Some(root_widget) = root
                 .get_layer_root(0)
                 .downcast::<masonry::widgets::Passthrough>()
@@ -368,7 +368,7 @@ where
             for font in &fonts {
                 // We currently don't do anything with the resulting family information,
                 // because we don't have an easy way to return this to the application.
-                drop(root.register_fonts(font.clone()));
+                drop(root.register_fonts(app_ctx, font.clone()));
             }
         }
 

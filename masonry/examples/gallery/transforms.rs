@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{
     ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
@@ -43,17 +43,17 @@ impl TransformsDemo {
         }
     }
 
-    fn apply(&self, render_root: &mut RenderRoot) {
+    fn apply(&self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
         let pivot = Vec2::new(80.0, 80.0);
         let transform = Affine::translate(pivot)
             .then_rotate(self.angle_rad)
             .then_scale(self.scale)
             .then_translate(-pivot);
 
-        render_root.edit_widget_with_tag(self.target, |mut target| {
+        render_root.edit_widget_with_tag(app_ctx, self.target, |mut target| {
             target.set_transform(transform);
         });
-        render_root.edit_widget_with_tag(self.state_label, |mut label| {
+        render_root.edit_widget_with_tag(app_ctx, self.state_label, |mut label| {
             Label::set_text(
                 &mut label,
                 format!(
@@ -128,12 +128,13 @@ impl DemoPage for TransformsDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_selected(&mut self, render_root: &mut RenderRoot) {
-        self.apply(render_root);
+    fn on_selected(&mut self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
+        self.apply(app_ctx, render_root);
     }
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -144,28 +145,28 @@ impl DemoPage for TransformsDemo {
 
         if self.matches_button(render_root, self.btn_rotate_left, widget_id) {
             self.angle_rad -= 15_f64.to_radians();
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_rotate_right, widget_id) {
             self.angle_rad += 15_f64.to_radians();
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_scale_down, widget_id) {
             self.scale = (self.scale / 1.1).clamp(0.3, 3.0);
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_scale_up, widget_id) {
             self.scale = (self.scale * 1.1).clamp(0.3, 3.0);
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
         if self.matches_button(render_root, self.btn_reset, widget_id) {
             self.angle_rad = 0.0;
             self.scale = 1.0;
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
         Handled::No

@@ -1,7 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{theme::BACKGROUND_COLOR, util::debug_panic};
+use masonry::app::AppCtx;
+use masonry::theme::BACKGROUND_COLOR;
+use masonry::util::debug_panic;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
@@ -63,7 +65,7 @@ impl<State> WindowView<State> {
 pub struct PodWindow(pub NewWindow);
 
 impl ViewElement for PodWindow {
-    type Mut<'a> = &'a mut Window;
+    type Mut<'a> = (&'a mut AppCtx, &'a mut Window);
 }
 
 impl<State> ViewMarker for WindowView<State> where State: 'static {}
@@ -100,7 +102,7 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
         prev: &Self,
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        window: Mut<'_, Self::Element>,
+        (app_ctx, window): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.options.rebuild(&prev.options, window.handle());
@@ -114,7 +116,7 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
             &prev.masonry_root,
             root_widget_view_state,
             ctx,
-            window.render_root(),
+            (app_ctx, window.render_root()),
             app_state,
         );
     }
@@ -123,21 +125,25 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        window: Mut<'_, Self::Element>,
+        (app_ctx, window): Mut<'_, Self::Element>,
     ) {
         self.masonry_root
-            .teardown(view_state, ctx, window.render_root());
+            .teardown(view_state, ctx, (app_ctx, window.render_root()));
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
         message: &mut MessageCtx,
-        window: Mut<'_, Self::Element>,
+        (app_ctx, window): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        self.masonry_root
-            .message(view_state, message, window.render_root(), app_state)
+        self.masonry_root.message(
+            view_state,
+            message,
+            (app_ctx, window.render_root()),
+            app_state,
+        )
     }
 }
 

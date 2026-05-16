@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{
     ErasedAction, Handled, NewWidget, PropertySet, StyleProperty, Widget, WidgetId, WidgetTag,
 };
@@ -56,12 +56,12 @@ impl BadgeDemo {
         )
     }
 
-    fn apply_count(&self, render_root: &mut RenderRoot) {
-        render_root.edit_widget_with_tag(self.count_label, |mut label| {
+    fn apply_count(&self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
+        render_root.edit_widget_with_tag(app_ctx, self.count_label, |mut label| {
             Label::set_text(&mut label, format!("count: {}", self.count));
         });
 
-        render_root.edit_widget_with_tag(self.inbox_badged, |mut badged| {
+        render_root.edit_widget_with_tag(app_ctx, self.inbox_badged, |mut badged| {
             if let Some(badge) = Self::make_count_badge(self.count) {
                 Badged::set_badge(&mut badged, badge);
             } else {
@@ -240,12 +240,13 @@ impl DemoPage for BadgeDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_selected(&mut self, render_root: &mut RenderRoot) {
-        self.apply_count(render_root);
+    fn on_selected(&mut self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
+        self.apply_count(app_ctx, render_root);
     }
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -265,13 +266,13 @@ impl DemoPage for BadgeDemo {
 
         if widget_id == dec_id {
             self.count = self.count.saturating_sub(1);
-            self.apply_count(render_root);
+            self.apply_count(app_ctx, render_root);
             return Handled::Yes;
         }
 
         if widget_id == inc_id {
             self.count = self.count.saturating_add(1);
-            self.apply_count(render_root);
+            self.apply_count(app_ctx, render_root);
             return Handled::Yes;
         }
 
