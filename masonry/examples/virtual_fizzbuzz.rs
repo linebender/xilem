@@ -19,7 +19,7 @@ use masonry_winit::winit::window::Window;
 /// Function to create the virtual scroll area.
 fn init() -> VirtualScroll {
     // We start our fizzbuzzing with the top of the screen at item 0
-    VirtualScroll::new(0)
+    VirtualScroll::new(0, usize::MAX)
 }
 
 struct Driver {
@@ -51,20 +51,24 @@ impl AppDriver for Driver {
             let action = action
                 .downcast::<VirtualScrollAction>()
                 .expect("Only expected Virtual Scroll actions");
+            let VirtualScrollAction::Fetch(action) = *action else {
+                tracing::trace!("Got scroll action {action:?}");
+                return;
+            };
             ctx.render_root(window_id).edit_base_layer(|mut root| {
                 let mut scroll = root.downcast::<VirtualScroll>();
                 // We need to tell the `VirtualScroll` which request this is associated with
                 // This is so that the controller knows which actions have been handled.
                 VirtualScroll::will_handle_action(&mut scroll, &action);
-                for idx in action.old_active.clone() {
-                    if !action.target.contains(&idx) {
+                for idx in action.old_active().clone() {
+                    if !action.target().contains(&idx) {
                         // If we had different work to do in response to the item being unloaded
                         // (for example, saving some related data?), then we'd do it here
                         VirtualScroll::remove_child(&mut scroll, idx);
                     }
                 }
-                for idx in action.target.clone() {
-                    if !action.old_active.contains(&idx) {
+                for idx in action.target().clone() {
+                    if !action.old_active().contains(&idx) {
                         let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
                             (false, true) => self.buzz.clone(),
                             (true, false) => self.fizz.clone(),
