@@ -772,7 +772,8 @@ impl Widget for VirtualScroll {
 
         let active_range =
             self.virtual_list.visible_strip().start..self.virtual_list.visible_strip().end;
-        if self.active_range != active_range {
+        // We only send an updated request if the driver has actioned the previous request.
+        if self.action_handled && self.active_range != active_range {
             ctx.submit_action::<VirtualScrollAction>(VirtualScrollAction::Fetch(
                 VirtualScrollFetchAction {
                     old_active: self.active_range.clone(),
