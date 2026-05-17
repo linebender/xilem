@@ -32,6 +32,7 @@ smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 include_doc_path.workspace = true
 resvg.workspace = true
+understory_virtual_list = "0.1.0"
 
 [dev-dependencies]
 accesskit_consumer.workspace = true

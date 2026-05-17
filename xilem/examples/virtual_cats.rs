@@ -21,7 +21,7 @@ use xilem::palette::css::{BLACK, WHITE};
 use xilem::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use xilem::style::Style as _;
 use xilem::view::{
-    ObjectFit, ZStackExt, flex_col, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
+    ObjectFit, ZStackExt, flex_col, image, label, prose, spinner, virtual_scroll, zstack,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, TextAlign, WidgetView, WindowOptions, Xilem,
@@ -48,8 +48,7 @@ enum ImageState {
 }
 
 impl VirtualCats {
-    fn virtual_item(&mut self, idx: i64) -> impl WidgetView<Self> + use<> {
-        let index: usize = idx.try_into().expect("VirtualScroll bounds set correctly.");
+    fn virtual_item(&mut self, index: usize) -> impl WidgetView<Self> + use<> {
         let item = self
             .statuses
             .get_mut(index)
@@ -90,22 +89,17 @@ impl VirtualCats {
         };
         let img = match &item.image {
             ImageState::Available(img) => {
-                let attribution = sized_box(
-                    sized_box(
-                        prose("Copyright ©️ https://http.cat")
-                            .line_break_mode(LineBreaking::Clip)
-                            .text_alignment(TextAlign::End),
-                    )
-                    .padding(4.px())
+                let attribution = prose("Copyright ©️ https://http.cat")
+                    .line_break_mode(LineBreaking::Clip)
+                    .text_alignment(TextAlign::End)
+                    .background_color(BLACK.multiply_alpha(0.5))
                     .corner_radius(4.px())
-                    .background_color(BLACK.multiply_alpha(0.5)),
-                )
-                .padding(Padding {
-                    left: 0.px(),
-                    right: 42.px(),
-                    top: 30.px(),
-                    bottom: 0.px(),
-                });
+                    .padding(Padding {
+                        left: 4.px(),
+                        right: 46.px(),
+                        top: 34.px(),
+                        bottom: 4.px(),
+                    });
                 let imgview = zstack((
                     image(img.clone()).fit(ObjectFit::FitWidth),
                     attribution.alignment(UnitPoint::TOP_RIGHT),
@@ -137,11 +131,8 @@ impl VirtualCats {
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
-        sized_box(virtual_scroll(
-            0..i64::try_from(self.statuses.len()).unwrap(),
-            Self::virtual_item,
-        ))
-        .padding(Padding::horizontal(10.px()))
+        virtual_scroll(self.statuses.len(), Self::virtual_item)
+            .padding(Padding::horizontal(10.px()))
     }
 }
 

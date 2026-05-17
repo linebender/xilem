@@ -7,19 +7,26 @@ use std::ops::Range;
 
 use masonry::core::{Widget, WidgetPod};
 use masonry::util::debug_panic;
-use masonry::widgets::{self, VirtualScrollAction};
-use private::VirtualScrollState;
+use masonry::widgets;
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
+pub use widgets::ScrollDirection;
+
 /// The view type for [`virtual_scroll`].
 ///
 /// See its documentation for details.
-pub struct VirtualScroll<State, Action, ChildrenViews, F> {
+pub struct VirtualScroll<State, Action, ChildrenViews, F, G> {
     phantom: PhantomData<fn() -> (WidgetPod<dyn Widget>, State, Action, ChildrenViews)>,
     func: F,
-    valid_range: Range<i64>,
+    anchor_index: Option<usize>,
+    len: usize,
+    start_at: f64,
+    end_at: f64,
+    direction: ScrollDirection,
+    scrolling: bool,
+    on_scroll: G,
 }
 
 /// A (vertical) virtual scrolling View, for Masonry's [`VirtualScroll`](widgets::VirtualScroll).
@@ -37,7 +44,7 @@ pub struct VirtualScroll<State, Action, ChildrenViews, F> {
 /// However, it also has access to the app's state, so this is unlikely to be needed.
 ///
 /// Arguments:
-/// - `valid_range` is the range of ids which are supported.
+/// - `len` is the number of children which are supported.
 /// - `func` is the component for this element's children.
 ///   It is provided with the app's state and the index of the child.
 ///
@@ -49,18 +56,31 @@ pub struct VirtualScroll<State, Action, ChildrenViews, F> {
 ///
 /// For full details, see the documentation on the [view type](VirtualScroll).
 pub fn virtual_scroll<State, Action, ChildrenViews, F>(
-    valid_range: Range<i64>,
+    len: usize,
     func: F,
-) -> VirtualScroll<State, Action, ChildrenViews, F>
+) -> VirtualScroll<
+    State,
+    Action,
+    ChildrenViews,
+    F,
+    impl Fn(&mut State, Range<usize>) -> MessageResult<Action> + Send + Sync + 'static,
+>
 where
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    F: Fn(&mut State, usize) -> ChildrenViews + 'static,
     State: 'static,
+    Action: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,
         func,
-        valid_range,
+        anchor_index: None,
+        len,
+        start_at: 0.,
+        end_at: 1.,
+        direction: ScrollDirection::TopToBottom,
+        scrolling: false,
+        on_scroll: private::do_nothing::<State, Action>,
     }
 }
 
@@ -73,31 +93,100 @@ where
 /// For full details, see the documentation on the [view type](VirtualScroll).
 pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F>(
     func: F,
-) -> VirtualScroll<State, Action, ChildrenViews, F>
+) -> VirtualScroll<
+    State,
+    Action,
+    ChildrenViews,
+    F,
+    impl Fn(&mut State, Range<usize>) -> MessageResult<Action> + Send + Sync + 'static,
+>
 where
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    F: Fn(&mut State, usize) -> ChildrenViews + 'static,
     State: 'static,
+    Action: 'static,
 {
     VirtualScroll {
         phantom: PhantomData,
         func,
-        valid_range: i64::MIN..i64::MAX,
+        anchor_index: None,
+        len: usize::MAX,
+        start_at: 0.,
+        end_at: 1.,
+        direction: ScrollDirection::TopToBottom,
+        scrolling: false,
+        on_scroll: private::do_nothing::<State, Action>,
+    }
+}
+
+impl<State, Action, ChildrenViews, F, G> VirtualScroll<State, Action, ChildrenViews, F, G> {
+    /// Jumps to the child with the specified index.
+    ///
+    /// Sets the top of the child to the start position of viewport.
+    pub fn jump_to(mut self, anchor_index: Option<usize>) -> Self {
+        self.anchor_index = anchor_index;
+        self
+    }
+
+    /// Sets the points (as ratios of width) where the first item starts and
+    /// the last item ends in the viewport.
+    pub fn start_end(mut self, start_at: f64, end_at: f64) -> Self {
+        self.start_at = start_at;
+        self.end_at = end_at;
+        self
+    }
+
+    /// Sets the direction of scrolling.
+    pub fn direction(mut self, direction: ScrollDirection) -> Self {
+        self.direction = direction;
+        self
+    }
+
+    /// Sets if the view is in the process of scrolling.
+    ///
+    /// Helps with animated scrolls where pixel-snapping and font-hinting should be turned off.
+    pub fn scrolling(mut self, scrolling: bool) -> Self {
+        self.scrolling = scrolling;
+        self
+    }
+
+    /// Sets the scroll handler.
+    ///
+    /// A scroll handler enables saving the current index of the scroll view, among others.
+    pub fn on_scroll<H>(self, on_scroll: H) -> VirtualScroll<State, Action, ChildrenViews, F, H> {
+        VirtualScroll {
+            phantom: self.phantom,
+            func: self.func,
+            anchor_index: self.anchor_index,
+            len: self.len,
+            start_at: self.start_at,
+            end_at: self.end_at,
+            direction: self.direction,
+            scrolling: self.scrolling,
+            on_scroll,
+        }
     }
 }
 
 mod private {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, ops::Range};
 
-    use masonry::widgets::VirtualScrollAction;
+    use super::*;
+
+    pub(super) fn do_nothing<State: 'static + 'static, Action>(
+        _: &mut State,
+        _: Range<usize>,
+    ) -> MessageResult<Action> {
+        MessageResult::Nop
+    }
 
     #[expect(
         unnameable_types,
         reason = "Not meaningful public API; required to be public due to design of View trait"
     )]
     pub struct VirtualScrollState<View, State> {
-        pub(super) pending_action: Option<VirtualScrollAction>,
-        pub(super) children: HashMap<i64, ChildState<View, State>>,
+        pub(super) pending_action: Option<widgets::VirtualScrollFetchAction>,
+        pub(super) children: HashMap<usize, ChildState<View, State>>,
     }
 
     pub(super) struct ChildState<View, State> {
@@ -107,40 +196,49 @@ mod private {
 }
 
 /// Create the view id used for child views.
-const fn view_id_for_index(idx: i64) -> ViewId {
-    ViewId::new(idx.cast_unsigned())
+const fn view_id_for_index(idx: usize) -> ViewId {
+    ViewId::new(idx as _)
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "VirtualList mandates it, however it should not be an issue in practice"
+)]
 /// Get the index stored in the view id.
-const fn index_for_view_id(id: ViewId) -> i64 {
-    id.routing_id().cast_signed()
+const fn index_for_view_id(id: ViewId) -> usize {
+    id.routing_id() as _
 }
 
-impl<State, Action, ChildrenViews, F> ViewMarker
-    for VirtualScroll<State, Action, ChildrenViews, F>
+impl<State, Action, ChildrenViews, F, G> ViewMarker
+    for VirtualScroll<State, Action, ChildrenViews, F, G>
 {
 }
-impl<State, Action, ChildrenViews, F> View<State, Action, ViewCtx>
-    for VirtualScroll<State, Action, ChildrenViews, F>
+impl<State, Action, ChildrenViews, F, G> View<State, Action, ViewCtx>
+    for VirtualScroll<State, Action, ChildrenViews, F, G>
 where
     State: 'static,
     Action: 'static,
     ChildrenViews: WidgetView<State, Action>,
-    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    F: Fn(&mut State, usize) -> ChildrenViews + 'static,
+    G: Fn(&mut State, Range<usize>) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<widgets::VirtualScroll>;
 
-    type ViewState = VirtualScrollState<ChildrenViews, ChildrenViews::ViewState>;
+    type ViewState = private::VirtualScrollState<ChildrenViews, ChildrenViews::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: How does the anchor interact with Xilem?
         // Setting that seems like an imperative action?
-        let pod =
-            Pod::new(widgets::VirtualScroll::new(0).with_valid_range(self.valid_range.clone()));
+        let pod = Pod::new(
+            widgets::VirtualScroll::new(self.anchor_index.unwrap_or(0), self.len)
+                .with_start_end(self.start_at, self.end_at)
+                .with_direction(self.direction)
+                .with_scrolling(self.scrolling),
+        );
         ctx.record_action_source(pod.new_widget.id());
         (
             pod,
-            VirtualScrollState {
+            private::VirtualScrollState {
                 pending_action: None,
                 children: HashMap::default(),
             },
@@ -155,10 +253,37 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        let valid_range_changed = self.valid_range != prev.valid_range;
-        if valid_range_changed {
-            widgets::VirtualScroll::set_valid_range(&mut element, self.valid_range.clone());
+        if self.anchor_index != prev.anchor_index
+            && let Some(idx) = self.anchor_index
+        {
+            widgets::VirtualScroll::scroll_to(&mut element, idx);
         }
+
+        let len_changed = self.len != prev.len;
+        if len_changed {
+            widgets::VirtualScroll::set_len(&mut element, self.len);
+        }
+
+        let start_at = self.start_at != prev.start_at;
+        if start_at {
+            widgets::VirtualScroll::set_start(&mut element, self.start_at);
+        }
+
+        let end_at = self.end_at != prev.end_at;
+        if end_at {
+            widgets::VirtualScroll::set_end(&mut element, self.end_at);
+        }
+
+        let direction_changed = self.direction != prev.direction;
+        if direction_changed {
+            widgets::VirtualScroll::set_direction(&mut element, self.direction);
+        }
+
+        let scrolling_changed = self.scrolling != prev.scrolling;
+        if scrolling_changed {
+            widgets::VirtualScroll::set_scrolling(&mut element, self.scrolling);
+        }
+
         // TODO: This code should be moved into `Self::message` once it becomes possible to
         // make a build/rebuild/teardown context there.
         //
@@ -169,8 +294,8 @@ where
         if let Some(pending_action) = view_state.pending_action.take() {
             widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
             // Teardown the old items
-            for idx in pending_action.old_active.clone() {
-                if !pending_action.target.contains(&idx) {
+            for idx in pending_action.old_active().clone() {
+                if !pending_action.target().contains(&idx) {
                     let Some(mut child_state) = view_state.children.remove(&idx) else {
                         debug_panic!(
                             "Tried to remove {idx} from virtual scroll {pending_action:?}, but it wasn't already present."
@@ -189,10 +314,10 @@ where
             }
             // Build all new items. Whilst we're here, rebuild all the others.
             // This avoids needing to carefully track which ones we just built.
-            for idx in pending_action.target.clone() {
+            for idx in pending_action.target().clone() {
                 if let Some(child) = view_state.children.get_mut(&idx) {
                     debug_assert!(
-                        pending_action.old_active.contains(&idx),
+                        pending_action.old_active().contains(&idx),
                         "{idx} was asked to be removed in {pending_action:?}, but wasn't already present."
                     );
                     let next_child = (self.func)(app_state, idx);
@@ -296,12 +421,19 @@ where
                 return MessageResult::Stale;
             }
         }
-        if let Some(action) = message.take_message::<VirtualScrollAction>() {
-            // TODO: We should be able to rebuild here (we have the element)
-            // but we currently can't make a `ViewCtx`
-            view_state.pending_action = Some(*action);
-            // We need rebuild to be called now.
-            MessageResult::RequestRebuild
+        if let Some(action) = message.take_message::<widgets::VirtualScrollAction>() {
+            match *action {
+                widgets::VirtualScrollAction::Fetch(action) => {
+                    // TODO: We should be able to rebuild here (we have the element)
+                    // but we currently can't make a `ViewCtx`
+                    view_state.pending_action = Some(action);
+                    // We need rebuild to be called now.
+                    MessageResult::RequestRebuild
+                }
+                widgets::VirtualScrollAction::Scroll(action) => {
+                    (self.on_scroll)(app_state, action.range_in_viewport().clone())
+                }
+            }
         } else {
             tracing::error!(?message, "Wrong message type in VirtualScroll::message");
             MessageResult::Stale
