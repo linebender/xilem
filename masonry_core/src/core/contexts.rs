@@ -441,11 +441,11 @@ impl_context_method!(
     {
         /// Requests a timer for the current widget.
         ///
-        /// When the timer expires, this widget receives [`Update::Timer`] with
+        /// When the timer expires, this widget receives [`Update::TimerExpired`] with
         /// the returned token. Timer delivery is best-effort: timers targeting
         /// removed widgets are ignored by the host.
         ///
-        /// [`Update::Timer`]: crate::core::Update::Timer
+        /// [`Update::TimerExpired`]: crate::core::Update::TimerExpired
         pub fn request_timer(&mut self, delay: Duration) -> TimerToken {
             self.global_state.request_timer(self.widget_id(), delay)
         }

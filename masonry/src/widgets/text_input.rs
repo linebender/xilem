@@ -414,8 +414,7 @@ mod tests {
         assert_render_snapshot!(harness, "text_input_selection_unfocused");
 
         harness.process_text_event(TextEvent::WindowFocusChange(true));
-        harness.set_timer_time(Duration::from_millis(500));
-        harness.handle_timers();
+        harness.handle_timers(Duration::from_millis(500));
 
         assert_render_snapshot!(harness, "text_input_cursor_blink");
     }

@@ -14,7 +14,7 @@ use crate::util::Duration;
 ///
 /// Timer tokens are assigned by a [`RenderRoot`](crate::app::RenderRoot)'s
 /// timer queue. A widget can keep the token to recognize a later
-/// [`Update::Timer`] or cancel the timer before it fires.
+/// [`Update::TimerExpired`] or cancel the timer before it fires.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TimerToken(pub(crate) TimerId);
 
@@ -137,7 +137,7 @@ pub enum Update {
     ChildHoveredChanged(bool),
 
     /// Called when a timer requested by this widget expires.
-    Timer(TimerToken),
+    TimerExpired(TimerToken),
 
     /// Called when the [active] status of the current widget changes.
     ///
@@ -303,7 +303,7 @@ impl Update {
             Self::FocusChanged(true) => "FocusChanged(true)",
             Self::ChildFocusChanged(true) => "ChildFocusChanged(true)",
             Self::RequestPanToChild(_) => "RequestPanToChild(_)",
-            Self::Timer(_) => "Timer(_)",
+            Self::TimerExpired(_) => "TimerExpired(_)",
             Self::FontsChanged => "FontsChanged",
         }
     }

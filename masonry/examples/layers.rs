@@ -77,10 +77,10 @@ impl Widget for OverlayBox {
     ) {
         if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
             self.last_cursor_pos = current.logical_point();
-            if let Some(timer) = self.hover_timer.take() {
-                ctx.cancel_timer(timer);
+            if self.layer_root_id.take().is_some() && ctx.is_hovered() && self.hover_timer.is_none()
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
             }
-            self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
         }
     }
 
@@ -90,13 +90,24 @@ impl Widget for OverlayBox {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::HoveredChanged(true)
+                if self.layer_root_id.is_none() && self.hover_timer.is_none() =>
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
+            }
             Update::HoveredChanged(false) => {
                 if let Some(timer) = self.hover_timer.take() {
                     ctx.cancel_timer(timer);
                 }
+                if let Some(layer) = self.layer_root_id.take() {
+                    ctx.remove_layer(layer);
+                }
             }
-            Update::Timer(token) if Some(*token) == self.hover_timer => {
+            Update::TimerExpired(token) if Some(*token) == self.hover_timer => {
                 self.hover_timer = None;
+                if !ctx.is_hovered() {
+                    return;
+                }
                 let (overlay, layer_type) = (self.overlayer)();
                 self.layer_root_id = Some(overlay.id());
                 let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);

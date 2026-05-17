@@ -48,10 +48,6 @@ use crate::util::Duration;
 /// IME area as the `last_sent_ime_area`.
 const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
 
-fn duration_to_timer_ticks(duration: Duration) -> TimerInstant {
-    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
-}
-
 // --- MARK: STRUCTS
 
 /// The composition root of Masonry.
@@ -980,6 +976,10 @@ impl RenderRoot {
     /// The time is measured from an origin chosen by the host. All calls to
     /// this method and [`next_timer_deadline`](Self::next_timer_deadline) must
     /// use the same origin.
+    ///
+    /// This is separate from [`handle_timers`](Self::handle_timers) because timer
+    /// requests made while handling normal events also need to be scheduled
+    /// relative to the current host time.
     pub fn set_timer_time(&mut self, time: Duration) {
         self.global_state.timer_now = duration_to_timer_ticks(time);
     }
@@ -994,9 +994,8 @@ impl RenderRoot {
 
     /// Delivers all timers due at or before the current timer time.
     ///
-    /// Returns the number of timers delivered. Timers targeting removed widgets
-    /// are discarded.
-    pub fn handle_timers(&mut self) -> usize {
+    /// Timers targeting removed widgets are discarded.
+    pub fn handle_timers(&mut self) {
         let now = self.global_state.timer_now;
         let mut fired = Vec::new();
         // Pop the due set before dispatch. Widget updates may request or cancel
@@ -1007,18 +1006,16 @@ impl RenderRoot {
             fired.push((timer.into_target(), token));
         }
 
-        let mut delivered = 0;
+        let had_due_timer = !fired.is_empty();
         for (target, token) in fired {
             if !self.widget_arena.has(target) {
                 continue;
             }
             run_update_timer_pass(self, target, token);
-            delivered += 1;
         }
-        if delivered != 0 {
+        if had_due_timer {
             self.run_rewrite_passes();
         }
-        delivered
     }
 
     /// Returns true if the accessibility tree needs to be rebuilt.
@@ -1089,6 +1086,10 @@ impl RenderRootState {
             || !self.mutate_callbacks.is_empty()
             || !self.actions.is_empty()
     }
+}
+
+fn duration_to_timer_ticks(duration: Duration) -> TimerInstant {
+    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
 }
 
 impl RenderRootSignal {

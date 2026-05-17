@@ -30,6 +30,8 @@ const CURSOR_BLINK_INTERVAL: u64 = 500;
 const CURSOR_BLINK_TIME: u64 = CURSOR_BLINK_INTERVAL * 2;
 /// The timeout after which the cursor will stop blinking and stay solid.
 const CURSOR_BLINK_TIMEOUT: u64 = 10_000;
+// TODO: These should be read from system settings, but we currently
+// aren't aware of a robust way to read that cross-platform.
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -284,8 +286,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
         }
 
-        let should_show = self.anim_elapsed >= CURSOR_BLINK_TIMEOUT
-            || self.anim_prev_interval < CURSOR_BLINK_INTERVAL;
+        let should_show = self.anim_elapsed >= CURSOR_BLINK_TIMEOUT || self.anim_prev_interval == 0;
         if self.anim_cursor_visible == should_show {
             false
         } else {
@@ -885,7 +886,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 // We might need to use the disabled brush, and stop displaying the selection.
                 ctx.request_render();
             }
-            Update::Timer(token) if Some(*token) == self.cursor_blink_timer => {
+            Update::TimerExpired(token) if Some(*token) == self.cursor_blink_timer => {
                 self.cursor_blink_timer = None;
                 if ctx.is_window_focused() && ctx.is_focus_target() {
                     if self.advance_cursor_blink() {

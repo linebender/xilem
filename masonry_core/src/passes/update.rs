@@ -1248,11 +1248,14 @@ pub(crate) fn run_update_fonts_pass(root: &mut RenderRoot) {
     );
 }
 
+// ----------------
+
+// --- MARK: TIMERS
 pub(crate) fn run_update_timer_pass(root: &mut RenderRoot, target: WidgetId, token: TimerToken) {
     let _span = info_span!("update_timer").entered();
 
     run_single_update_pass(root, Some(target), |widget, ctx, props| {
-        widget.update(ctx, props, &Update::Timer(token));
+        widget.update(ctx, props, &Update::TimerExpired(token));
     });
 }
 

@@ -627,17 +627,14 @@ impl MasonryState<'_> {
     }
 
     fn drain_due_timers(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
-        let mut delivered = 0;
         for window in self.windows.values_mut() {
             window
                 .render_root
                 .set_timer_time(window.timer_origin.elapsed());
-            delivered += window.render_root.handle_timers();
+            window.render_root.handle_timers();
         }
 
-        if delivered != 0 {
-            self.handle_signals(event_loop, app_driver);
-        }
+        self.handle_signals(event_loop, app_driver);
     }
 
     // --- MARK: REDRAW
