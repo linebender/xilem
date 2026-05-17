@@ -12,8 +12,8 @@ use crate::core::{
 };
 use crate::layout::{AsUnit, Length};
 use crate::testing::{
-    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
-    assert_debug_panics,
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_all,
+    assert_any, assert_debug_panics,
 };
 use crate::theme::test_property_set;
 use crate::util::Duration;
@@ -81,22 +81,18 @@ fn timer_update_targets_widget() {
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 
-    harness.set_timer_time(Duration::from_millis(10));
-    assert_eq!(harness.handle_timers(), 1);
+    harness.handle_timers(Duration::from_millis(10));
 
     let records = harness.take_records_of(target_tag);
     assert_any(
         records,
-        |record| matches!(record, Record::Update(Update::Timer(seen)) if seen == token),
+        |record| matches!(record, Record::Update(Update::TimerExpired(seen)) if seen == token),
     );
 
     let records = harness.take_records_of(parent_tag);
-    assert!(
-        !records
-            .iter()
-            .any(|record| matches!(record, Record::Update(Update::Timer(_)))),
-        "timer update should not bubble to the parent"
-    );
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
 }
 
 #[test]
@@ -113,16 +109,12 @@ fn cancelled_timer_does_not_fire() {
     });
     harness.flush_records_of(target_tag);
 
-    harness.set_timer_time(Duration::from_millis(10));
-    assert_eq!(harness.handle_timers(), 0);
+    harness.handle_timers(Duration::from_millis(10));
 
     let records = harness.take_records_of(target_tag);
-    assert!(
-        !records
-            .iter()
-            .any(|record| matches!(record, Record::Update(Update::Timer(_)))),
-        "cancelled timer should not be delivered"
-    );
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
 }
 
 #[test]
