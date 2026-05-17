@@ -1035,13 +1035,18 @@ impl RenderRoot {
 
     /// Sets the current host-provided timer time.
     ///
-    /// The time is measured from an origin chosen by the host. All calls to
-    /// this method and [`next_timer_deadline`](Self::next_timer_deadline) must
-    /// use the same origin.
+    /// The time is measured as a [`Duration`] from an origin chosen by the host.
+    /// All calls to this method, [`handle_timers`](Self::handle_timers), and
+    /// [`next_timer_deadline`](Self::next_timer_deadline) must use the same origin.
     ///
-    /// This is separate from [`handle_timers`](Self::handle_timers) because timer
-    /// requests made while handling normal events also need to be scheduled
-    /// relative to the current host time.
+    /// Masonry stores this as a `Duration` rather than a [`std::time::Instant`]
+    /// so tests can provide deterministic clock values, and so hosts can choose
+    /// the monotonic clock origin used to schedule wakeups.
+    ///
+    /// This is separate from [`handle_timers`](Self::handle_timers) because
+    /// [`UpdateCtx::request_timer`](crate::core::UpdateCtx::request_timer) schedules
+    /// timers relative to this value. Hosts should call this before delivering
+    /// normal events that may request timers.
     pub fn set_timer_time(&mut self, time: Duration) {
         self.global_state.timer_now = duration_to_timer_ticks(time);
     }
@@ -1054,10 +1059,15 @@ impl RenderRoot {
             .map(Duration::from_nanos)
     }
 
-    /// Delivers all timers due at or before the current timer time.
+    /// Delivers all timers due at or before `time`.
+    ///
+    /// `time` must be measured from the same host-chosen origin used by
+    /// [`set_timer_time`](Self::set_timer_time) and
+    /// [`next_timer_deadline`](Self::next_timer_deadline).
     ///
     /// Timers targeting removed widgets are discarded.
-    pub fn handle_timers(&mut self) {
+    pub fn handle_timers(&mut self, time: Duration) {
+        self.set_timer_time(time);
         let now = self.global_state.timer_now;
         let mut fired = Vec::new();
         // Pop the due set before dispatch. Widget updates may request or cancel

@@ -633,8 +633,7 @@ impl MasonryState {
         for window in self.windows.values_mut() {
             window
                 .render_root
-                .set_timer_time(window.timer_origin.elapsed());
-            window.render_root.handle_timers();
+                .handle_timers(window.timer_origin.elapsed());
         }
 
         self.handle_signals(event_loop, app_driver);

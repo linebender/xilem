@@ -854,8 +854,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Advances the simulated timer time and delivers all due timers.
     pub fn handle_timers(&mut self, time: Duration) {
-        self.render_root.set_timer_time(time);
-        self.render_root.handle_timers();
+        self.render_root.handle_timers(time);
         self.process_signals();
     }
 
