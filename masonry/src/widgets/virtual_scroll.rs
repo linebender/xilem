@@ -275,7 +275,7 @@ impl VirtualScroll {
     /// Sets the number of child ids which are valid.
     #[track_caller]
     pub fn with_len(mut self, len: usize) -> Self {
-        self.virtual_list.model_mut().set_len(len);
+        self.virtual_list.set_len(len);
         self
     }
 
@@ -328,10 +328,9 @@ impl VirtualScroll {
         self.virtual_list.clamp_scroll_to_content();
 
         let scroll_offset = self.virtual_list.scroll_offset();
-        let offset_of_anchor = self.virtual_list.model_mut().offset_at(self.anchor_index);
+        let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         if scroll_offset < offset_of_anchor
-            || scroll_offset
-                >= offset_of_anchor + self.virtual_list.model().extent_at(self.anchor_index)
+            || scroll_offset >= offset_of_anchor + self.virtual_list.extent_of(self.anchor_index)
         {
             PostScrollResult::Layout
         } else {
@@ -360,8 +359,7 @@ impl VirtualScroll {
     }
 
     fn scroll_offset_from_anchor(&mut self) -> f64 {
-        self.virtual_list.scroll_offset()
-            - self.virtual_list.model_mut().offset_at(self.anchor_index)
+        self.virtual_list.scroll_offset() - self.virtual_list.offset_of(self.anchor_index)
     }
 }
 
@@ -522,7 +520,7 @@ impl VirtualScroll {
     /// That is, the children which the virtual scrolling area will request within.
     /// Runtime equivalent of [`with_len`](Self::with_len).
     pub fn set_len(this: &mut WidgetMut<'_, Self>, len: usize) {
-        this.widget.virtual_list.model_mut().set_len(len);
+        this.widget.virtual_list.set_len(len);
         this.ctx.request_layout();
     }
 
@@ -668,7 +666,7 @@ impl Widget for VirtualScroll {
             Some(accesskit::ActionData::ScrollUnit(accesskit::ScrollUnit::Page)) => {
                 ctx.content_box_size().get_coord(self.direction.axis())
             }
-            _ => self.virtual_list.model().extent_at(self.anchor_index),
+            _ => self.virtual_list.extent_of(self.anchor_index),
         };
 
         self.scroll_by(if backscroll { delta } else { -delta });
@@ -757,7 +755,7 @@ impl Widget for VirtualScroll {
         self.virtual_list
             .set_overscan(main_axis_length + start_at, main_axis_length * 3. - end_at);
 
-        let offset_of_anchor = self.virtual_list.model_mut().offset_at(self.anchor_index);
+        let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         self.virtual_list
             .set_scroll_offset(offset_of_anchor_re_viewport + offset_of_anchor);
 
@@ -784,12 +782,12 @@ impl Widget for VirtualScroll {
         }
 
         // place children
-        let offset_of_anchor = self.virtual_list.model_mut().offset_at(self.anchor_index);
+        let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         for (idx, child) in &mut self.items {
             if active_range.contains(idx) {
-                let pos = self.virtual_list.model_mut().offset_at(*idx) - offset_of_anchor;
+                let pos = self.virtual_list.offset_of(*idx) - offset_of_anchor;
                 let placed_pos = if self.direction.is_reverse() {
-                    -pos - self.virtual_list.model().extent_at(*idx)
+                    -pos - self.virtual_list.extent_of(*idx)
                 } else {
                     pos
                 };
@@ -905,9 +903,8 @@ impl Widget for VirtualScroll {
         }
         let last_visible_index = self.virtual_list.last_visible_index();
         let at_end = last_visible_index.is_some_and(|index| {
-            index == self.virtual_list.model().len() - 1
-                && self.virtual_list.model_mut().offset_at(index)
-                    + self.virtual_list.model().extent_at(index)
+            index == self.virtual_list.len() - 1
+                && self.virtual_list.offset_of(index) + self.virtual_list.extent_of(index)
                     - self.virtual_list.scroll_offset()
                     - self.virtual_list.viewport_extent()
                     != 0.
