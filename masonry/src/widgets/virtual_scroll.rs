@@ -905,7 +905,7 @@ impl Widget for VirtualScroll {
         }
         let last_visible_index = self.virtual_list.last_visible_index();
         let at_end = last_visible_index.is_some_and(|index| {
-            index == self.virtual_list.model().len()
+            index == self.virtual_list.model().len() - 1
                 && self.virtual_list.model_mut().offset_at(index)
                     + self.virtual_list.model().extent_at(index)
                     - self.virtual_list.scroll_offset()
