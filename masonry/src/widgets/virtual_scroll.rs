@@ -25,29 +25,20 @@ use crate::util::debug_panic;
 /// Currently, this does not have utilities to produce the ranges which should be added and removed.
 /// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
 ///
-/// ```rust
-/// # use masonry::core::{ErasedAction, Widget, NewWidget};
-/// # use masonry::widgets::{VirtualScrollAction, Label};
-/// # use core::marker::PhantomData;
-/// # let action: ErasedAction = Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 });
-/// # // A fake VirtualScroll, as setting up a full Masonry context for this example would also be very verbose
-/// # struct VirtualScroll;
-/// # impl VirtualScroll {
-/// #    fn remove_child(&mut self, idx: i64) {}
-/// #    fn add_child(&mut self, idx: i64, pod: NewWidget<dyn Widget>) {}
-/// #    fn will_handle_action(&mut self, action: &VirtualScrollAction) {}
-/// # }
-/// # let mut scroll = VirtualScroll;
+/// ```ignore
 /// let action = action.downcast::<VirtualScrollAction>().unwrap();
+/// let VirtualScrollAction::Fetch(action) = action else {
+///     return;
+/// };
 /// // We tell the scroll area which action we're about to handle
 /// VirtualScroll::will_handle_action(&mut scroll, &action);
-/// for idx in action.old_active.clone() {
-///     if !action.target.contains(&idx) {
+/// for idx in action.old_active().clone() {
+///     if !action.target().contains(&idx) {
 ///         VirtualScroll::remove_child(&mut scroll, idx);
 ///     }
 /// }
-/// for idx in action.target.clone() {
-///     if !action.old_active.contains(&idx) {
+/// for idx in action.target().clone() {
+///     if !action.old_active().contains(&idx) {
 ///         let label = Label::new(format!("Child {idx}"));
 ///         VirtualScroll::add_child(
 ///             &mut scroll,
@@ -63,8 +54,6 @@ use crate::util::debug_panic;
 ///   be removed from the `VirtualScroll` using [`remove_child`](VirtualScroll::remove_child).
 /// - Any items which are in `target` and aren't in `old_active` should
 ///   be materialised and added to the `VirtualScroll` using [`add_child`](VirtualScroll::add_child).
-// TODO: This definitely needs helper functions (that is, the fields shouldn't be public); this is extremely easy to misuse.
-// That can be a follow-up.
 #[derive(Debug)]
 pub struct VirtualScrollFetchAction {
     /// The range of children ids which were "active" before this change.
