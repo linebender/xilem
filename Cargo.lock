@@ -2467,6 +2467,7 @@ dependencies = [
  "tracing_android_trace",
  "tree_arena",
  "ui-events",
+ "understory_timing",
  "web-time",
 ]
 
@@ -5058,6 +5059,12 @@ dependencies = [
  "web-time",
  "winit",
 ]
+
+[[package]]
+name = "understory_timing"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd51bfaa2fed0422a43d7a29fcd928356376740422ac07191604039cfa3be4cd"
 
 [[package]]
 name = "unicase"

@@ -48,6 +48,16 @@ It runs in depth-first preorder on all animated widgets in the tree.
 
 The animation pass may be considered as a special event pass: it's not triggered by user interaction, and it doesn't bubble, but it's also triggered externally and sets off the rewrite passes.
 
+### Timer delivery
+
+Widget timers are delayed callbacks requested with context methods such as [`UpdateCtx::request_timer`].
+When a timer expires, Masonry delivers [`Update::TimerExpired`] to the widget that requested it.
+
+Timer delivery does not bubble to ancestors.
+Like the animation pass, it is triggered externally by the host event loop and sets off the rewrite passes after delivery.
+Timers are best for delayed one-shot UI behavior such as cursor blinking, tooltip delays, debounce, and long press recognition.
+Use animation frames instead for visual state that should advance with frame cadence.
+
 
 ## Rewrite passes
 
@@ -255,6 +265,8 @@ They can access the layout of children if they have already been laid out.
 [`RegisterCtx`]: crate::core::RegisterCtx
 [`QueryCtx`]: crate::core::QueryCtx
 [`WidgetAdded`]: crate::core::Update::WidgetAdded
+[`Update::TimerExpired`]: crate::core::Update::TimerExpired
+[`UpdateCtx::request_timer`]: crate::core::UpdateCtx::request_timer
 [`Ime::Disabled`]: crate::core::Ime::Disabled
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged

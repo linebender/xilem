@@ -10,7 +10,7 @@ use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
     NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet,
-    RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    RegisterCtx, StyleProperty, TimerToken, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size, Vec2};
@@ -20,7 +20,7 @@ use masonry::parley::FontWeight;
 use masonry::peniko::Color;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
 use masonry::theme::default_property_set;
-use masonry::util::{Duration, Instant};
+use masonry::util::Duration;
 use masonry::widgets::{Flex, Label, Selector};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -44,7 +44,7 @@ struct OverlayBox {
     child: WidgetPod<dyn Widget>,
     overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
     layer_root_id: Option<WidgetId>,
-    last_mouse_move: Option<Instant>,
+    hover_timer: Option<TimerToken>,
     last_cursor_pos: Point,
 }
 
@@ -59,7 +59,7 @@ impl OverlayBox {
             child: child.erased().to_pod(),
             overlayer,
             layer_root_id: None,
-            last_mouse_move: None,
+            hover_timer: None,
             last_cursor_pos: Point::ZERO,
         }
     }
@@ -77,26 +77,9 @@ impl Widget for OverlayBox {
     ) {
         if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
             self.last_cursor_pos = current.logical_point();
-            self.last_mouse_move = Some(Instant::now());
-            ctx.request_anim_frame();
-        }
-    }
-
-    fn on_anim_frame(
-        &mut self,
-        ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _interval: u64,
-    ) {
-        if let Some(last_mouse_move) = self.last_mouse_move {
-            let now = Instant::now();
-            if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
-                let (overlay, layer_type) = (self.overlayer)();
-                self.layer_root_id = Some(overlay.id());
-                let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
-                ctx.create_layer(layer_type, overlay, layer_pos);
-            } else {
-                ctx.request_anim_frame();
+            if self.layer_root_id.take().is_some() && ctx.is_hovered() && self.hover_timer.is_none()
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
             }
         }
     }
@@ -105,9 +88,32 @@ impl Widget for OverlayBox {
         ctx.register_child(&mut self.child);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        if let Update::HoveredChanged(false) = event {
-            self.last_mouse_move = None;
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::HoveredChanged(true)
+                if self.layer_root_id.is_none() && self.hover_timer.is_none() =>
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
+            }
+            Update::HoveredChanged(false) => {
+                if let Some(timer) = self.hover_timer.take() {
+                    ctx.cancel_timer(timer);
+                }
+                if let Some(layer) = self.layer_root_id.take() {
+                    ctx.remove_layer(layer);
+                }
+            }
+            Update::TimerExpired(token) if Some(*token) == self.hover_timer => {
+                self.hover_timer = None;
+                if !ctx.is_hovered() {
+                    return;
+                }
+                let (overlay, layer_type) = (self.overlayer)();
+                self.layer_root_id = Some(overlay.id());
+                let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
+                ctx.create_layer(layer_type, overlay, layer_pos);
+            }
+            _ => {}
         }
     }
 

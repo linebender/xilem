@@ -11,8 +11,8 @@ use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, TimerToken,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -21,9 +21,17 @@ use crate::parley::PlainEditor;
 use crate::parley::editing::{Generation, SplitString};
 use crate::properties::{CaretColor, ContentColor, SelectionColor};
 use crate::theme::default_text_styles;
-use crate::util::bounding_box_to_rect;
-use crate::util::debug_panic;
+use crate::util::{Duration, bounding_box_to_rect, debug_panic};
 use crate::{TextAlign, theme};
+
+/// The time for half of a cursor blink cycle.
+const CURSOR_BLINK_INTERVAL: u64 = 500;
+/// The time for a complete cursor blink cycle.
+const CURSOR_BLINK_TIME: u64 = CURSOR_BLINK_INTERVAL * 2;
+/// The timeout after which the cursor will stop blinking and stay solid.
+const CURSOR_BLINK_TIMEOUT: u64 = 10_000;
+// TODO: These should be read from system settings, but we currently
+// aren't aware of a robust way to read that cross-platform.
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -82,6 +90,9 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 
     /// Time elapsed (ms) to calculate the timeout of the cursor's blink animation.
     anim_elapsed: u64,
+
+    /// Pending cursor blink timer.
+    cursor_blink_timer: Option<TimerToken>,
 }
 
 // --- MARK: BUILDERS
@@ -126,6 +137,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             anim_cursor_visible: true,
             anim_prev_interval: 0,
             anim_elapsed: 0,
+            cursor_blink_timer: None,
         }
     }
 
@@ -256,6 +268,35 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             "TextArea::ime_area should only be called when the editor layout is available"
         );
         bounding_box_to_rect(self.editor.ime_cursor_area())
+    }
+
+    fn reset_cursor_blink(&mut self) -> bool {
+        self.anim_prev_interval = 0;
+        self.anim_elapsed = 0;
+        let was_hidden = !self.anim_cursor_visible;
+        self.anim_cursor_visible = true;
+        was_hidden
+    }
+
+    fn advance_cursor_blink(&mut self) -> bool {
+        self.anim_prev_interval += CURSOR_BLINK_INTERVAL;
+        self.anim_elapsed += CURSOR_BLINK_INTERVAL;
+
+        if self.anim_prev_interval >= CURSOR_BLINK_TIME {
+            self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
+        }
+
+        let should_show = self.anim_elapsed >= CURSOR_BLINK_TIMEOUT || self.anim_prev_interval == 0;
+        if self.anim_cursor_visible == should_show {
+            false
+        } else {
+            self.anim_cursor_visible = should_show;
+            true
+        }
+    }
+
+    fn cursor_should_blink(&self) -> bool {
+        self.anim_elapsed < CURSOR_BLINK_TIMEOUT
     }
 }
 
@@ -425,55 +466,6 @@ pub enum TextAction {
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     type Action = TextAction;
 
-    fn on_anim_frame(
-        &mut self,
-        ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        interval: u64,
-    ) {
-        /// The time for a complete blink cycle, in milliseconds.
-        /// For the first half (i.e. currently 0.5s) the cursor is shown, and for the second half,
-        /// it is hidden.
-        const CURSOR_BLINK_TIME: u64 = 1000;
-
-        /// The timeout, in milliseconds, after which the cursor will stop blinking (i.e. stay
-        /// solid).
-        const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // 10 seconds
-
-        // TODO: These should be reading from the system settings, but we currently
-        // aren't aware of a robust way to read that cross-platform.
-
-        if ctx.is_window_focused() && ctx.is_focus_target() {
-            if self.anim_elapsed < CURSOR_BLINK_TIMEOUT {
-                let interval_ms = interval / 1_000_000; // ns to ms
-                self.anim_prev_interval += interval_ms;
-                self.anim_elapsed += interval_ms;
-
-                if self.anim_prev_interval >= CURSOR_BLINK_TIME {
-                    self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
-                }
-
-                // TODO: request timer here
-                ctx.request_anim_frame();
-
-                // Request paint only if changed.
-                if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
-                    self.anim_cursor_visible = true;
-                    ctx.request_paint_only();
-                } else if self.anim_prev_interval >= CURSOR_BLINK_TIME / 2
-                    && self.anim_cursor_visible
-                {
-                    self.anim_cursor_visible = false;
-                    ctx.request_paint_only();
-                }
-            } else if !self.anim_cursor_visible {
-                // Request paint only if changed.
-                self.anim_cursor_visible = true;
-                ctx.request_paint_only();
-            }
-        }
-    }
-
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -538,10 +530,19 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        // Reset the blink animation.
-        self.anim_prev_interval = 0;
-        self.anim_elapsed = 0;
-        ctx.request_anim_frame();
+        if let Some(timer) = self.cursor_blink_timer.take() {
+            ctx.cancel_timer(timer);
+        }
+        if ctx.is_window_focused()
+            && ctx.is_focus_target()
+            && !matches!(event, TextEvent::WindowFocusChange(false))
+        {
+            if self.reset_cursor_blink() {
+                ctx.request_paint_only();
+            }
+            self.cursor_blink_timer =
+                Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
+        }
 
         match event {
             TextEvent::Keyboard(key_event) => {
@@ -859,12 +860,43 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let _ = self.editor.edit_styles();
                 ctx.request_layout();
             }
-            Update::FocusChanged(_) => {
+            Update::FocusChanged(true) => {
+                if let Some(timer) = self.cursor_blink_timer.take() {
+                    ctx.cancel_timer(timer);
+                }
+                if self.reset_cursor_blink() {
+                    ctx.request_paint_only();
+                }
+                if ctx.is_window_focused() && self.cursor_should_blink() {
+                    self.cursor_blink_timer =
+                        Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
+                }
+                ctx.request_render();
+            }
+            Update::FocusChanged(false) => {
+                if let Some(timer) = self.cursor_blink_timer.take() {
+                    ctx.cancel_timer(timer);
+                }
                 ctx.request_render();
             }
             Update::DisabledChanged(_) => {
+                if let Some(timer) = self.cursor_blink_timer.take() {
+                    ctx.cancel_timer(timer);
+                }
                 // We might need to use the disabled brush, and stop displaying the selection.
                 ctx.request_render();
+            }
+            Update::TimerExpired(token) if Some(*token) == self.cursor_blink_timer => {
+                self.cursor_blink_timer = None;
+                if ctx.is_window_focused() && ctx.is_focus_target() {
+                    if self.advance_cursor_blink() {
+                        ctx.request_paint_only();
+                    }
+                    if self.cursor_should_blink() {
+                        self.cursor_blink_timer =
+                            Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
+                    }
+                }
             }
             _ => {}
         }

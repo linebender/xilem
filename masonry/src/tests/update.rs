@@ -12,10 +12,11 @@ use crate::core::{
 };
 use crate::layout::{AsUnit, Length};
 use crate::testing::{
-    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
-    assert_debug_panics,
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_all,
+    assert_any, assert_debug_panics,
 };
 use crate::theme::test_property_set;
+use crate::util::Duration;
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 // TREE
@@ -63,6 +64,57 @@ fn new_widget() {
             Record::Update(Update::WidgetAdded)
         ]
     );
+}
+
+#[test]
+fn timer_update_targets_widget() {
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child).record()).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+
+    harness.flush_records_of(target_tag);
+    harness.flush_records_of(parent_tag);
+
+    harness.handle_timers(Duration::from_millis(10));
+
+    let records = harness.take_records_of(target_tag);
+    assert_any(
+        records,
+        |record| matches!(record, Record::Update(Update::TimerExpired(seen)) if seen == token),
+    );
+
+    let records = harness.take_records_of(parent_tag);
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
+}
+
+#[test]
+fn cancelled_timer_does_not_fire() {
+    let target_tag = WidgetTag::named("target");
+    let widget = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+    harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.cancel_timer(token);
+    });
+    harness.flush_records_of(target_tag);
+
+    harness.handle_timers(Duration::from_millis(10));
+
+    let records = harness.take_records_of(target_tag);
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
 }
 
 #[test]
