@@ -768,14 +768,12 @@ impl Widget for VirtualScroll {
 
         self.virtual_list.clamp_scroll_to_content();
 
-        let active_range =
-            self.virtual_list.visible_strip().start..self.virtual_list.visible_strip().end;
         // We only send an updated request if the driver has actioned the previous request.
-        if self.action_handled && self.active_range != active_range {
+        if self.action_handled && self.active_range != self.virtual_list.visible_range() {
             ctx.submit_action::<VirtualScrollAction>(VirtualScrollAction::Fetch(
                 VirtualScrollFetchAction {
                     old_active: self.active_range.clone(),
-                    target: active_range.clone(),
+                    target: self.virtual_list.visible_range(),
                 },
             ));
             self.action_handled = false;
@@ -784,7 +782,7 @@ impl Widget for VirtualScroll {
         // place children
         let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         for (idx, child) in &mut self.items {
-            if active_range.contains(idx) {
+            if self.virtual_list.visible_range().contains(idx) {
                 let pos = self.virtual_list.offset_of(*idx) - offset_of_anchor;
                 let placed_pos = if self.direction.is_reverse() {
                     -pos - self.virtual_list.extent_of(*idx)
@@ -817,22 +815,13 @@ impl Widget for VirtualScroll {
             }
         }
 
-        let mut visible_indices = self.virtual_list.visible_indices();
-        if let Some(anchor_index) =
-            visible_indices.find(|i| self.virtual_list.is_index_partially_visible(*i))
+        let range_in_viewport = self.virtual_list.viewport_range();
+        if std::mem::replace(&mut self.range_in_viewport, range_in_viewport.clone())
+            != range_in_viewport
         {
-            let last_visible_index = visible_indices
-                .rfind(|i| self.virtual_list.is_index_partially_visible(*i))
-                .unwrap_or(anchor_index);
-            let new_range_in_viewport = anchor_index..last_visible_index;
-            if self.range_in_viewport != new_range_in_viewport.clone() {
-                self.range_in_viewport = new_range_in_viewport.clone();
-                ctx.submit_action::<VirtualScrollAction>(VirtualScrollAction::Scroll(
-                    VirtualScrollScrollAction {
-                        range_in_viewport: new_range_in_viewport,
-                    },
-                ));
-            }
+            ctx.submit_action::<VirtualScrollAction>(VirtualScrollAction::Scroll(
+                VirtualScrollScrollAction { range_in_viewport },
+            ));
         }
     }
 
@@ -1156,10 +1145,8 @@ mod tests {
             let widget = harness.root_widget();
             tracing::debug!(widget = ?(&*widget));
             assert_eq!(
-                widget.range_in_viewport.end,
-                MAX - 1,
-                "Virtual Scroll controller should locl anchor to be within active range \
-                and last item to the enf of the viewport"
+                widget.range_in_viewport.end, MAX,
+                "Virtual Scroll controller should fix the last item to the end of the viewport"
             );
             (
                 widget.active_range.clone(),
@@ -1173,7 +1160,7 @@ mod tests {
         {
             let widget = harness.root_widget();
             tracing::debug!(widget = ?(&*widget));
-            assert_ne!(widget.range_in_viewport.end, MAX - 1);
+            assert_ne!(widget.range_in_viewport.end, MAX);
             assert_eq!(widget.active_range, original_range);
         }
         harness.mouse_wheel(Vec2 { x: 0., y: -45. });
@@ -1182,7 +1169,7 @@ mod tests {
         assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
         {
             let widget = harness.root_widget();
-            assert_eq!(widget.range_in_viewport.end, MAX - 1);
+            assert_eq!(widget.range_in_viewport.end, MAX);
             assert_eq!(
                 widget.virtual_list.scroll_offset(),
                 original_scroll,
