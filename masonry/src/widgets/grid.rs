@@ -1060,13 +1060,12 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = NewWidget::new(
-            Grid::new()
-                .with_column(GridTrackSize::FRACTION)
-                .with_row(GridTrackSize::FRACTION)
-                .with(Button::with_text("A").prepare(), (0, 0)),
-        )
-        .with_props(Dimensions::STRETCH);
+        let widget = Grid::new()
+            .with_column(GridTrackSize::FRACTION)
+            .with_row(GridTrackSize::FRACTION)
+            .with(Button::with_text("A").prepare(), (0, 0))
+            .prepare()
+            .with_props(Dimensions::STRETCH);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_1x1");
@@ -1109,12 +1108,11 @@ mod tests {
 
     #[test]
     fn test_widget_removal_and_modification() {
-        let widget = NewWidget::new(
-            Grid::new()
-                .with_columns([GridTrackSize::FRACTION; 2])
-                .with_rows([GridTrackSize::FRACTION; 2])
-                .with(Button::with_text("A").prepare(), (0, 0)),
-        );
+        let widget = Grid::new()
+            .with_columns([GridTrackSize::FRACTION; 2])
+            .with_rows([GridTrackSize::FRACTION; 2])
+            .with(Button::with_text("A").prepare(), (0, 0))
+            .prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
@@ -1156,12 +1154,11 @@ mod tests {
 
     #[test]
     fn test_widget_order() {
-        let widget = NewWidget::new(
-            Grid::new()
-                .with_columns([GridTrackSize::FRACTION; 2])
-                .with_rows([GridTrackSize::FRACTION; 2])
-                .with(Button::with_text("A").prepare(), (0, 0)),
-        );
+        let widget = Grid::new()
+            .with_columns([GridTrackSize::FRACTION; 2])
+            .with_rows([GridTrackSize::FRACTION; 2])
+            .with(Button::with_text("A").prepare(), (0, 0))
+            .prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
@@ -1236,71 +1233,70 @@ mod tests {
 
     #[test]
     fn grid_nonuniform() {
-        let widget = NewWidget::new(
-            Grid::new()
-                .with_columns([
-                    GridTrackSize::MinContent,
-                    GridTrackSize::MaxContent,
-                    GridTrackSize::Fraction(1.),
-                ])
-                .with_rows([
-                    GridTrackSize::Auto,
-                    GridTrackSize::Fixed(30.px()),
-                    GridTrackSize::Percentage(0.2),
-                    GridTrackSize::Fraction(2.),
-                    GridTrackSize::Fraction(1.),
-                ])
-                .with(
-                    Label::new("Min Content")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::CHOCOLATE.with_alpha(0.5))),
-                    (),
-                )
-                .with(
-                    Label::new("Max Content")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::OLIVE.with_alpha(0.5))),
-                    (),
-                )
-                .with(
-                    Label::new("1×3")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::ORANGE_RED.with_alpha(0.5))),
-                    (2, 0, (), 3),
-                )
-                .with(
-                    Label::new("20px")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::MAGENTA.with_alpha(0.5))),
-                    (1, ()),
-                )
-                .with(
-                    Label::new("30%")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::SEA_GREEN.with_alpha(0.5))),
-                    (),
-                )
-                .with(
-                    Label::new("2×2")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::AQUAMARINE.with_alpha(0.5))),
-                    (1, 2, 2, 2),
-                )
-                .with(
-                    Label::new("2fr")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::PURPLE.with_alpha(0.5))),
-                    (),
-                )
-                .with(
-                    Label::new("1fr")
-                        .prepare()
-                        .with_props(Background::Color(palette::css::GOLD.with_alpha(0.5))),
-                    (2, ()),
-                ),
-        )
-        .with_props(Gap::new(5.px()))
-        .with_props(Dimensions::STRETCH);
+        let widget = Grid::new()
+            .with_columns([
+                GridTrackSize::MinContent,
+                GridTrackSize::MaxContent,
+                GridTrackSize::Fraction(1.),
+            ])
+            .with_rows([
+                GridTrackSize::Auto,
+                GridTrackSize::Fixed(30.px()),
+                GridTrackSize::Percentage(0.2),
+                GridTrackSize::Fraction(2.),
+                GridTrackSize::Fraction(1.),
+            ])
+            .with(
+                Label::new("Min Content")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::CHOCOLATE.with_alpha(0.5))),
+                (),
+            )
+            .with(
+                Label::new("Max Content")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::OLIVE.with_alpha(0.5))),
+                (),
+            )
+            .with(
+                Label::new("1×3")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::ORANGE_RED.with_alpha(0.5))),
+                (2, 0, (), 3),
+            )
+            .with(
+                Label::new("20px")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::MAGENTA.with_alpha(0.5))),
+                (1, ()),
+            )
+            .with(
+                Label::new("30%")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::SEA_GREEN.with_alpha(0.5))),
+                (),
+            )
+            .with(
+                Label::new("2×2")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::AQUAMARINE.with_alpha(0.5))),
+                (1, 2, 2, 2),
+            )
+            .with(
+                Label::new("2fr")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::PURPLE.with_alpha(0.5))),
+                (),
+            )
+            .with(
+                Label::new("1fr")
+                    .prepare()
+                    .with_props(Background::Color(palette::css::GOLD.with_alpha(0.5))),
+                (2, ()),
+            )
+            .prepare()
+            .with_props(Gap::new(5.px()))
+            .with_props(Dimensions::STRETCH);
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (300, 300));
         assert_render_snapshot!(harness, "grid_nonuniform");
