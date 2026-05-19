@@ -285,6 +285,7 @@ impl Grid {
         cross_length: Option<Length>,
         gap: Length,
         context_length: Option<Length>,
+        is_measuring_only: bool,
         mut compute_length: impl FnMut(
             &mut WidgetPod<dyn Widget + 'static>,
             LenDef,
@@ -456,8 +457,47 @@ impl Grid {
             return extract_bases_with_fr(track_lengths, 0.);
         }
 
-        let Some(context_length) = context_length else {
-            return if let Some(fr_unit) = tracks
+        if let Some(context_length) = context_length
+            && (matches!(len_req, LenReq::FitContent(_)) || !is_measuring_only)
+        {
+            let (occupied_length, total_fr) = tracks
+                .iter()
+                .zip(&track_lengths)
+                .map(|(track, length)| match *track {
+                    GridTrackSize::Fraction(fr) => (0., fr),
+                    _ => (*length, 0.),
+                })
+                .reduce(|(a, b), (c, d)| (a + c, b + d))
+                .unwrap();
+
+            let leftover_length = context_length.get() - occupied_length;
+            if leftover_length <= 0. {
+                return extract_bases(track_lengths);
+            }
+
+            if total_fr == 0. {
+                let n_auto = tracks
+                    .iter()
+                    .filter(|t| matches!(t, GridTrackSize::Auto))
+                    .count();
+                if n_auto != 0 {
+                    let per_auto_track_ext = leftover_length / n_auto as f64;
+                    tracks
+                        .iter()
+                        .zip(track_lengths)
+                        .map(|(track, length)| match track {
+                            GridTrackSize::Auto => length + per_auto_track_ext,
+                            _ => length,
+                        })
+                        .collect()
+                } else {
+                    extract_bases(track_lengths)
+                }
+            } else {
+                extract_bases_with_fr(track_lengths, leftover_length / total_fr)
+            }
+        } else {
+            if let Some(fr_unit) = tracks
                 .iter()
                 .zip(&track_lengths)
                 .filter_map(|(track, length)| match track {
@@ -469,43 +509,7 @@ impl Grid {
                 extract_bases_with_fr(track_lengths, fr_unit)
             } else {
                 extract_bases(track_lengths)
-            };
-        };
-
-        let (occupied_length, total_fr) = tracks
-            .iter()
-            .zip(&track_lengths)
-            .map(|(track, length)| match *track {
-                GridTrackSize::Fraction(fr) => (0., fr),
-                _ => (*length, 0.),
-            })
-            .reduce(|(a, b), (c, d)| (a + c, b + d))
-            .unwrap();
-
-        let leftover_length = context_length.get() - occupied_length;
-        if leftover_length <= 0. {
-            return extract_bases(track_lengths);
-        }
-        if total_fr == 0. {
-            let n_auto = tracks
-                .iter()
-                .filter(|t| matches!(t, GridTrackSize::Auto))
-                .count();
-            if n_auto != 0 {
-                let per_auto_track_ext = leftover_length / n_auto as f64;
-                tracks
-                    .iter()
-                    .zip(track_lengths)
-                    .map(|(track, length)| match track {
-                        GridTrackSize::Auto => length + per_auto_track_ext,
-                        _ => length,
-                    })
-                    .collect()
-            } else {
-                extract_bases(track_lengths)
             }
-        } else {
-            extract_bases_with_fr(track_lengths, leftover_length / total_fr)
         }
     }
 }
@@ -899,6 +903,7 @@ impl Widget for Grid {
             cross_length,
             gap.gap,
             ctx.context_size().length(axis),
+            true,
             |child, auto_length, context_size, axis, cross_length| {
                 ctx.compute_length(child, auto_length, context_size, axis, cross_length)
             },
@@ -933,6 +938,7 @@ impl Widget for Grid {
                 Some(size.get_coord(axis.cross()).px()),
                 gap.gap,
                 Some(size.get_coord(axis).px()),
+                false,
                 |child, auto_length, context_size, axis, cross_length| {
                     ctx.compute_length(child, auto_length, context_size, axis, cross_length)
                 },
