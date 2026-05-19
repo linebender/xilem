@@ -880,7 +880,9 @@ impl MasonryState<'_> {
         // visible jitter.
         #[cfg(target_os = "macos")]
         match event {
-            WinitWindowEvent::Resized(_) | WinitWindowEvent::RedrawRequested => {}
+            WinitWindowEvent::Resized(_)
+            | WinitWindowEvent::RedrawRequested
+            | WinitWindowEvent::Moved(_) => {}
             _ => {
                 if let Some(surface) = self
                     .resized_window
