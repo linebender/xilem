@@ -59,7 +59,7 @@ pub fn main() {
 }
 ```
 
-[Trunk]: https://trunkrs.dev/
+[Trunk]: https://trunk-rs.github.io/trunk
 [Xilem Core]: xilem_core
 
 <!-- cargo-rdme end -->
