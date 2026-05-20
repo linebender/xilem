@@ -5078,8 +5078,9 @@ dependencies = [
 
 [[package]]
 name = "understory_virtual_list"
-version = "0.1.1"
-source = "git+https://github.com/forest-rs/understory.git#e6cddef1a0844d96181f8f93a5ddfb68765ed91e"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1562c70e80970850aefd08f87cda4bd134355b8d6dad65ea1320725f157b709e"
 
 [[package]]
 name = "unicase"

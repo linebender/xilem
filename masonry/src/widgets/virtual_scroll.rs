@@ -316,46 +316,24 @@ impl VirtualScroll {
     }
 
     /// Scroll by the specified amount of pixels.
-    pub fn scroll_by(&mut self, delta: f64) {
+    ///
+    /// Returns `true` if the children needs to be laid out again as a result of the scroll.
+    pub fn scroll_by(&mut self, delta: f64) -> bool {
         self.virtual_list
             .scroll_by(-self.direction.appropriate(delta));
+        self.needs_layout()
     }
 
     /// Ensures that the correct follow-up passes are requested after the scroll position changes.
     ///
     /// `size` is the current viewport's size.
-    fn post_scroll(&mut self) -> PostScrollResult {
+    fn needs_layout(&mut self) -> bool {
         self.virtual_list.clamp_scroll_to_content();
 
         let scroll_offset = self.virtual_list.scroll_offset();
         let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
-        if scroll_offset < offset_of_anchor
+        scroll_offset < offset_of_anchor
             || scroll_offset >= offset_of_anchor + self.virtual_list.extent_of(self.anchor_index)
-        {
-            PostScrollResult::Layout
-        } else {
-            PostScrollResult::NoLayout
-        }
-    }
-
-    /// A wrapper to use [`post_scroll`](Self::post_scroll) in event methods.
-    fn event_post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
-        match self.post_scroll() {
-            PostScrollResult::Layout => ctx.request_layout(),
-            PostScrollResult::NoLayout => {}
-        }
-        ctx.request_compose();
-    }
-
-    /// A wrapper to use [`post_scroll`](Self::post_scroll) in update methods.
-    fn update_post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
-        match self.post_scroll() {
-            PostScrollResult::Layout => {
-                ctx.request_layout();
-            }
-            PostScrollResult::NoLayout => {}
-        }
-        ctx.request_compose();
     }
 
     fn scroll_offset_from_anchor(&mut self) -> f64 {
@@ -404,11 +382,6 @@ impl ScrollDirection {
     fn appropriate(self, delta: f64) -> f64 {
         if self.is_reverse() { -delta } else { delta }
     }
-}
-
-enum PostScrollResult {
-    Layout,
-    NoLayout,
 }
 
 // --- MARK: WIDGETMUT
@@ -547,7 +520,7 @@ impl VirtualScroll {
     /// Adjusts pixel snapping for animations.
     pub fn set_scrolling(this: &mut WidgetMut<'_, Self>, scrolling: bool) {
         this.widget.scrolling = scrolling;
-        this.ctx.request_layout();
+        this.ctx.request_render();
     }
 
     /// Forcefully aligns the top of the item at `idx` with the top of the
@@ -595,8 +568,11 @@ impl Widget for VirtualScroll {
                 (Axis::Horizontal, false, _) | (Axis::Vertical, _, true) => delta_px.x,
                 (Axis::Horizontal, true, _) | (Axis::Vertical, _, false) => delta_px.y,
             };
-            self.scroll_by(-delta);
-            self.event_post_scroll(ctx);
+
+            if self.scroll_by(-delta) {
+                ctx.request_layout();
+            }
+            ctx.request_compose();
         }
     }
 
@@ -643,7 +619,11 @@ impl Widget for VirtualScroll {
             } else {
                 self.direction.appropriate(delta)
             });
-            self.event_post_scroll(ctx);
+
+            if self.needs_layout() {
+                ctx.request_layout();
+            }
+            ctx.request_compose();
             ctx.set_handled();
         }
     }
@@ -669,8 +649,10 @@ impl Widget for VirtualScroll {
             _ => self.virtual_list.extent_of(self.anchor_index),
         };
 
-        self.scroll_by(if backscroll { delta } else { -delta });
-        self.event_post_scroll(ctx);
+        if self.scroll_by(if backscroll { delta } else { -delta }) {
+            ctx.request_layout();
+        }
+        ctx.request_compose();
         ctx.set_handled();
     }
 
@@ -687,7 +669,10 @@ impl Widget for VirtualScroll {
             let new_pos =
                 super::compute_pan_range(0.0..content_box_length, target.0..target.1).start;
             self.virtual_list.scroll_by(new_pos);
-            self.update_post_scroll(ctx);
+            if self.needs_layout() {
+                ctx.request_layout();
+            }
+            ctx.request_compose();
         }
     }
 
@@ -758,22 +743,16 @@ impl Widget for VirtualScroll {
         let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         self.virtual_list
             .set_scroll_offset(offset_of_anchor_re_viewport + offset_of_anchor);
-
-        let mut visible_indices = self.virtual_list.visible_indices();
-        if let Some(anchor_index) =
-            visible_indices.find(|i| self.virtual_list.is_index_partially_visible(*i))
-        {
-            self.anchor_index = anchor_index;
-        }
-
         self.virtual_list.clamp_scroll_to_content();
 
+        self.anchor_index = self.virtual_list.viewport_range().start;
+
         // We only send an updated request if the driver has actioned the previous request.
-        if self.action_handled && self.active_range != self.virtual_list.visible_range() {
+        if self.action_handled && self.active_range != self.virtual_list.materialized_range() {
             ctx.submit_action::<VirtualScrollAction>(VirtualScrollAction::Fetch(
                 VirtualScrollFetchAction {
                     old_active: self.active_range.clone(),
-                    target: self.virtual_list.visible_range(),
+                    target: self.virtual_list.materialized_range(),
                 },
             ));
             self.action_handled = false;
@@ -782,7 +761,7 @@ impl Widget for VirtualScroll {
         // place children
         let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         for (idx, child) in &mut self.items {
-            if self.virtual_list.visible_range().contains(idx) {
+            if self.virtual_list.materialized_range().contains(idx) {
                 let pos = self.virtual_list.offset_of(*idx) - offset_of_anchor;
                 let placed_pos = if self.direction.is_reverse() {
                     -pos - self.virtual_list.extent_of(*idx)
@@ -890,14 +869,13 @@ impl Widget for VirtualScroll {
                 ScrollDirection::RightToLeft => accesskit::Action::ScrollRight,
             });
         }
-        let last_visible_index = self.virtual_list.last_visible_index();
-        let at_end = last_visible_index.is_some_and(|index| {
-            index == self.virtual_list.len() - 1
-                && self.virtual_list.offset_of(index) + self.virtual_list.extent_of(index)
-                    - self.virtual_list.scroll_offset()
-                    - self.virtual_list.viewport_extent()
-                    != 0.
-        });
+        let viewport = self.virtual_list.viewport_strip();
+        let at_end = viewport.end == self.virtual_list.len()
+            && viewport.content_extent
+                - viewport.after_extent
+                - self.virtual_list.scroll_offset()
+                - self.virtual_list.viewport_extent()
+                != 0.;
         if !at_end {
             node.add_action(match self.direction {
                 ScrollDirection::TopToBottom => accesskit::Action::ScrollDown,
