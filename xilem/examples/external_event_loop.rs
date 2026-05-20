@@ -111,7 +111,8 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         event_loop: &winit::event_loop::ActiveEventLoop,
         cause: winit::event::StartCause,
     ) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+        self.masonry_state
+            .handle_new_events(event_loop, cause, self.app_driver.as_mut());
     }
 
     fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {

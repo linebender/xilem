@@ -38,6 +38,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "time"] }
 tracing-tracy = { version = "0.11.4", optional = true }
 tree_arena.workspace = true
 ui-events.workspace = true
+understory_timing.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 time = { workspace = true, features = ["macros", "formatting"] }

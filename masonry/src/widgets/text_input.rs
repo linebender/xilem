@@ -377,6 +377,7 @@ mod tests {
     use crate::dpi::PhysicalSize;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
+    use crate::util::Duration;
     use crate::widgets::TextArea;
 
     const HARNESS_PARAMS: TestHarnessParams = {
@@ -413,7 +414,7 @@ mod tests {
         assert_render_snapshot!(harness, "text_input_selection_unfocused");
 
         harness.process_text_event(TextEvent::WindowFocusChange(true));
-        harness.animate_ms(500 + 1);
+        harness.handle_timers(Duration::from_millis(500));
 
         assert_render_snapshot!(harness, "text_input_cursor_blink");
     }

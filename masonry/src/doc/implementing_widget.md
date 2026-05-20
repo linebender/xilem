@@ -48,6 +48,7 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 - `on_pointer_event`, `on_text_event` and `on_access_event` are called once after a user-initiated event (like a mouse click or keyboard input).
 - `on_anim_frame` is called once per frame for animated widgets.
 - `update` is called many times during a frame, with various events reflecting changes in the widget's state (for instance, it gets or loses text focus).
+- `update` is also where timers requested by the widget are delivered as `Update::TimerExpired`.
 - `measure` and `layout` are called during Masonry's layout pass.
   `measure` computes the preferred size of the widget on a single axis.
   `layout` receives a chosen size and lays out its children accordingly.
@@ -161,6 +162,12 @@ impl Widget for ColorRectangle {
     // ...
 }
 ```
+
+Use `on_anim_frame` for visual state that should advance with frame cadence, such as continuous motion or interpolation.
+For delayed one-shot behavior, use a timer instead.
+For example, a widget can store an `Option<TimerToken>`, set it with `ctx.request_timer(delay)`, then compare it against `Update::TimerExpired(token)` in `update`.
+If the delayed behavior should continue, request a new one-shot timer from that `Update::TimerExpired` branch.
+Cancel the stored token with `ctx.cancel_timer(token)` when the state that made the timer relevant no longer applies.
 
 ### Layout
 
@@ -348,6 +355,11 @@ Most context types include these methods for requesting future passes:
 - `request_accessibility_update()`
 - `request_layout()`
 - `request_anim_frame()`
+- `request_timer()`
+- `cancel_timer()`
+
+Use `request_anim_frame()` for frame-cadenced animation.
+Use `request_timer()` for delayed one-shot UI behavior such as cursor blinking, tooltip delays, debounce, or long press recognition.
 
 
 ### Using context in `ColorRectangle`
