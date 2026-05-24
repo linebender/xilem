@@ -166,7 +166,7 @@ The current passes are:
 - **on_xxx_event:** Handles UX-related events, e.g. clicks, text entered, IME updates and accessibility input. Widgets can declare these events as "handled" which has a bunch of semantic implications.
 - **anim:** Do updates related to an animation frame.
 - **update:** Handles internal changes to some widgets, e.g. when the widget is marked as "disabled" or Masonry detects that a widget is hovered by a pointer.
-- **layout:** Container widgets measure their children with `LayoutCtx::compute_size` and then lay them out with `LayoutCtx::run_layout`, finally giving them a position with `LayoutCtx::place_child`.
+- **layout:** Container widgets measure their children with `LayoutCtx::compute_size` and then lay them out with `LayoutCtx::layout_child`, choosing an origin and size for each child.
 - **compose:** Computes the global transform/origin for every widget.
 - **paint** Paint every widget.
 - **accessibility:** Compute every widget's node in the accessibility tree.

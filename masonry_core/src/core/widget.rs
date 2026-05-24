@@ -336,15 +336,15 @@ pub trait Widget: AsDynWidget + Any {
     ///    Note, however, that the child will still be in control of its own [`paint`] method.
     ///    If a child is given a size smaller than its [`MinContent`], its painting is likely
     ///    to overflow its bounds, depending on both the child's and the parent's clip settings.
-    /// 3. Call [`run_layout`] on the child with the chosen border-box size.
+    /// 3. Decide on the border-box origin of the child, relative to the parent's content-box.
+    /// 4. Call [`layout_child`] on the child with the chosen origin and border-box size.
     ///    This will recursively trigger the layout pass on both the child and all its descendants.
-    /// 4. Call [`place_child`] to give the child a location, relative to the parent's content-box.
-    ///    With that, the laying out of the child is finished.
+    ///    The final layout origin and size may slightly change due to pixel snapping.
     ///
     /// The order of laying out children doesn't matter. It is also valid to interleave the calls.
     /// For example you might `compute_size` for a few, lay out one, re-compute the others.
     ///
-    /// Failing to lay out and place some child is a logic error and may lead to panics.
+    /// Failing to lay out some child is a logic error and may lead to panics.
     ///
     /// Container widgets must not add or remove children during layout.
     /// Doing so is a logic error and may lead to panics.
@@ -354,8 +354,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// [`compute_size`]: LayoutCtx::compute_size
     /// [`compute_length`]: LayoutCtx::compute_length
-    /// [`run_layout`]: LayoutCtx::run_layout
-    /// [`place_child`]: LayoutCtx::place_child
+    /// [`layout_child`]: LayoutCtx::layout_child
     /// [`children_ids`]: Self::children_ids
     /// [`paint`]: Self::paint
     /// [`MinContent`]: crate::layout::Dim::MinContent

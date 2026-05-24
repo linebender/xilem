@@ -81,8 +81,7 @@ fn paint_order() {
                 let mut pos = Point::ZERO;
                 for child in children {
                     let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-                    ctx.run_layout(child, child_size);
-                    ctx.place_child(child, pos);
+                    ctx.layout_child(child, pos, child_size);
                     pos += Vec2::new(SQUARE_SIZE / 2., SQUARE_SIZE / 2.);
                 }
             })

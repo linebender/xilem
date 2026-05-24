@@ -661,7 +661,6 @@ impl Widget for Divider {
 
         if let Some(content) = &mut self.content {
             let content_size = ctx.compute_size(content, SizeDef::fit(size), size.into());
-            ctx.run_layout(content, content_size);
 
             let placement = match self.placement {
                 Placement::Start => match self.axis {
@@ -675,7 +674,7 @@ impl Widget for Divider {
                 },
             };
             let content_origin = placement.resolve((size - content_size).to_rect());
-            ctx.place_child(content, content_origin);
+            ctx.layout_child(content, content_origin, content_size);
 
             ctx.derive_baselines(content);
 
