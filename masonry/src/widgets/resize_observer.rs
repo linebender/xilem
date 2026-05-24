@@ -132,8 +132,7 @@ impl Widget for ResizeObserver {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        ctx.run_layout(&mut self.child, size);
-        ctx.place_child(&mut self.child, Point::ORIGIN);
+        ctx.layout_child(&mut self.child, Point::ORIGIN, size);
         ctx.derive_baselines(&self.child);
 
         if self.last_size.is_none_or(|it| it != size) {

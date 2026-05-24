@@ -290,18 +290,15 @@ impl Widget for TextInput {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        ctx.run_layout(&mut self.text, size);
-
         let child_origin = Point::ORIGIN;
-        ctx.place_child(&mut self.text, child_origin);
+        ctx.layout_child(&mut self.text, child_origin, size);
 
         ctx.derive_baselines(&self.text);
 
         let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
         if text_is_empty {
-            ctx.run_layout(&mut self.placeholder, size);
-            ctx.place_child(&mut self.placeholder, child_origin);
+            ctx.layout_child(&mut self.placeholder, child_origin, size);
         }
 
         if self.clip {

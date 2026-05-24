@@ -265,10 +265,13 @@ impl Widget for IndexedStack {
             SizeDef::fit(size),
             size.into(),
         );
-        ctx.run_layout(&mut self.children[self.active_child], child_size);
 
         let child_origin = Point::ORIGIN;
-        ctx.place_child(&mut self.children[self.active_child], child_origin);
+        ctx.layout_child(
+            &mut self.children[self.active_child],
+            child_origin,
+            child_size,
+        );
 
         ctx.derive_baselines(&self.children[self.active_child]);
     }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Role, Tree, TreeId, TreeUpdate};
-use kurbo::Rect;
+use kurbo::{Affine, Rect};
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
@@ -19,6 +19,7 @@ fn build_accessibility_tree(
     property_arena: &PropertyArena,
     tree_update: &mut TreeUpdate,
     node: ArenaMut<'_, WidgetArenaNode>,
+    parent_window_transform: Affine,
     scale_factor: Option<f64>,
 ) {
     let mut children = node.children;
@@ -49,7 +50,7 @@ fn build_accessibility_tree(
             children: children.reborrow_mut(),
             tree_update,
         };
-        let mut node = build_access_node(widget, &mut ctx, scale_factor);
+        let mut node = build_access_node(widget, &mut ctx, parent_window_transform, scale_factor);
         let props = PropertiesRef {
             local: properties,
             default_map: default_properties.for_widget(widget.type_id()),
@@ -76,6 +77,7 @@ fn build_accessibility_tree(
             property_arena,
             tree_update,
             node.reborrow_mut(),
+            parent_state.window_transform,
             None,
         );
         parent_state.merge_up(&mut node.item.state);
@@ -86,12 +88,15 @@ fn build_accessibility_tree(
 fn build_access_node(
     widget: &mut dyn Widget,
     ctx: &mut AccessCtx<'_>,
+    parent_window_transform: Affine,
     scale_factor: Option<f64>,
 ) -> Node {
     let mut node = Node::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(ctx.widget_state.border_box()));
 
-    let mut local_transform = ctx.widget_state.compose_local_transform();
+    let mut local_transform = ctx
+        .widget_state
+        .compose_local_transform(parent_window_transform, ctx.global_state.scale_factor);
 
     // TODO - Remove once Masonry uses physical coordinates.
     // See https://github.com/linebender/xilem/issues/1264
@@ -173,6 +178,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         &root.property_arena,
         &mut tree_update,
         root_node,
+        Affine::IDENTITY,
         Some(scale_factor),
     );
 

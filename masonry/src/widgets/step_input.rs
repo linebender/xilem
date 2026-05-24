@@ -1410,13 +1410,12 @@ impl<T: Steppable> Widget for StepInput<T> {
         let label_space = Size::new((size.width - buttons_width).max(0.), size.height);
         let auto_size = SizeDef::fit(label_space);
         let label_size = ctx.compute_size(label, auto_size, size.into());
-        ctx.run_layout(label, label_size);
 
         let label_origin = Point::new(
             (size.width - label_size.width) * 0.5,
             (size.height - label_size.height) * 0.5,
         );
-        ctx.place_child(label, label_origin);
+        ctx.layout_child(label, label_origin, label_size);
 
         self.label_x_start = label_origin.x;
         self.label_x_end = label_origin.x + label_size.width;

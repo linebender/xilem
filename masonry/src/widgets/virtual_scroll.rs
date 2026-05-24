@@ -703,7 +703,8 @@ impl Widget for VirtualScroll {
             last_item = last_item.map(|it| it.max(*idx)).or(Some(*idx));
             let auto_size = SizeDef::fit(size).with_height(LenDef::MaxContent);
             let child_size = ctx.compute_size(child, auto_size, size.into());
-            ctx.run_layout(child, child_size);
+            ctx.layout_child(child, Point::ORIGIN, child_size);
+            let child_size = ctx.child_size(child);
             if *idx < self.anchor_index {
                 height_before_anchor += child_size.height;
             }
@@ -833,7 +834,7 @@ impl Widget for VirtualScroll {
             let item = self.items.get_mut(&idx);
             if let Some(item) = item {
                 let size = ctx.child_size(item);
-                ctx.place_child(item, Point::new(0., y));
+                ctx.move_child(item, Point::new(0., y));
                 // TODO: Padding/gap?
                 y += size.height;
             } else {

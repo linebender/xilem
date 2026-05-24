@@ -7,7 +7,7 @@ use crate::core::{ChildrenIds, NewWidget, Update, Widget, WidgetPod, WidgetTag};
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef};
 use crate::testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
-use crate::tests::assert_rect_approx_eq;
+use crate::tests::{assert_point_approx_eq, assert_rect_approx_eq};
 use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 
@@ -33,8 +33,7 @@ fn request_compose() {
         .measure_fn(|_state, _ctx, _props, _axis, _len_req, _cross_length| Length::ZERO)
         .layout_fn(|state, ctx, _props, size| {
             let child_size = ctx.compute_size(&mut state.child, SizeDef::fit(size), size.into());
-            ctx.run_layout(&mut state.child, child_size);
-            ctx.place_child(&mut state.child, state.pos);
+            ctx.layout_child(&mut state.child, state.pos, child_size);
         })
         .compose_fn(|state, ctx| {
             ctx.set_child_scroll_translation(&mut state.child, state.offset);
@@ -103,8 +102,7 @@ fn scroll_translation_updates_composed_geometry_without_layout() {
     })
     .layout_fn(|state, ctx, _, size| {
         let child_size = ctx.compute_size(&mut state.child, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut state.child, child_size);
-        ctx.place_child(&mut state.child, Point::new(5.1, 5.3));
+        ctx.layout_child(&mut state.child, Point::new(5.1, 5.3), child_size);
     })
     .compose_fn(|state, ctx| {
         ctx.set_child_scroll_translation(&mut state.child, state.offset);
@@ -155,11 +153,10 @@ fn scroll_translation_updates_composed_geometry_without_layout() {
     let child = harness.get_widget(child_tag);
     let child_id = child.id();
     let ctx = child.ctx();
-    assert_eq!(ctx.border_box_size(), Size::new(10., 11.));
+    assert_eq!(ctx.border_box().size(), Size::new(10., 11.));
     assert_rect_approx_eq(
         "window border box",
-        ctx.window_transform()
-            .transform_rect_bbox(ctx.border_box_size().to_rect()),
+        ctx.window_transform().transform_rect_bbox(ctx.border_box()),
         Rect::new(7., 6., 17., 17.),
     );
 
@@ -183,7 +180,8 @@ fn scroll_translation_updates_composed_geometry_without_layout() {
 
 #[test]
 fn scroll_pixel_snap() {
-    let child_tag = WidgetTag::named("child");
+    let parent_tag = WidgetTag::unique();
+    let child_tag = WidgetTag::unique();
     let child = NewWidget::new(SizedBox::empty()).with_tag(child_tag);
 
     let parent = ModularWidget::new_parent(child)
@@ -192,13 +190,23 @@ fn scroll_pixel_snap() {
 
             ctx.set_child_scroll_translation(state, offset);
         })
-        .prepare();
+        .prepare()
+        .with_tag(parent_tag);
 
-    let harness = TestHarness::create(test_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
 
     // Origin should be rounded to (0., 1.) by pixel-snapping.
     let child = harness.get_widget(child_tag);
     let ctx = child.ctx();
     let origin = ctx.to_window(ctx.border_box().origin());
     assert_eq!(origin, Point::new(0., 1.));
+
+    harness.edit_widget(parent_tag, |mut parent| {
+        parent.set_snap_disabled(true);
+    });
+
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+    let origin = ctx.to_window(ctx.border_box().origin());
+    assert_point_approx_eq("origin", origin, Point::new(0.1, 0.9));
 }

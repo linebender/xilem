@@ -681,16 +681,13 @@ where
         let child1_size = self.split_axis.pack_size(child1_split_space, cross_space);
         let child2_size = self.split_axis.pack_size(child2_split_space, cross_space);
 
-        ctx.run_layout(&mut self.child1, child1_size);
-        ctx.run_layout(&mut self.child2, child2_size);
-
         // Top-left align both children.
         let child1_origin = Point::ORIGIN;
         let child2_origin = self
             .split_axis
             .pack_point(child1_split_space + bar_thickness, 0.);
-        ctx.place_child(&mut self.child1, child1_origin);
-        ctx.place_child(&mut self.child2, child2_origin);
+        ctx.layout_child(&mut self.child1, child1_origin, child1_size);
+        ctx.layout_child(&mut self.child2, child2_origin, child2_size);
     }
 
     fn paint(

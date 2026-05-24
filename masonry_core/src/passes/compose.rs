@@ -29,7 +29,8 @@ fn compose_widget(
         return;
     }
 
-    let local_transform = state.compose_local_transform();
+    let local_transform =
+        state.compose_local_transform(parent_window_transform, global_state.scale_factor);
     state.window_transform = parent_window_transform * local_transform;
 
     let paint_box = state.paint_box();

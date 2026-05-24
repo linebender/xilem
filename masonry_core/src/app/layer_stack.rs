@@ -200,9 +200,8 @@ impl Widget for LayerStack {
 
         // Our measurement is just the passed on result from the base layer,
         // so the size we received is effectively meant for the base layer.
-        ctx.run_layout(&mut base_layer.root, size);
         // The base layer is always located at our origin.
-        ctx.place_child(&mut base_layer.root, Point::ORIGIN);
+        ctx.layout_child(&mut base_layer.root, Point::ORIGIN, size);
 
         ctx.derive_baselines(&base_layer.root);
 
@@ -213,8 +212,7 @@ impl Widget for LayerStack {
             // so we won't give any FitContent fallback and instead just use MaxContent.
             // These other layers still have access to the window size via context size.
             let layer_size = ctx.compute_size(&mut layer.root, SizeDef::MAX, size.into());
-            ctx.run_layout(&mut layer.root, layer_size);
-            ctx.place_child(&mut layer.root, layer.position);
+            ctx.layout_child(&mut layer.root, layer.position, layer_size);
         }
     }
 

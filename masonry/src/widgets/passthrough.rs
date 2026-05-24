@@ -99,8 +99,7 @@ impl Widget for Passthrough {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        ctx.run_layout(&mut self.inner, size);
-        ctx.place_child(&mut self.inner, Point::ORIGIN);
+        ctx.layout_child(&mut self.inner, Point::ORIGIN, size);
         ctx.derive_baselines(&self.inner);
     }
 

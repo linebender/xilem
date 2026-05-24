@@ -237,7 +237,6 @@ impl Widget for CollapsePanel {
 
         // Square button
         let button_size = Size::new(button_width, button_width);
-        ctx.run_layout(&mut self.disclosure_button, button_size);
 
         let label_auto_size = SizeDef::new(
             LenDef::FitContent(
@@ -249,8 +248,6 @@ impl Widget for CollapsePanel {
         );
         let label_size = ctx.compute_size(&mut self.header_label, label_auto_size, size.into());
 
-        ctx.run_layout(&mut self.header_label, label_size);
-
         let header_height = button_size.height.max(label_size.height);
 
         // Place it at the center of the label height.
@@ -258,10 +255,10 @@ impl Widget for CollapsePanel {
             header_padding_width,
             (label_size.height - button_size.height) * 0.5,
         );
-        ctx.place_child(&mut self.disclosure_button, btn_origin);
+        ctx.layout_child(&mut self.disclosure_button, btn_origin, button_size);
 
         let label_origin = Point::new(button_size.width + header_padding_width * 2.0, 0.0);
-        ctx.place_child(&mut self.header_label, label_origin);
+        ctx.layout_child(&mut self.header_label, label_origin, label_size);
 
         // Collapsed = !Disclosed
         let is_collapsed = !ctx.get_raw(&mut self.disclosure_button).0.is_disclosed();
@@ -280,10 +277,8 @@ impl Widget for CollapsePanel {
 
             let child_size = ctx.compute_size(&mut self.child, child_auto_size, child_context_size);
 
-            ctx.run_layout(&mut self.child, child_size);
-
             let child_origin = Point::new(0.0, header_height + separator_height);
-            ctx.place_child(&mut self.child, child_origin);
+            ctx.layout_child(&mut self.child, child_origin, child_size);
 
             self.separator_line_y =
                 Some(header_height + SEPARATOR_PAD.top.get() + border_width * 0.5);

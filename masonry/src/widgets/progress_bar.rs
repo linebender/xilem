@@ -169,10 +169,9 @@ impl Widget for ProgressBar {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.label, label_size);
 
         let child_origin = ((size - label_size).to_vec2() * 0.5).to_point();
-        ctx.place_child(&mut self.label, child_origin);
+        ctx.layout_child(&mut self.label, child_origin, label_size);
 
         ctx.derive_baselines(&self.label);
     }

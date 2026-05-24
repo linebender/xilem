@@ -274,8 +274,7 @@ impl Widget for SizedBox {
             return;
         };
 
-        ctx.run_layout(child, size);
-        ctx.place_child(child, Point::ORIGIN);
+        ctx.layout_child(child, Point::ORIGIN, size);
         ctx.derive_baselines(child);
     }
 

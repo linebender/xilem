@@ -273,42 +273,15 @@ impl<
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         match self {
-            Self::A(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::B(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::C(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::D(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::E(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::F(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::G(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::H(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
-            Self::I(w) => {
-                ctx.run_layout(w, size);
-                ctx.place_child(w, Point::ORIGIN);
-            }
+            Self::A(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::B(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::C(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::D(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::E(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::F(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::G(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::H(w) => ctx.layout_child(w, Point::ORIGIN, size),
+            Self::I(w) => ctx.layout_child(w, Point::ORIGIN, size),
         }
     }
 

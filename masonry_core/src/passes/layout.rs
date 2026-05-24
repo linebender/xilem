@@ -16,8 +16,11 @@ use crate::core::{
     ChildrenIds, LayoutCtx, MeasureCtx, PropertiesRef, PropertyArena, Widget, WidgetArenaNode,
     WidgetState,
 };
-use crate::kurbo::{Axis, Insets, Point, Size};
-use crate::layout::{LayoutSize, LenDef, LenReq, Length, MeasurementInputs, SizeDef};
+use crate::kurbo::{Affine, Axis, Insets, Point, Size};
+use crate::layout::{
+    LayoutSize, LenDef, LenReq, Length, MeasurementInputs, SizeDef, SnapKey, snap_border_box,
+    snap_translation_delta, supports_box_snapping,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::properties::{BorderWidth, BoxShadow, Dimensions, Padding};
 use crate::util::Sanitize;
@@ -280,28 +283,45 @@ pub(crate) fn resolve_size(
 }
 
 // --- MARK: RUN LAYOUT
-/// Run [`Widget::layout`] method on the given widget.
-/// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
+/// Places the widget based on `chosen_origin` and runs its [`Widget::layout`] method.
 ///
-/// The provided `size` will be the given widget's chosen border-box size.
+/// This will be called by [`LayoutCtx::layout_child`], which is itself called
+/// in the parent widget's `layout`.
 ///
-/// If the chosen border-box `size` is smaller than what is required to fit the widget's
-/// borders and padding, then the `size` will be expanded to meet those constraints.
+/// The provided `chosen_size` will be the given widget's chosen border-box size,
+/// before minimum border/padding constraints and pixel snapping are applied.
 ///
-/// The provided `size` must be finite, non-negative, and in logical pixels.
+/// The provided `chosen_size` must be finite, non-negative, and in logical pixels.
 /// Non-finite or negative length will fall back to zero with a logged warning.
+///
+/// The provided `chosen_origin` must be finite and in logical pixels.
+/// Non-finite origin will fall back to zero with a logged warning.
 ///
 /// # Panics
 ///
-/// Panics if `size` is non-finite or negative and debug assertions are enabled.
+/// Panics if `chosen_size` is non-finite or negative and debug assertions are enabled.
+///
+/// Panics if `chosen_origin` is non-finite and debug assertions are enabled.
 ///
 /// [`Widget::layout`]: crate::core::Widget::layout
 pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
     property_arena: &PropertyArena,
     node: ArenaMut<'_, WidgetArenaNode>,
+    chosen_origin: Point,
     chosen_size: Size,
+    parent_snap_transform: Affine,
+    parent_snap_disabled: bool,
+    parent_snap_unsupported: bool,
 ) {
+    // Ensure the chosen origin is sanitized.
+    let chosen_origin = if chosen_origin.is_finite() {
+        chosen_origin
+    } else {
+        debug_panic!("chosen origin must be finite, got {}", chosen_origin);
+        Point::ZERO
+    };
+
     // Ensure the chosen size is sanitized.
     let chosen_size = Size::new(
         chosen_size.width.sanitize("chosen border-box size width"),
@@ -319,8 +339,8 @@ pub(crate) fn run_layout_on(
 
     // This checks reads `is_explicitly_stashed` instead of `is_stashed` because the latter may be outdated.
     // A widget's `is_explicitly_stashed` flag is controlled by its direct parent.
-    // The parent may set this flag during layout, in which case it should avoid calling `run_layout`.
-    // Note that, because this check exits before recursing, `run_layout` can only ever be
+    // The parent may set this flag during layout, in which case it should avoid calling `layout_child`.
+    // Note that, because this check exits before recursing, layout can only ever be
     // reached for a widget whose parent is not stashed, which means `is_explicitly_stashed`
     // being false is sufficient to know the widget is non-stashed.
     if state.is_explicitly_stashed {
@@ -330,8 +350,7 @@ pub(crate) fn run_layout_on(
             id,
         );
         state.origin = Point::ZERO;
-        state.end_point = Point::ZERO;
-        state.layout_border_box_size = Size::ZERO;
+        state.border_box_size = Size::ZERO;
         return;
     }
 
@@ -348,18 +367,76 @@ pub(crate) fn run_layout_on(
     let border_width = props.get::<BorderWidth>(&mut state.property_cache);
     let padding = props.get::<Padding>(&mut state.property_cache);
 
-    // Force the border-box size to be large enough to actually contain the border and padding.
+    // Force the chosen border-box to be large enough to actually contain the border and padding.
     let minimum_size = Size::ZERO;
     let minimum_size = border_width.size_up(minimum_size);
     let minimum_size = padding.size_up(minimum_size);
-    let border_box_size = minimum_size.max(chosen_size);
+    let chosen_border_box = minimum_size.max(chosen_size).to_rect();
 
-    if !state.needs_layout() && state.layout_border_box_size == border_box_size {
+    // Calculate the chosen snap transform based on the chosen origin.
+    // Snap transform excludes scroll translation, which will be dealt with during compose.
+    let chosen_snap_transform =
+        parent_snap_transform * state.transform.then_translate(chosen_origin.to_vec2());
+
+    // Update the flags that determine whether snapping is active.
+    let is_snap_disabled = parent_snap_disabled || state.is_explicitly_snap_disabled;
+    let snap_disabled_changed = state.is_snap_disabled != is_snap_disabled;
+    state.is_snap_disabled = is_snap_disabled;
+    state.is_snap_unsupported = parent_snap_unsupported
+        || !supports_box_snapping(chosen_snap_transform.then_scale(global_state.scale_factor));
+
+    // Snap the chosen border-box to the pixel grid.
+    let snapped_border_box = if state.is_snap_active() {
+        snap_border_box(
+            chosen_border_box,
+            chosen_snap_transform,
+            global_state.scale_factor,
+        )
+    } else {
+        chosen_border_box
+    };
+
+    // The layout origin will be the chosen origin adjusted so that it will be pixel-snapped.
+    let origin_delta =
+        state.transform * snapped_border_box.origin() - state.transform * Point::ORIGIN;
+    let origin = chosen_origin + origin_delta;
+    if state.origin != origin {
+        state.origin = origin;
+        state.mark_compose_transform_changed();
+    }
+
+    // Now that we have the layout origin, we can calculate the corresponding snap transform.
+    let snap_transform =
+        parent_snap_transform * state.transform.then_translate(state.origin.to_vec2());
+
+    // The border-box size will be exactly the pixel-snapped chosen border-box size.
+    let border_box_size = snapped_border_box.size();
+
+    // We can skip redoing layout for this branch, if all the following conditions are true:
+    // - No widget in this branch explicitly requested layout.
+    // - The border-box size matches the cached layout.
+    //   The box size can change due to snapping, constraints, or just a new chosen input.
+    // - The snap key matches the cached layout.
+    //   Even though the cached layout for this widget may be valid, if the snap key changed,
+    //   then deeper descendant widgets may end up with different border-boxes due to snapping.
+    // - The snap disabled state remains the same as it was during the cached layout.
+    //   Even though the cached layout for this whole branch may be valid,
+    //   we still need to propagate the is_snap_disabled flag updates, as those are used
+    //   in context methods like set_transform to decide whether layout or only compose is needed.
+    let snap_key = state
+        .is_snap_active()
+        .then(|| SnapKey::new(snap_transform, global_state.scale_factor));
+    if !state.needs_layout()
+        && state.border_box_size == border_box_size
+        && state.snap_key == snap_key
+        && !snap_disabled_changed
+    {
         // We reset this to false to mark that the current widget has been visited.
         state.request_layout = false;
         return;
     }
-    state.layout_border_box_size = border_box_size;
+    state.border_box_size = border_box_size;
+    state.snap_key = snap_key;
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
     state.needs_paint = true;
@@ -419,6 +496,7 @@ pub(crate) fn run_layout_on(
         widget_state: state,
         children: children.reborrow_mut(),
         property_arena,
+        snap_transform,
     };
 
     // Run the widget's layout
@@ -445,7 +523,6 @@ pub(crate) fn run_layout_on(
 
     state.request_layout = false;
     state.set_needs_layout(false);
-    state.is_expecting_place_child_call = true;
 
     #[cfg(debug_assertions)]
     {
@@ -459,17 +536,7 @@ pub(crate) fn run_layout_on(
 
             if child_state.request_layout {
                 debug_panic!(
-                    "Error in '{}' {}: LayoutCtx::run_layout() was not called with child widget '{}' {}.",
-                    name,
-                    id,
-                    child_state.widget_name,
-                    child_state.id,
-                );
-            }
-
-            if child_state.is_expecting_place_child_call {
-                debug_panic!(
-                    "Error in '{}' {}: LayoutCtx::place_child() was not called with child widget '{}' {}.",
+                    "Error in '{}' {}: LayoutCtx::layout_child() was not called with child widget '{}' {}.",
                     name,
                     id,
                     child_state.widget_name,
@@ -506,23 +573,46 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
     });
 }
 
-// --- MARK: PLACE WIDGET
-/// Places the child at `origin` in its parent's border-box coordinate space.
-pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
-    let end_point = origin + child_state.layout_border_box_size.to_vec2();
-    // TODO - Account for display scale in pixel snapping
-    // See https://github.com/linebender/xilem/issues/1264
-    let origin = origin.round();
-    let end_point = end_point.round();
+// --- MARK: MOVE WIDGET
+/// Moves a placed child to `origin`, quantizing the movement to an
+/// integer device-pixel delta when snapping is active.
+///
+/// The provided `chosen_origin` must be finite and in logical pixels.
+/// Non-finite origin will fall back to zero with a logged warning.
+///
+/// # Panics
+///
+/// Panics if `chosen_origin` is non-finite and debug assertions are enabled.
+pub(crate) fn move_widget(
+    child_state: &mut WidgetState,
+    chosen_origin: Point,
+    parent_snap_transform: Affine,
+    scale_factor: f64,
+) {
+    // Ensure the chosen origin is sanitized.
+    let chosen_origin = if chosen_origin.is_finite() {
+        chosen_origin
+    } else {
+        debug_panic!("chosen origin must be finite, got {}", chosen_origin);
+        Point::ZERO
+    };
 
-    // TODO - We may want to invalidate in other cases as well
-    if origin != child_state.origin {
+    // We snap the delta instead of the chosen origin, because then we can skip dealing with
+    // the local transform of the child. Which is to say, the current child origin is snapped
+    // only after the child's local transform is applied. Adding a snapped delta means that
+    // the new origin will also end up snapped after the child's local transform is applied.
+    let requested_delta = chosen_origin - child_state.origin;
+    let snapped_delta = if child_state.is_snap_active() {
+        snap_translation_delta(requested_delta, parent_snap_transform, scale_factor)
+    } else {
+        requested_delta
+    };
+    let origin = child_state.origin + snapped_delta;
+
+    if child_state.origin != origin {
+        child_state.origin = origin;
         child_state.mark_compose_transform_changed();
     }
-    child_state.origin = origin;
-    child_state.end_point = end_point;
-
-    child_state.is_expecting_place_child_call = false;
 }
 
 // --- MARK: ROOT
@@ -558,13 +648,16 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         &mut root.global_state,
         &root.property_arena,
         root_node.reborrow_mut(),
+        Point::ORIGIN,
         root_node_size,
+        Affine::IDENTITY,
+        false,
+        false,
     );
-    place_widget(&mut root_node.item.state, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.global_state.size_policy {
-        // We use the aligned border-box size, which means that transforms won't affect window size.
-        let size = root_node.item.state.border_box().size();
+        // We use the border-box size, which means that transforms won't affect window size.
+        let size = root_node.item.state.border_box_size;
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
         if root.global_state.size != new_size {

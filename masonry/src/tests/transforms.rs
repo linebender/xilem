@@ -6,7 +6,7 @@
 use core::f64::consts::PI;
 
 use crate::core::{NewWidget, PropertySet, Widget, WidgetTag};
-use crate::kurbo::{Affine, Point, Vec2};
+use crate::kurbo::{Affine, Point, Rect, Size, Vec2};
 use crate::layout::{AsUnit, SizeDef, UnitPoint};
 use crate::peniko::color::palette;
 use crate::properties::{Background, BorderColor, BorderWidth, Dimensions, Padding};
@@ -88,8 +88,7 @@ fn transforms_handle_content_box_space_translation() {
     let root = ModularWidget::new_parent(child)
         .layout_fn(|child, ctx, _, size| {
             let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-            ctx.run_layout(child, child_size);
-            ctx.place_child(child, Point::new(5., 7.));
+            ctx.layout_child(child, Point::new(5., 7.), child_size);
         })
         .prepare()
         .with_props(Dimensions::fixed(40.px(), 40.px()));
@@ -134,4 +133,135 @@ fn transforms_handle_content_box_space_translation() {
         ctx.window_transform() * Point::new(2., 1.),
         Point::new(12., 17.5),
     );
+}
+
+#[test]
+fn unsupported_transform_disables_pixel_snap() {
+    let child_tag = WidgetTag::unique();
+    let child = NewWidget::new(SizedBox::empty().size(10.3.px(), 10.3.px())).with_tag(child_tag);
+    let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, size| {
+        let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+        ctx.layout_child(child, Point::new(5.1, 5.3), child_size);
+    });
+    let parent = NewWidget::new(parent).with_transform(Affine::rotate(0.25));
+
+    let harness = TestHarness::create(test_property_set(), parent);
+
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+
+    assert_eq!(ctx.border_box().size(), Size::new(10.3, 10.3));
+}
+
+#[test]
+fn pixel_snapping_after_window_transforms() {
+    #[track_caller]
+    fn assert_integer_edges(name: &str, rect: Rect) {
+        let edges = [rect.x0, rect.y0, rect.x1, rect.y1];
+        assert!(
+            edges.iter().all(|edge| (edge - edge.round()).abs() < 1e-9),
+            "{name}: expected integer edges, got {rect:?}"
+        );
+    }
+
+    let translated_tag = WidgetTag::unique();
+    let scaled_tag = WidgetTag::unique();
+    let flipped_tag = WidgetTag::unique();
+    let nested_tag = WidgetTag::unique();
+
+    let translated = NewWidget::new(SizedBox::empty().size(12.2.px(), 8.4.px()))
+        .with_tag(translated_tag)
+        .with_transform(Affine::translate(Vec2::new(0.37, 0.61)))
+        .erased();
+    let scaled = NewWidget::new(SizedBox::empty().size(9.3.px(), 11.7.px()))
+        .with_tag(scaled_tag)
+        .with_transform(Affine::scale_non_uniform(1.25, 0.8).then_translate(Vec2::new(0.41, 0.29)))
+        .erased();
+    let flipped = NewWidget::new(SizedBox::empty().size(10.6.px(), 7.5.px()))
+        .with_tag(flipped_tag)
+        .with_transform(
+            Affine::scale_non_uniform(-0.75, 1.4).then_translate(Vec2::new(0.48, -0.33)),
+        )
+        .erased();
+    let nested = NewWidget::new(SizedBox::empty().size(8.2.px(), 6.6.px()))
+        .with_tag(nested_tag)
+        .with_transform(Affine::scale_non_uniform(0.6, 1.35).then_translate(Vec2::new(0.27, 0.43)))
+        .erased();
+
+    let inner = ModularWidget::new_parent(nested)
+        .layout_fn(|child, ctx, _, size| {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.layout_child(child, Point::new(1.7, 2.2), child_size);
+        })
+        .compose_fn(|child, ctx| {
+            ctx.set_child_scroll_translation(child, Vec2::new(0.33, -0.47));
+        });
+    let inner = NewWidget::new(inner)
+        .with_transform(Affine::scale_non_uniform(1.5, -0.9).then_translate(Vec2::new(0.19, 0.71)))
+        .erased();
+
+    let outer = ModularWidget::new_parent(inner)
+        .layout_fn(|child, ctx, _, size| {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.layout_child(child, Point::new(4.6, 3.9), child_size);
+        })
+        .compose_fn(|child, ctx| {
+            ctx.set_child_scroll_translation(child, Vec2::new(-0.22, 0.35));
+        });
+    let outer = NewWidget::new(outer)
+        .with_transform(Affine::scale_non_uniform(-1.2, 0.7).then_translate(Vec2::new(0.52, -0.24)))
+        .erased();
+
+    let positions = [
+        Point::new(2.3, 4.7),
+        Point::new(19.4, 3.6),
+        Point::new(37.8, 8.2),
+        Point::new(57.1, 5.4),
+    ];
+    let scroll_offsets = [
+        Vec2::new(0.21, 0.36),
+        Vec2::new(-0.44, 0.52),
+        Vec2::new(0.68, -0.17),
+        Vec2::new(-0.31, 0.49),
+    ];
+
+    let root = ModularWidget::new(vec![
+        translated.to_pod(),
+        scaled.to_pod(),
+        flipped.to_pod(),
+        outer.to_pod(),
+    ])
+    .layout_fn(move |children, ctx, _, size| {
+        for (idx, child) in children.iter_mut().enumerate() {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.layout_child(child, positions[idx], child_size);
+        }
+    })
+    .compose_fn(move |children, ctx| {
+        for (idx, child) in children.iter_mut().enumerate() {
+            ctx.set_child_scroll_translation(child, scroll_offsets[idx]);
+        }
+    })
+    .register_children_fn(|children, ctx| {
+        for child in children {
+            ctx.register_child(child);
+        }
+    })
+    .children_fn(|children| children.iter().map(|child| child.id()).collect())
+    .prepare();
+
+    let harness = TestHarness::create_with_size(test_property_set(), root, (200, 120));
+
+    let assert_pixel_aligned = |name: &str, tag: WidgetTag<SizedBox>| {
+        let widget = harness.get_widget(tag);
+        let ctx = widget.ctx();
+        let window_border_box = ctx.window_transform().transform_rect_bbox(ctx.border_box());
+
+        assert_integer_edges(name, window_border_box);
+    };
+
+    assert_pixel_aligned("translated", translated_tag);
+    assert_pixel_aligned("scaled", scaled_tag);
+    assert_pixel_aligned("flipped", flipped_tag);
+    assert_pixel_aligned("nested", nested_tag);
 }

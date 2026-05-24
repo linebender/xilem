@@ -210,13 +210,12 @@ The box model refers to the following box hierarchy:
 The box lifecycle terms describe what stage a box is in during its journey from idea to painting.
 
 1. **Preferred** - The size that a widget wishes to be and is the result of `LayoutCtx::compute_size`.
-2. **Chosen** - The size that the parent of a widget ends up choosing for it and is given to `LayoutCtx::run_layout`.
-3. **Layout** - The result of the chosen size being potentially adjusted to meet min/max constraints.
-   For example, if the parent gave a size too small to even contain the child's borders and padding.
-4. **Aligned** - Once a parent places its child to a specific position, that position will be aligned to the pixel grid.
-   This alignment is done in the parent's border-box coordinate space using the child's layout border-box size.
-5. **Effective** - The actual visual box that gets painted on the screen.
-   This is the result when all of the transforms of the widget's tree branch are applied to its aligned box.
+2. **Chosen** - The origin and size that the parent of a widget ends up choosing for it and is given to `LayoutCtx::layout_child`.
+3. **Layout** - The origin and size used for layout, painting, hit testing, accessibility bounds, etc.
+   These may have been adjusted to meet min/max constraints; for example, if the parent gave a size too small to even contain the child's borders and padding.
+   When pixel snapping is active, the layout geometry also accounts for the device pixel grid in order to have a sharp presentation.
+
+Unless documentation explicitly says a box is preferred or chosen, unqualified box terms such as content-box and border-box refer to the layout stage.
 
 ### Presence of descendants
 
@@ -226,11 +225,11 @@ As the descendants may be overflowing these bounds or a transformation may move 
 
 ### Bounding-box
 
-We only calculate the effective variant of the bounding-box, i.e. where all transforms have been applied.
-The effective bounding-box is a union of the widget's effective paint-box and the bounding-boxes of all of its descendants.
+We only calculate the bounding-box in the window's coordinate space, i.e. where all transforms have been applied.
+The bounding-box is a union of the widget's paint-box, transformed into the window's coordinate space, and the bounding-boxes of all of its descendants.
 Additionally, these are clipped according to the per-widget clip rules.
 
-This effective bounding-box in the window's coordinate space is used to determine which pointer events might affect either the widget or its descendants.
+This window-space bounding-box is used to determine which pointer events might affect either the widget or its descendants.
 
 The bounding-boxes of the widget tree form a kind of "bounding volume hierarchy": when looking to find which widget a pointer is on, Masonry will automatically exclude any widget if the pointer is outside its bounding-box.
 
@@ -302,17 +301,16 @@ We will probably need to implement other features before we can handle it proper
 
 ## Pixel snapping
 
-Masonry currently handles pixel snapping for its widgets.
+Masonry handles pixel snapping for its widgets.
 
-The basic idea is that when widgets are laid out, Masonry takes their reported sizes and positions, and rounds them to integer values, so that the drawn shapes line up with pixels.
+Widgets manage their layout sizes and positions in logical pixels which can be fractional.
+When a parent lays out a child, the child's chosen border-box is mapped to device pixels using the layout-time transform.
+Then the border-box edges are snapped to the pixel grid if the transform supports it.
+The result is then mapped back to widget-local logical coordinates and becomes the child's layout geometry.
 
-This is done "at the end" of the layout pass, so to speak, so that widgets can lay themselves out assuming a floating point coordinate space, and without worrying about rounding errors.
-
-The snapping is done in a way that preserves relations between widgets: if one widget ends precisely where another stops, Masonry will pick values so that their pixel-snapped layout rects have no gap or overlap.
-
-<!-- TODO - Remove this note once https://github.com/linebender/xilem/issues/1264 is implemented. -->
-**Note:** This may produce incorrect results with DPI scaling.
-DPI-aware pixel snapping is a future feature.
+The snapping is done in a way that preserves relations between widgets.
+If one widget ends precisely where another starts, Masonry will snap coordinates so that their boxes have no gap or overlap.
+Snapping also accounts for the active DPI scale factor and is disabled for transforms such as rotation or shear.
 
 
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel

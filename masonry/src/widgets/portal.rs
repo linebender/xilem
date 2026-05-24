@@ -766,7 +766,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 child_size
             }
         };
-        ctx.run_layout(&mut self.child, content_size);
+        ctx.layout_child(&mut self.child, Point::ZERO, content_size);
+        let content_size = ctx.child_size(&self.child);
         self.content_size = content_size;
 
         // TODO - document better
@@ -775,8 +776,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         // TODO - recompute portal progress
 
         ctx.set_clip_path(size.to_rect());
-
-        ctx.place_child(&mut self.child, Point::ZERO);
 
         self.scrollbar_horizontal_visible =
             !self.constrain_horizontal && size.width < content_size.width;
@@ -799,10 +798,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 SizeDef::fit(size),
                 size.into(),
             );
-            ctx.run_layout(&mut self.scrollbar_horizontal, scrollbar_size);
-            ctx.place_child(
+            ctx.layout_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, size.height - scrollbar_size.height),
+                scrollbar_size,
             );
         }
 
@@ -822,10 +821,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 SizeDef::fit(size),
                 size.into(),
             );
-            ctx.run_layout(&mut self.scrollbar_vertical, scrollbar_size);
-            ctx.place_child(
+            ctx.layout_child(
                 &mut self.scrollbar_vertical,
                 Point::new(size.width - scrollbar_size.width, 0.0),
+                scrollbar_size,
             );
         }
     }
@@ -950,10 +949,9 @@ mod tests {
             })
             .layout_fn(move |child, ctx, _props, size| {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-                ctx.run_layout(child, child_size);
                 // We don't place it at (0,0) to test that stacked-origin translation works.
                 // Because if we were at (0,0) it would be effectively the same as no parent.
-                ctx.place_child(child, Point::new(0., top_pad));
+                ctx.layout_child(child, Point::new(0., top_pad), child_size);
             })
             .prepare()
     }

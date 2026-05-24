@@ -129,8 +129,7 @@ impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
             })
             .layout_fn(move |child, ctx, _props, size| {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-                ctx.run_layout(child, child_size);
-                ctx.place_child(child, Point::ZERO);
+                ctx.layout_child(child, Point::ZERO, child_size);
                 ctx.derive_baselines(child);
             })
             .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
@@ -174,13 +173,12 @@ impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
                         continue;
                     }
                     let child_size = ctx.compute_size(child, auto_size, context_size);
-                    ctx.run_layout(child, child_size);
-                    ctx.place_child(child, Point::ZERO);
+                    ctx.layout_child(child, Point::ZERO, child_size);
                 }
 
                 if let Some(child) = children.first() {
-                    let (first_baseline, _) = ctx.child_aligned_baselines(child);
-                    let (_, last_baseline) = ctx.child_aligned_baselines(children.last().unwrap());
+                    let (first_baseline, _) = ctx.child_baselines(child);
+                    let (_, last_baseline) = ctx.child_baselines(children.last().unwrap());
                     ctx.set_baselines(first_baseline, last_baseline);
                 } else {
                     ctx.clear_baselines();
