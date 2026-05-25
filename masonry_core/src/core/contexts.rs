@@ -772,7 +772,10 @@ impl MeasureCtx<'_> {
 impl LayoutCtx<'_> {
     #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
-        if self.get_child_state(child).needs_layout() {
+        let child_state = self.get_child_state(child);
+        // request_layout is used as a visit marker, but only when debug_assertions are enabled.
+        let child_not_visited = cfg!(debug_assertions) && child_state.request_layout;
+        if child_state.needs_layout() || child_not_visited {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
                 self.widget_id(),

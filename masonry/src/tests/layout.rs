@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cell::Cell;
+use std::rc::Rc;
+
 use assert_matches::assert_matches;
 
 use crate::core::{NewWidget, Widget, WidgetTag};
@@ -93,6 +96,36 @@ fn call_place_child_before_layout() {
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
         "trying to call 'place_child'"
+    );
+}
+
+#[test]
+fn call_child_size_before_layout() {
+    let parent_tag = WidgetTag::unique();
+    let layout_count = Rc::new(Cell::new(0));
+    let layout_count_for_fn = layout_count.clone();
+
+    let child = NewWidget::new(SizedBox::empty().width(20.px()).height(20.px()));
+    let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, size| {
+        if layout_count_for_fn.get() > 0 {
+            let _ = ctx.child_size(child);
+        }
+
+        layout_count_for_fn.set(layout_count_for_fn.get() + 1);
+
+        let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+        ctx.run_layout(child, child_size);
+        ctx.place_child(child, Point::ORIGIN);
+    });
+    let widget = NewWidget::new(parent).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+
+    assert_debug_panics!(
+        harness.edit_widget(parent_tag, |mut parent| {
+            parent.ctx.request_layout();
+        }),
+        "trying to call 'child_size'"
     );
 }
 
