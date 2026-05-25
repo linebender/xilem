@@ -773,7 +773,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
         let child_state = self.get_child_state(child);
-        // request_layout is used as a visit marker, but only when debug_assertions are enabled.
+        // If debug_assertions are enabled, then request_layout is always true until visited.
         let child_not_visited = cfg!(debug_assertions) && child_state.request_layout;
         if child_state.needs_layout() || child_not_visited {
             debug_panic!(
