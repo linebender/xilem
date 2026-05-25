@@ -927,7 +927,7 @@ impl LayoutCtx<'_> {
             insets.x1 - self.widget_state.border_box_insets.x1,
             insets.y1 - self.widget_state.border_box_insets.y1,
         );
-        self.widget_state.paint_insets = insets.nonnegative();
+        self.widget_state.paint_box_insets = insets.nonnegative();
     }
 
     /// Sets explicit baselines for this widget.

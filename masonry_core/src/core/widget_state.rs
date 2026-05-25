@@ -105,7 +105,7 @@ pub(crate) struct WidgetState {
     ///
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
-    pub(crate) paint_insets: Insets,
+    pub(crate) paint_box_insets: Insets,
     /// An axis aligned bounding rect (AABB in 2D),
     /// containing itself and all its descendents in the window's coordinate space.
     ///
@@ -297,7 +297,7 @@ impl WidgetState {
             end_point: Point::ORIGIN,
             layout_border_box_size: Size::ZERO,
             border_box_insets: Insets::ZERO,
-            paint_insets: Insets::ZERO,
+            paint_box_insets: Insets::ZERO,
             bounding_box: Rect::ZERO,
             first_baseline: f64::NAN,
             last_baseline: f64::NAN,
@@ -407,7 +407,7 @@ impl WidgetState {
 
     /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
     pub(crate) fn paint_box(&self) -> Rect {
-        self.border_box_size().to_rect() + self.paint_insets
+        self.border_box_size().to_rect() + self.paint_box_insets
     }
 
     /// Returns the [`Vec2`] for translating between this widget's
