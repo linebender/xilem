@@ -71,7 +71,9 @@ fn request_compose() {
     });
 
     // Origin should be "parent_origin + pos + scroll_offset"
-    let origin = harness.get_widget(child_tag).ctx().window_origin();
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+    let origin = ctx.to_window(ctx.border_box().origin());
     assert_eq!(
         origin.to_vec2(),
         Vec2::new(7., 7.) + Point::new(30., 30.).to_vec2() + Vec2::new(8., 8.)
@@ -94,6 +96,8 @@ fn scroll_pixel_snap() {
     let harness = TestHarness::create(test_property_set(), parent);
 
     // Origin should be rounded to (0., 1.) by pixel-snapping.
-    let origin = harness.get_widget(child_tag).ctx().window_origin();
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+    let origin = ctx.to_window(ctx.border_box().origin());
     assert_eq!(origin, Point::new(0., 1.));
 }

@@ -1306,11 +1306,6 @@ impl_context_method!(
             self.widget_state.border_box_translation()
         }
 
-        /// Returns the widget's effective border-box origin in the window's coordinate space.
-        pub fn window_origin(&self) -> Point {
-            self.widget_state.border_box_window_origin()
-        }
-
         /// Returns the global transform mapping this widget's content-box coordinate space
         /// to the window's coordinate space.
         ///

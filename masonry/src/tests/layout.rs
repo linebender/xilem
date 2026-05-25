@@ -243,13 +243,18 @@ fn pixel_snapping() {
 
     let harness = TestHarness::create(test_property_set(), parent);
 
-    let child_pos = harness.get_widget(child_tag).ctx().window_origin();
-    let child_size = harness.get_widget(child_tag).ctx().border_box_size();
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+    let border_box = ctx.border_box();
+    let content_box = ctx.content_box();
+    let child_pos = ctx.to_window(border_box.origin());
     let first_baseline = harness.get_widget(parent_tag).ctx().first_baseline();
     let last_baseline = harness.get_widget(parent_tag).ctx().last_baseline();
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));
-    assert_eq!(child_size, Size::new(10., 11.));
+    assert_eq!(content_box.origin(), Point::ORIGIN);
+    assert_eq!(content_box.size(), Size::new(10., 11.));
+    assert_eq!(border_box.size(), Size::new(10., 11.));
     assert_eq!(first_baseline, 2.4);
     assert_eq!(last_baseline, 2.6);
 }

@@ -419,12 +419,6 @@ impl WidgetState {
         Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
     }
 
-    /// Returns the widget's effective border-box origin in the window's coordinate space.
-    pub(crate) fn border_box_window_origin(&self) -> Point {
-        // We can just use the translation for (0,0)
-        self.window_transform.translation().to_point()
-    }
-
     /// Returns the first baseline relative to the top of the widget's layout border-box.
     pub(crate) fn layout_first_baseline(&self) -> f64 {
         if self.first_baseline.is_nan() {
