@@ -403,7 +403,7 @@ pub(crate) fn run_layout_on(
         }
     });
 
-    state.paint_insets = Insets::ZERO;
+    state.paint_box_insets = Insets::ZERO;
 
     // Compute the insets for deriving the content-box from the border-box
     let border_box_insets = border_width.insets_up(Insets::ZERO);
@@ -428,18 +428,18 @@ pub(crate) fn run_layout_on(
     let shadow = props.get::<BoxShadow>(&mut state.property_cache);
     if shadow.is_visible() {
         let shadow_insets = shadow.get_insets();
-        state.paint_insets = Insets {
-            x0: state.paint_insets.x0.max(shadow_insets.x0),
-            y0: state.paint_insets.y0.max(shadow_insets.y0),
-            x1: state.paint_insets.x1.max(shadow_insets.x1),
-            y1: state.paint_insets.y1.max(shadow_insets.y1),
+        state.paint_box_insets = Insets {
+            x0: state.paint_box_insets.x0.max(shadow_insets.x0),
+            y0: state.paint_box_insets.y0.max(shadow_insets.y0),
+            x1: state.paint_box_insets.x1.max(shadow_insets.x1),
+            y1: state.paint_box_insets.y1.max(shadow_insets.y1),
         };
     }
 
     if trace {
         trace!(
             "Computed layout: border-box={}, first_baseline={}, last_baseline={} insets={:?}",
-            border_box_size, state.first_baseline, state.last_baseline, state.paint_insets,
+            border_box_size, state.first_baseline, state.last_baseline, state.paint_box_insets,
         );
     }
 
