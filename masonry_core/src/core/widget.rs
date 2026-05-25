@@ -581,7 +581,7 @@ pub fn find_widget_under_pointer<'c>(
         return None;
     }
 
-    let local_pos = ctx.window_transform().inverse() * pos;
+    let local_pos = ctx.to_local(pos);
 
     if let Some(clip) = ctx.clip_path()
         && !clip.contains(local_pos)
