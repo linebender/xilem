@@ -138,8 +138,7 @@ pub(crate) struct WidgetState {
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// This transform is applied before `scroll_translation` and `origin`.
     pub(crate) transform: Affine,
     /// Global transform mapping this widget's border-box coordinate space
     /// to the window's coordinate space.
@@ -152,8 +151,13 @@ pub(crate) struct WidgetState {
     pub(crate) window_transform: Affine,
     /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
-    /// The `transform` or `scroll_translation` has changed.
+    /// The local `transform` has changed.
+    ///
+    /// This is tracked separately for Xilem's benefit.
     pub(crate) transform_changed: bool,
+    /// The effective compose transform has changed because `transform`, `scroll_translation`, or
+    /// `origin` has changed.
+    pub(crate) compose_transform_changed: bool,
 
     // --- INTERACTIONS ---
     /// The `TypeId` of the widget's `Widget::Action` type.
@@ -306,6 +310,7 @@ impl WidgetState {
             window_transform: Affine::IDENTITY,
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
+            compose_transform_changed: false,
 
             action_type,
             accepts_pointer_interaction: true,
@@ -383,6 +388,18 @@ impl WidgetState {
         self.needs_update_props |= child_state.needs_update_props;
     }
 
+    /// Marks this widget's local transform as changed.
+    pub(crate) fn mark_transform_changed(&mut self) {
+        self.transform_changed = true;
+        self.mark_compose_transform_changed();
+    }
+
+    /// Marks this widget's effective compose transform as changed.
+    pub(crate) fn mark_compose_transform_changed(&mut self) {
+        self.compose_transform_changed = true;
+        self.needs_compose = true;
+    }
+
     // TODO: Add WidgetState::add_diff method that merges a ClassSetDiff into the WidgetState's class_diff.
 
     /// Returns `true` if this widget or a descendant explicitly requested layout.
@@ -417,6 +434,18 @@ impl WidgetState {
     /// and subtract this [`Vec2`] to translate from border-box to content-box.
     pub(crate) fn border_box_translation(&self) -> Vec2 {
         Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
+    }
+
+    /// Returns this widget's total local transform needed for composing.
+    ///
+    /// This maps from this widget's border-box coordinate space into its
+    /// parent's border-box coordinate space. It includes the widget's local
+    /// transform, scroll translation, and origin.
+    pub(crate) fn compose_local_transform(&self) -> Affine {
+        // The translation needs to be applied after the local transform so scrolling
+        // and layout origin are in the transformed coordinate space, similar to CSS.
+        let local_translation = self.scroll_translation + self.origin.to_vec2();
+        self.transform.then_translate(local_translation)
     }
 
     /// Returns the first baseline relative to the top of the widget's layout border-box.

@@ -517,7 +517,7 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
 
     // TODO - We may want to invalidate in other cases as well
     if origin != child_state.origin {
-        child_state.transform_changed = true;
+        child_state.mark_compose_transform_changed();
     }
     child_state.origin = origin;
     child_state.end_point = end_point;

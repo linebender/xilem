@@ -224,8 +224,7 @@ impl_context_method!(
         /// This transform is used during the mapping of this widget's border-box coordinate space
         /// to the parent's border-box coordinate space.
         ///
-        /// When calculating the effective border-box of this widget, first this transform
-        /// will be applied and then `scroll_translation` and `origin` applied on top.
+        /// This transform is applied before `scroll_translation` and `origin`.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
         }
@@ -1152,7 +1151,7 @@ impl ComposeCtx<'_> {
         let child = self.get_child_state_mut(child);
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
-            child.transform_changed = true;
+            child.mark_compose_transform_changed();
         }
     }
 
@@ -1184,7 +1183,7 @@ impl ComposeCtx<'_> {
         let child = self.get_child_state_mut(child);
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
-            child.transform_changed = true;
+            child.mark_compose_transform_changed();
         }
     }
 }
@@ -1701,7 +1700,7 @@ impl_context_method!(
         /// It behaves similarly as CSS transforms.
         pub fn set_transform(&mut self, transform: Affine) {
             self.widget_state.transform = transform;
-            self.widget_state.transform_changed = true;
+            self.widget_state.mark_transform_changed();
             self.request_compose();
         }
 
