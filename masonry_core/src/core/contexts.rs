@@ -1122,12 +1122,6 @@ impl LayoutCtx<'_> {
 }
 
 impl ComposeCtx<'_> {
-    // TODO - Remove?
-    /// Returns whether [`Widget::compose`] will be called on this widget.
-    pub fn needs_compose(&self) -> bool {
-        self.widget_state.needs_compose
-    }
-
     /// Sets the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
