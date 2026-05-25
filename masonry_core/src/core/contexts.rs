@@ -1339,25 +1339,15 @@ impl_context_method!(
             let translation = self.widget_state.border_box_translation();
             self.widget_state.window_transform * (point + translation)
         }
+
+        /// Returns the DPI scaling factor.
+        ///
+        /// This can be useful for loading image resources meant for a specific scale.
+        pub fn scale_factor(&self) -> f64 {
+            self.global_state.scale_factor
+        }
     }
 );
-
-impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
-    /// Returns DPI scaling factor.
-    ///
-    /// This is not required for most widgets, and should be used only for precise
-    /// rendering, such as rendering single pixel lines or selecting image variants.
-    /// This is currently only provided in the render stages, as these are the only passes which
-    /// are re-run when the scale factor changes, except [`EventCtx`] where it is necessary to
-    /// translate pointer events which are currently in physical coordinates.
-    ///
-    /// Note that accessibility nodes and paint results will automatically be scaled by Masonry.
-    /// This also doesn't account for the widget's current transform, which cannot currently be
-    /// accessed by widgets directly.
-    pub fn get_scale_factor(&self) -> f64 {
-        self.global_state.scale_factor
-    }
-});
 
 // --- MARK: GET STATUS
 
