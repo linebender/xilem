@@ -11,8 +11,8 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::{BorderColor, Style};
 use xilem::view::{
-    FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label, text_button,
-    unit_fractions,
+    FlexSequence, FlexSpacer, GridExt, GridSequence, GridTrackSize, button, flex_row, grid, label,
+    repeat_tracks, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
@@ -240,8 +240,8 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
         }),
         one_button(label("="), Calculator::on_equals),
     ))
-    .columns(unit_fractions(4))
-    .rows(unit_fractions(6))
+    .columns(repeat_tracks(4, GridTrackSize::FRACTION))
+    .rows(repeat_tracks(6, GridTrackSize::FRACTION))
     .gap(GRID_GAP)
 }
 
