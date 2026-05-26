@@ -7,10 +7,11 @@ use std::rc::Rc;
 use assert_matches::assert_matches;
 
 use crate::core::{NewWidget, Widget, WidgetTag};
-use crate::kurbo::{Insets, Point, Rect, Size};
+use crate::kurbo::{Insets, Point, Rect, Size, Vec2};
 use crate::layout::{AsUnit, Length, SizeDef};
 use crate::properties::{BorderWidth, Dimensions, Padding};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, assert_debug_panics};
+use crate::tests::{assert_point_approx_eq, assert_rect_approx_eq, assert_vec2_approx_eq};
 use crate::theme::test_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, Portal, SizedBox, ZStack};
 
@@ -41,7 +42,7 @@ fn layout_simple() {
 
     let harness = TestHarness::create(test_property_set(), widget);
 
-    let first_box_size = harness.get_widget(tag_1).ctx().border_box_size();
+    let first_box_size = harness.get_widget(tag_1).ctx().border_box().size();
     let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_box();
 
     assert_eq!(first_box_size.width, BOX_WIDTH);
@@ -327,9 +328,9 @@ fn content_box() {
     let harness = TestHarness::create(test_property_set(), hero);
 
     let border_box = harness.get_widget(tag).ctx().border_box();
-    let border_box_size = harness.get_widget(tag).ctx().border_box_size();
+    let border_box_size = border_box.size();
     let content_box = harness.get_widget(tag).ctx().content_box();
-    let content_box_size = harness.get_widget(tag).ctx().content_box_size();
+    let content_box_size = content_box.size();
     let border_box_translation = harness.get_widget(tag).ctx().border_box_translation();
 
     let expected_border_box_size = Size::new(100., 100.);
@@ -356,4 +357,159 @@ fn content_box() {
 
     assert_eq!(border_box, expected_border_box);
     assert_eq!(content_box, expected_content_box);
+}
+
+#[test]
+fn boxes_match_without_insets_or_snapping() {
+    let tag = WidgetTag::unique();
+    let child = NewWidget::new(SizedBox::empty().size(10.px(), 8.px())).with_tag(tag);
+    let root = ModularWidget::new_parent(child)
+        .layout_fn(|child, ctx, _, size| {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.run_layout(child, child_size);
+            ctx.place_child(child, Point::new(2., 3.));
+        })
+        .prepare();
+
+    let harness = TestHarness::create(test_property_set(), root);
+    let child = harness.get_widget(tag);
+    let ctx = child.ctx();
+
+    // Everything besides the bounding box will be exactly the same
+    let local_box = Rect::new(0., 0., 10., 8.);
+    assert_rect_approx_eq("content_box", ctx.content_box(), local_box);
+    assert_rect_approx_eq("border_box", ctx.border_box(), local_box);
+    assert_rect_approx_eq("paint_box", ctx.paint_box(), local_box);
+    assert_rect_approx_eq(
+        "bounding_box",
+        ctx.bounding_box(),
+        Rect::new(2., 3., 12., 11.),
+    );
+}
+
+#[test]
+fn boxes_use_content_box_coordinates() {
+    let tag = WidgetTag::unique();
+
+    let child = ModularWidget::new(())
+        .layout_fn(|_, ctx, _, _| {
+            ctx.set_paint_insets(Insets::new(5.9, 6.1, 7.4, 8.2));
+        })
+        .prepare()
+        .with_tag(tag)
+        .with_props((
+            Dimensions::fixed(23.4.px(), 17.6.px()),
+            BorderWidth::all(0.7.px()),
+            Padding {
+                left: 1.2.px(),
+                right: 2.3.px(),
+                top: 3.4.px(),
+                bottom: 4.5.px(),
+            },
+        ));
+
+    let root = ModularWidget::new_parent(child)
+        .layout_fn(|child, ctx, _, size| {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.run_layout(child, child_size);
+            ctx.place_child(child, Point::new(5.3, 7.6));
+        })
+        .prepare()
+        .with_props(Dimensions::fixed(80.px(), 80.px()));
+
+    let harness = TestHarness::create(test_property_set(), root);
+    let child = harness.get_widget(tag);
+    let ctx = child.ctx();
+
+    // Border 0.7 + padding (1.2,3.4) gives top-left content inset (1.9,4.1).
+    // The chosen child origin is (5.3,7.6), and snapping rounds its border-box to (5,8)-(29,25).
+    assert_vec2_approx_eq(
+        "border_box_translation",
+        ctx.border_box_translation(),
+        Vec2::new(1.9, 4.1),
+    );
+
+    assert_rect_approx_eq(
+        "content_box",
+        ctx.content_box(),
+        Rect::new(0., 0., 19.1, 7.7),
+    );
+    assert_rect_approx_eq(
+        "border_box",
+        ctx.border_box(),
+        Rect::new(-1.9, -4.1, 22.1, 12.9),
+    );
+    assert_rect_approx_eq(
+        "paint_box",
+        ctx.paint_box(),
+        Rect::new(-5.9, -6.1, 26.5, 15.9),
+    );
+    assert_rect_approx_eq(
+        "bounding_box",
+        ctx.bounding_box(),
+        Rect::new(1., 6., 33.4, 28.),
+    );
+
+    assert_point_approx_eq(
+        "to_window content box origin",
+        ctx.to_window(Point::ORIGIN),
+        Point::new(6.9, 12.1),
+    );
+    assert_point_approx_eq(
+        "to_window border box origin",
+        ctx.to_window(ctx.border_box().origin()),
+        Point::new(5., 8.),
+    );
+    assert_point_approx_eq(
+        "to_local content box origin",
+        ctx.to_local(Point::new(6.9, 12.1)),
+        Point::ORIGIN,
+    );
+    assert_point_approx_eq(
+        "window_transform",
+        ctx.window_transform() * Point::new(2., 1.),
+        Point::new(8.9, 13.1),
+    );
+}
+
+#[test]
+fn content_box_clamps_when_insets_exceed_size() {
+    let tag = WidgetTag::unique();
+
+    let child = ModularWidget::new(()).prepare().with_tag(tag).with_props((
+        Dimensions::fixed(2.5.px(), 2.5.px()),
+        BorderWidth::all(0.5.px()),
+        Padding {
+            left: 0.7.px(),
+            right: 0.8.px(),
+            top: 0.6.px(),
+            bottom: 0.9.px(),
+        },
+    ));
+
+    let root = ModularWidget::new_parent(child)
+        .layout_fn(|child, ctx, _, size| {
+            let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+            ctx.run_layout(child, child_size);
+            ctx.place_child(child, Point::new(0.6, 0.6));
+        })
+        .prepare()
+        .with_props(Dimensions::fixed(20.px(), 20.px()));
+
+    let harness = TestHarness::create(test_property_set(), root);
+    let child = harness.get_widget(tag);
+    let ctx = child.ctx();
+
+    // Border 0.5 + padding (0.7,0.6) gives top-left content inset (1.2,1.1).
+    assert_vec2_approx_eq(
+        "border_box_translation",
+        ctx.border_box_translation(),
+        Vec2::new(1.2, 1.1),
+    );
+    assert_rect_approx_eq(
+        "border_box",
+        ctx.border_box(),
+        Rect::new(-1.2, -1.1, 0.8, 0.9),
+    );
+    assert_rect_approx_eq("content_box", ctx.content_box(), Rect::ZERO);
 }
