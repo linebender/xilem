@@ -1252,13 +1252,13 @@ impl Widget for Flex {
 mod tests {
     use super::*;
     use crate::core::WidgetTag;
-    use crate::kurbo::{Cap, Line, Stroke};
+    use crate::kurbo::{Cap, Line, Rect, Stroke};
     use crate::layout::AsUnit;
     use crate::palette;
     use crate::properties::{BorderColor, BorderWidth, Dimensions, Padding};
     use crate::testing::{ModularWidget, TestHarness, assert_debug_panics, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
-    use crate::widgets::Label;
+    use crate::widgets::{Label, SizedBox};
 
     #[test]
     fn test_main_axis_alignment_spacing() {
@@ -1426,6 +1426,85 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_row_fixed_children_spaceAround");
+    }
+
+    #[test]
+    fn equal_children_snap_shared_edges() {
+        let child_1 = WidgetTag::unique();
+        let child_2 = WidgetTag::unique();
+        let child_3 = WidgetTag::unique();
+
+        let widget = Flex::row()
+            .cross_axis_alignment(CrossAxisAlignment::Stretch)
+            .with(NewWidget::new(SizedBox::empty()).with_tag(child_1), 1.0)
+            .with(NewWidget::new(SizedBox::empty()).with_tag(child_2), 1.0)
+            .with(NewWidget::new(SizedBox::empty()).with_tag(child_3), 1.0)
+            .prepare()
+            .with_props(Gap::new(0.px()));
+
+        let harness = TestHarness::create_with_size(test_property_set(), widget, (100, 10));
+
+        let rect = |tag: WidgetTag<SizedBox>| {
+            let widget = harness.get_widget(tag);
+            let ctx = widget.ctx();
+            ctx.window_transform().transform_rect_bbox(ctx.border_box())
+        };
+        let rect_1 = rect(child_1);
+        let rect_2 = rect(child_2);
+        let rect_3 = rect(child_3);
+
+        assert_eq!(rect_1, Rect::new(0., 0., 33., 10.));
+        assert_eq!(rect_2, Rect::new(33., 0., 67., 10.));
+        assert_eq!(rect_3, Rect::new(67., 0., 100., 10.));
+        assert_eq!(rect_1.x1, rect_2.x0);
+        assert_eq!(rect_2.x1, rect_3.x0);
+    }
+
+    #[test]
+    fn main_axis_spacing_snaps_shared_edges() {
+        let child_1 = WidgetTag::unique();
+        let child_2 = WidgetTag::unique();
+        let child_3 = WidgetTag::unique();
+
+        let child = |tag| NewWidget::new(SizedBox::empty().size(10.px(), 10.px())).with_tag(tag);
+        let widget = Flex::row()
+            .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+            .with_fixed(child(child_1))
+            .with_fixed(child(child_2))
+            .with_fixed(child(child_3))
+            .prepare()
+            .with_props(Gap::new(0.px()));
+
+        let harness = TestHarness::create_with_size(test_property_set(), widget, (101, 10));
+
+        let rect = |tag: WidgetTag<SizedBox>| {
+            let widget = harness.get_widget(tag);
+            let ctx = widget.ctx();
+            ctx.window_transform().transform_rect_bbox(ctx.border_box())
+        };
+
+        assert_eq!(rect(child_1), Rect::new(18., 0., 28., 10.));
+        assert_eq!(rect(child_2), Rect::new(46., 0., 56., 10.));
+        assert_eq!(rect(child_3), Rect::new(73., 0., 83., 10.));
+    }
+
+    #[test]
+    fn center_cross_alignment_snap() {
+        let child_tag = WidgetTag::unique();
+
+        let widget = Flex::row()
+            .cross_axis_alignment(CrossAxisAlignment::Center)
+            .with_fixed(
+                NewWidget::new(SizedBox::empty().size(10.px(), 5.4.px())).with_tag(child_tag),
+            )
+            .prepare();
+
+        let harness = TestHarness::create_with_size(test_property_set(), widget, (20, 10));
+        let child = harness.get_widget(child_tag);
+        let ctx = child.ctx();
+        let rect = ctx.window_transform().transform_rect_bbox(ctx.border_box());
+
+        assert_eq!(rect, Rect::new(0., 2., 10., 8.));
     }
 
     // TODO - Reduce copy-pasting?
