@@ -372,7 +372,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
             let progress_y = this.widget.viewport_pos.y / (content_size - portal_size).height;
             Self::vertical_scrollbar_mut(this).widget.cursor_progress = progress_y;
             Self::vertical_scrollbar_mut(this).ctx.request_render();
-            this.ctx.request_layout();
+            this.ctx.request_compose();
         }
         pos_changed
     }
