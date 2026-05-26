@@ -9,7 +9,9 @@ use winit::error::EventLoopError;
 use xilem::core::one_of::Either;
 use xilem::masonry::kurbo::{Affine, Vec2};
 use xilem::style::Style;
-use xilem::view::{GridExt, grid, label, sized_box, text_button, transformed, unit_fractions};
+use xilem::view::{
+    GridExt, GridTrackSize, grid, label, repeat_tracks, sized_box, text_button, transformed,
+};
 use xilem::{Color, EventLoop, WidgetView, WindowOptions, Xilem};
 
 struct TransformsGame {
@@ -96,8 +98,8 @@ impl TransformsGame {
         );
 
         grid((controls, transformed_status.grid((1, 1))))
-            .columns(unit_fractions(3))
-            .rows(unit_fractions(3))
+            .columns(repeat_tracks(3, GridTrackSize::FRACTION))
+            .rows(repeat_tracks(3, GridTrackSize::FRACTION))
     }
 }
 

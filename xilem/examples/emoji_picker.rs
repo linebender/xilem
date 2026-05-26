@@ -8,8 +8,8 @@ use winit::error::EventLoopError;
 use xilem::core::View;
 use xilem::style::Style;
 use xilem::view::{
-    FlexExt, FlexSpacer, MainAxisAlignment, button, flex_col, flex_row, grid, label, prose,
-    text_button, unit_fractions,
+    FlexExt, FlexSpacer, GridTrackSize, MainAxisAlignment, button, flex_col, flex_row, grid, label,
+    prose, repeat_tracks, text_button,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
@@ -78,8 +78,14 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
     }
 
     grid(grid_items)
-        .columns(unit_fractions(data.size.try_into().unwrap()))
-        .rows(unit_fractions(data.size.try_into().unwrap()))
+        .columns(repeat_tracks(
+            data.size.try_into().unwrap(),
+            GridTrackSize::FRACTION,
+        ))
+        .rows(repeat_tracks(
+            data.size.try_into().unwrap(),
+            GridTrackSize::FRACTION,
+        ))
         .gap(10.px())
         .padding(20.px())
 }
