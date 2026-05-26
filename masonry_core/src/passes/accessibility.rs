@@ -89,9 +89,7 @@ fn build_access_node(
     scale_factor: Option<f64>,
 ) -> Node {
     let mut node = Node::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(
-        ctx.widget_state.border_box_size().to_rect(),
-    ));
+    node.set_bounds(to_accesskit_rect(ctx.widget_state.border_box()));
 
     let mut local_transform = ctx.widget_state.compose_local_transform();
 
