@@ -18,14 +18,12 @@ pub use masonry::widgets::{GridParams, GridTrackSize};
 /// between inner elements in terms of size and position.
 ///
 /// # Example
-/// ```ignore
+/// ```
 /// # use xilem_masonry as xilem;
-/// use masonry::widgets::GridParams;
-/// use xilem::view::{
-///     text_button, grid, label, unit_fractions, GridExt,
-/// };
+/// use masonry::layout::Length;
+/// use xilem::view::{GridExt, GridTrackSize, text_button, grid, label, repeat_tracks};
 ///
-/// const GRID_GAP: f64 = 2.;
+/// const GRID_GAP: Length = Length::const_px(2.);
 ///
 /// #[derive(Default)]
 /// struct State {
@@ -40,8 +38,8 @@ pub use masonry::widgets::{GridParams, GridTrackSize};
 ///     text_button("To zero", |state: &mut State| state.int = 0).grid((2, 1)),
 ///     text_button("Increase by 1", |state: &mut State| state.int += 1).grid((3, 1)),
 /// ))
-/// .columns(unit_fractions(3))
-/// .rows(unit_fractions(2))
+/// .columns(repeat_tracks(3, GridTrackSize::FRACTION))
+/// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
 /// .gap(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
@@ -56,11 +54,11 @@ pub fn grid<State: 'static, Action, Seq: GridSequence<State, Action>>(
     }
 }
 
-/// Helper function for quickly creating `n` tracks with which divides length equally between them.
+/// Helper function for quickly creating `n` tracks with the given `size`.
 ///
-/// Similar to CSS `repeat(n, 1fr)`.
-pub fn unit_fractions(n: usize) -> impl GridTracks {
-    hidden::CloneTracks(std::iter::repeat_n(GridTrackSize::FRACTION, n))
+/// Analogous to CSS `repeat(n, size)`.
+pub fn repeat_tracks(n: usize, size: GridTrackSize) -> impl GridTracks {
+    hidden::CloneTracks(std::iter::repeat_n(size, n))
 }
 
 /// The [`View`] created by [`grid`] from a sequence.
@@ -408,7 +406,7 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// ```
     /// # use xilem_masonry as xilem;
     /// use masonry::widgets::GridParams;
-    /// use xilem::view::{text_button, prose, grid, unit_fractions, GridExt};
+    /// use xilem::view::{text_button, prose, grid, repeat_tracks, GridExt};
     /// # use xilem::WidgetView;
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
@@ -416,8 +414,8 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     ///     text_button("click me", |_| ()).grid((0, 0, 2, ())),
     ///     prose("a prose").grid((1, 1)),
     /// ))
-    /// .columns(unit_fractions(2))
-    /// .rows(unit_fractions(2))
+    /// .columns(repeat_tracks(2))
+    /// .rows(repeat_tracks(2))
     /// # }
     /// ```
     fn grid(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
