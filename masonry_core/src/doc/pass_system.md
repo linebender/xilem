@@ -68,7 +68,8 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 
 The layout pass may call [`Widget::measure`] any number of times, including zero.
 It may then call [`Widget::layout`].
-The compose pass will call [`Widget::compose`].
+The compose pass will call [`Widget::compose`] on widgets that requested compose.
+Running [`Widget::layout`] also requests [`Widget::compose`] for that widget.
 The update_xxx passes call the widgets' update method.
 
 By default, each of these passes completes without doing any work, unless pass-dependent invalidation flags are set.
@@ -189,7 +190,10 @@ Not doing so is a logical bug, and may trigger debug assertions.
 ### Compose pass
 
 The **compose** pass runs top-down and assigns transforms to children.
-Transform-only layout changes (e.g. scrolling) should request compose instead of requesting layout.
+Transform-only presentation changes (e.g. scrolling) should request compose instead of requesting layout.
+
+[`Widget::compose`] is called when the widget explicitly requests compose or after that widget's [`Widget::layout`] method runs.
+It may also be called in other scenarios, but widgets should not rely on [`Widget::compose`] as a notification for every change to their window transform.
 
 Compose is meant to be a cheaper way to position widgets than layout.
 Because the compose pass is more limited than layout, it's easier to recompute in many situations.
@@ -229,7 +233,7 @@ External mutation is how Xilem applies any changes to the widget tree produced b
 Some notes about pass context types:
 
 - Render passes should be pure and can be skipped occasionally, therefore their context types ([`PaintCtx`] and [`AccessCtx`]) can't set invalidation flags or send signals.
-- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot access the size and position of the `self` widget.
+- The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`MeasureCtx`] and [`LayoutCtx`] cannot access the size and position of the `self` widget.
 They can access the layout of children if they have already been laid out.
 - For the same reason, [`MeasureCtx`], [`LayoutCtx`], and [`ComposeCtx`] cannot create a `WidgetRef` reference to a child.
 - [`MutateCtx`], [`EventCtx`] and [`UpdateCtx`] can let you add and remove children.

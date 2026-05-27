@@ -5,7 +5,7 @@
 //! before any translations applied in [`compose`](crate::passes::compose).
 //!
 //! The framework helps orchestrate the size computation alongside [`Widget::measure`].
-//! The final chosen size is passed to [`Widget::layout`].
+//! The layout size is passed to [`Widget::layout`].
 
 use dpi::LogicalSize;
 use tracing::{info_span, trace};

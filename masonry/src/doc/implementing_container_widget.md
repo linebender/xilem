@@ -163,7 +163,8 @@ There are a few things to note here:
 
 ### `compose`
 
-The `compose` method is called during the compose pass, after layout.
+The `compose` method may be called during the compose pass, after layout.
+Masonry guarantees that `compose` is called after that widget's `layout` method runs, or when the widget explicitly requests compose.
 
 The compose pass runs top-down and assigns transforms to children. Transform-only layout changes (e.g. scrolling) should request compose instead of requesting layout.
 
