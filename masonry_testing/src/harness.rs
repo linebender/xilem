@@ -180,7 +180,7 @@ pub struct TestHarnessParams {
     /// This is useful:
     ///
     /// 1) For individual widgets, as they will often be designed with content outside their
-    ///    layout box (e.g. drop shadows, focus indicators).
+    ///    border-box (e.g. drop shadows, focus indicators).
     /// 2) For full apps, as it allows (manual) validation that none of the app content is cut off by
     ///    the window border.
     ///
@@ -694,7 +694,6 @@ impl<W: Widget> TestHarness<W> {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget_with_id(id);
         let local_widget_center = widget.ctx().border_box().center();
-
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         // TODO - Add reachable_by_pointer() method.

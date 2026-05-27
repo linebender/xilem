@@ -33,8 +33,8 @@ use crate::layout::MeasurementCache;
 /// Some fields follow a naming scheme:
 /// - `request_xxx`: this specific widget has requested the xxx pass to run on it.
 /// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it.
-/// - `is_xxx`: this widget has the xxx property.
-/// - `has_xxx`: this widget or a descendant has the xxx property.
+/// - `is_xxx`: this widget is in the xxx state.
+/// - `has_xxx`: this widget or a descendant is in the xxx state.
 ///
 /// # Resetting flags
 ///

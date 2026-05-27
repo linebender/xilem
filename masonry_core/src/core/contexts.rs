@@ -440,11 +440,11 @@ impl EventCtx<'_> {
     /// capture the pointer during any other event.
     ///
     /// A widget normally only receives pointer events when the pointer is inside the widget's
-    /// layout box. Pointer capture causes widget layout boxes to be ignored: when the pointer is
+    /// border-box. Pointer capture causes border-box hit checks to be ignored: when the pointer is
     /// captured by a widget, that widget will continue receiving pointer events when the pointer
-    /// is outside the widget's layout box. Other widgets the pointer is over will not receive
+    /// is outside the widget's border-box. Other widgets the pointer is over will not receive
     /// events. Events that are not marked as handled by the capturing widget, bubble up to the
-    /// widget's ancestors, ignoring their layout boxes as well.
+    /// widget's ancestors, ignoring their border-boxes as well.
     ///
     /// The pointer cannot be captured by multiple widgets at the same time. If a widget has
     /// captured the pointer and another widget captures it, the first widget loses the pointer
@@ -1584,11 +1584,12 @@ impl_context_method!(
             self.widget_state.set_needs_layout(true);
         }
 
-        // TODO - Document better
-        /// Requests a [`compose`] pass.
+        /// Requests that this widget's [`compose`] method be called.
         ///
         /// The compose pass is often cheaper than the layout pass,
         /// because it can only transform individual widgets' position.
+        /// Use this when widget-owned state read by [`compose`] changes,
+        /// such as a scroll offset applied to a child during compose.
         ///
         /// [`compose`]: crate::core::Widget::compose
         pub fn request_compose(&mut self) {
@@ -1920,7 +1921,9 @@ impl_context_method!(
 
         /// Removes the IME cursor area.
         ///
-        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        /// See [`set_ime_area`] for more details.
+        ///
+        /// [`set_ime_area`]: Self::set_ime_area
         pub fn clear_ime_area(&mut self) {
             self.widget_state.ime_area = None;
         }
