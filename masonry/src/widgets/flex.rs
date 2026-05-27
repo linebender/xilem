@@ -1436,9 +1436,9 @@ mod tests {
 
         let widget = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
-            .with(NewWidget::new(SizedBox::empty()).with_tag(child_1), 1.0)
-            .with(NewWidget::new(SizedBox::empty()).with_tag(child_2), 1.0)
-            .with(NewWidget::new(SizedBox::empty()).with_tag(child_3), 1.0)
+            .with(SizedBox::empty().prepare().with_tag(child_1), 1.0)
+            .with(SizedBox::empty().prepare().with_tag(child_2), 1.0)
+            .with(SizedBox::empty().prepare().with_tag(child_3), 1.0)
             .prepare()
             .with_props(Gap::new(0.px()));
 
@@ -1466,7 +1466,12 @@ mod tests {
         let child_2 = WidgetTag::unique();
         let child_3 = WidgetTag::unique();
 
-        let child = |tag| NewWidget::new(SizedBox::empty().size(10.px(), 10.px())).with_tag(tag);
+        let child = |tag| {
+            SizedBox::empty()
+                .size(10.px(), 10.px())
+                .prepare()
+                .with_tag(tag)
+        };
         let widget = Flex::row()
             .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
             .with_fixed(child(child_1))
@@ -1495,7 +1500,10 @@ mod tests {
         let widget = Flex::row()
             .cross_axis_alignment(CrossAxisAlignment::Center)
             .with_fixed(
-                NewWidget::new(SizedBox::empty().size(10.px(), 5.4.px())).with_tag(child_tag),
+                SizedBox::empty()
+                    .size(10.px(), 5.4.px())
+                    .prepare()
+                    .with_tag(child_tag),
             )
             .prepare();
 
