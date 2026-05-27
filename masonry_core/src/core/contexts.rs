@@ -29,7 +29,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{ParentLinkedList, get_debug_color};
+use crate::util::{get_debug_color, ParentLinkedList};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -1222,6 +1222,15 @@ impl_context_method!(
         /// Returns the aligned paint-box size of this widget.
         pub fn paint_box_size(&self) -> Size {
             self.widget_state.paint_box().size()
+        }
+
+        /// Returns the current window content size in logical pixels.
+        pub fn window_size(&self) -> Size {
+            let size = self
+                .global_state
+                .size
+                .to_logical(self.global_state.scale_factor);
+            Size::new(size.width, size.height)
         }
 
         /// Returns the aligned content-box rect of this widget
