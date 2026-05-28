@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cell::Cell;
+use std::rc::Rc;
+
 use assert_matches::assert_matches;
 
 use crate::core::{NewWidget, Widget, WidgetTag};
@@ -93,6 +96,36 @@ fn call_place_child_before_layout() {
     assert_debug_panics!(
         TestHarness::create(test_property_set(), widget),
         "trying to call 'place_child'"
+    );
+}
+
+#[test]
+fn call_child_size_before_layout() {
+    let parent_tag = WidgetTag::unique();
+    let layout_count = Rc::new(Cell::new(0));
+    let layout_count_for_fn = layout_count.clone();
+
+    let child = NewWidget::new(SizedBox::empty().width(20.px()).height(20.px()));
+    let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, size| {
+        if layout_count_for_fn.get() > 0 {
+            let _ = ctx.child_size(child);
+        }
+
+        layout_count_for_fn.set(layout_count_for_fn.get() + 1);
+
+        let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
+        ctx.run_layout(child, child_size);
+        ctx.place_child(child, Point::ORIGIN);
+    });
+    let widget = NewWidget::new(parent).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+
+    assert_debug_panics!(
+        harness.edit_widget(parent_tag, |mut parent| {
+            parent.ctx.request_layout();
+        }),
+        "trying to call 'child_size'"
     );
 }
 
@@ -210,13 +243,18 @@ fn pixel_snapping() {
 
     let harness = TestHarness::create(test_property_set(), parent);
 
-    let child_pos = harness.get_widget(child_tag).ctx().window_origin();
-    let child_size = harness.get_widget(child_tag).ctx().border_box_size();
+    let child = harness.get_widget(child_tag);
+    let ctx = child.ctx();
+    let border_box = ctx.border_box();
+    let content_box = ctx.content_box();
+    let child_pos = ctx.to_window(border_box.origin());
     let first_baseline = harness.get_widget(parent_tag).ctx().first_baseline();
     let last_baseline = harness.get_widget(parent_tag).ctx().last_baseline();
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));
-    assert_eq!(child_size, Size::new(10., 11.));
+    assert_eq!(content_box.origin(), Point::ORIGIN);
+    assert_eq!(content_box.size(), Size::new(10., 11.));
+    assert_eq!(border_box.size(), Size::new(10., 11.));
     assert_eq!(first_baseline, 2.4);
     assert_eq!(last_baseline, 2.6);
 }

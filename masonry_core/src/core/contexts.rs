@@ -440,11 +440,11 @@ impl EventCtx<'_> {
     /// capture the pointer during any other event.
     ///
     /// A widget normally only receives pointer events when the pointer is inside the widget's
-    /// layout box. Pointer capture causes widget layout boxes to be ignored: when the pointer is
+    /// border-box. Pointer capture causes border-box hit checks to be ignored: when the pointer is
     /// captured by a widget, that widget will continue receiving pointer events when the pointer
-    /// is outside the widget's layout box. Other widgets the pointer is over will not receive
+    /// is outside the widget's border-box. Other widgets the pointer is over will not receive
     /// events. Events that are not marked as handled by the capturing widget, bubble up to the
-    /// widget's ancestors, ignoring their layout boxes as well.
+    /// widget's ancestors, ignoring their border-boxes as well.
     ///
     /// The pointer cannot be captured by multiple widgets at the same time. If a widget has
     /// captured the pointer and another widget captures it, the first widget loses the pointer
@@ -772,7 +772,10 @@ impl MeasureCtx<'_> {
 impl LayoutCtx<'_> {
     #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
-        if self.get_child_state(child).needs_layout() {
+        let child_state = self.get_child_state(child);
+        // If debug_assertions are enabled, then request_layout is always true until visited.
+        let child_not_visited = cfg!(debug_assertions) && child_state.request_layout;
+        if child_state.needs_layout() || child_not_visited {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
                 self.widget_id(),
@@ -924,7 +927,7 @@ impl LayoutCtx<'_> {
             insets.x1 - self.widget_state.border_box_insets.x1,
             insets.y1 - self.widget_state.border_box_insets.y1,
         );
-        self.widget_state.paint_insets = insets.nonnegative();
+        self.widget_state.paint_box_insets = insets.nonnegative();
     }
 
     /// Sets explicit baselines for this widget.
@@ -1119,12 +1122,6 @@ impl LayoutCtx<'_> {
 }
 
 impl ComposeCtx<'_> {
-    // TODO - Remove?
-    /// Returns whether [`Widget::compose`] will be called on this widget.
-    pub fn needs_compose(&self) -> bool {
-        self.widget_state.needs_compose
-    }
-
     /// Sets the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
@@ -1312,11 +1309,6 @@ impl_context_method!(
             self.widget_state.border_box_translation()
         }
 
-        /// Returns the widget's effective border-box origin in the window's coordinate space.
-        pub fn window_origin(&self) -> Point {
-            self.widget_state.border_box_window_origin()
-        }
-
         /// Returns the global transform mapping this widget's content-box coordinate space
         /// to the window's coordinate space.
         ///
@@ -1348,25 +1340,15 @@ impl_context_method!(
             let translation = self.widget_state.border_box_translation();
             self.widget_state.window_transform * (point + translation)
         }
+
+        /// Returns the DPI scaling factor.
+        ///
+        /// This can be useful for loading image resources meant for a specific scale.
+        pub fn scale_factor(&self) -> f64 {
+            self.global_state.scale_factor
+        }
     }
 );
-
-impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
-    /// Returns DPI scaling factor.
-    ///
-    /// This is not required for most widgets, and should be used only for precise
-    /// rendering, such as rendering single pixel lines or selecting image variants.
-    /// This is currently only provided in the render stages, as these are the only passes which
-    /// are re-run when the scale factor changes, except [`EventCtx`] where it is necessary to
-    /// translate pointer events which are currently in physical coordinates.
-    ///
-    /// Note that accessibility nodes and paint results will automatically be scaled by Masonry.
-    /// This also doesn't account for the widget's current transform, which cannot currently be
-    /// accessed by widgets directly.
-    pub fn get_scale_factor(&self) -> f64 {
-        self.global_state.scale_factor
-    }
-});
 
 // --- MARK: GET STATUS
 
@@ -1611,11 +1593,12 @@ impl_context_method!(
             self.widget_state.set_needs_layout(true);
         }
 
-        // TODO - Document better
-        /// Requests a [`compose`] pass.
+        /// Requests that this widget's [`compose`] method be called.
         ///
         /// The compose pass is often cheaper than the layout pass,
         /// because it can only transform individual widgets' position.
+        /// Use this when widget-owned state read by [`compose`] changes,
+        /// such as a scroll offset applied to a child during compose.
         ///
         /// [`compose`]: crate::core::Widget::compose
         pub fn request_compose(&mut self) {
@@ -1947,7 +1930,9 @@ impl_context_method!(
 
         /// Removes the IME cursor area.
         ///
-        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        /// See [`set_ime_area`] for more details.
+        ///
+        /// [`set_ime_area`]: Self::set_ime_area
         pub fn clear_ime_area(&mut self) {
             self.widget_state.ime_area = None;
         }

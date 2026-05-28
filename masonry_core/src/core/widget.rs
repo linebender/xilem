@@ -332,7 +332,7 @@ pub trait Widget: AsDynWidget + Any {
     /// 1. (Optionally) Call [`compute_size`] to get the border-box size the child wants to be.
     ///    If the container has somehow already decided on the child length on one axis, then it
     ///    should instead call [`compute_length`] with the correct border-box `cross_length`.
-    /// 2. Decide on a final border-box [`Size`] that the child should be. The parent is in control.
+    /// 2. Decide what the border-box [`Size`] of the child should be. The parent is in control.
     ///    Note, however, that the child will still be in control of its own [`paint`] method.
     ///    If a child is given a size smaller than its [`MinContent`], its painting is likely
     ///    to overflow its bounds, depending on both the child's and the parent's clip settings.
@@ -361,7 +361,14 @@ pub trait Widget: AsDynWidget + Any {
     /// [`MinContent`]: crate::layout::Dim::MinContent
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &PropertiesRef<'_>, size: Size);
 
-    /// Runs after the widget's final transform has been computed.
+    /// Updates compose-only state like scroll translations.
+    ///
+    /// Cheaper alternative than doing a full layout.
+    ///
+    /// This method is guaranteed to be called after this widget's [`layout`] method runs,
+    /// and after this widget explicitly requests compose. It may also be called in other scenarios.
+    ///
+    /// [`layout`]: Self::layout
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}
 
     /// Paints the widget's background.
@@ -581,7 +588,7 @@ pub fn find_widget_under_pointer<'c>(
         return None;
     }
 
-    let local_pos = ctx.window_transform().inverse() * pos;
+    let local_pos = ctx.to_local(pos);
 
     if let Some(clip) = ctx.clip_path()
         && !clip.contains(local_pos)

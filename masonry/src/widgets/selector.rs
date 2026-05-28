@@ -140,10 +140,11 @@ impl Selector {
         let layer_widget = NewWidget::new(menu);
 
         // TODO: We should ideally create a layer with the same transform as this widget.
+        let border_box = ctx.border_box();
         ctx.create_layer(
             layer_type,
             layer_widget,
-            ctx.window_origin() + Vec2::new(0., ctx.border_box_size().height),
+            ctx.to_window(border_box.origin()) + Vec2::new(0., border_box.size().height),
         );
     }
 }

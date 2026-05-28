@@ -537,7 +537,7 @@ impl Widget for VirtualScroll {
         match event {
             PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 let size = ctx.content_box_size();
-                let scale_factor = ctx.get_scale_factor();
+                let scale_factor = ctx.scale_factor();
                 let line_px = PhysicalPosition {
                     x: 120.0 * scale_factor,
                     y: 120.0 * scale_factor,

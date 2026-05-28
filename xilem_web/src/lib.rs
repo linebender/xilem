@@ -36,7 +36,7 @@
 //! }
 //! ```
 //!
-//! [Trunk]: https://trunkrs.dev/
+//! [Trunk]: https://trunk-rs.github.io/trunk
 //! [Xilem Core]: xilem_core
 
 // LINEBENDER LINT SET - lib.rs - v3
