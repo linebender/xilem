@@ -287,20 +287,19 @@ impl Widget for SelectorMenu {
         let mut y_offset = 0.0;
         for child in &mut self.children {
             let child_size = ctx.compute_size(child, auto_size, context_size);
-            ctx.run_layout(child, child_size);
-            ctx.place_child(child, Point::new(0.0, y_offset));
+            ctx.layout_child(child, Point::new(0.0, y_offset), child_size);
 
             y_offset += child_size.height + gap_length;
         }
 
         if !self.children.is_empty() {
             let first_child = self.children.first().unwrap();
-            let (first_baseline, _) = ctx.child_aligned_baselines(first_child);
+            let (first_baseline, _) = ctx.child_baselines(first_child);
             let first_child_origin = ctx.child_origin(first_child);
             let first_baseline = first_child_origin.y + first_baseline;
 
             let last_child = self.children.last().unwrap();
-            let (_, last_baseline) = ctx.child_aligned_baselines(last_child);
+            let (_, last_baseline) = ctx.child_baselines(last_child);
             let last_child_origin = ctx.child_origin(last_child);
             let last_baseline = last_child_origin.y + last_baseline;
 
@@ -363,7 +362,7 @@ impl Layer for SelectorMenu {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 let local_pos = ctx.local_position(state.position);
 
-                !ctx.border_box_size().to_rect().contains(local_pos)
+                !ctx.border_box().contains(local_pos)
             }
             PointerEvent::Cancel(..) => true,
             _ => false,

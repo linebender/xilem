@@ -197,7 +197,7 @@ fn paint_widget(
     recurse_on_children(id, widget, children, |mut node| {
         // TODO: We could skip painting children outside the parent clip path.
         // There's a few things to consider if we do:
-        // - Some widgets can paint outside of their layout box.
+        // - Some widgets can paint outside of their border-box.
         // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
         // - We still want to reset needs_paint and request_paint flags.
         paint_widget(
@@ -224,7 +224,8 @@ fn paint_widget(
 
             // Draw the widget's explicit baselines
             let mut draw_baseline = |baseline| {
-                let line = Line::new((0., baseline), (state.end_point.x, baseline));
+                let border_box = state.border_box();
+                let line = Line::new((border_box.x0, baseline), (border_box.x1, baseline));
                 let baseline_style = Stroke::new(1.0).with_dashes(0., [4.0, 4.0]);
                 painter
                     .stroke(line, &baseline_style, color)
@@ -256,7 +257,7 @@ fn paint_widget(
 
         if global_state.inspector_state.hovered_widget == Some(id) {
             const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
-            let rect = state.border_box_size().to_rect();
+            let rect = state.border_box();
             Painter::new(layer_collector.scene_mut())
                 .fill(rect, HOVER_FILL_COLOR)
                 .transform(border_box_to_layer_transform)
@@ -265,7 +266,7 @@ fn paint_widget(
     }
 
     if paint_as_external {
-        layer_collector.push_external_layer(id, state.border_box_size().to_rect());
+        layer_collector.push_external_layer(id, state.border_box());
     }
 
     if matches!(

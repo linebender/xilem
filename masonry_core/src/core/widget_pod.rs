@@ -83,9 +83,10 @@ pub struct WidgetOptions {
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// This transform is applied before `scroll_translation` and `origin`.
     pub transform: Affine,
+    /// Whether pixel snapping should be disabled for this widget and its descendants.
+    pub snap_disabled: bool,
     /// The disabled state the widget will be created with.
     pub disabled: bool,
 }
@@ -176,6 +177,15 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     /// Sets the [`Affine`] transform for this widget.
     pub fn with_transform(mut self, transform: Affine) -> Self {
         self.options.transform = transform;
+        self
+    }
+
+    /// Sets whether pixel snapping is disabled for this widget and its descendants.
+    ///
+    /// This is primarily useful for continuous motion such as drag, scroll, or transform
+    /// animation, where stable fractional presentation is preferred over pixel-aligned layout.
+    pub fn with_snap_disabled(mut self, disabled: bool) -> Self {
+        self.options.snap_disabled = disabled;
         self
     }
 

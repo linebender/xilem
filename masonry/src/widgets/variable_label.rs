@@ -247,8 +247,7 @@ impl Widget for VariableLabel {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        ctx.run_layout(&mut self.label, size);
-        ctx.place_child(&mut self.label, Point::ORIGIN);
+        ctx.layout_child(&mut self.label, Point::ORIGIN, size);
         ctx.derive_baselines(&self.label);
     }
 

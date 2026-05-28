@@ -475,6 +475,11 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.global_state.scale_factor = scale_factor;
+                // Request layout, which may end up being skipped.
+                self.root_state_mut().request_layout = true;
+                self.root_state_mut().set_needs_layout(true);
+                self.run_rewrite_passes();
+                // Request render on everything, always.
                 self.request_render_all();
                 Handled::Yes
             }

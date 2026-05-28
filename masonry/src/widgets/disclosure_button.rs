@@ -165,7 +165,8 @@ impl Widget for DisclosureButton {
         let cache = ctx.property_cache();
         let button_color = props.get::<ContentColor>(cache);
 
-        let size = ctx.content_box_size();
+        let content_box = ctx.content_box();
+        let size = content_box.size();
         let half_size = size * 0.5;
 
         let mut arrow = BezPath::new();
@@ -173,7 +174,7 @@ impl Widget for DisclosureButton {
         arrow.line_to((half_size.width, 0.0));
         arrow.line_to((0.0, half_size.height));
 
-        let mut affine = Affine::translate(half_size.to_vec2());
+        let mut affine = Affine::translate(content_box.center().to_vec2());
 
         // Rotate if it's disclosed
         if self.is_disclosed() {

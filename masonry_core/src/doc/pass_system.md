@@ -60,7 +60,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **update_stashed:** Updates the stashed status of widgets.
 - **update_focusable:** Updates whether widgets have focusable children. (Internal-only, doesn't call widget methods.)
 - **update_focus:** Updates the focused status of widgets.
-- **layout:** Computes the layout of the widget tree.
+- **layout:** Computes the layout of the widget tree, including layout-time pixel snapping.
 - **update_scrolls:** Updates the scroll positions of widgets.
 - **compose:** Assigns transforms to widgets.
 - **update_pointer:** Updates the hovered status of widgets and the current cursor icon.
@@ -183,14 +183,17 @@ The layout pass will determine the size of widgets, which might involve calling 
 
 Then as sizes get resolved, they get passed to the `layout` methods on widgets.
 
-Unlike with other passes, container widgets' `Widget::layout()` method must "manually" recurse by calling [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of their children.
-
+Unlike with other passes, container widgets' `Widget::layout()` method must "manually" recurse by calling [`LayoutCtx::layout_child`] for each of their children.
 Not doing so is a logical bug, and may trigger debug assertions.
+During layout, the parent chooses the origin and size for all its children.
+When pixel snapping is active and the child's transform supports it, Masonry pixel-snaps the chosen border-box before the child's `Widget::layout()` method runs.
+The resulting layout geometry is the local geometry used by paint, events, accessibility, and query contexts.
 
 ### Compose pass
 
 The **compose** pass runs top-down and assigns transforms to children.
 Transform-only presentation changes (e.g. scrolling) should request compose instead of requesting layout.
+When snapping is active, compose quantizes scroll translation to integer device-pixel deltas so layout geometry remains snapped.
 
 [`Widget::compose`] is called when the widget explicitly requests compose or after that widget's [`Widget::layout`] method runs.
 It may also be called in other scenarios, but widgets should not rely on [`Widget::compose`] as a notification for every change to their window transform.
@@ -244,8 +247,7 @@ They can access the layout of children if they have already been laid out.
 [`Widget::measure`]: crate::core::Widget::measure
 [`Widget::layout`]: crate::core::Widget::layout
 [`Widget::compose`]: crate::core::Widget::compose
-[`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
-[`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
+[`LayoutCtx::layout_child`]: crate::core::LayoutCtx::layout_child
 [`WidgetMut`]: crate::core::WidgetMut
 [`RenderRoot`]: crate::app::RenderRoot
 [`PaintCtx`]: crate::core::PaintCtx

@@ -140,8 +140,7 @@ impl Widget for VerticalStack {
         let mut y_offset = 0.0;
         for child in &mut self.children {
             let child_size = ctx.compute_size(child, auto_size, context_size);
-            ctx.run_layout(child, child_size);
-            ctx.place_child(child, Point::new(0.0, y_offset));
+            ctx.layout_child(child, Point::new(0.0, y_offset), child_size);
 
             y_offset += child_size.height + self.gap;
         }

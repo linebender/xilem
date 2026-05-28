@@ -359,7 +359,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     ///
     /// A position of zero means no scrolling at all.
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
-        let portal_size = this.ctx.content_box_size();
+        let portal_size = this.ctx.content_box().size();
         let content_size = this.widget.content_size;
 
         let pos_changed = this
@@ -372,7 +372,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
             let progress_y = this.widget.viewport_pos.y / (content_size - portal_size).height;
             Self::vertical_scrollbar_mut(this).widget.cursor_progress = progress_y;
             Self::vertical_scrollbar_mut(this).ctx.request_render();
-            this.ctx.request_layout();
+            this.ctx.request_compose();
         }
         pos_changed
     }
@@ -387,7 +387,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     /// `target` is in the child's border-box coordinate space, meaning a target
     /// of `(0, 0, 10, 10)` will scroll an item at the top-left of the child into view.
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
-        let portal_size = this.ctx.content_box_size();
+        let portal_size = this.ctx.content_box().size();
         let viewport = Rect::from_origin_size(this.widget.viewport_pos, portal_size);
 
         let new_pos_x = compute_pan_range(
@@ -420,7 +420,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let cache = ctx.property_cache();
         let auto_hide_scroll_bar = props.get::<AutoHideScrollBar>(cache).0;
 
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.content_box().size();
         let content_size = self.content_size;
 
         match *event {
@@ -479,7 +479,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.content_box().size();
         let content_size = self.content_size;
         let target = ctx.target();
         let scrollbar_target =
@@ -583,7 +583,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.content_box().size();
         let content_size = self.content_size;
         let target = ctx.target();
         let scrollbar_target =
@@ -682,7 +682,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::RequestPanToChild(target) => {
-                let portal_size = ctx.content_box_size();
+                let portal_size = ctx.content_box().size();
                 let content_size = self.content_size;
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
@@ -766,7 +766,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 child_size
             }
         };
-        ctx.run_layout(&mut self.child, content_size);
+        ctx.layout_child(&mut self.child, Point::ZERO, content_size);
+        let content_size = ctx.child_size(&self.child);
         self.content_size = content_size;
 
         // TODO - document better
@@ -775,8 +776,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         // TODO - recompute portal progress
 
         ctx.set_clip_path(size.to_rect());
-
-        ctx.place_child(&mut self.child, Point::ZERO);
 
         self.scrollbar_horizontal_visible =
             !self.constrain_horizontal && size.width < content_size.width;
@@ -799,10 +798,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 SizeDef::fit(size),
                 size.into(),
             );
-            ctx.run_layout(&mut self.scrollbar_horizontal, scrollbar_size);
-            ctx.place_child(
+            ctx.layout_child(
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, size.height - scrollbar_size.height),
+                scrollbar_size,
             );
         }
 
@@ -822,10 +821,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 SizeDef::fit(size),
                 size.into(),
             );
-            ctx.run_layout(&mut self.scrollbar_vertical, scrollbar_size);
-            ctx.place_child(
+            ctx.layout_child(
                 &mut self.scrollbar_vertical,
                 Point::new(size.width - scrollbar_size.width, 0.0),
+                scrollbar_size,
             );
         }
     }
@@ -857,7 +856,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     ) {
         node.set_clips_children();
 
-        let portal_size = ctx.content_box_size();
+        let portal_size = ctx.content_box().size();
         let content_size = self.content_size;
         let scroll_range = (content_size - portal_size).max(Size::ZERO);
 
@@ -950,10 +949,9 @@ mod tests {
             })
             .layout_fn(move |child, ctx, _props, size| {
                 let child_size = ctx.compute_size(child, SizeDef::fit(size), size.into());
-                ctx.run_layout(child, child_size);
                 // We don't place it at (0,0) to test that stacked-origin translation works.
                 // Because if we were at (0,0) it would be effectively the same as no parent.
-                ctx.place_child(child, Point::new(0., top_pad));
+                ctx.layout_child(child, Point::new(0., top_pad), child_size);
             })
             .prepare()
     }

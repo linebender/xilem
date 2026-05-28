@@ -958,16 +958,15 @@ impl Widget for Flex {
                 main.pack_size(child_main_length.get(), child_cross_length.get())
             };
 
-        // Sum flex factors, resolve bases, subtract bases from main space,
-        // and lay out inflexible widgets.
+        // Sum flex factors, resolve bases, and subtract bases from main space.
         for child in &mut self.children {
             match child {
                 Child::Widget {
                     widget,
-                    alignment,
                     flex,
                     basis,
                     basis_resolved,
+                    ..
                 } => {
                     match effective_basis(*basis, *flex) {
                         FlexBasis::Auto => {
@@ -989,15 +988,7 @@ impl Widget for Flex {
                             *basis_resolved = Length::ZERO;
                         }
                     }
-                    if *flex == 0. {
-                        let child_main_length = *basis_resolved;
-                        let child_size =
-                            compute_child_size(ctx, widget, child_main_length, alignment);
-
-                        ctx.run_layout(widget, child_size);
-                    } else {
-                        flex_sum += *flex;
-                    }
+                    flex_sum += *flex;
                 }
                 Child::Spacer {
                     flex,
@@ -1028,8 +1019,6 @@ impl Widget for Flex {
         for child in &mut self.children {
             match child {
                 Child::Widget {
-                    widget,
-                    alignment,
                     flex,
                     basis_resolved,
                     ..
@@ -1040,10 +1029,6 @@ impl Widget for Flex {
                     // this distribution will need to evolve into a looped solver.
                     let child_main_length =
                         basis_resolved.saturating_add((*flex * flex_fraction).px());
-                    let child_size = compute_child_size(ctx, widget, child_main_length, alignment);
-
-                    ctx.run_layout(widget, child_size);
-
                     main_space = main_space
                         .saturating_sub(child_main_length.saturating_sub(*basis_resolved));
                 }
@@ -1072,6 +1057,57 @@ impl Widget for Flex {
         let (space_before, space_between) =
             get_spacing(self.main_alignment, main_space.get(), widget_count);
 
+        // Lay out widgets at their ideal main-axis positions.
+        let mut main_offset = space_before;
+        let mut previous_was_widget = false;
+        for child in &mut self.children {
+            match child {
+                Child::Widget {
+                    widget,
+                    alignment,
+                    flex,
+                    basis_resolved,
+                    ..
+                } => {
+                    if previous_was_widget {
+                        main_offset += space_between;
+                    }
+
+                    let child_main_length = if *flex > 0. {
+                        basis_resolved.saturating_add((*flex * flex_fraction).px())
+                    } else {
+                        *basis_resolved
+                    };
+                    let child_size = compute_child_size(ctx, widget, child_main_length, alignment);
+                    let alignment = alignment.unwrap_or(self.cross_alignment);
+                    let child_origin_cross = if main == Axis::Horizontal
+                        && matches!(
+                            alignment,
+                            CrossAxisAlignment::FirstBaseline | CrossAxisAlignment::LastBaseline
+                        ) {
+                        0.
+                    } else {
+                        let cross_unused = cross_space.get() - child_size.get_coord(cross);
+                        alignment.offset(cross_unused)
+                    };
+                    let child_origin = main.pack_point(main_offset, child_origin_cross);
+
+                    ctx.layout_child(widget, child_origin, child_size);
+
+                    main_offset += child_main_length.get();
+                    main_offset += gap_length;
+                    previous_was_widget = true;
+                }
+                Child::Spacer {
+                    length_resolved, ..
+                } => {
+                    main_offset += length_resolved.get();
+                    main_offset += gap_length;
+                    previous_was_widget = false;
+                }
+            }
+        }
+
         // Determine the shared cross alignment baselines.
         // As we currently only support the horizontal-tb writing mode, we do it only for rows.
         let mut alignment_ascent: Option<f64> = None;
@@ -1085,7 +1121,7 @@ impl Widget for Flex {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         match alignment {
                             CrossAxisAlignment::FirstBaseline => {
-                                let (first_baseline, _) = ctx.child_layout_baselines(widget);
+                                let (first_baseline, _) = ctx.child_baselines(widget);
                                 alignment_ascent = Some(
                                     alignment_ascent
                                         .unwrap_or(first_baseline)
@@ -1093,7 +1129,7 @@ impl Widget for Flex {
                                 );
                             }
                             CrossAxisAlignment::LastBaseline => {
-                                let (_, last_baseline) = ctx.child_layout_baselines(widget);
+                                let (_, last_baseline) = ctx.child_baselines(widget);
                                 let child_size = ctx.child_size(widget);
                                 let descent = child_size.get_coord(cross) - last_baseline;
                                 alignment_descent =
@@ -1107,52 +1143,34 @@ impl Widget for Flex {
             }
         }
 
-        // Distribute free space and place children
-        let mut main_offset = space_before;
-        let mut previous_was_widget = false;
+        // Apply baseline alignment. Other alignments were already positioned before layout.
         for child in &mut self.children {
             match child {
                 Child::Widget {
                     widget, alignment, ..
                 } => {
-                    if previous_was_widget {
-                        main_offset += space_between;
-                    }
-
                     let child_size = ctx.child_size(widget);
                     let alignment = alignment.unwrap_or(self.cross_alignment);
                     let child_origin_cross = match alignment {
                         CrossAxisAlignment::FirstBaseline if main == Axis::Horizontal => {
-                            let (first_baseline, _) = ctx.child_layout_baselines(widget);
+                            let (first_baseline, _) = ctx.child_baselines(widget);
                             alignment_ascent.unwrap() - first_baseline
                         }
                         CrossAxisAlignment::LastBaseline if main == Axis::Horizontal => {
-                            let (_, last_baseline) = ctx.child_layout_baselines(widget);
+                            let (_, last_baseline) = ctx.child_baselines(widget);
                             let descent = child_size.get_coord(cross) - last_baseline;
                             let end_gap = alignment_descent.unwrap() - descent;
                             let cross_unused = cross_space.get() - child_size.get_coord(cross);
                             cross_unused - end_gap
                         }
-                        _ => {
-                            let cross_unused = cross_space.get() - child_size.get_coord(cross);
-                            alignment.offset(cross_unused)
-                        }
+                        _ => continue,
                     };
 
-                    let child_origin = main.pack_point(main_offset, child_origin_cross);
-                    ctx.place_child(widget, child_origin);
-
-                    main_offset += child_size.get_coord(main);
-                    main_offset += gap_length;
-                    previous_was_widget = true;
+                    let mut child_origin = ctx.child_origin(widget);
+                    child_origin.set_coord(cross, child_origin_cross);
+                    ctx.move_child(widget, child_origin);
                 }
-                Child::Spacer {
-                    length_resolved, ..
-                } => {
-                    main_offset += length_resolved.get();
-                    main_offset += gap_length;
-                    previous_was_widget = false;
-                }
+                Child::Spacer { .. } => (),
             }
         }
 
@@ -1190,7 +1208,7 @@ impl Widget for Flex {
                         .unwrap()
                         .widget()
                         .unwrap();
-                    let (first_baseline, _) = ctx.child_aligned_baselines(first_child);
+                    let (first_baseline, _) = ctx.child_baselines(first_child);
                     let first_child_origin = ctx.child_origin(first_child);
                     let first_baseline = first_child_origin.y + first_baseline;
 
@@ -1201,7 +1219,7 @@ impl Widget for Flex {
                         .unwrap()
                         .widget()
                         .unwrap();
-                    let (_, last_baseline) = ctx.child_aligned_baselines(last_child);
+                    let (_, last_baseline) = ctx.child_baselines(last_child);
                     let last_child_origin = ctx.child_origin(last_child);
                     let last_baseline = last_child_origin.y + last_baseline;
 

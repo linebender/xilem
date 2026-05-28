@@ -9,7 +9,7 @@ use tracing::Span;
 use crate::core::{
     ClassSetDiff, PaintLayerMode, PropertyCache, PropertyStackId, WidgetId, WidgetOptions,
 };
-use crate::layout::MeasurementCache;
+use crate::layout::{MeasurementCache, SnapKey, snap_translation_delta};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -72,25 +72,13 @@ pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
-    /// The origin (top-left) of the widget's aligned border-box
+    /// The origin (top-left) of the widget's border-box
     /// in the parent's border-box coordinate space.
-    ///
-    /// Together with `end_point`, these constitute the widget's aligned border-box.
     pub(crate) origin: Point,
-    /// The bottom right of the widget's aligned border-box
-    /// in the parent's border-box coordinate space.
+    /// The size of the widget's border-box.
     ///
-    /// Computed from the widget's `origin` and `layout_border_box_size`, with some pixel snapping.
-    pub(crate) end_point: Point,
-    /// The widget's layout border-box size.
-    ///
-    /// This is the chosen border-box size with min/max constraints applied.
-    ///
-    /// It is used to:
-    /// * Determine layout cache validity.
-    /// * Derive the widget's layout content-box size that will be given to `Widget::layout`.
-    /// * Compute `end_point` when the widget is placed to an `origin` by its parent.
-    pub(crate) layout_border_box_size: Size,
+    /// This is also used to determine layout cache validity.
+    pub(crate) border_box_size: Size,
     /// The insets for converting between content-box and border-box rects.
     ///
     /// Add these insets to the content-box to get the border-box,
@@ -109,17 +97,16 @@ pub(crate) struct WidgetState {
     /// An axis aligned bounding rect (AABB in 2D),
     /// containing itself and all its descendents in the window's coordinate space.
     ///
-    /// This is the union of clipped effective paint-box rects, i.e. the union of
-    /// globally transformed aligned border-box rects with paint insets applied.
+    /// This is the union of clipped paint-box rects in the window's coordinate space.
     pub(crate) bounding_box: Rect,
 
-    /// The offset of the first baseline relative to the top of the widget's layout border-box.
+    /// The offset of the first baseline relative to the top of the widget's border-box.
     ///
     /// In general, this will be `f64::NAN`; the bottom of the widget will be considered
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) first_baseline: f64,
-    /// The offset of the last baseline relative to the top of the widget's layout border-box.
+    /// The offset of the last baseline relative to the top of the widget's border-box.
     ///
     /// In general, this will be `f64::NAN`; the bottom of the widget will be considered
     /// the baseline. Widgets that contain text or controls that expect to be
@@ -138,8 +125,7 @@ pub(crate) struct WidgetState {
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// This transform is applied before `scroll_translation` and `origin`.
     pub(crate) transform: Affine,
     /// Global transform mapping this widget's border-box coordinate space
     /// to the window's coordinate space.
@@ -152,8 +138,23 @@ pub(crate) struct WidgetState {
     pub(crate) window_transform: Affine,
     /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
-    /// The `transform` or `scroll_translation` has changed.
+    /// The local `transform` has changed.
+    ///
+    /// This is tracked separately for Xilem's benefit.
     pub(crate) transform_changed: bool,
+    /// The effective compose transform has changed because `transform`, `scroll_translation`, or
+    /// `origin` has changed.
+    pub(crate) compose_transform_changed: bool,
+
+    /// This widget explicitly disables pixel snapping for itself and descendants.
+    pub(crate) is_explicitly_snap_disabled: bool,
+    /// Pixel snapping is disabled for this widget because this widget or an ancestor disabled it.
+    pub(crate) is_snap_disabled: bool,
+    /// Pixel snapping is unsupported for this widget because its transform branch does not
+    /// preserve axis-aligned boxes in window space.
+    pub(crate) is_snap_unsupported: bool,
+    /// Cache key for the active snap transform.
+    pub(crate) snap_key: Option<SnapKey>,
 
     // --- INTERACTIONS ---
     /// The `TypeId` of the widget's `Widget::Action` type.
@@ -179,9 +180,6 @@ pub(crate) struct WidgetState {
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
     pub(crate) is_new: bool,
-
-    /// A flag used to track and debug missing calls to `place_child`.
-    pub(crate) is_expecting_place_child_call: bool,
 
     /// This widget explicitly requested layout
     pub(crate) request_layout: bool,
@@ -294,8 +292,7 @@ impl WidgetState {
             id,
 
             origin: Point::ORIGIN,
-            end_point: Point::ORIGIN,
-            layout_border_box_size: Size::ZERO,
+            border_box_size: Size::ZERO,
             border_box_insets: Insets::ZERO,
             paint_box_insets: Insets::ZERO,
             bounding_box: Rect::ZERO,
@@ -306,6 +303,11 @@ impl WidgetState {
             window_transform: Affine::IDENTITY,
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
+            compose_transform_changed: false,
+            is_explicitly_snap_disabled: options.snap_disabled,
+            is_snap_disabled: false,
+            is_snap_unsupported: false,
+            snap_key: None,
 
             action_type,
             accepts_pointer_interaction: true,
@@ -315,7 +317,6 @@ impl WidgetState {
             ime_area: None,
 
             is_new: true,
-            is_expecting_place_child_call: false,
             request_layout: true,
             needs_layout: true,
             measurement_cache: MeasurementCache::new(),
@@ -383,6 +384,18 @@ impl WidgetState {
         self.needs_update_props |= child_state.needs_update_props;
     }
 
+    /// Marks this widget's local transform as changed.
+    pub(crate) fn mark_transform_changed(&mut self) {
+        self.transform_changed = true;
+        self.mark_compose_transform_changed();
+    }
+
+    /// Marks this widget's effective compose transform as changed.
+    pub(crate) fn mark_compose_transform_changed(&mut self) {
+        self.compose_transform_changed = true;
+        self.needs_compose = true;
+    }
+
     // TODO: Add WidgetState::add_diff method that merges a ClassSetDiff into the WidgetState's class_diff.
 
     /// Returns `true` if this widget or a descendant explicitly requested layout.
@@ -400,14 +413,24 @@ impl WidgetState {
         self.needs_layout = needs_layout;
     }
 
-    /// The aligned border-box size of this widget.
-    pub(crate) fn border_box_size(&self) -> Size {
-        (self.end_point - self.origin).to_size()
+    /// Returns the widget's content-box in the widget's border-box coordinate space.
+    pub(crate) fn content_box(&self) -> Rect {
+        let border_box = self.border_box();
+        let x0 = border_box.x0 + self.border_box_insets.x0;
+        let y0 = border_box.y0 + self.border_box_insets.y0;
+        let x1 = (border_box.x1 - self.border_box_insets.x1).max(x0);
+        let y1 = (border_box.y1 - self.border_box_insets.y1).max(y0);
+        Rect::new(x0, y0, x1, y1)
     }
 
-    /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
+    /// Returns the widget's border-box in the widget's border-box coordinate space.
+    pub(crate) fn border_box(&self) -> Rect {
+        self.border_box_size.to_rect()
+    }
+
+    /// Returns the widget's paint-box in the widget's border-box coordinate space.
     pub(crate) fn paint_box(&self) -> Rect {
-        self.border_box_size().to_rect() + self.paint_box_insets
+        self.border_box() + self.paint_box_insets
     }
 
     /// Returns the [`Vec2`] for translating between this widget's
@@ -419,37 +442,50 @@ impl WidgetState {
         Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
     }
 
-    /// Returns the first baseline relative to the top of the widget's layout border-box.
-    pub(crate) fn layout_first_baseline(&self) -> f64 {
+    /// Returns this widget's total local transform needed for composing.
+    ///
+    /// This maps from this widget's border-box coordinate space into its
+    /// parent's border-box coordinate space. It includes the widget's local
+    /// transform, origin, and the pixel-snapped scroll translation.
+    pub(crate) fn compose_local_transform(
+        &self,
+        parent_window_transform: Affine,
+        scale_factor: f64,
+    ) -> Affine {
+        let scroll_translation = if self.is_snap_active() {
+            snap_translation_delta(
+                self.scroll_translation,
+                parent_window_transform,
+                scale_factor,
+            )
+        } else {
+            self.scroll_translation
+        };
+
+        // The translation needs to be applied after the local transform so scrolling
+        // and layout origin are in the transformed coordinate space, similar to CSS.
+        let local_translation = scroll_translation + self.origin.to_vec2();
+        self.transform.then_translate(local_translation)
+    }
+
+    /// Returns whether pixel snapping is active for this widget.
+    pub(crate) fn is_snap_active(&self) -> bool {
+        !self.is_snap_disabled && !self.is_snap_unsupported
+    }
+
+    /// Returns the first baseline relative to the top of the widget's border-box.
+    pub(crate) fn first_baseline(&self) -> f64 {
         if self.first_baseline.is_nan() {
-            self.layout_border_box_size.height
+            self.border_box_size.height
         } else {
             self.first_baseline
         }
     }
 
-    /// Returns the last baseline relative to the top of the widget's layout border-box.
-    pub(crate) fn layout_last_baseline(&self) -> f64 {
+    /// Returns the last baseline relative to the top of the widget's border-box.
+    pub(crate) fn last_baseline(&self) -> f64 {
         if self.last_baseline.is_nan() {
-            self.layout_border_box_size.height
-        } else {
-            self.last_baseline
-        }
-    }
-
-    /// Returns the first baseline relative to the top of the widget's aligned border-box.
-    pub(crate) fn aligned_first_baseline(&self) -> f64 {
-        if self.first_baseline.is_nan() {
-            self.end_point.y - self.origin.y
-        } else {
-            self.first_baseline
-        }
-    }
-
-    /// Returns the last baseline relative to the top of the widget's aligned border-box.
-    pub(crate) fn aligned_last_baseline(&self) -> f64 {
-        if self.last_baseline.is_nan() {
-            self.end_point.y - self.origin.y
+            self.border_box_size.height
         } else {
             self.last_baseline
         }
@@ -457,14 +493,13 @@ impl WidgetState {
 
     /// Returns the area being edited by an IME, in the window's coordinate space.
     ///
-    /// If no explicit `ime_area` has been defined this will return the effective border-box area.
+    /// If no explicit `ime_area` has been defined this will return the border-box
+    /// area in the window's coordinate space.
     pub(crate) fn get_ime_area(&self) -> Rect {
         // Note: this returns sensible values for a widget that is translated and/or rescaled.
         // Other transformations like rotation may produce weird IME areas.
-        self.window_transform.transform_rect_bbox(
-            self.ime_area
-                .unwrap_or_else(|| self.border_box_size().to_rect()),
-        )
+        self.window_transform
+            .transform_rect_bbox(self.ime_area.unwrap_or(self.border_box()))
     }
 
     /// Returns the result of intersecting the widget's clip path (if any) with the given rect.

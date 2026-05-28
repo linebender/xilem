@@ -165,14 +165,13 @@ impl Widget for Align {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.child, child_size);
 
         let extra_width = size.width - child_size.width;
         let extra_height = size.height - child_size.height;
         let child_origin = self
             .align
             .resolve(Rect::new(0., 0., extra_width, extra_height));
-        ctx.place_child(&mut self.child, child_origin);
+        ctx.layout_child(&mut self.child, child_origin, child_size);
 
         ctx.derive_baselines(&self.child);
     }
