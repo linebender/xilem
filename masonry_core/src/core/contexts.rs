@@ -29,7 +29,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{get_debug_color, ParentLinkedList};
+use crate::util::{ParentLinkedList, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
