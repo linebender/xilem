@@ -20,6 +20,7 @@ pub struct ViewCtx {
     proxy: Arc<dyn RawProxy>,
     runtime: Arc<tokio::runtime::Runtime>,
     props_changed: HashSet<(WidgetId, TypeId)>,
+    transforms_changed: HashSet<WidgetId>,
     environment: Environment,
 }
 
@@ -93,6 +94,15 @@ impl ViewCtx {
         self.props_changed.insert((id, TypeId::of::<P>()));
     }
 
+    /// Marks the transform of the widget with the given id as changed.
+    ///
+    /// This is used to avoid bugs when multiple `Transformed` views are stacked on the same widget.
+    ///
+    /// This should be reset at the end of each rebuild.
+    pub fn mark_transform_changed(&mut self, id: WidgetId) {
+        self.transforms_changed.insert(id);
+    }
+
     /// Checks if the property `P` of the widget with the given id has changed during this rebuild.
     ///
     /// This is used to avoid bugs when multiple `Prop` views are stacked on the same widget.
@@ -100,11 +110,25 @@ impl ViewCtx {
         self.props_changed.contains(&(id, TypeId::of::<P>()))
     }
 
+    /// Checks if the transform of the widget with the given id has changed during this rebuild.
+    ///
+    /// This is used to avoid bugs when multiple `Transformed` views are stacked on the same widget.
+    pub fn transform_has_changed(&self, id: WidgetId) -> bool {
+        self.transforms_changed.contains(&id)
+    }
+
     /// Resets the changed properties for all widgets.
     ///
     /// This should be called at the start of each rebuild.
     pub fn reset_changed_props(&mut self) {
         self.props_changed.clear();
+    }
+
+    /// Resets the changed transforms for all widgets.
+    ///
+    /// This should be called at the start of each rebuild.
+    pub fn reset_changed_transforms(&mut self) {
+        self.transforms_changed.clear();
     }
 
     /// Returns an event queue to which [`SendMessage`](crate::core::SendMessage)s can be submitted.
@@ -122,6 +146,7 @@ impl ViewCtx {
             proxy,
             runtime,
             props_changed: HashSet::default(),
+            transforms_changed: HashSet::default(),
             environment: Environment::new(),
         }
     }
