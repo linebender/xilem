@@ -5,7 +5,7 @@
 //! both to centralize tests in a single crate and to have access to the `masonry`
 //! widget/property set in our tests if needed.
 
-use crate::kurbo::Rect;
+use crate::kurbo::{Point, Rect, Vec2};
 
 mod accessibility;
 mod action;
@@ -25,6 +25,18 @@ pub(crate) fn assert_approx_eq(name: &str, actual: f64, expected: f64) {
         (actual - expected).abs() <= 1e-9,
         "{name}: expected {expected}, got {actual}"
     );
+}
+
+#[track_caller]
+pub(crate) fn assert_point_approx_eq(name: &str, actual: Point, expected: Point) {
+    assert_approx_eq(&format!("{name}.x"), actual.x, expected.x);
+    assert_approx_eq(&format!("{name}.y"), actual.y, expected.y);
+}
+
+#[track_caller]
+pub(crate) fn assert_vec2_approx_eq(name: &str, actual: Vec2, expected: Vec2) {
+    assert_approx_eq(&format!("{name}.x"), actual.x, expected.x);
+    assert_approx_eq(&format!("{name}.y"), actual.y, expected.y);
 }
 
 #[track_caller]
