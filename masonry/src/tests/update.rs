@@ -16,7 +16,7 @@ use crate::testing::{
     assert_debug_panics,
 };
 use crate::theme::test_property_set;
-use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
+use crate::widgets::{Button, Flex, IndexedStack, Label, SizedBox, TextArea};
 
 // TREE
 
@@ -478,6 +478,133 @@ fn remove_focusable() {
     // Same thing the other way.
     harness.press_tab_key(true);
     assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
+#[test]
+fn auto_focus_on_add() {
+    let button_tag = WidgetTag::named("button");
+    let button = NewWidget::new(Button::with_text(""))
+        .with_tag(button_tag)
+        .with_auto_focus(true);
+
+    let harness = TestHarness::create(test_property_set(), button);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // A widget with `auto_focus` grabs focus when it is added to the tree.
+    assert_eq!(harness.focused_widget_id(), Some(button_id));
+}
+
+#[test]
+fn auto_focus_first_in_tree_order() {
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+
+    let button1 = NewWidget::new(Button::with_text(""))
+        .with_tag(button1_tag)
+        .with_auto_focus(true);
+    let button2 = NewWidget::new(Button::with_text(""))
+        .with_tag(button2_tag)
+        .with_auto_focus(true);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button1, button2]));
+    let harness = TestHarness::create(test_property_set(), parent);
+    let button1_id = harness.get_widget(button1_tag).id();
+
+    // When several widgets request auto-focus at once, the first in tree order wins.
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
+#[test]
+fn auto_focus_on_unstash() {
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+
+    let button1 = NewWidget::new(Button::with_text("")).with_tag(button1_tag);
+    let button2 = NewWidget::new(Button::with_text(""))
+        .with_tag(button2_tag)
+        .with_auto_focus(true);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button1, button2]));
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button2_id = harness.get_widget(button2_tag).id();
+
+    // Stashing the auto-focus widget gives up focus.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], true);
+    });
+    assert_eq!(harness.focused_widget_id(), None);
+
+    // Un-stashing it counts as appearing, so it grabs focus again.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], false);
+    });
+    assert_eq!(harness.focused_widget_id(), Some(button2_id));
+}
+
+#[test]
+fn auto_focus_inside_indexed_stack() {
+    let field_tag = WidgetTag::named("field");
+    let field = NewWidget::new(Button::with_text("page 0"))
+        .with_tag(field_tag)
+        .with_auto_focus(true);
+    let page1 = NewWidget::new(Button::with_text("page 1"));
+
+    // The auto-focus widget is the active page of an `IndexedStack`, which stashes its
+    // inactive children during layout (i.e. after the focusable/focus passes). The active
+    // page must still grab focus when the stack first appears.
+    let stack = NewWidget::new(
+        IndexedStack::new()
+            .with(field)
+            .with(page1)
+            .with_active_child(0),
+    );
+    let harness = TestHarness::create(test_property_set(), stack);
+    let field_id = harness.get_widget(field_tag).id();
+
+    assert_eq!(harness.focused_widget_id(), Some(field_id));
+}
+
+#[test]
+fn auto_focus_wrapper_inside_indexed_stack() {
+    let field_tag = WidgetTag::named("field");
+    let inner = NewWidget::new(Button::with_text("page 0")).with_tag(field_tag);
+    // Auto-focus on a non-focusable wrapper (like Xilem's `text_input`, whose focusable
+    // `TextArea` is nested). The focus must resolve to the focusable descendant.
+    let wrapper = NewWidget::new(SizedBox::new(inner.erased())).with_auto_focus(true);
+    let page1 = NewWidget::new(Button::with_text("page 1"));
+
+    let stack = NewWidget::new(
+        IndexedStack::new()
+            .with(wrapper)
+            .with(page1)
+            .with_active_child(0),
+    );
+    let harness = TestHarness::create(test_property_set(), stack);
+    let field_id = harness.get_widget(field_tag).id();
+
+    assert_eq!(harness.focused_widget_id(), Some(field_id));
+}
+
+#[test]
+fn mutate_focus_subtree_and_resign() {
+    let button_tag = WidgetTag::named("button");
+    let button = NewWidget::new(Button::with_text("")).with_tag(button_tag);
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button]));
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // `focus_subtree` on the (non-focusable) parent resolves to the focusable descendant.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.focus_subtree();
+    });
+    assert_eq!(harness.focused_widget_id(), Some(button_id));
+
+    // `resign_focus` from an ancestor gives focus up.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.resign_focus();
+    });
+    assert_eq!(harness.focused_widget_id(), None);
 }
 
 // FOCUS

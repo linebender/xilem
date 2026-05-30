@@ -168,6 +168,11 @@ pub(crate) struct WidgetState {
     /// Tracks whether widget gets text focus.
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) accepts_focus: bool,
+    /// Whether the widget requests text focus when it appears (added or un-stashed).
+    ///
+    /// Unlike `accepts_focus`, this is mutable after creation (e.g. via
+    /// [`MutateCtx::set_auto_focus`](crate::core::MutateCtx::set_auto_focus)).
+    pub(crate) auto_focus: bool,
 
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
@@ -225,6 +230,11 @@ pub(crate) struct WidgetState {
     pub(crate) descendant_is_focusable: bool,
     /// A focusable widget was added, removed, stashed, disabled, etc.
     pub(crate) needs_update_focusable: bool,
+    /// This widget was just added to the tree or un-stashed.
+    ///
+    /// Transient flag used by the focusable pass to fire `auto_focus`: set on creation and
+    /// on the un-stash transition, cleared while the focusable pass visits the widget.
+    pub(crate) just_appeared: bool,
 
     /// This widget has pending property changes.
     pub(crate) request_update_props: bool,
@@ -311,6 +321,7 @@ impl WidgetState {
             accepts_pointer_interaction: true,
             propagates_pointer_interaction: true,
             accepts_focus: false,
+            auto_focus: options.auto_focus,
             accepts_text_input: false,
             ime_area: None,
 
@@ -334,6 +345,7 @@ impl WidgetState {
             needs_update_stashed: true,
             descendant_is_focusable: false,
             needs_update_focusable: true,
+            just_appeared: true,
             request_update_props: false,
             needs_update_props: false,
             children_changed: true,

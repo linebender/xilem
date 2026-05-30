@@ -542,6 +542,15 @@ impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
         self.is_handled
     }
 
+});
+
+// --- MARK: FOCUS
+// All focus-changing methods live in one block, shared by every context that can change
+// focus: `MutateCtx` (so app code can move focus during the mutate/rebuild phase, e.g.
+// Xilem's `.focus(...)`/`.focus_on_appear(...)`), and `ActionCtx`/`EventCtx` (so widgets can
+// move focus while handling actions/events).
+// It was moved from the block above into this one.
+impl_context_method!(MutateCtx<'_>, ActionCtx<'_>, EventCtx<'_>, {
     /// Requests [text focus].
     ///
     /// Because only one widget can be focused at a time, multiple focus requests
@@ -567,9 +576,25 @@ impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
         self.global_state.next_focused_widget = Some(target);
     }
 
+    /// Requests [text focus] for the first focusable widget in this widget's subtree
+    /// (this widget itself if it is focusable).
+    ///
+    /// Unlike [`set_focus`](Self::set_focus), the target is resolved from the subtree during
+    /// the following `update_focus` pass, so the caller doesn't need to know the id of the
+    /// (possibly nested) focusable widget. This is what Xilem's `.focus(true)` uses, since the
+    /// modifier only knows the wrapper widget (e.g. `TextInput`), not the inner focusable one
+    /// (e.g. `TextArea`).
+    ///
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
+    pub fn focus_subtree(&mut self) {
+        trace!("focus_subtree");
+        self.global_state.pending_focus_subtree = Some(self.widget_id());
+    }
+
     /// Gives up [text focus].
     ///
-    /// This should only be called by a widget that currently has focus.
+    /// This should only be called when this widget or one of its ancestors currently has
+    /// focus.
     ///
     /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn resign_focus(&mut self) {
@@ -583,6 +608,13 @@ impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
                 self.widget_id()
             );
         }
+    }
+
+    /// Sets whether this widget requests focus when it next appears (is added or un-stashed).
+    ///
+    /// This only updates the flag read at appear-time; it never moves focus by itself.
+    pub fn set_auto_focus(&mut self, auto_focus: bool) {
+        self.widget_state.auto_focus = auto_focus;
     }
 });
 

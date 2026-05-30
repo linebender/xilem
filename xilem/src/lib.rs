@@ -156,6 +156,7 @@ pub use masonry::{kurbo, peniko};
 pub use tokio;
 pub use winit;
 pub use xilem_core as core;
+pub use xilem_masonry::focus;
 pub use xilem_masonry::style;
 pub use xilem_masonry::view;
 

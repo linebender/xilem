@@ -88,6 +88,11 @@ pub struct WidgetOptions {
     pub transform: Affine,
     /// The disabled state the widget will be created with.
     pub disabled: bool,
+    /// Whether the widget should request [text focus] when it appears, i.e. when it is
+    /// added to the tree or un-stashed.
+    ///
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
+    pub auto_focus: bool,
 }
 
 // TODO - This is a simple state machine that lets users create WidgetPods
@@ -206,6 +211,15 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     /// [disabled]: crate::doc::masonry_concepts#disabled
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.options.disabled = disabled;
+        self
+    }
+
+    /// Set whether the widget will request [text focus] when it appears (is added to the
+    /// tree or un-stashed).
+    ///
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
+    pub fn with_auto_focus(mut self, auto_focus: bool) -> Self {
+        self.options.auto_focus = auto_focus;
         self
     }
 
