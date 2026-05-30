@@ -124,7 +124,8 @@ where
             element.reborrow_mut(),
             app_state,
         );
-        let transform_changed = element.ctx.transform_has_changed();
+        let id = element.id();
+        let transform_changed = ctx.transform_has_changed(id);
         // If the child view changed the transform, we know we're out of date.
         if transform_changed {
             // If it has changed the transform, then we know that it will only be due to effects
@@ -139,6 +140,7 @@ where
             element
                 .ctx
                 .set_transform(self.transform * view_state.previous_transform);
+            ctx.mark_transform_changed(id);
         }
     }
 
