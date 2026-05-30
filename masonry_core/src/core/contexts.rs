@@ -224,8 +224,7 @@ impl_context_method!(
         /// This transform is used during the mapping of this widget's border-box coordinate space
         /// to the parent's border-box coordinate space.
         ///
-        /// When calculating the effective border-box of this widget, first this transform
-        /// will be applied and then `scroll_translation` and `origin` applied on top.
+        /// This transform is applied before `scroll_translation` and `origin`.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
         }
@@ -349,17 +348,6 @@ impl MutateCtx<'_> {
             ancestors: None,
             property_arena: self.property_arena,
         }
-    }
-
-    /// Returns `true` if the [local transform] of this widget has been modified since
-    /// the last time this widget's transformation was resolved.
-    ///
-    /// This is exposed for Xilem, and is more likely to change or be removed
-    /// in major releases of Masonry.
-    ///
-    /// [local transform]: Self::transform
-    pub fn transform_has_changed(&self) -> bool {
-        self.widget_state.transform_changed
     }
 
     /// Sets which property stack this widget uses for property resolution.
@@ -1153,6 +1141,7 @@ impl ComposeCtx<'_> {
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
             child.transform_changed = true;
+            child.needs_compose = true;
         }
     }
 
@@ -1185,6 +1174,7 @@ impl ComposeCtx<'_> {
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
             child.transform_changed = true;
+            child.needs_compose = true;
         }
     }
 }
@@ -1674,7 +1664,7 @@ impl_context_method!(
         pub fn set_transform(&mut self, transform: Affine) {
             self.widget_state.transform = transform;
             self.widget_state.transform_changed = true;
-            self.request_compose();
+            self.widget_state.needs_compose = true;
         }
 
         /// Adds a string to this widget's [class set].

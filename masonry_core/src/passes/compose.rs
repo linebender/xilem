@@ -29,13 +29,8 @@ fn compose_widget(
         return;
     }
 
-    // The translation needs to be applied *after* applying the transform,
-    // as translation by scrolling should be within the transformed coordinate space.
-    // Same is true for the aligned border-box origin, to behave similar as in CSS.
-    let local_translation = state.scroll_translation + state.origin.to_vec2();
-
-    state.window_transform =
-        parent_window_transform * state.transform.then_translate(local_translation);
+    let local_transform = state.compose_local_transform();
+    state.window_transform = parent_window_transform * local_transform;
 
     let paint_box = state.paint_box();
     state.bounding_box = state.window_transform.transform_rect_bbox(paint_box);
