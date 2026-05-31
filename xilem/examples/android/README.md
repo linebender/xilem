@@ -18,7 +18,7 @@ The examples are built and packaged with [`cargo-apk`](https://crates.io/crates/
 - `cargo-apk` itself:
 
   ```sh
-  cargo install cargo-apk
+  cargo install cargo-apk --locked
   ```
 
 ### Build and run
