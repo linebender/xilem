@@ -875,6 +875,13 @@ impl<W: Widget> TestHarness<W> {
         self.render_root.get_layer_root(0).id()
     }
 
+    /// Replace the tree-wide default properties at runtime.
+    ///
+    /// Mirrors [`RenderRoot::set_default_properties`].
+    pub fn set_default_properties(&mut self, default_properties: Arc<DefaultProperties>) {
+        self.render_root.set_default_properties(default_properties);
+    }
+
     /// Returns a [`WidgetRef`] to the widget with the given id.
     ///
     /// # Panics
