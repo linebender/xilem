@@ -363,7 +363,7 @@ impl Layer for SelectorMenu {
             PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 let local_pos = ctx.local_position(state.position);
 
-                !ctx.border_box_size().to_rect().contains(local_pos)
+                !ctx.border_box().contains(local_pos)
             }
             PointerEvent::Cancel(..) => true,
             _ => false,

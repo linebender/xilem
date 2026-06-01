@@ -95,6 +95,7 @@ doc-scrape-examples = false
 name = "http_cats"
 
 # Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
+# and update the list in xilem/examples/android/README.md.
 # A custom example target which uses the same `mason.rs` file but for android
 [[example]]
 name = "mason_android"

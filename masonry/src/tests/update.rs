@@ -932,3 +932,54 @@ fn status_flag_update_order() {
     assert!(!harness.get_widget(parent1_tag).ctx().is_focus_target());
     assert!(!harness.get_widget(parent1_tag).ctx().has_focus_target());
 }
+
+/// `RenderRoot::set_default_properties` should re-fire `property_changed` on
+/// every cached property across the tree, so a host can swap the default set at
+/// runtime and have widgets react.
+#[test]
+fn set_default_properties_refires_property_changed() {
+    use std::any::TypeId;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    use crate::peniko::color::AlphaColor;
+    use crate::properties::ContentColor;
+
+    let changed: Rc<RefCell<Vec<TypeId>>> = Rc::new(RefCell::new(Vec::new()));
+
+    let widget = {
+        let changed = changed.clone();
+        ModularWidget::new(())
+            // Read `ContentColor` during paint so it lands in the property cache.
+            .paint_fn(|_, ctx, props, _painter| {
+                let cache = ctx.property_cache();
+                let _ = props.get::<ContentColor>(cache);
+            })
+            .property_change_fn(move |_, _ctx, property_type| {
+                changed.borrow_mut().push(property_type);
+            })
+    };
+
+    // Seed a default `ContentColor` for this widget type and run a frame so the
+    // widget caches it.
+    let mut defaults = test_property_set();
+    defaults.insert::<ModularWidget<()>, ContentColor>(ContentColor::new(AlphaColor::WHITE));
+    let mut harness = TestHarness::create(defaults, NewWidget::new(widget));
+    let _ = harness.redraw();
+    changed.borrow_mut().clear();
+
+    // Swap in a different default and run another frame; the update-props pass
+    // should re-fire `property_changed` for every cached property, including
+    // `ContentColor`.
+    let mut new_defaults = test_property_set();
+    new_defaults.insert::<ModularWidget<()>, ContentColor>(ContentColor::new(AlphaColor::BLACK));
+    harness.set_default_properties(Arc::new(new_defaults));
+    let _ = harness.redraw();
+
+    assert!(
+        changed.borrow().contains(&TypeId::of::<ContentColor>()),
+        "expected property_changed to re-fire for ContentColor after the default swap, got {:?}",
+        changed.borrow(),
+    );
+}

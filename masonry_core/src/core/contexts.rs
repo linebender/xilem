@@ -513,7 +513,7 @@ impl EventCtx<'_> {
 impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
     /// Sends a signal to parent widgets to scroll this widget's border-box into view.
     pub fn request_scroll_to_this(&mut self) {
-        let rect = self.widget_state.border_box_size().to_rect();
+        let rect = self.widget_state.border_box();
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
@@ -1221,9 +1221,9 @@ impl ComposeCtx<'_> {
     }
 }
 
-// --- MARK: GET LAYOUT
+// --- MARK: GET GEOMETRY
 // Methods on all context types except MeasureCtx and LayoutCtx
-// These methods access layout info calculated during the layout pass.
+// These methods access geometry resolved during layout and compose.
 impl_context_method!(
     MutateCtx<'_>,
     ActionCtx<'_>,
@@ -1234,46 +1234,18 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// Returns the aligned content-box size of this widget.
-        pub fn content_box_size(&self) -> Size {
-            let border_box_size = self.widget_state.border_box_size();
-            Size::new(
-                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
-        }
-
-        /// Returns the aligned border-box size of this widget.
-        pub fn border_box_size(&self) -> Size {
-            self.widget_state.border_box_size()
-        }
-
-        /// Returns the aligned paint-box size of this widget.
-        pub fn paint_box_size(&self) -> Size {
-            self.widget_state.paint_box().size()
-        }
-
         /// Returns the aligned content-box rect of this widget
         /// in this widget's content-box coordinate space.
         pub fn content_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            Rect::new(
-                0.,
-                0.,
-                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
+            let translation = self.widget_state.border_box_translation();
+            self.widget_state.content_box() - translation
         }
 
         /// Returns the aligned border-box rect of this widget
         /// in this widget's content-box coordinate space.
         pub fn border_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            let origin = Point::new(
-                -self.widget_state.border_box_insets.x0,
-                -self.widget_state.border_box_insets.y0,
-            );
-            Rect::from_origin_size(origin, border_box_size)
+            let translation = self.widget_state.border_box_translation();
+            self.widget_state.border_box() - translation
         }
 
         /// Returns the aligned paint-box rect of this widget

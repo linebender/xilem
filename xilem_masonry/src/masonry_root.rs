@@ -54,6 +54,7 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         render_root.edit_base_layer(|mut root| {
             let mut root = root.downcast();
             ctx.reset_changed_props();
+            ctx.reset_changed_transforms();
             self.root_widget_view.rebuild(
                 &prev.root_widget_view,
                 root_widget_view_state,

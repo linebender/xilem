@@ -412,14 +412,24 @@ impl WidgetState {
         self.needs_layout = needs_layout;
     }
 
-    /// The aligned border-box size of this widget.
-    pub(crate) fn border_box_size(&self) -> Size {
-        (self.end_point - self.origin).to_size()
+    /// Returns the widget's aligned content-box in the widget's border-box coordinate space.
+    pub(crate) fn content_box(&self) -> Rect {
+        let border_box = self.border_box();
+        let x0 = border_box.x0 + self.border_box_insets.x0;
+        let y0 = border_box.y0 + self.border_box_insets.y0;
+        let x1 = (border_box.x1 - self.border_box_insets.x1).max(x0);
+        let y1 = (border_box.y1 - self.border_box_insets.y1).max(y0);
+        Rect::new(x0, y0, x1, y1)
     }
 
-    /// Returns the widget's aligned paint-box rect in the widget's border-box coordinate space.
+    /// Returns the widget's aligned border-box in the widget's border-box coordinate space.
+    pub(crate) fn border_box(&self) -> Rect {
+        (self.end_point - self.origin).to_size().to_rect()
+    }
+
+    /// Returns the widget's aligned paint-box in the widget's border-box coordinate space.
     pub(crate) fn paint_box(&self) -> Rect {
-        self.border_box_size().to_rect() + self.paint_box_insets
+        self.border_box() + self.paint_box_insets
     }
 
     /// Returns the [`Vec2`] for translating between this widget's
@@ -473,10 +483,8 @@ impl WidgetState {
     pub(crate) fn get_ime_area(&self) -> Rect {
         // Note: this returns sensible values for a widget that is translated and/or rescaled.
         // Other transformations like rotation may produce weird IME areas.
-        self.window_transform.transform_rect_bbox(
-            self.ime_area
-                .unwrap_or_else(|| self.border_box_size().to_rect()),
-        )
+        self.window_transform
+            .transform_rect_bbox(self.ime_area.unwrap_or(self.border_box()))
     }
 
     /// Returns the result of intersecting the widget's clip path (if any) with the given rect.
