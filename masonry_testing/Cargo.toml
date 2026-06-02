@@ -19,6 +19,7 @@ targets = []
 
 [dependencies]
 accesskit_consumer.workspace = true
+copypasta.workspace = true
 image = { workspace = true, features = ["png"] }
 imaging_vello_cpu = { workspace = true }
 masonry_core.workspace = true

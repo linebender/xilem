@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label};
@@ -52,6 +52,7 @@ impl DemoPage for CheckboxDemo {
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -66,10 +67,10 @@ impl DemoPage for CheckboxDemo {
             return Handled::No;
         }
 
-        render_root.edit_widget_with_tag(self.state_label, |mut label| {
+        render_root.edit_widget_with_tag(app_ctx, self.state_label, |mut label| {
             Label::set_text(&mut label, format!("Checked: {checked}"));
         });
-        render_root.edit_widget_with_tag(self.checkbox, |mut checkbox| {
+        render_root.edit_widget_with_tag(app_ctx, self.checkbox, |mut checkbox| {
             Checkbox::set_checked(&mut checkbox, checked);
         });
         Handled::Yes

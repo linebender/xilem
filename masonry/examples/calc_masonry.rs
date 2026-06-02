@@ -155,7 +155,9 @@ impl AppDriver for CalcState {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        let Some(source) = ctx.render_root(window_id).get_widget(widget_id) else {
+        let (app_ctx, render_root) = ctx.render_root(window_id);
+
+        let Some(source) = render_root.get_widget(widget_id) else {
             return;
         };
         let Some(button) = source.downcast::<Button>() else {
@@ -171,7 +173,7 @@ impl AppDriver for CalcState {
             CalcAction::None => (),
         }
 
-        ctx.render_root(window_id).edit_base_layer(|mut root| {
+        render_root.edit_base_layer(app_ctx, |mut root| {
             let mut grid = root.downcast();
             let mut flex = Grid::get_mut(&mut grid, 0);
             let mut flex = flex.downcast();

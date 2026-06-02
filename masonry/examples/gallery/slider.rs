@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Flex, Label, Slider, SliderMoved};
@@ -53,6 +53,7 @@ impl DemoPage for SliderDemo {
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -66,7 +67,7 @@ impl DemoPage for SliderDemo {
         if widget_id != id {
             return Handled::No;
         }
-        render_root.edit_widget_with_tag(self.value_label, |mut label| {
+        render_root.edit_widget_with_tag(app_ctx, self.value_label, |mut label| {
             Label::set_text(&mut label, format!("Value: {value:.3}"));
         });
         Handled::Yes

@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{Handled, NewWidget, Widget, WidgetId, WidgetTag};
 use masonry::widgets::{Flex, Label, PageChanged, Pagination, Step, StepInput};
 
@@ -53,6 +53,7 @@ impl DemoPage for PaginationDemo {
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &masonry::core::ErasedAction,
         widget_id: WidgetId,
@@ -86,34 +87,34 @@ impl DemoPage for PaginationDemo {
                 .id();
 
             if widget_id == id_page_count {
-                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_pagination, |mut widget| {
                     Pagination::set_page_count(&mut widget, value as usize);
                 });
                 return Handled::Yes;
             }
             if widget_id == id_page_active {
-                render_root.edit_widget_with_tag(self.tag_content, |mut content| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_content, |mut content| {
                     Label::set_text(&mut content, format!("Now on page {}", value));
                 });
-                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_pagination, |mut widget| {
                     Pagination::set_active_page(&mut widget, (value - 1) as usize);
                 });
                 return Handled::Yes;
             }
             if widget_id == id_buttons_start {
-                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_start(&mut widget, value as u8);
                 });
                 return Handled::Yes;
             }
             if widget_id == id_buttons_end {
-                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_end(&mut widget, value as u8);
                 });
                 return Handled::Yes;
             }
             if widget_id == id_buttons_total {
-                render_root.edit_widget_with_tag(self.tag_pagination, |mut widget| {
+                render_root.edit_widget_with_tag(app_ctx, self.tag_pagination, |mut widget| {
                     Pagination::set_buttons_total(&mut widget, value as u8);
                 });
                 return Handled::Yes;
@@ -131,10 +132,10 @@ impl DemoPage for PaginationDemo {
                 return Handled::No;
             }
 
-            render_root.edit_widget_with_tag(self.tag_content, |mut content| {
+            render_root.edit_widget_with_tag(app_ctx, self.tag_content, |mut content| {
                 Label::set_text(&mut content, format!("Now on page {}", page_idx + 1));
             });
-            render_root.edit_widget_with_tag(self.tag_page_active, |mut widget| {
+            render_root.edit_widget_with_tag(app_ctx, self.tag_page_active, |mut widget| {
                 StepInput::set_base(&mut widget, (page_idx + 1).cast_signed());
             });
             return Handled::Yes;

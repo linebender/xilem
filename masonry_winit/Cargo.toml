@@ -45,7 +45,7 @@ masonry_imaging = { workspace = true, default-features = false }
 vello = { workspace = true, optional = true }
 wgpu.workspace = true
 wgpu-profiler = { optional = true, version = "0.26.0", default-features = false }
-copypasta = "0.10.2"
+copypasta.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # We need Metal to interact with CoreAnimation during window resizing.

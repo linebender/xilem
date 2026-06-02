@@ -1,7 +1,7 @@
 // Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{AppCtx, RenderRoot};
 use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::widgets::{Checkbox, CheckboxToggled, Flex, Label, ProgressBar, Slider};
@@ -31,18 +31,18 @@ impl ProgressDemo {
         }
     }
 
-    fn apply(&mut self, render_root: &mut RenderRoot) {
+    fn apply(&mut self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
         let progress = if self.is_indeterminate {
             None
         } else {
             Some(self.value)
         };
 
-        render_root.edit_widget_with_tag(self.bar, |mut bar| {
+        render_root.edit_widget_with_tag(app_ctx, self.bar, |mut bar| {
             ProgressBar::set_progress(&mut bar, progress);
         });
 
-        render_root.edit_widget_with_tag(self.value_label, |mut label| {
+        render_root.edit_widget_with_tag(app_ctx, self.value_label, |mut label| {
             Label::set_text(
                 &mut label,
                 if let Some(value) = progress {
@@ -53,7 +53,7 @@ impl ProgressDemo {
             );
         });
 
-        render_root.edit_widget_with_tag(self.indeterminate, |mut checkbox| {
+        render_root.edit_widget_with_tag(app_ctx, self.indeterminate, |mut checkbox| {
             Checkbox::set_checked(&mut checkbox, self.is_indeterminate);
         });
     }
@@ -89,12 +89,13 @@ impl DemoPage for ProgressDemo {
         wrap_in_shell(self.shell, NewWidget::new(body).erased())
     }
 
-    fn on_selected(&mut self, render_root: &mut RenderRoot) {
-        self.apply(render_root);
+    fn on_selected(&mut self, app_ctx: &mut AppCtx, render_root: &mut RenderRoot) {
+        self.apply(app_ctx, render_root);
     }
 
     fn on_action(
         &mut self,
+        app_ctx: &mut AppCtx,
         render_root: &mut RenderRoot,
         action: &ErasedAction,
         widget_id: WidgetId,
@@ -108,7 +109,7 @@ impl DemoPage for ProgressDemo {
                 return Handled::No;
             }
             self.is_indeterminate = toggled.0;
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
 
@@ -118,7 +119,7 @@ impl DemoPage for ProgressDemo {
                 return Handled::No;
             }
             self.value = value.clamp(0.0, 1.0);
-            self.apply(render_root);
+            self.apply(app_ctx, render_root);
             return Handled::Yes;
         }
 

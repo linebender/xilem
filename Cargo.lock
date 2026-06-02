@@ -2454,6 +2454,7 @@ dependencies = [
  "anymore",
  "assert_matches",
  "console_error_panic_hook",
+ "copypasta",
  "cursor-icon",
  "dpi",
  "float-cmp 0.10.0",
@@ -2498,6 +2499,7 @@ version = "0.4.0"
 dependencies = [
  "accesskit_consumer",
  "assert_matches",
+ "copypasta",
  "image",
  "imaging_vello_cpu",
  "masonry_core",

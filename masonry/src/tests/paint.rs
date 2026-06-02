@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use assert_matches::assert_matches;
 
-use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
+use crate::app::{AppCtx, RenderRoot, RenderRootOptions, WindowSizePolicy};
 use crate::core::{NewWidget, PaintLayerMode, PropertySet, Widget, WidgetTag};
 use crate::dpi::PhysicalSize;
 use crate::kurbo::{Circle, Dashes, Point, Stroke, Vec2};
@@ -17,6 +17,7 @@ use crate::properties::types::MainAxisAlignment;
 use crate::properties::{Background, Dimensions, Gap, Padding};
 use crate::testing::{
     ModularWidget, ROBOTO, Record, TestHarness, TestWidgetExt, assert_render_snapshot,
+    create_app_ctx,
 };
 use crate::theme::test_property_set;
 use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
@@ -214,9 +215,10 @@ fn make_external_placeholder_tree() -> NewWidget<impl Widget> {
         .prepare()
 }
 
-fn create_render_root(root_widget: NewWidget<impl Widget>) -> RenderRoot {
+fn create_render_root(app_ctx: &mut AppCtx, root_widget: NewWidget<impl Widget>) -> RenderRoot {
     let test_font = Blob::new(Arc::new(ROBOTO));
     RenderRoot::new(
+        app_ctx,
         root_widget,
         |_| {},
         RenderRootOptions {
@@ -232,12 +234,13 @@ fn create_render_root(root_widget: NewWidget<impl Widget>) -> RenderRoot {
 
 #[test]
 fn isolated_scene_layers_update_the_plan_without_changing_rendering() {
-    let mut inline_root = create_render_root(make_layer_split_tree(false));
-    let (inline_layers, _) = inline_root.redraw();
+    let mut app_ctx = create_app_ctx();
+    let mut inline_root = create_render_root(&mut app_ctx, make_layer_split_tree(false));
+    let (inline_layers, _) = inline_root.redraw(&mut app_ctx);
     assert_eq!(inline_layers.layers.len(), 1);
 
-    let mut isolated_root = create_render_root(make_layer_split_tree(true));
-    let (isolated_layers, _) = isolated_root.redraw();
+    let mut isolated_root = create_render_root(&mut app_ctx, make_layer_split_tree(true));
+    let (isolated_layers, _) = isolated_root.redraw(&mut app_ctx);
     assert_eq!(isolated_layers.layers.len(), 2);
 
     let mut inline_harness =
@@ -250,8 +253,9 @@ fn isolated_scene_layers_update_the_plan_without_changing_rendering() {
 
 #[test]
 fn external_placeholders_appear_in_painter_order() {
-    let mut root = create_render_root(make_external_placeholder_tree());
-    let (visual_layers, _) = root.redraw();
+    let mut app_ctx = create_app_ctx();
+    let mut root = create_render_root(&mut app_ctx, make_external_placeholder_tree());
+    let (visual_layers, _) = root.redraw(&mut app_ctx);
     assert_eq!(visual_layers.layers.len(), 3);
 
     assert!(matches!(

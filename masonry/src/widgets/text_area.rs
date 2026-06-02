@@ -583,6 +583,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             ctx.set_clipboard(text.to_string());
                         }
                     }
+                    // Paste
+                    Key::Character(x)
+                        if EDITABLE && action_mod && x.as_str().eq_ignore_ascii_case("v") =>
+                    {
+                        let text = ctx.get_clipboard();
+                        let (fctx, lctx) = ctx.text_contexts();
+                        self.editor
+                            .driver(fctx, lctx)
+                            .insert_or_replace_selection(text.as_str());
+                        edited = true;
+                    }
                     Key::Character(a) if action_mod && a.as_str().eq_ignore_ascii_case("a") => {
                         let mut drv = self.editor.driver(fctx, lctx);
 
@@ -784,25 +795,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if new_generation != self.rendered_generation {
                     ctx.request_layout();
                     self.rendered_generation = new_generation;
-                }
-            }
-
-            TextEvent::ClipboardPaste(text) => {
-                if EDITABLE {
-                    let (fctx, lctx) = ctx.text_contexts();
-                    self.editor
-                        .driver(fctx, lctx)
-                        .insert_or_replace_selection(text);
-
-                    // TODO - Factor out with other branches
-                    let new_generation = self.editor.generation();
-                    if new_generation != self.rendered_generation {
-                        ctx.submit_action::<Self::Action>(TextAction::Changed(
-                            self.text().into_iter().collect(),
-                        ));
-                        ctx.request_layout();
-                        self.rendered_generation = new_generation;
-                    }
                 }
             }
         }

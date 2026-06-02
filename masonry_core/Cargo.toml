@@ -26,6 +26,7 @@ accesskit.workspace = true
 anymap3 = "1.0.1"
 anymore.workspace = true
 cursor-icon = "1.2.0"
+copypasta.workspace = true
 dpi.workspace = true
 imaging.workspace = true
 kurbo.workspace = true
