@@ -138,8 +138,7 @@ pub(crate) struct WidgetState {
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// This transform is applied before `scroll_translation` and `origin`.
     pub(crate) transform: Affine,
     /// Global transform mapping this widget's border-box coordinate space
     /// to the window's coordinate space.
@@ -152,7 +151,8 @@ pub(crate) struct WidgetState {
     pub(crate) window_transform: Affine,
     /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
-    /// The `transform` or `scroll_translation` has changed.
+    /// The effective compose transform has changed because `transform`, `scroll_translation`, or
+    /// `origin` has changed.
     pub(crate) transform_changed: bool,
 
     // --- INTERACTIONS ---
@@ -192,7 +192,7 @@ pub(crate) struct WidgetState {
 
     /// The `compose` method must be called on this widget
     pub(crate) request_compose: bool,
-    /// The `compose` method must be called on this widget or a descendant
+    /// The `compose` pass must run on this widget.
     pub(crate) needs_compose: bool,
 
     /// The `pre_paint` method must be called on this widget
@@ -427,6 +427,18 @@ impl WidgetState {
     /// and subtract this [`Vec2`] to translate from border-box to content-box.
     pub(crate) fn border_box_translation(&self) -> Vec2 {
         Vec2::new(self.border_box_insets.x0, self.border_box_insets.y0)
+    }
+
+    /// Returns this widget's total local transform needed for composing.
+    ///
+    /// This maps from this widget's border-box coordinate space into its
+    /// parent's border-box coordinate space. It includes the widget's local
+    /// transform, scroll translation, and origin.
+    pub(crate) fn compose_local_transform(&self) -> Affine {
+        // The translation needs to be applied after the local transform so scrolling
+        // and layout origin are in the transformed coordinate space, similar to CSS.
+        let local_translation = self.scroll_translation + self.origin.to_vec2();
+        self.transform.then_translate(local_translation)
     }
 
     /// Returns the first baseline relative to the top of the widget's layout border-box.
