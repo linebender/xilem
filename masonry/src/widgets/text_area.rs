@@ -23,6 +23,7 @@ use crate::properties::{CaretColor, ContentColor, SelectionColor};
 use crate::theme::default_text_styles;
 use crate::util::bounding_box_to_rect;
 use crate::util::debug_panic;
+use crate::widgets::text_layout_cache::TextLayoutCache;
 use crate::{TextAlign, theme};
 
 /// `TextArea` implements the core of interactive text.
@@ -48,6 +49,18 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     // TODO: Placeholder text?
     /// The underlying `PlainEditor`, which provides a high-level interface for us to dispatch into.
     editor: PlainEditor<BrushIndex>,
+    /// Cached layouts used only by [`measure`](Widget::measure).
+    ///
+    /// Measurement must not mutate `editor`: [`measure`](Widget::measure) results are
+    /// cached, so they may only change when layout is requested, and speculative
+    /// measure calls must not invalidate the layout that [`paint`](Widget::paint) and
+    /// friends read from the editor. Instead of doing layout through the editor and
+    /// then undoing it, we measure with cached layouts built from the editor's
+    /// current text and styles, leaving the editor untouched.
+    ///
+    /// The cached layouts are built at the editor's default scale (`1.0`) and
+    /// quantization (`true`); `TextArea` never reconfigures these on the editor.
+    measure_layouts: TextLayoutCache,
     /// The generation of `editor` which we have rendered.
     ///
     /// TODO: Split into rendered and layout generation. This will make the `edited` mechanism in [`on_text_event`](Widget::on_text_event).
@@ -118,6 +131,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         editor.set_text(text);
         Self {
             editor,
+            measure_layouts: TextLayoutCache::new(),
             rendered_generation: Generation::default(),
             word_wrap: true,
             last_max_advance: None,
@@ -247,6 +261,13 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self.editor.raw_text().is_empty()
     }
 
+    /// Clears the measurement layout cache.
+    ///
+    /// Call this whenever text, styles, or fonts have changed.
+    fn clear_measure_cache(&mut self) {
+        self.measure_layouts.clear();
+    }
+
     /// Returns the IME area from the editor, accounting for padding.
     ///
     /// This should only be called when the editor layout is available.
@@ -286,6 +307,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ) -> Option<StyleProperty> {
         let old = this.widget.insert_style_inner(property.into());
 
+        this.widget.clear_measure_cache();
         this.ctx.request_layout();
         old
     }
@@ -299,6 +321,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
         this.widget.editor.edit_styles().retain(f);
 
+        this.widget.clear_measure_cache();
         this.ctx.request_layout();
     }
 
@@ -318,6 +341,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ) -> Option<StyleProperty> {
         let old = this.widget.editor.edit_styles().remove(property);
 
+        this.widget.clear_measure_cache();
         this.ctx.request_layout();
         old
     }
@@ -339,6 +363,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         let (fctx, lctx) = this.ctx.text_contexts();
         this.widget.editor.driver(fctx, lctx).move_to_text_end();
 
+        this.widget.clear_measure_cache();
         this.ctx.request_layout();
     }
 
@@ -732,6 +757,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         ctx.submit_action::<Self::Action>(TextAction::Changed(
                             self.text().into_iter().collect(),
                         ));
+                        self.clear_measure_cache();
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
@@ -782,6 +808,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
+                    self.clear_measure_cache();
                     ctx.request_layout();
                     self.rendered_generation = new_generation;
                 }
@@ -800,6 +827,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         ctx.submit_action::<Self::Action>(TextAction::Changed(
                             self.text().into_iter().collect(),
                         ));
+                        self.clear_measure_cache();
                         ctx.request_layout();
                         self.rendered_generation = new_generation;
                     }
@@ -857,6 +885,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 //       We know that the lifecycle of dirty tracking in Parley's
                 //       editor will need to change eventually anyway...
                 let _ = self.editor.edit_styles();
+                self.clear_measure_cache();
                 ctx.request_layout();
             }
             Update::FocusChanged(_) => {
@@ -917,34 +946,24 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
         .map(|v| v.get() as f32);
 
-        let mut reset_max_advance = None;
-        if self.last_max_advance != max_advance {
-            reset_max_advance = Some(self.last_max_advance);
-            self.editor.set_width(max_advance);
-            self.last_max_advance = max_advance;
-        }
-
-        // TODO: PlainEditor::layout will do alignment and all,
-        //       but that's potentially wasted work for measure.
-        //       Should probably split up that PlainEditor method.
-
+        // Measure with cached layouts built from the editor's current text and styles,
+        // mirroring `PlainEditor`'s internal layout logic minus the alignment,
+        // which doesn't affect the measured size. The editor and its layout are
+        // deliberately left untouched, keeping `measure` free of side effects.
         let (fctx, lctx) = ctx.text_contexts();
-        let layout = self.editor.layout(fctx, lctx);
+        let layout_idx = self.measure_layouts.build_and_break(
+            fctx,
+            lctx,
+            self.editor.raw_text(),
+            self.editor.get_styles(),
+            max_advance,
+        );
+        let layout = &self.measure_layouts.get(layout_idx).layout;
+
         let text_width = max_advance.unwrap_or(layout.full_width());
         let text_size = Size::new(text_width.into(), layout.height().into());
 
-        let length = text_size.get_coord(axis);
-
-        // TODO: Remove this hack and do efficient side-effect free measurement with no alignment
-        // HACK: Perform layout again with the old value so that speculative measure() calls
-        //       won't affect paint() calls which expect the old layout() result to be present.
-        if let Some(reset_max_advance) = reset_max_advance {
-            self.editor.set_width(reset_max_advance);
-            self.last_max_advance = reset_max_advance;
-            self.editor.refresh_layout(fctx, lctx);
-        }
-
-        length.px()
+        text_size.get_coord(axis).px()
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
@@ -1116,11 +1135,85 @@ mod tests {
     use masonry_testing::TestHarnessParams;
 
     use super::*;
-    use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet};
+    use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet, WidgetTag};
+    use crate::layout::SizeDef;
     use crate::palette;
-    use crate::testing::TestHarness;
+    use crate::testing::{ModularWidget, TestHarness};
     use crate::theme::test_property_set;
     // Tests of alignment happen in Prose.
+
+    #[test]
+    fn measure_does_not_mutate_editor() {
+        let area_tag = WidgetTag::unique();
+        let parent_tag = WidgetTag::unique();
+
+        let area =
+            NewWidget::new(TextArea::new_immutable("String which will wrap")).with_tag(area_tag);
+        // A parent which measures its child at min- and max-content
+        // before laying it out to fit the available space.
+        let parent = NewWidget::new(ModularWidget::new_parent(area).layout_fn(
+            |child, ctx, _props, size| {
+                let context_size = size.into();
+                let _ = ctx.compute_size(child, SizeDef::MIN, context_size);
+                let _ = ctx.compute_size(child, SizeDef::MAX, context_size);
+                let child_size = ctx.compute_size(child, SizeDef::fit(size), context_size);
+                ctx.run_layout(child, child_size);
+                ctx.place_child(child, Point::ZERO);
+                ctx.derive_baselines(child);
+            },
+        ))
+        .with_tag(parent_tag);
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), parent, (60, 40));
+
+        let generation = harness.get_widget(area_tag).inner().editor.generation();
+
+        // Relayout the parent without changing anything about the text area.
+        harness.edit_widget(parent_tag, |mut parent| {
+            parent.ctx.request_layout();
+        });
+
+        // We don't use assert_eq because `Generation` doesn't implement `Debug`.
+        assert!(
+            harness.get_widget(area_tag).inner().editor.generation() == generation,
+            "measuring the text area must not invalidate its editor"
+        );
+    }
+
+    #[test]
+    fn measure_reflects_edits() {
+        let area_tag = WidgetTag::unique();
+
+        let area = NewWidget::new(TextArea::new_editable("hello")).with_tag(area_tag);
+        // A parent which always lays out its child at the child's max-content size,
+        // so the child's final size tracks what `measure` reports.
+        let parent = NewWidget::new(ModularWidget::new_parent(area).layout_fn(
+            |child, ctx, _props, size| {
+                let child_size = ctx.compute_size(child, SizeDef::MAX, size.into());
+                ctx.run_layout(child, child_size);
+                ctx.place_child(child, Point::ZERO);
+                ctx.derive_baselines(child);
+            },
+        ));
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), parent, (200, 40));
+
+        let area_id = harness.get_widget(area_tag).id();
+        harness.focus_on(Some(area_id));
+
+        let width = harness.get_widget(area_tag).ctx().border_box().width();
+
+        harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+            key: Key::Character("words".into()),
+            ..Default::default()
+        }));
+
+        let new_width = harness.get_widget(area_tag).ctx().border_box().width();
+        assert!(
+            new_width > width,
+            "inserting text must grow the measured max-content width ({width} -> {new_width})"
+        );
+    }
 
     #[test]
     fn edit_wordwrap() {
