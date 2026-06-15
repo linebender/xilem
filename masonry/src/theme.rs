@@ -372,7 +372,12 @@ pub fn default_property_set() -> DefaultProperties {
     }
 
     // Spinner
-    properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
+    properties.insert::<Spinner, _>(TrackColor {
+        active: TEXT_COLOR,
+        inactive: Color::TRANSPARENT,
+    });
+    properties.insert::<Spinner, _>(TrackThickness(8.px()));
+    properties.insert::<Spinner, _>(AnimationDuration { seconds: 1.2 });
 
     // StepInput
     default_step_input_style::<u8>(&mut properties);

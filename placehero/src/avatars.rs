@@ -64,7 +64,7 @@ impl Avatars {
                 // If the worker hasn't started yet, we have to wait until it does to do so.
             }
             Either::B(
-                sized_box(spinner().color(css::BLACK))
+                sized_box(spinner())
                     .dims((width, height))
                     .background_gradient(
                         Gradient::new_linear(

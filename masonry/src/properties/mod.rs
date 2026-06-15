@@ -5,6 +5,7 @@
 //!
 //! See [properties documentation](crate::doc::widget_properties) for details.
 
+mod animation;
 mod checkmark;
 mod content_color;
 mod gap;
@@ -17,9 +18,11 @@ mod scroll_bar;
 mod selection;
 mod slider;
 mod step_input;
+mod track;
 
 pub mod types;
 
+pub use animation::*;
 pub use checkmark::*;
 pub use content_color::*;
 pub use gap::*;
@@ -32,5 +35,6 @@ pub use scroll_bar::*;
 pub use selection::*;
 pub use slider::*;
 pub use step_input::*;
+pub use track::*;
 
 pub use masonry_core::properties::*;
