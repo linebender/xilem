@@ -418,6 +418,8 @@ pub enum TextAction {
     /// Whether this action gets emitted depends on the [`InsertNewline`] setting
     /// and with [`InsertNewline::OnShiftEnter`] also on if the shift key is pressed.
     Entered(String),
+    /// The Escape key was pressed, signalling a cancel action.
+    Cancelled,
     // TODO: TextCursor changed, ImeChanged
 }
 
@@ -713,6 +715,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // Intentionally do nothing so that tabbing from a TextInput/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
+                    }
+                    Key::Named(NamedKey::Escape) => {
+                        ctx.submit_action::<Self::Action>(TextAction::Cancelled);
                     }
                     Key::Character(text) if EDITABLE => {
                         self.editor
