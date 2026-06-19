@@ -1296,4 +1296,27 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn escape_emits_cancelled() {
+        let area = NewWidget::new(TextArea::new_editable("hello world"));
+
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let text_id = harness.root_id();
+
+        harness.focus_on(Some(text_id));
+        harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+            key: Key::Named(NamedKey::Escape),
+            modifiers: Modifiers::default(),
+            ..Default::default()
+        }));
+
+        let area = harness.root_widget();
+        let text = area.text().to_string();
+        let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
+        assert_eq!(widget_id, text_id);
+        assert_eq!(action, TextAction::Cancelled);
+        assert!(harness.pop_action_erased().is_none());
+        assert_eq!(text, "hello world");
+    }
 }

@@ -413,6 +413,42 @@ impl RenderRoot {
         &mut self.property_arena
     }
 
+    /// Replace the tree-wide default properties at runtime.
+    ///
+    /// The default property set is normally fixed at construction. This lets
+    /// a host swap it mid-session, e.g. a light/dark theme toggle that
+    /// re-colors widgets relying on default `ContentColor` / `Background`.
+    ///
+    /// This invalidates the computed properties of the entire widget tree,
+    /// and calls [`Widget::property_changed`] for every property previously
+    /// resolved by each widget.
+    pub fn set_default_properties(&mut self, default_properties: Arc<DefaultProperties>) {
+        self.property_arena.default_properties = default_properties;
+
+        // Mark the whole tree for the update-properties pass: `needs_update_props`
+        // so the pass descends to every node, `request_update_props` to enter the
+        // cache-eviction branch, and `invalidated` so every cached entry re-fires
+        // `property_changed` regardless of its (unchanged) resolved index.
+        fn invalidate_props_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            state.request_update_props = true;
+            state.needs_update_props = true;
+            state.property_cache.invalidated = true;
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                invalidate_props_all_in(node);
+            });
+        }
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
+        invalidate_props_all_in(root_node);
+
+        self.run_rewrite_passes();
+    }
+
     pub(crate) fn root_id(&self) -> WidgetId {
         self.layer_stack.id()
     }

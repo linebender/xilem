@@ -518,6 +518,7 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
     // TODO - We may want to invalidate in other cases as well
     if origin != child_state.origin {
         child_state.transform_changed = true;
+        child_state.needs_compose = true;
     }
     child_state.origin = origin;
     child_state.end_point = end_point;
@@ -564,7 +565,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     if let WindowSizePolicy::Content = root.global_state.size_policy {
         // We use the aligned border-box size, which means that transforms won't affect window size.
-        let size = root_node.item.state.border_box_size();
+        let size = root_node.item.state.border_box().size();
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
         if root.global_state.size != new_size {

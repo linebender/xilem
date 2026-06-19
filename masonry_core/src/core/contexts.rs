@@ -224,8 +224,7 @@ impl_context_method!(
         /// This transform is used during the mapping of this widget's border-box coordinate space
         /// to the parent's border-box coordinate space.
         ///
-        /// When calculating the effective border-box of this widget, first this transform
-        /// will be applied and then `scroll_translation` and `origin` applied on top.
+        /// This transform is applied before `scroll_translation` and `origin`.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
         }
@@ -349,17 +348,6 @@ impl MutateCtx<'_> {
             ancestors: None,
             property_arena: self.property_arena,
         }
-    }
-
-    /// Returns `true` if the [local transform] of this widget has been modified since
-    /// the last time this widget's transformation was resolved.
-    ///
-    /// This is exposed for Xilem, and is more likely to change or be removed
-    /// in major releases of Masonry.
-    ///
-    /// [local transform]: Self::transform
-    pub fn transform_has_changed(&self) -> bool {
-        self.widget_state.transform_changed
     }
 
     /// Sets which property stack this widget uses for property resolution.
@@ -513,7 +501,7 @@ impl EventCtx<'_> {
 impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
     /// Sends a signal to parent widgets to scroll this widget's border-box into view.
     pub fn request_scroll_to_this(&mut self) {
-        let rect = self.widget_state.border_box_size().to_rect();
+        let rect = self.widget_state.border_box();
         self.global_state
             .scroll_request_targets
             .push((self.widget_state.id, rect));
@@ -1153,6 +1141,7 @@ impl ComposeCtx<'_> {
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
             child.transform_changed = true;
+            child.needs_compose = true;
         }
     }
 
@@ -1185,13 +1174,14 @@ impl ComposeCtx<'_> {
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
             child.transform_changed = true;
+            child.needs_compose = true;
         }
     }
 }
 
-// --- MARK: GET LAYOUT
+// --- MARK: GET GEOMETRY
 // Methods on all context types except MeasureCtx and LayoutCtx
-// These methods access layout info calculated during the layout pass.
+// These methods access geometry resolved during layout and compose.
 impl_context_method!(
     MutateCtx<'_>,
     ActionCtx<'_>,
@@ -1202,46 +1192,18 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// Returns the aligned content-box size of this widget.
-        pub fn content_box_size(&self) -> Size {
-            let border_box_size = self.widget_state.border_box_size();
-            Size::new(
-                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
-        }
-
-        /// Returns the aligned border-box size of this widget.
-        pub fn border_box_size(&self) -> Size {
-            self.widget_state.border_box_size()
-        }
-
-        /// Returns the aligned paint-box size of this widget.
-        pub fn paint_box_size(&self) -> Size {
-            self.widget_state.paint_box().size()
-        }
-
         /// Returns the aligned content-box rect of this widget
         /// in this widget's content-box coordinate space.
         pub fn content_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            Rect::new(
-                0.,
-                0.,
-                (border_box_size.width - self.widget_state.border_box_insets.x_value()).max(0.),
-                (border_box_size.height - self.widget_state.border_box_insets.y_value()).max(0.),
-            )
+            let translation = self.widget_state.border_box_translation();
+            self.widget_state.content_box() - translation
         }
 
         /// Returns the aligned border-box rect of this widget
         /// in this widget's content-box coordinate space.
         pub fn border_box(&self) -> Rect {
-            let border_box_size = self.widget_state.border_box_size();
-            let origin = Point::new(
-                -self.widget_state.border_box_insets.x0,
-                -self.widget_state.border_box_insets.y0,
-            );
-            Rect::from_origin_size(origin, border_box_size)
+            let translation = self.widget_state.border_box_translation();
+            self.widget_state.border_box() - translation
         }
 
         /// Returns the aligned paint-box rect of this widget
@@ -1702,7 +1664,7 @@ impl_context_method!(
         pub fn set_transform(&mut self, transform: Affine) {
             self.widget_state.transform = transform;
             self.widget_state.transform_changed = true;
-            self.request_compose();
+            self.widget_state.needs_compose = true;
         }
 
         /// Adds a string to this widget's [class set].

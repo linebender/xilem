@@ -2,7 +2,7 @@
 /.direnv
 /target
 .DS_Store
-graphify-out
+
 # Common LLM agent files
 AGENT.md
 AGENTS.md
