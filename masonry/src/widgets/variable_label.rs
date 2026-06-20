@@ -284,5 +284,88 @@ impl Widget for VariableLabel {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    // TODO - Add tests
+    use super::*;
+
+    #[test]
+    fn stable_value_does_not_animate() {
+        let mut value = AnimatedF32::stable(5.0);
+        assert_eq!(value.value(), 5.0);
+        assert_eq!(value.target(), 5.0);
+
+        // Advancing a stable value leaves it unchanged and reports completion.
+        let status = value.advance(100.0);
+        assert!(status.is_completed());
+        assert_eq!(value.value(), 5.0);
+    }
+
+    #[test]
+    fn move_to_zero_millis_jumps_immediately() {
+        let mut value = AnimatedF32::stable(0.0);
+        value.move_to(10.0, 0.0);
+        assert_eq!(value.target(), 10.0);
+        // With a zero-length animation the value reaches the target right away.
+        assert_eq!(value.value(), 10.0);
+    }
+
+    #[test]
+    fn move_to_negative_millis_jumps_immediately() {
+        let mut value = AnimatedF32::stable(0.0);
+        // A negative duration is invalid; the value snaps to the target.
+        value.move_to(10.0, -5.0);
+        assert_eq!(value.target(), 10.0);
+        assert_eq!(value.value(), 10.0);
+    }
+
+    #[test]
+    fn move_to_animates_linearly_over_time() {
+        let mut value = AnimatedF32::stable(0.0);
+        value.move_to(100.0, 10.0);
+
+        // Half-way through the animation the value is half-way to the target.
+        let status = value.advance(5.0);
+        assert_eq!(status, AnimationStatus::Ongoing);
+        assert_eq!(value.value(), 50.0);
+
+        // The remaining time reaches the target exactly and completes.
+        let status = value.advance(5.0);
+        assert!(status.is_completed());
+        assert_eq!(value.value(), 100.0);
+        assert_eq!(value.target(), 100.0);
+    }
+
+    #[test]
+    fn advance_past_target_clamps_to_target() {
+        let mut value = AnimatedF32::stable(0.0);
+        value.move_to(100.0, 10.0);
+
+        // Overshooting the duration must clamp to the target rather than sail past it.
+        let status = value.advance(1000.0);
+        assert!(status.is_completed());
+        assert_eq!(value.value(), 100.0);
+
+        // Once completed the value stays put even if advanced again.
+        let status = value.advance(1000.0);
+        assert!(status.is_completed());
+        assert_eq!(value.value(), 100.0);
+    }
+
+    #[test]
+    fn move_to_can_animate_downwards() {
+        let mut value = AnimatedF32::stable(100.0);
+        value.move_to(0.0, 10.0);
+
+        let status = value.advance(5.0);
+        assert_eq!(status, AnimationStatus::Ongoing);
+        assert_eq!(value.value(), 50.0);
+
+        let status = value.advance(5.0);
+        assert!(status.is_completed());
+        assert_eq!(value.value(), 0.0);
+    }
+
+    #[test]
+    fn animation_status_is_completed() {
+        assert!(AnimationStatus::Completed.is_completed());
+        assert!(!AnimationStatus::Ongoing.is_completed());
+    }
 }
