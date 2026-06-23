@@ -414,8 +414,8 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     ///     text_button("click me", |_| ()).grid((0, 0, 2, ())),
     ///     prose("a prose").grid((1, 1)),
     /// ))
-    /// .columns(repeat_tracks(2))
-    /// .rows(repeat_tracks(2))
+    /// .columns(repeat_tracks(2, GridTrackSize::FRACTION))
+    /// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
     /// # }
     /// ```
     fn grid(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
