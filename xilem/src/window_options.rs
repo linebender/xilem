@@ -710,7 +710,76 @@ pub use macos::*;
 #[cfg(windows)]
 pub use windows::*;
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
+mod linux {
+    use winit::platform::wayland::WindowAttributesExtWayland;
+    use winit::platform::x11::WindowAttributesExtX11;
+    use winit::window::{Window, WindowAttributes};
+
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificInitialWindowAttrs {
+        /// `(general, instance)` identifier applied as the Wayland `app_id` and
+        /// the X11 `WM_CLASS`.
+        pub(crate) name: Option<(String, String)>,
+    }
+
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificReactiveWindowAttrs {}
+
+    impl PlatformSpecificInitialWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            let Some((general, instance)) = &self.name else {
+                return attrs;
+            };
+            // winit only knows which backend it will use at runtime, so the
+            // same identifier is applied to both: the Wayland `app_id` and the
+            // X11 `WM_CLASS`.
+            let attrs =
+                WindowAttributesExtWayland::with_name(attrs, general.clone(), instance.clone());
+            WindowAttributesExtX11::with_name(attrs, general.clone(), instance.clone())
+        }
+
+        pub(crate) fn warn(&self, prev: &Self) {
+            if self.name != prev.name {
+                tracing::warn!(
+                    "attempted to change name attribute after window creation, this is not supported"
+                );
+            }
+        }
+    }
+
+    impl PlatformSpecificReactiveWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            attrs
+        }
+
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+    }
+
+    /// Extension setters for Linux-specific window options.
+    pub trait WindowOptionsExtLinux {
+        /// Sets the window's application identifier.
+        ///
+        /// `general` becomes the Wayland `app_id` (and the general class of the
+        /// X11 `WM_CLASS`); `instance` becomes the X11 instance name and is
+        /// ignored on Wayland. Compositors commonly use this identifier to match
+        /// a window to its desktop entry or to apply window-management rules.
+        fn with_name(self, general: impl Into<String>, instance: impl Into<String>) -> Self;
+    }
+
+    impl<S> WindowOptionsExtLinux for super::WindowOptions<S> {
+        #[inline]
+        fn with_name(mut self, general: impl Into<String>, instance: impl Into<String>) -> Self {
+            self.initial.platform_specific.name = Some((general.into(), instance.into()));
+            self
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub use linux::*;
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 mod dummy_platform {
     use winit::window::{Window, WindowAttributes};
 
@@ -737,5 +806,5 @@ mod dummy_platform {
     }
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub(crate) use dummy_platform::*;
