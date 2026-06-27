@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::core::{ArcStr, NewWidget};
 use masonry::parley::style::FontWeight;
-use masonry::parley::{FontFamily, StyleProperty};
+use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, StyleProperty};
 use masonry::widgets::{self, CheckboxToggled};
 
 use crate::core::{MessageCtx, MessageResult, Mut, View, ViewMarker};
@@ -44,7 +44,7 @@ where
         checked,
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
-        font: FontFamily::List(std::borrow::Cow::Borrowed(&[])),
+        font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
         disabled: false,
         phantom: PhantomData,
     }
