@@ -83,8 +83,7 @@ pub struct WidgetOptions {
     /// Local transform used during the mapping of this widget's border-box coordinate space
     /// to the parent's border-box coordinate space.
     ///
-    /// When calculating the effective border-box of this widget, first this transform
-    /// will be applied and then `scroll_translation` and `origin` applied on top.
+    /// This transform is applied before `scroll_translation` and `origin`.
     pub transform: Affine,
     /// The disabled state the widget will be created with.
     pub disabled: bool,

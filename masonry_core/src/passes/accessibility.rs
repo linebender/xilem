@@ -91,8 +91,7 @@ fn build_access_node(
     let mut node = Node::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(ctx.widget_state.border_box()));
 
-    let local_translation = ctx.widget_state.scroll_translation + ctx.widget_state.origin.to_vec2();
-    let mut local_transform = ctx.widget_state.transform.then_translate(local_translation);
+    let mut local_transform = ctx.widget_state.compose_local_transform();
 
     // TODO - Remove once Masonry uses physical coordinates.
     // See https://github.com/linebender/xilem/issues/1264
