@@ -2443,6 +2443,7 @@ dependencies = [
  "resvg",
  "smallvec",
  "tracing",
+ "understory_virtual_list",
 ]
 
 [[package]]
@@ -5074,6 +5075,12 @@ dependencies = [
  "web-time",
  "winit",
 ]
+
+[[package]]
+name = "understory_virtual_list"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1562c70e80970850aefd08f87cda4bd134355b8d6dad65ea1320725f157b709e"
 
 [[package]]
 name = "unicase"
