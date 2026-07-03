@@ -1,18 +1,16 @@
 // Copyright 2026 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{
-    core::{
-        AccessCtx, ActionCtx, ChildrenIds, ErasedAction, LayoutCtx, MeasureCtx, PaintCtx,
-        PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
-    },
-    imaging::Painter,
-    kurbo::{Axis, Point, Size},
-    layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef},
-    peniko::Color,
-    properties::{Background, TrackColor, types::CrossAxisAlignment},
-    widgets::{Flex, SizedBox, Slider, SliderMoved},
+use masonry::core::{
+    AccessCtx, ActionCtx, ChildrenIds, ErasedAction, LayoutCtx, MeasureCtx, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use masonry::imaging::Painter;
+use masonry::kurbo::{Axis, Point, Size};
+use masonry::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
+use masonry::peniko::Color;
+use masonry::properties::{Background, TrackColor, types::CrossAxisAlignment};
+use masonry::widgets::{Flex, SizedBox, Slider, SliderMoved};
 
 use crate::demo::CONTENT_GAP;
 
@@ -100,7 +98,7 @@ impl HorizontalColorPicker {
         }
     }
 
-    #[allow(unused, reason = "Not yet used")]
+    #[expect(dead_code, reason = "Currently unused, available for future use.")]
     pub(crate) fn set_color(this: &mut WidgetMut<'_, Self>, color: Color) {
         for (component, wid) in this.widget.sliders.iter() {
             let value = component.get(&color);

@@ -14,12 +14,6 @@ use masonry::widgets::{Flex, Label, Slider, SliderMoved, Step, StepInput};
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
 use crate::{ColorSelected, HorizontalColorPicker};
 
-fn desc(text: &str) -> NewWidget<Label> {
-    Label::new(text)
-        .with_style(StyleProperty::FontSize(14.0))
-        .prepare()
-        .with_props(Dimensions::width(120.px()))
-}
 pub(crate) struct SliderDemo {
     shell: ShellTags,
     value_label: WidgetTag<Label>,
@@ -70,6 +64,13 @@ impl DemoPage for SliderDemo {
     }
 
     fn build(&self) -> NewWidget<dyn Widget> {
+        fn desc(text: &str) -> NewWidget<Label> {
+            Label::new(text)
+                .with_style(StyleProperty::FontSize(14.0))
+                .prepare()
+                .with_props(Dimensions::width(120.px()))
+        }
+
         let slider =
             NewWidget::new(Slider::new(-1.0, 1.0, 0.0).with_step(0.001)).with_tag(self.slider);
 
