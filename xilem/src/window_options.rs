@@ -704,12 +704,6 @@ mod macos {
     }
 }
 
-#[cfg(target_os = "macos")]
-pub use macos::*;
-
-#[cfg(windows)]
-pub use windows::*;
-
 #[cfg(target_os = "linux")]
 mod linux {
     use winit::platform::wayland::WindowAttributesExtWayland;
@@ -776,9 +770,6 @@ mod linux {
     }
 }
 
-#[cfg(target_os = "linux")]
-pub use linux::*;
-
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 mod dummy_platform {
     use winit::window::{Window, WindowAttributes};
@@ -805,6 +796,15 @@ mod dummy_platform {
         pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
     }
 }
+
+#[cfg(target_os = "macos")]
+pub use macos::*;
+
+#[cfg(windows)]
+pub use windows::*;
+
+#[cfg(target_os = "linux")]
+pub use linux::*;
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub(crate) use dummy_platform::*;
