@@ -399,7 +399,7 @@ where
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a grid item
 pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
-    /// Applies [`impl Into<GridParams>`](`GridParams`) to this view. This allows the view
+    /// Applies [`GridParams`](`GridParams`) to this view. This allows the view
     /// to be placed as a child within a [`Grid`] [`View`].
     ///
     /// # Examples
@@ -418,12 +418,39 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
     /// # }
     /// ```
-    fn grid(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
+    fn grid_params(self, params: GridParams) -> GridItem<Self, State, Action>
     where
         Action: 'static,
         Self: Sized,
     {
         grid_item(self, params)
+    }
+
+    /// Applies a [`GridParams`](`GridParams`) with the specified position to this view.
+    /// This allows the view to be placed as a child within a [`Grid`] [`View`].
+    /// For instances where a grid item is expected to take up multiple cell units,
+    /// use [`GridExt::grid_item`]
+    ///
+    /// # Examples
+    /// ```
+    /// # use xilem_masonry as xilem;
+    /// use masonry::widgets::GridParams;
+    /// use xilem::{view::{text_button, prose, grid, GridExt}};
+    /// # use xilem::WidgetView;
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// grid((
+    ///     text_button("click me", |_| ()).grid_pos(0, 0),
+    ///     prose("a prose").grid_pos(1, 1),
+    /// ), 2, 2)
+    /// # }
+    /// ```
+    fn grid_pos(self, x: u16, y: u16) -> GridItem<Self, State, Action>
+    where
+        Action: 'static,
+        Self: Sized,
+    {
+        grid_item(self, GridParams::new().with_pos(x, y))
     }
 }
 
@@ -468,10 +495,7 @@ pub struct GridItem<V, State, Action> {
 }
 
 /// Creates a [`GridItem`] from a view and [`GridParams`].
-pub fn grid_item<V, State, Action>(
-    view: V,
-    params: impl Into<GridParams>,
-) -> GridItem<V, State, Action>
+pub fn grid_item<V, State, Action>(view: V, params: GridParams) -> GridItem<V, State, Action>
 where
     State: 'static,
     Action: 'static,

@@ -19,9 +19,7 @@ use crate::testing::{
     ModularWidget, ROBOTO, Record, TestHarness, TestWidgetExt, assert_render_snapshot,
 };
 use crate::theme::test_property_set;
-use crate::widgets::{
-    Align, ChildAlignment, Flex, Grid, GridParams, GridTrackSize, Label, SizedBox, ZStack,
-};
+use crate::widgets::{Align, ChildAlignment, Flex, Grid, GridParams, Label, SizedBox, ZStack};
 
 #[test]
 fn request_paint() {
@@ -300,9 +298,7 @@ fn paint_transparency() {
     let align_a = UnitPoint::TOP_LEFT;
     let align_b = UnitPoint::BOTTOM_LEFT;
 
-    let mut grid_a = Grid::new()
-        .with_columns([GridTrackSize::FRACTION; 4])
-        .with_row(GridTrackSize::FRACTION);
+    let mut grid_a = Grid::with_dimensions(4, 1);
     grid_a = grid_a.with(child("AAAA", align_a, None), GridParams::pos(0, 0));
     grid_a = grid_a.with(
         child("AABB", align_a, Color::TRANSPARENT),
@@ -319,9 +315,7 @@ fn paint_transparency() {
         GridParams::pos(3, 0),
     );
 
-    let mut grid_b = Grid::new()
-        .with_columns([GridTrackSize::FRACTION; 16])
-        .with_row(GridTrackSize::FRACTION);
+    let mut grid_b = Grid::with_dimensions(16, 1);
     grid_b = grid_b.with(
         child("BBAA", align_b, None),
         GridParams::pos(1, 0).with_width(3),

@@ -97,6 +97,16 @@ impl Grid {
         Self::default()
     }
 
+    /// Creates a new grid with the given number of columns and rows,
+    /// with each row and column sized with [`GridTrackSize::FRACTION`].
+    pub fn with_dimensions(columns: usize, rows: usize) -> Self {
+        Self {
+            columns: vec![GridTrackSize::FRACTION; columns],
+            rows: vec![GridTrackSize::FRACTION; rows],
+            ..Self::default()
+        }
+    }
+
     /// Builder-style method to add a row to the grid.
     pub fn with_row(mut self, row: GridTrackSize) -> Self {
         self.rows.push(row);
@@ -122,11 +132,7 @@ impl Grid {
     }
 
     /// Builder-style method to add a child widget.
-    pub fn with(
-        mut self,
-        child: NewWidget<impl Widget + ?Sized>,
-        params: impl Into<GridParams>,
-    ) -> Self {
+    pub fn with(mut self, child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
         let child = Child::new(child, params);
         self.children.push(child);
         self
@@ -516,7 +522,7 @@ impl Grid {
 
 // --- MARK: IMPL CHILD
 impl Child {
-    fn new(child: NewWidget<impl Widget + ?Sized>, params: impl Into<GridParams>) -> Self {
+    fn new(child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
         Self {
             widget: child.erased().to_pod(),
             params: params.into(),
@@ -642,102 +648,6 @@ impl Default for GridParams {
     }
 }
 
-impl From<(u16, u16)> for GridParams {
-    fn from((col, row): (u16, u16)) -> Self {
-        Self::pos(col, row)
-    }
-}
-
-impl From<(u16, u16, u16, u16)> for GridParams {
-    fn from((col, row, width, height): (u16, u16, u16, u16)) -> Self {
-        Self::pos(col, row).with_span(width, height)
-    }
-}
-
-impl From<(u16, ())> for GridParams {
-    fn from((col, ()): (u16, ())) -> Self {
-        Self::new().with_col(col)
-    }
-}
-
-impl From<((), u16)> for GridParams {
-    fn from(((), row): ((), u16)) -> Self {
-        Self::new().with_row(row)
-    }
-}
-
-impl From<((), u16, u16, u16)> for GridParams {
-    fn from(((), row, width, height): ((), u16, u16, u16)) -> Self {
-        Self::new().with_row(row).with_span(width, height)
-    }
-}
-
-impl From<(u16, (), u16, u16)> for GridParams {
-    fn from((col, (), width, height): (u16, (), u16, u16)) -> Self {
-        Self::new().with_col(col).with_span(width, height)
-    }
-}
-
-impl From<((), (), u16, u16)> for GridParams {
-    fn from(((), (), width, height): ((), (), u16, u16)) -> Self {
-        Self::new().with_span(width, height)
-    }
-}
-
-impl From<((), (), u16, ())> for GridParams {
-    fn from(((), (), width, ()): ((), (), u16, ())) -> Self {
-        Self::new().with_width(width)
-    }
-}
-
-impl From<((), (), (), u16)> for GridParams {
-    fn from(((), (), (), height): ((), (), (), u16)) -> Self {
-        Self::new().with_height(height)
-    }
-}
-
-impl From<(u16, u16, (), u16)> for GridParams {
-    fn from((col, row, (), height): (u16, u16, (), u16)) -> Self {
-        Self::pos(col, row).with_height(height)
-    }
-}
-
-impl From<(u16, u16, u16, ())> for GridParams {
-    fn from((col, row, width, ()): (u16, u16, u16, ())) -> Self {
-        Self::pos(col, row).with_width(width)
-    }
-}
-
-impl From<((), u16, (), u16)> for GridParams {
-    fn from(((), row, (), height): ((), u16, (), u16)) -> Self {
-        Self::new().with_row(row).with_height(height)
-    }
-}
-
-impl From<((), u16, u16, ())> for GridParams {
-    fn from(((), row, width, ()): ((), u16, u16, ())) -> Self {
-        Self::new().with_row(row).with_width(width)
-    }
-}
-
-impl From<(u16, (), (), u16)> for GridParams {
-    fn from((col, (), (), height): (u16, (), (), u16)) -> Self {
-        Self::new().with_col(col).with_height(height)
-    }
-}
-
-impl From<(u16, (), u16, ())> for GridParams {
-    fn from((col, (), width, ()): (u16, (), u16, ())) -> Self {
-        Self::new().with_col(col).with_width(width)
-    }
-}
-
-impl From<()> for GridParams {
-    fn from((): ()) -> Self {
-        Self::new()
-    }
-}
-
 // --- MARK: WIDGETMUT
 impl Grid {
     /// Sets the column sizes of the grid.
@@ -781,7 +691,7 @@ impl CollectionWidget<GridParams> for Grid {
         child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<GridParams>,
     ) {
-        let child = Child::new(child, params);
+        let child = Child::new(child, params.into());
         this.widget.children.push(child);
         this.ctx.children_changed();
     }
@@ -797,7 +707,7 @@ impl CollectionWidget<GridParams> for Grid {
         child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<GridParams>,
     ) {
-        let child = Child::new(child, params);
+        let child = Child::new(child, params.into());
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
     }
@@ -813,7 +723,7 @@ impl CollectionWidget<GridParams> for Grid {
         child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<GridParams>,
     ) {
-        let child = Child::new(child, params);
+        let child = Child::new(child, params.into());
         let old_child = mem::replace(&mut this.widget.children[idx], child);
         this.ctx.remove_child(old_child.widget);
     }
@@ -1060,10 +970,8 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = Grid::new()
-            .with_column(GridTrackSize::FRACTION)
-            .with_row(GridTrackSize::FRACTION)
-            .with(Button::with_text("A").prepare(), (0, 0))
+        let widget = Grid::with_dimensions(1, 1)
+            .with(Button::with_text("A").prepare(), GridParams::pos(0, 0))
             .prepare()
             .with_props(Dimensions::STRETCH);
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
@@ -1083,19 +991,31 @@ mod tests {
 
         // Add a widget that takes up more than one horizontal cell
         harness.edit_root_widget(|mut grid| {
-            Grid::add(&mut grid, Button::with_text("B").prepare(), (1, 0, 3, 1));
+            Grid::add(
+                &mut grid,
+                Button::with_text("B").prepare(),
+                GridParams::pos(1, 0).with_span(3, 1),
+            );
         });
         assert_render_snapshot!(harness, "grid_with_horizontal_widget");
 
         // Add a widget that takes up more than one vertical cell
         harness.edit_root_widget(|mut grid| {
-            Grid::add(&mut grid, Button::with_text("C").prepare(), (0, 1, 1, 3));
+            Grid::add(
+                &mut grid,
+                Button::with_text("C").prepare(),
+                GridParams::pos(0, 1).with_span(1, 3),
+            );
         });
         assert_render_snapshot!(harness, "grid_with_vertical_widget");
 
         // Add a widget that takes up more than one horizontal and vertical cell
         harness.edit_root_widget(|mut grid| {
-            Grid::add(&mut grid, Button::with_text("D").prepare(), (1, 1, 2, 2));
+            Grid::add(
+                &mut grid,
+                Button::with_text("D").prepare(),
+                GridParams::pos(1, 1).with_span(2, 2),
+            );
         });
         assert_render_snapshot!(harness, "grid_with_2x2_widget");
 
@@ -1108,10 +1028,8 @@ mod tests {
 
     #[test]
     fn test_widget_removal_and_modification() {
-        let widget = Grid::new()
-            .with_columns([GridTrackSize::FRACTION; 2])
-            .with_rows([GridTrackSize::FRACTION; 2])
-            .with(Button::with_text("A").prepare(), (0, 0))
+        let widget = Grid::with_dimensions(2, 2)
+            .with(Button::with_text("A").prepare(), GridParams::pos(0, 0))
             .prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         // Snapshot with the single widget.
@@ -1125,39 +1043,50 @@ mod tests {
 
         // Add it back
         harness.edit_root_widget(|mut grid| {
-            Grid::add(&mut grid, Button::with_text("A").prepare(), (0, 0));
+            Grid::add(
+                &mut grid,
+                Button::with_text("A").prepare(),
+                GridParams::pos(0, 0),
+            );
         });
         assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
 
         // Test replacement
         harness.edit_root_widget(|mut grid| {
             Grid::remove(&mut grid, 0);
-            Grid::add(&mut grid, Button::with_text("X").prepare(), (0, 0));
+            Grid::add(
+                &mut grid,
+                Button::with_text("X").prepare(),
+                GridParams::pos(0, 0),
+            );
         });
         harness.edit_root_widget(|mut grid| {
-            Grid::set(&mut grid, 0, Button::with_text("A").prepare(), (0, 0));
+            Grid::set(
+                &mut grid,
+                0,
+                Button::with_text("A").prepare(),
+                GridParams::pos(0, 0),
+            );
         });
         assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
 
         // Change the grid params to position it on the other corner
         harness.edit_root_widget(|mut grid| {
-            Grid::set_params(&mut grid, 0, (1, 1));
+            Grid::set_params(&mut grid, 0, GridParams::pos(1, 1));
         });
         assert_render_snapshot!(harness, "grid_moved_2x2_1");
 
         // Now make it take up the entire grid
         harness.edit_root_widget(|mut grid| {
-            Grid::set_params(&mut grid, 0, (0, 0, 2, 2));
+            Grid::set_params(&mut grid, 0, GridParams::pos(0, 0).with_span(2, 2));
         });
         assert_render_snapshot!(harness, "grid_moved_2x2_2");
     }
 
     #[test]
     fn test_widget_order() {
-        let widget = Grid::new()
-            .with_columns([GridTrackSize::FRACTION; 2])
-            .with_rows([GridTrackSize::FRACTION; 2])
-            .with(Button::with_text("A").prepare(), (0, 0))
+        let widget = Grid::with_dimensions(2, 2)
+            .with(Button::with_text("A").prepare(), GridParams::pos(0, 0))
             .prepare();
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (200, 200));
         // Snapshot with the single widget.
@@ -1165,50 +1094,57 @@ mod tests {
 
         // Order sets the draw order, so draw a widget over A by adding it after
         harness.edit_root_widget(|mut grid| {
-            Grid::add(&mut grid, Button::with_text("B").prepare(), (0, 0));
+            Grid::add(
+                &mut grid,
+                Button::with_text("B").prepare(),
+                GridParams::pos(0, 0),
+            );
         });
         assert_render_snapshot!(harness, "grid_2x2_with_overlapping_b");
 
         // Draw a widget under the others by putting it at index 0
         // Make it wide enough to see it stick out, with half of it under A and B.
         harness.edit_root_widget(|mut grid| {
-            Grid::insert(&mut grid, 0, Button::with_text("C").prepare(), (0, 0, 2, 1));
+            Grid::insert(
+                &mut grid,
+                0,
+                Button::with_text("C").prepare(),
+                GridParams::pos(0, 0).with_span(2, 1),
+            );
         });
         assert_render_snapshot!(harness, "grid_2x2_with_overlapping_c");
     }
 
     #[test]
     fn grid_baselines() {
-        let grid = Grid::new()
-            .with_columns([GridTrackSize::FRACTION; 3])
-            .with_rows([GridTrackSize::FRACTION; 3])
+        let grid = Grid::with_dimensions(3, 3)
             .with(
                 Label::new("A\nB").prepare().with_props((
                     Padding::from_vh(0.px(), 0.px()),
                     Background::Color(palette::css::ORANGE),
                 )),
-                (1, 0),
+                GridParams::pos(1, 0),
             )
             .with(
                 Label::new("C\nD").prepare().with_props((
                     Padding::from_vh(8.px(), 0.px()),
                     Background::Color(palette::css::DARK_BLUE),
                 )),
-                (0, 0, 1, 2),
+                GridParams::pos(0, 0).with_span(1, 2),
             )
             .with(
                 Label::new("E\nF").prepare().with_props((
                     Padding::from_vh(16.px(), 0.px()),
                     Background::Color(palette::css::DARK_SALMON),
                 )),
-                (2, 0, 1, 3),
+                GridParams::pos(2, 0).with_span(1, 3),
             )
             .with(
                 Label::new("G\nH").prepare().with_props((
                     Padding::from_vh(24.px(), 0.px()),
                     Background::Color(palette::css::DARK_SLATE_BLUE),
                 )),
-                (1, 1, 1, 2),
+                GridParams::pos(1, 1).with_span(1, 2),
             )
             .prepare()
             .with_props(Dimensions::width(80.px()));
@@ -1250,49 +1186,49 @@ mod tests {
                 Label::new("Min Content")
                     .prepare()
                     .with_props(Background::Color(palette::css::CHOCOLATE.with_alpha(0.5))),
-                (),
+                GridParams::new(),
             )
             .with(
                 Label::new("Max Content")
                     .prepare()
                     .with_props(Background::Color(palette::css::OLIVE.with_alpha(0.5))),
-                (),
+                GridParams::new(),
             )
             .with(
                 Label::new("1×3")
                     .prepare()
                     .with_props(Background::Color(palette::css::ORANGE_RED.with_alpha(0.5))),
-                (2, 0, (), 3),
+                GridParams::pos(2, 0).with_height(3),
             )
             .with(
                 Label::new("20px")
                     .prepare()
                     .with_props(Background::Color(palette::css::MAGENTA.with_alpha(0.5))),
-                (1, ()),
+                GridParams::new().with_col(1),
             )
             .with(
                 Label::new("30%")
                     .prepare()
                     .with_props(Background::Color(palette::css::SEA_GREEN.with_alpha(0.5))),
-                (),
+                GridParams::new(),
             )
             .with(
                 Label::new("2×2")
                     .prepare()
                     .with_props(Background::Color(palette::css::AQUAMARINE.with_alpha(0.5))),
-                (1, 2, 2, 2),
+                GridParams::pos(1, 2).with_span(2, 2),
             )
             .with(
                 Label::new("2fr")
                     .prepare()
                     .with_props(Background::Color(palette::css::PURPLE.with_alpha(0.5))),
-                (),
+                GridParams::new(),
             )
             .with(
                 Label::new("1fr")
                     .prepare()
                     .with_props(Background::Color(palette::css::GOLD.with_alpha(0.5))),
-                (2, ()),
+                GridParams::new().with_col(2),
             )
             .prepare()
             .with_props(Gap::new(5.px()))

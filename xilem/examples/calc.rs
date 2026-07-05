@@ -11,8 +11,8 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::{BorderColor, Style};
 use xilem::view::{
-    FlexSequence, FlexSpacer, GridExt, GridSequence, GridTrackSize, button, flex_row, grid, label,
-    repeat_tracks, text_button,
+    FlexSequence, FlexSpacer, GridExt, GridParams, GridSequence, GridTrackSize, button, flex_row,
+    grid, label, repeat_tracks, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
@@ -213,7 +213,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
                 .map(|result| display_label(result.as_ref())),
             FlexSpacer::Flex(0.1),
         ))
-        .grid(((), (), 4, ())),
+        .grid_params(GridParams::new().with_width(4)),
         // Top row
         one_button(
             label("CE").color(if data.get_current_number().is_empty() {

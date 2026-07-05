@@ -6,6 +6,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+use masonry::TextAlign;
 use masonry::core::{
     ErasedAction, NewWidget, PointerButton, PropertySet, StyleProperty, Widget as _, WidgetId,
 };
@@ -15,7 +16,6 @@ use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth, Gap};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
-use masonry::{TextAlign, widgets::GridTrackSize};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -86,10 +86,7 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
     ];
 
     // Arrange widgets in a 4 by 4 grid.
-    let mut main_widget = Grid::new()
-        .with_columns([GridTrackSize::FRACTION; 4])
-        .with_rows([GridTrackSize::FRACTION; 4])
-        .with(label.prepare(), GridParams::pos(1, 0));
+    let mut main_widget = Grid::with_dimensions(4, 4).with(label.prepare(), GridParams::pos(1, 0));
     for button_input in button_inputs {
         let button = grid_button(button_input);
         main_widget = main_widget.with(button.prepare(), button_input);
