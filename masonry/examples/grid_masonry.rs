@@ -53,7 +53,10 @@ impl AppDriver for Driver {
 fn grid_button(params: GridParams) -> Button {
     Button::with_text(format!(
         "X: {}, Y: {}, W: {}, H: {}",
-        params.x, params.y, params.width, params.height
+        params.col.unwrap(),
+        params.row.unwrap(),
+        params.width,
+        params.height
     ))
 }
 
@@ -73,53 +76,17 @@ pub fn make_grid(grid_gap: f64) -> NewWidget<Grid> {
     let label = SizedBox::new(NewWidget::new(label).with_props(props));
 
     let button_inputs = vec![
-        GridParams {
-            x: 0,
-            y: 0,
-            width: 1,
-            height: 1,
-        },
-        GridParams {
-            x: 2,
-            y: 0,
-            width: 2,
-            height: 1,
-        },
-        GridParams {
-            x: 0,
-            y: 1,
-            width: 1,
-            height: 2,
-        },
-        GridParams {
-            x: 1,
-            y: 1,
-            width: 2,
-            height: 2,
-        },
-        GridParams {
-            x: 3,
-            y: 1,
-            width: 1,
-            height: 1,
-        },
-        GridParams {
-            x: 3,
-            y: 2,
-            width: 1,
-            height: 1,
-        },
-        GridParams {
-            x: 0,
-            y: 3,
-            width: 4,
-            height: 1,
-        },
+        GridParams::pos(0, 0),
+        GridParams::pos(2, 0).with_width(2),
+        GridParams::pos(0, 1).with_height(2),
+        GridParams::pos(1, 1).with_span(2, 2),
+        GridParams::pos(3, 1),
+        GridParams::pos(3, 2),
+        GridParams::pos(0, 3).with_width(4),
     ];
 
     // Arrange widgets in a 4 by 4 grid.
-    let mut main_widget =
-        Grid::with_dimensions(4, 4).with(label.prepare(), GridParams::new(1, 0, 1, 1));
+    let mut main_widget = Grid::with_dimensions(4, 4).with(label.prepare(), GridParams::pos(1, 0));
     for button_input in button_inputs {
         let button = grid_button(button_input);
         main_widget = main_widget.with(button.prepare(), button_input);

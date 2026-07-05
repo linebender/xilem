@@ -385,22 +385,10 @@ mod tests {
         use crate::palette::css::ORANGE;
 
         let grid = Grid::with_dimensions(2, 2)
-            .with(
-                Button::with_text("A").prepare(),
-                GridParams::new(0, 0, 1, 1),
-            )
-            .with(
-                Button::with_text("B").prepare(),
-                GridParams::new(1, 0, 1, 1),
-            )
-            .with(
-                Button::with_text("C").prepare(),
-                GridParams::new(0, 1, 1, 1),
-            )
-            .with(
-                Button::with_text("D").prepare(),
-                GridParams::new(1, 1, 1, 1),
-            );
+            .with(Button::with_text("A").prepare(), GridParams::pos(0, 0))
+            .with(Button::with_text("B").prepare(), GridParams::pos(1, 0))
+            .with(Button::with_text("C").prepare(), GridParams::pos(0, 1))
+            .with(Button::with_text("D").prepare(), GridParams::pos(1, 1));
         let root_widget = NewWidget::new(grid).with_props(
             PropertySet::new()
                 .with(Padding::all(20.px()))

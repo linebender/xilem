@@ -203,7 +203,7 @@ macro_rules! impl_view_tuple {
     };
 }
 
-// We implement for tuples of length up to 15. 0 and 1 are special cased to be more efficient
+// We implement for tuples of length up to 16. 0 and 1 are special cased to be more efficient
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3);
