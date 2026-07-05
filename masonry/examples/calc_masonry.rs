@@ -24,7 +24,7 @@ use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BorderColor, BorderWidth, Gap, Padding};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, GridTrackSize, Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams,  Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -222,10 +222,8 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         .with_spacer(1.)
         .cross_axis_alignment(CrossAxisAlignment::End);
 
-    let root_widget = Grid::new()
-        .with_columns([GridTrackSize::FRACTION; 4])
-        .with_rows([GridTrackSize::FRACTION; 6])
-        .with(display.prepare(), (0, 0, 4, 1))
+    let root_widget = Grid::with_dimensions(4, 6)
+        .with(display.prepare(), GridParams::pos(0, 0).with_span(4, 1))
         .with(
             op_button_with_label('c', "CE".to_string()),
             GridParams::pos(0, 1),

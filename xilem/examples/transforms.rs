@@ -10,7 +10,8 @@ use xilem::core::one_of::Either;
 use xilem::masonry::kurbo::{Affine, Vec2};
 use xilem::style::Style;
 use xilem::view::{
-    GridExt, GridTrackSize, grid, label, repeat_tracks, sized_box, text_button, transformed,
+    GridExt, GridParams, GridTrackSize, grid, label, repeat_tracks, sized_box, text_button,
+    transformed,
 };
 use xilem::{Color, EventLoop, WidgetView, WindowOptions, Xilem};
 
@@ -65,41 +66,44 @@ impl TransformsGame {
             text_button("↶", |this: &mut Self| {
                 this.rotation -= PI * 0.125;
             })
-            .grid((0, 0)),
+            .grid_params(GridParams::pos(0, 0)),
             text_button("↑", |this: &mut Self| {
                 this.translation.y -= 10.0;
             })
-            .grid((1, 0)),
+            .grid_params(GridParams::pos(1, 0)),
             text_button("↷", |this: &mut Self| {
                 this.rotation += PI * 0.125;
             })
-            .grid((2, 0)),
+            .grid_params(GridParams::pos(2, 0)),
             text_button("←", |this: &mut Self| {
                 this.translation.x -= 10.0;
             })
-            .grid((0, 1)),
+            .grid_params(GridParams::pos(0, 1)),
             text_button("→", |this: &mut Self| {
                 this.translation.x += 10.0;
             })
-            .grid((2, 1)),
+            .grid_params(GridParams::pos(2, 1)),
             text_button("-", |this: &mut Self| {
                 // 2 ^ (1/3) for 3 clicks to reach the target.
                 this.scale /= 1.2599210498948732;
             })
-            .grid((0, 2)),
+            .grid_params(GridParams::pos(0, 2)),
             text_button("↓", |this: &mut Self| {
                 this.translation.y += 10.0;
             })
-            .grid((1, 2)),
+            .grid_params(GridParams::pos(1, 2)),
             text_button("+", |this: &mut Self| {
                 this.scale *= 1.2599210498948732;
             })
-            .grid((2, 2)),
+            .grid_params(GridParams::pos(2, 2)),
         );
 
-        grid((controls, transformed_status.grid((1, 1))))
-            .columns(repeat_tracks(3, GridTrackSize::FRACTION))
-            .rows(repeat_tracks(3, GridTrackSize::FRACTION))
+        grid((
+            controls,
+            transformed_status.grid_params(GridParams::pos(1, 1)),
+        ))
+        .columns(repeat_tracks(3, GridTrackSize::FRACTION))
+        .rows(repeat_tracks(3, GridTrackSize::FRACTION))
     }
 }
 

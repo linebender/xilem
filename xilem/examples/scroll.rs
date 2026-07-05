@@ -8,8 +8,8 @@ use winit::error::EventLoopError;
 use xilem::peniko::color::AlphaColor;
 use xilem::style::Style;
 use xilem::view::{
-    CrossAxisAlignment, GridExt, GridTrackSize, MainAxisAlignment, flex_col, flex_row, grid, label,
-    portal, repeat_tracks, sized_box, text_button,
+    CrossAxisAlignment, GridExt, GridParams, GridTrackSize, MainAxisAlignment, flex_col, flex_row,
+    grid, label, portal, repeat_tracks, sized_box, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::one_of::Either;
@@ -74,7 +74,7 @@ fn grid_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             .flat_map(|row_idx| {
                 (0..horizontal_count).map(move |col_idx| {
                     color_block(row_idx, col_idx, vertical_count, horizontal_count)
-                        .grid((row_idx, col_idx))
+                        .grid_params(GridParams::pos(row_idx, col_idx))
                 })
             })
             .collect::<Vec<_>>(),
