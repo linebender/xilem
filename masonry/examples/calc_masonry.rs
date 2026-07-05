@@ -24,7 +24,7 @@ use masonry::peniko::color::AlphaColor;
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{Background, BorderColor, BorderWidth, Gap, Padding};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams,  Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 

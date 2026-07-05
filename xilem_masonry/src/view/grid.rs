@@ -21,7 +21,8 @@ pub use masonry::widgets::{GridParams, GridTrackSize};
 /// ```
 /// # use xilem_masonry as xilem;
 /// use masonry::layout::Length;
-/// use xilem::view::{GridExt, GridTrackSize, text_button, grid, label, repeat_tracks};
+/// use xilem::style::Style;
+/// use xilem::view::{GridExt, GridParams, GridTrackSize, text_button, grid, label, repeat_tracks};
 ///
 /// const GRID_GAP: Length = Length::const_px(2.);
 ///
@@ -33,14 +34,15 @@ pub use masonry::widgets::{GridParams, GridTrackSize};
 /// let mut state = State::default();
 ///
 /// grid((
-///     label(state.int.to_string()).grid((0, 0, 3, ())),
-///     text_button("Decrease by 1", |state: &mut State| state.int -= 1).grid((1, 1)),
-///     text_button("To zero", |state: &mut State| state.int = 0).grid((2, 1)),
-///     text_button("Increase by 1", |state: &mut State| state.int += 1).grid((3, 1)),
+///     label(state.int.to_string()).grid_params(GridParams::pos(0, 0).with_width(3)),
+///     text_button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
+///     text_button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
+///     text_button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
 /// ))
 /// .columns(repeat_tracks(3, GridTrackSize::FRACTION))
 /// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
 /// .gap(GRID_GAP)
+/// # ;
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State: 'static, Action, Seq: GridSequence<State, Action>>(
@@ -405,14 +407,13 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use masonry::widgets::GridParams;
-    /// use xilem::view::{text_button, prose, grid, repeat_tracks, GridExt};
+    /// use xilem::view::{GridExt, GridParams, GridTrackSize, grid, prose, repeat_tracks, text_button};
     /// # use xilem::WidgetView;
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     text_button("click me", |_| ()).grid((0, 0, 2, ())),
-    ///     prose("a prose").grid((1, 1)),
+    ///     text_button("click me", |_| ()).grid_params(GridParams::pos(0, 0).with_width(2)),
+    ///     prose("a prose").grid_pos(1, 1),
     /// ))
     /// .columns(repeat_tracks(2, GridTrackSize::FRACTION))
     /// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
@@ -429,20 +430,21 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// Applies a [`GridParams`](`GridParams`) with the specified position to this view.
     /// This allows the view to be placed as a child within a [`Grid`] [`View`].
     /// For instances where a grid item is expected to take up multiple cell units,
-    /// use [`GridExt::grid_item`]
+    /// use [`GridExt::grid_params`]
     ///
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
-    /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{text_button, prose, grid, GridExt}};
+    /// use xilem::view::{GridExt, GridParams, GridTrackSize, grid, prose, repeat_tracks, text_button};
     /// # use xilem::WidgetView;
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
     ///     text_button("click me", |_| ()).grid_pos(0, 0),
     ///     prose("a prose").grid_pos(1, 1),
-    /// ), 2, 2)
+    /// ))
+    /// .columns(repeat_tracks(2, GridTrackSize::FRACTION))
+    /// .rows(repeat_tracks(2, GridTrackSize::FRACTION))
     /// # }
     /// ```
     fn grid_pos(self, x: u16, y: u16) -> GridItem<Self, State, Action>
@@ -450,7 +452,7 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
         Action: 'static,
         Self: Sized,
     {
-        grid_item(self, GridParams::new().with_pos(x, y))
+        grid_item(self, GridParams::pos(x, y))
     }
 }
 
@@ -503,7 +505,7 @@ where
 {
     GridItem {
         view,
-        params: params.into(),
+        params,
         phantom: PhantomData,
     }
 }
