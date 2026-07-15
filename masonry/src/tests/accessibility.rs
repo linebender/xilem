@@ -85,6 +85,38 @@ fn access_node_children() {
     );
 }
 
+#[test]
+fn accessibility_hidden_omits_subtree() {
+    let hidden_tag = WidgetTag::named("hidden");
+    let child_tag = WidgetTag::named("child");
+    let child = NewWidget::new(SizedBox::empty()).with_tag(child_tag);
+    let hidden = NewWidget::new(ModularWidget::new_parent(child))
+        .with_tag(hidden_tag)
+        .accessibility_hidden(true);
+    let root = NewWidget::new(ModularWidget::new_parent(hidden));
+
+    let harness = TestHarness::create(test_property_set(), root);
+
+    assert!(
+        harness
+            .access_node(harness.get_widget(hidden_tag).id())
+            .is_none()
+    );
+    assert!(
+        harness
+            .access_node(harness.get_widget(child_tag).id())
+            .is_none()
+    );
+    assert_eq!(
+        harness
+            .access_node(harness.root_id())
+            .unwrap()
+            .child_ids()
+            .count(),
+        0
+    );
+}
+
 fn node_local_id_to_u64(node_id: NodeId) -> u64 {
     let node_id: u128 = node_id.into();
     (node_id >> 64) as u64

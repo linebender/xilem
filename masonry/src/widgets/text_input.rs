@@ -67,6 +67,7 @@ impl TextInput {
             text: text.to_pod(),
             placeholder: Label::new("")
                 .prepare()
+                .accessibility_hidden(true)
                 .with_props(LineBreaking::Clip)
                 .to_pod(),
             placeholder_text: "".into(),
@@ -87,7 +88,11 @@ impl TextInput {
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
-        self.placeholder = label.prepare().with_props(LineBreaking::Clip).to_pod();
+        self.placeholder = label
+            .prepare()
+            .accessibility_hidden(true)
+            .with_props(LineBreaking::Clip)
+            .to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -132,7 +137,10 @@ impl TextInput {
     ///
     /// The runtime equivalent of [`with_placeholder`](Self::with_placeholder).
     pub fn set_placeholder(this: &mut WidgetMut<'_, Self>, placeholder_text: impl Into<ArcStr>) {
-        Label::set_text(&mut Self::placeholder_mut(this), placeholder_text);
+        let placeholder_text = placeholder_text.into();
+        this.widget.placeholder_text = placeholder_text.clone();
+        Label::set_text(&mut Self::placeholder_mut(this), placeholder_text.clone());
+        TextArea::set_placeholder(&mut Self::text_mut(this), placeholder_text);
     }
 
     /// Whether to clip the text to the drawn boundaries.
@@ -252,6 +260,11 @@ impl Widget for TextInput {
                     let mut label = Self::placeholder_mut(&mut input);
                     label.insert_prop(ContentColor::new(color));
                 });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let placeholder_text = input.widget.placeholder_text.clone();
+                    TextArea::set_placeholder(&mut Self::text_mut(&mut input), placeholder_text);
+                });
             }
             // We check for `ChildFocusChanged` instead of `FocusChanged`
             // because the actual widget that receives focus is the child `TextArea`
@@ -348,9 +361,8 @@ impl Widget for TextInput {
         &mut self,
         _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
-        node: &mut Node,
+        _node: &mut Node,
     ) {
-        node.set_placeholder(self.placeholder_text.to_string());
     }
 
     fn children_ids(&self) -> ChildrenIds {
@@ -432,6 +444,30 @@ mod tests {
         let mut harness = TestHarness::create_with(test_property_set(), text_input, HARNESS_PARAMS);
 
         assert_render_snapshot!(harness, "text_input_placeholder");
+    }
+
+    #[test]
+    fn placeholder_is_exposed_on_text_area_accessibility_node() {
+        let text_input = NewWidget::new(TextInput::new("").with_placeholder("Search"));
+        let text_area_id = text_input.widget.area_pod().id();
+        let placeholder_id = text_input.widget.placeholder.id();
+        let mut harness = TestHarness::create_with(test_property_set(), text_input, HARNESS_PARAMS);
+
+        let text_input_node = harness.access_node(harness.root_id()).unwrap();
+        assert_eq!(text_input_node.data().placeholder(), None);
+        assert_eq!(text_input_node.child_ids().count(), 1);
+        assert!(harness.access_node(placeholder_id).is_none());
+
+        let text_area_node = harness.access_node(text_area_id).unwrap();
+        assert_eq!(text_area_node.data().placeholder(), Some("Search"));
+
+        harness.edit_root_widget(|mut text_input| {
+            TextInput::set_placeholder(&mut text_input, "Filter");
+        });
+        let _ = harness.redraw();
+
+        let text_area_node = harness.access_node(text_area_id).unwrap();
+        assert_eq!(text_area_node.data().placeholder(), Some("Filter"));
     }
 
     #[test]
