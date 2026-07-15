@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, NewWidget, PropertySet};
 use masonry::parley::style::FontWeight;
-use masonry::parley::{FontFamily, StyleProperty};
+use masonry::parley::{FontFamily, FontFamilyName, GenericFamily, StyleProperty};
 use masonry::peniko::Color;
 use masonry::properties::{CaretColor, ContentColor, PlaceholderColor, SelectionColor};
 use masonry::widgets::{self, TextAction};
@@ -89,7 +89,7 @@ where
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
-        font: FontFamily::List(std::borrow::Cow::Borrowed(&[])),
+        font: FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
         insert_newline: InsertNewline::default(),
         disabled: false,
         // Since we don't support setting the word wrapping, we can default to

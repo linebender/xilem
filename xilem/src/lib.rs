@@ -184,3 +184,6 @@ pub use window_options::WindowOptionsExtWindows;
 
 #[cfg(target_os = "macos")]
 pub use window_options::WindowOptionsExtMacOS;
+
+#[cfg(target_os = "linux")]
+pub use window_options::WindowOptionsExtLinux;

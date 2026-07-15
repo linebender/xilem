@@ -15,6 +15,7 @@ mod basics;
 mod checkbox;
 mod demo;
 mod divider;
+mod horizontal_color_picker;
 mod image;
 mod kitchen_sink;
 mod pagination;
@@ -44,6 +45,7 @@ use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 use crate::demo::{DemoPage, new_demo_shell_tags};
+use crate::horizontal_color_picker::{ColorSelected, HorizontalColorPicker};
 use crate::switch::SwitchDemo;
 
 const SIDEBAR_WIDTH: Length = Length::const_px(240.0);
@@ -268,11 +270,12 @@ fn main() {
         demos,
     };
 
-    let window_size = LogicalSize::new(900.0, 600.0);
+    let window_size = LogicalSize::new(1024.0, 600.0);
     let window_attributes = Window::default_attributes()
         .with_title("Masonry Gallery")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_min_inner_size(window_size)
+        .with_inner_size(window_size);
 
     masonry_winit::app::run(
         vec![NewWindow::new_with_id(
