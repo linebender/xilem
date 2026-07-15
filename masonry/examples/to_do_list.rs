@@ -55,6 +55,7 @@ impl AppDriver for Driver {
                     self.next_task = new_text.clone();
                 }
                 TextAction::Entered(_) => {}
+                TextAction::Cancelled => {}
             }
         }
     }
