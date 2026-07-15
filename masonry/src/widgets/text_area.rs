@@ -9,7 +9,7 @@ use tracing::{Span, trace_span};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
+    AccessCtx, AccessEvent, ArcStr, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
@@ -45,9 +45,10 @@ use crate::{TextAlign, theme};
 // TODO: RichTextInput 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
-    // TODO: Placeholder text?
     /// The underlying `PlainEditor`, which provides a high-level interface for us to dispatch into.
     editor: PlainEditor<BrushIndex>,
+    /// Placeholder text exposed to accessibility APIs by an editable text area.
+    placeholder: ArcStr,
     /// The generation of `editor` which we have rendered.
     ///
     /// TODO: Split into rendered and layout generation. This will make the `edited` mechanism in [`on_text_event`](Widget::on_text_event).
@@ -118,6 +119,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         editor.set_text(text);
         Self {
             editor,
+            placeholder: "".into(),
             rendered_generation: Generation::default(),
             word_wrap: true,
             last_max_advance: None,
@@ -369,6 +371,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
     pub fn set_insert_newline(this: &mut WidgetMut<'_, Self>, insert_newline: InsertNewline) {
         this.widget.insert_newline = insert_newline;
+        this.ctx.request_accessibility_update();
+    }
+
+    pub(super) fn set_placeholder(this: &mut WidgetMut<'_, Self>, placeholder: impl Into<ArcStr>) {
+        this.widget.placeholder = placeholder.into();
         this.ctx.request_accessibility_update();
     }
 
@@ -1057,6 +1064,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     ) {
         if !EDITABLE {
             node.set_read_only();
+        }
+        if !self.placeholder.is_empty() {
+            node.set_placeholder(self.placeholder.to_string());
         }
 
         let cache = ctx.property_cache();
