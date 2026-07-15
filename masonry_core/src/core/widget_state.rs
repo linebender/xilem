@@ -243,6 +243,8 @@ pub(crate) struct WidgetState {
     pub(crate) is_explicitly_stashed: bool,
     /// This widget or an ancestor has been stashed.
     pub(crate) is_stashed: bool,
+    /// This widget and its descendants are omitted from the accessibility tree.
+    pub(crate) accessibility_hidden: bool,
 
     /// In the hovered path, starting from window and ending at the hovered widget.
     /// Descendants of the hovered widget are not in the hovered path.
@@ -342,6 +344,7 @@ impl WidgetState {
             is_disabled: false,
             is_explicitly_stashed: false,
             is_stashed: false,
+            accessibility_hidden: options.accessibility_hidden,
             has_hovered: false,
             is_hovered: false,
             has_active: false,

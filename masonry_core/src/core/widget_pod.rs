@@ -87,6 +87,8 @@ pub struct WidgetOptions {
     pub transform: Affine,
     /// The disabled state the widget will be created with.
     pub disabled: bool,
+    /// Whether this widget and its descendants are omitted from the accessibility tree.
+    pub(crate) accessibility_hidden: bool,
 }
 
 // TODO - This is a simple state machine that lets users create WidgetPods
@@ -205,6 +207,14 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     /// [disabled]: crate::doc::masonry_concepts#disabled
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.options.disabled = disabled;
+        self
+    }
+
+    /// Sets whether this widget and its descendants are omitted from the accessibility tree.
+    ///
+    /// This does not affect layout, painting, or event handling.
+    pub fn accessibility_hidden(mut self, hidden: bool) -> Self {
+        self.options.accessibility_hidden = hidden;
         self
     }
 

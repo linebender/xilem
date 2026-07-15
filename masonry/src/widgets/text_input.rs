@@ -67,6 +67,7 @@ impl TextInput {
             text: text.to_pod(),
             placeholder: Label::new("")
                 .prepare()
+                .accessibility_hidden(true)
                 .with_props(LineBreaking::Clip)
                 .to_pod(),
             placeholder_text: "".into(),
@@ -87,7 +88,11 @@ impl TextInput {
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
-        self.placeholder = label.prepare().with_props(LineBreaking::Clip).to_pod();
+        self.placeholder = label
+            .prepare()
+            .accessibility_hidden(true)
+            .with_props(LineBreaking::Clip)
+            .to_pod();
         self.placeholder_text = placeholder_text;
         self
     }
@@ -445,10 +450,13 @@ mod tests {
     fn placeholder_is_exposed_on_text_area_accessibility_node() {
         let text_input = NewWidget::new(TextInput::new("").with_placeholder("Search"));
         let text_area_id = text_input.widget.area_pod().id();
+        let placeholder_id = text_input.widget.placeholder.id();
         let mut harness = TestHarness::create_with(test_property_set(), text_input, HARNESS_PARAMS);
 
         let text_input_node = harness.access_node(harness.root_id()).unwrap();
         assert_eq!(text_input_node.data().placeholder(), None);
+        assert_eq!(text_input_node.child_ids().count(), 1);
+        assert!(harness.access_node(placeholder_id).is_none());
 
         let text_area_node = harness.access_node(text_area_id).unwrap();
         assert_eq!(text_area_node.data().placeholder(), Some("Search"));
