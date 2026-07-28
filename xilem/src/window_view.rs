@@ -1,7 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{theme::BACKGROUND_COLOR, util::debug_panic};
+use std::sync::Arc;
+
+use masonry::{core::DefaultProperties, theme::BACKGROUND_COLOR, util::debug_panic};
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{MessageCtx, Mut, View, ViewElement, ViewMarker};
@@ -16,6 +18,8 @@ pub struct WindowView<State: 'static> {
     pub(crate) masonry_root: MasonryRoot<State>,
     /// The base color of the window.
     pub(crate) base_color: Option<Color>,
+    /// Tree-wide default properties, applied on `Arc` identity change.
+    pub(crate) default_properties: Option<Arc<DefaultProperties>>,
 }
 
 pub(crate) type WindowViewState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
@@ -37,6 +41,7 @@ pub fn window<V: WidgetView<State>, State: 'static>(
         options: WindowOptions::new(title),
         masonry_root: MasonryRoot::new(root_view),
         base_color: None,
+        default_properties: None,
     }
 }
 
@@ -55,6 +60,15 @@ impl<State> WindowView<State> {
     /// This is [`masonry::theme::BACKGROUND_COLOR`] by default.
     pub fn with_base_color(mut self, color: Color) -> Self {
         self.base_color = Some(color);
+        self
+    }
+
+    /// Set tree-wide default properties for runtime theme swaps.
+    ///
+    /// Applied on `Arc` identity change; cache the value so a new identity
+    /// only appears when the theme actually changes.
+    pub fn with_default_properties(mut self, default_properties: Arc<DefaultProperties>) -> Self {
+        self.default_properties = Some(default_properties);
         self
     }
 }
@@ -108,6 +122,15 @@ impl<State> View<State, (), ViewCtx> for WindowView<State> {
             && let Some(base_color) = self.base_color
         {
             *window.base_color() = base_color;
+        }
+
+        if let Some(props) = &self.default_properties
+            && prev
+                .default_properties
+                .as_ref()
+                .is_none_or(|p| !Arc::ptr_eq(p, props))
+        {
+            window.render_root().set_default_properties(props.clone());
         }
 
         self.masonry_root.rebuild(
