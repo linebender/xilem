@@ -83,6 +83,7 @@ where
         contents,
         on_changed: Box::new(on_changed),
         on_enter: None,
+        on_cancel: None,
         text_color: None,
         placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
@@ -103,6 +104,7 @@ pub struct TextInput<State: 'static, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
+    on_cancel: Option<Callback<State, Action>>,
     text_color: Option<Color>,
     placeholder: ArcStr,
     text_alignment: TextAlign,
@@ -195,6 +197,15 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
         F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
     {
         self.on_enter = Some(Box::new(on_enter));
+        self
+    }
+
+    /// Set a callback that will be run when the user presses Escape <kbd>Esc</kbd>.
+    pub fn on_cancel<F>(mut self, on_cancel: F) -> Self
+    where
+        F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
+    {
+        self.on_cancel = Some(Box::new(on_cancel));
         self
     }
 
@@ -355,6 +366,12 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
                     tracing::error!("Textbox::message: on_enter is not set");
                     MessageResult::Stale
                 }
+                TextAction::Cancelled if self.on_cancel.is_some() => {
+                    let text = self.contents.clone();
+                    MessageResult::Action((self.on_cancel.as_ref().unwrap())(app_state, text))
+                }
+
+                TextAction::Cancelled => MessageResult::Stale,
             },
             None => {
                 tracing::error!(?message, "Wrong message type in TextInput::message");

@@ -418,6 +418,8 @@ pub enum TextAction {
     /// Whether this action gets emitted depends on the [`InsertNewline`] setting
     /// and with [`InsertNewline::OnShiftEnter`] also on if the shift key is pressed.
     Entered(String),
+    /// The Escape key was pressed, signalling a cancel action.
+    Cancelled,
     // TODO: TextCursor changed, ImeChanged
 }
 
@@ -713,6 +715,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // Intentionally do nothing so that tabbing from a TextInput/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
+                    }
+                    Key::Named(NamedKey::Escape) => {
+                        ctx.submit_action::<Self::Action>(TextAction::Cancelled);
                     }
                     Key::Character(text) if EDITABLE => {
                         self.editor
@@ -1290,5 +1295,28 @@ mod tests {
                 assert_eq!(text, "\nhello world");
             }
         }
+    }
+
+    #[test]
+    fn escape_emits_cancelled() {
+        let area = NewWidget::new(TextArea::new_editable("hello world"));
+
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let text_id = harness.root_id();
+
+        harness.focus_on(Some(text_id));
+        harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+            key: Key::Named(NamedKey::Escape),
+            modifiers: Modifiers::default(),
+            ..Default::default()
+        }));
+
+        let area = harness.root_widget();
+        let text = area.text().to_string();
+        let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
+        assert_eq!(widget_id, text_id);
+        assert_eq!(action, TextAction::Cancelled);
+        assert!(harness.pop_action_erased().is_none());
+        assert_eq!(text, "hello world");
     }
 }
