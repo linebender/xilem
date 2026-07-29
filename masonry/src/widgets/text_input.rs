@@ -66,8 +66,8 @@ impl TextInput {
         Self {
             text: text.to_pod(),
             placeholder: Label::new("")
-                .prepare()
                 .accessibility_hidden(true)
+                .prepare()
                 .with_props(LineBreaking::Clip)
                 .to_pod(),
             placeholder_text: "".into(),
@@ -89,8 +89,8 @@ impl TextInput {
         let placeholder_text = placeholder_text.into();
         let label = Label::new(placeholder_text.clone()).with_text_alignment(self.text_alignment);
         self.placeholder = label
-            .prepare()
             .accessibility_hidden(true)
+            .prepare()
             .with_props(LineBreaking::Clip)
             .to_pod();
         self.placeholder_text = placeholder_text;
@@ -455,8 +455,10 @@ mod tests {
 
         let text_input_node = harness.access_node(harness.root_id()).unwrap();
         assert_eq!(text_input_node.data().placeholder(), None);
-        assert_eq!(text_input_node.child_ids().count(), 1);
-        assert!(harness.access_node(placeholder_id).is_none());
+        assert_eq!(text_input_node.child_ids().count(), 2);
+
+        let placeholder_node = harness.access_node(placeholder_id).unwrap();
+        assert!(placeholder_node.is_hidden());
 
         let text_area_node = harness.access_node(text_area_id).unwrap();
         assert_eq!(text_area_node.data().placeholder(), Some("Search"));
