@@ -132,6 +132,11 @@ impl Grid {
     }
 
     /// Builder-style method to add a child widget.
+    ///
+    /// # Panics
+    ///
+    /// If the `params` refer to a row/column that does not exist, `measure`/`layout` pass would
+    /// panic in debug mode and silently ignore this child in release mode.
     pub fn with(mut self, child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
         let child = Child::new(child, params);
         self.children.push(child);

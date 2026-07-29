@@ -404,6 +404,11 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// Applies [`GridParams`](`GridParams`) to this view. This allows the view
     /// to be placed as a child within a [`Grid`] [`View`].
     ///
+    /// # Panics
+    ///
+    /// If the `params` refer to a row/column that does not exist, `measure`/`layout` pass would
+    /// panic in debug mode and silently ignore this child in release mode.
+    ///
     /// # Examples
     /// ```
     /// # use xilem_masonry as xilem;
@@ -431,6 +436,11 @@ pub trait GridExt<State: 'static, Action>: WidgetView<State, Action> {
     /// This allows the view to be placed as a child within a [`Grid`] [`View`].
     /// For instances where a grid item is expected to take up multiple cell units,
     /// use [`GridExt::grid_params`]
+    ///
+    /// # Panics
+    ///
+    /// If the `x`/`y` refer to a row/column that does not exist, `measure`/`layout` pass would
+    /// panic in debug mode and silently ignore this child in release mode.
     ///
     /// # Examples
     /// ```
