@@ -193,7 +193,7 @@ impl Grid {
                 *cursor_row = row as usize + (*cursor_col == 0) as usize;
             };
 
-        let mut prefix = vec![0; occupied.len()];
+        let mut prefix = Vec::new();
         'child: for child in &mut self.children {
             let width = child.params.width as usize;
             let height = child.params.height as usize;
@@ -241,8 +241,23 @@ impl Grid {
                     );
                 }
                 (None, None) => {
-                    // build prefix sum
-                    prefix.fill(0);
+                    // build a 2D prefix sum that encodes how many cells above and left of it
+                    // (including itself) are occupied
+                    //
+                    // For example, consider a 4x4 grid:
+                    // x | x | x | x
+                    // x | _ | _ | x
+                    // x | _ | _ | x
+                    // x | x | x | x
+                    //
+                    // It generates the following prefix:
+                    // 1 | 2 | 3 | 4
+                    // 2 | 3 | 4 | 6
+                    // 3 | 4 | 5 | 8
+                    // 4 | 6 | 8 | 12
+
+                    prefix.clear();
+                    prefix.resize(occupied.len(), 0);
                     for col in 0..self.columns.len() {
                         for row in 0..self.rows.len() {
                             let cell = occupied[idx(col, row)] as u32;
@@ -257,6 +272,15 @@ impl Grid {
                     }
 
                     // query for empty rect
+                    //
+                    // Now, if a 2x2 child is to be viable at (1, 1) location,
+                    // prefix[2, 2] + prefix[0, 0] - prefix[0, 2] - prefix[2, 0]
+                    // = 5 + 1 - 3 - 3, must be 0, which it is.
+                    //
+                    // prefix[2, 2] is the last cell for the child,
+                    // prefix[0, 0] is the cell just above and left to the child,
+                    // prefix[0, 2] is the cell just above to the child on its last column,
+                    // prefix[2, 0] is the cell just left to the child on its last row,
                     for row0 in cursor.1..=(n_row - height) {
                         let start_col = if row0 == cursor.1 { cursor.0 } else { 0 };
                         for col0 in start_col..=(n_col - width) {
