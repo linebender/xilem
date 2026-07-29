@@ -87,6 +87,7 @@
 //!                     self.next_task = new_text.clone();
 //!                 }
 //!                 TextAction::Entered(_) => {}
+//!                 TextAction::Cancelled => {}
 //!             }
 //!         }
 //!     }
