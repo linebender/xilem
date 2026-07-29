@@ -376,7 +376,7 @@ impl Grid {
         // step 2: initialize track lengths
         for child in &mut self.children {
             if child.span(axis) == 1 {
-                // if a child spans only a single track, the tracks size accomodates
+                // if a child spans only a single track, the tracks size accommodates
                 // the child if the track size s not fixed.
                 let track = child.pos(axis) as usize;
                 let auto_length = track_auto_lengths[track];
@@ -448,7 +448,7 @@ impl Grid {
                 .sum::<f64>()
                 + gap.get() * (span - 1) as f64;
 
-            // min_contrib is how much should be added to the already exising length to align it
+            // min_contrib is how much should be added to the already existing length to align it
             // to the min length of the tracks computed in the previous step (2).
             let mut min_contrib = min_length - length_by_itself;
 
@@ -509,7 +509,7 @@ impl Grid {
             // if context length is provided and the grid is fit-content sized,
             // distribute the remaining context length after sizing non-fractional tracks
             // between the fractional tracks according to their fractions.
-            // if there is no fractional track but there are auto-sized tracks, distibute the space
+            // if there is no fractional track but there are auto-sized tracks, distribute the space
             // between the auto-sized tracks equally.
             let (occupied_length, total_fr) = tracks
                 .iter()

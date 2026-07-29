@@ -79,7 +79,7 @@ pub struct VirtualScrollScrollAction {
 /// It encapsulates fetching and scrolling actions, as a widget can have only one action type.
 #[derive(Debug)]
 pub enum VirtualScrollAction {
-    /// `VirtualScroll` needs to fecth new children.
+    /// `VirtualScroll` needs to fetch new children.
     Fetch(VirtualScrollFetchAction),
     /// `VirtualScroll` scrolled onto/out of some children.
     Scroll(VirtualScrollScrollAction),
@@ -479,9 +479,8 @@ impl VirtualScroll {
     ) -> WidgetMut<'t, dyn Widget> {
         let Some(child) = this.widget.items.get_mut(&idx) else {
             panic!(
-                "`VirtualScroll::child_mut` called with non-present index {idx}.\n\
-                Active range is {:?}.",
-                &this.widget.active_range
+                "`VirtualScroll::child_mut` called with non-present index {idx}.\nActive range is {:?}.",
+                this.widget.active_range
             )
         };
 
