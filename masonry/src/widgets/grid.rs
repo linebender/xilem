@@ -329,6 +329,9 @@ impl Grid {
             Option<Length>,
         ) -> Length,
     ) -> Vec<f64> {
+        // This function is a somewhat simplified implementation of track sizing algorithm from
+        // the CSS grid spec (https://drafts.csswg.org/css-grid-1/#algo-track-sizing).
+
         let tracks = match axis {
             Axis::Horizontal => &self.columns,
             Axis::Vertical => &self.rows,
@@ -338,9 +341,12 @@ impl Grid {
             return Vec::new();
         }
 
+        // available length for distribution
+        // = total_length - gap * (#tracks - 1)
         let context_length = context_length
             .and_then(|l| Length::try_px(l.get() - gap.get() * (tracks.len() - 1) as f64));
 
+        // step 1: auto lengths and initial lengths of tracks
         let (track_auto_lengths, mut track_lengths): (Vec<_>, Vec<_>) = tracks
             .iter()
             .map(|t| match *t {
@@ -367,8 +373,11 @@ impl Grid {
 
         let mut multitrack_lengths = BTreeMap::new();
 
+        // step 2: initialize track lengths
         for child in &mut self.children {
             if child.span(axis) == 1 {
+                // if a child spans only a single track, the tracks size accomodates
+                // the child if the track size s not fixed.
                 let track = child.pos(axis) as usize;
                 let auto_length = track_auto_lengths[track];
                 if !matches!(auto_length, LenDef::Fixed(_)) {
@@ -388,13 +397,12 @@ impl Grid {
                 let start_track = pos as usize;
                 let end_track = start_track + span as usize;
 
-                let Some((min_length, max_length)) =
-                    multitrack_lengths.entry((span, pos)).or_insert_with(|| {
-                        tracks[start_track..end_track]
-                            .iter()
-                            .all(|t| !matches!(t, GridTrackSize::Fraction(_)))
-                            .then_some((0., 0.))
-                    })
+                // if a child spans multiple tracks and any of those is a fractional track, skip this step.
+                // any computation involving fractional tracks are done in a separate step at the end.
+                let Some((min_length, max_length)) = tracks[start_track..end_track]
+                    .iter()
+                    .all(|t| !matches!(t, GridTrackSize::Fraction(_)))
+                    .then(|| multitrack_lengths.entry((span, pos)).or_insert((0., 0.)))
                 else {
                     continue;
                 };
@@ -419,15 +427,13 @@ impl Grid {
             }
         }
 
-        for ((span, pos), lengths) in multitrack_lengths {
-            let Some((min_length, max_length)) = lengths else {
-                continue;
-            };
-
+        // step 3: resolve all track lengths (except for fractional tracks)
+        for ((span, pos), (min_length, max_length)) in multitrack_lengths {
             let start_track = pos as usize;
             let end_track = start_track + span as usize;
 
-            let [n_intrinsic, n_max] = track_auto_lengths[start_track..end_track]
+            // count the number of minimally (intrinsically) and maximally sized tracks.
+            let [mut n_intrinsic, n_max] = track_auto_lengths[start_track..end_track]
                 .iter()
                 .map(|auto_length| match auto_length {
                     LenDef::MinContent | LenDef::FitContent(_) => [1_usize, 1],
@@ -435,48 +441,52 @@ impl Grid {
                     LenDef::Fixed(_) => [0, 0],
                 })
                 .reduce(|[a, b], [c, d]| [a + c, b + d])
-                .unwrap_or_default();
+                .unwrap_or([0, 0]);
             let length_by_itself = track_lengths[start_track..end_track]
                 .iter()
                 .copied()
                 .sum::<f64>()
-                + gap.get() * span as f64;
+                + gap.get() * (span - 1) as f64;
 
-            let min_contrib = min_length - length_by_itself;
-            if min_contrib <= 0. {
-                continue;
-            }
+            // min_contrib is how much should be added to the already exising length to align it
+            // to the min length of the tracks computed in the previous step (2).
+            let mut min_contrib = min_length - length_by_itself;
 
-            let per_track_min_contrib = min_contrib / n_intrinsic as f64;
-            let (n_unfit, pushed) = track_auto_lengths[start_track..end_track]
-                .iter()
-                .zip(&mut track_lengths[start_track..])
-                .filter_map(|(auto_length, length)| match *auto_length {
-                    LenDef::FitContent(limit) if *length + per_track_min_contrib > limit.get() => {
-                        Some(limit.get() - mem::replace(length, limit.get()))
+            // if the tracks are already longer than the min length there is nothing to do.
+            while min_contrib > 0. {
+                let per_track_min_contrib = min_contrib / n_intrinsic as f64;
+                let per_track_max_contrib =
+                    per_track_min_contrib + (max_length - min_length) / n_max as f64;
+
+                for (auto_length, length) in track_auto_lengths[start_track..end_track]
+                    .iter()
+                    .zip(&mut track_lengths[start_track..])
+                {
+                    match auto_length {
+                        LenDef::FitContent(limit)
+                            if *length + per_track_min_contrib > limit.get() =>
+                        {
+                            // if the extended length exceeds limit, extend up to limit and
+                            // pull this track off the pool if extendable tracks.
+                            min_contrib -= limit.get() - mem::replace(length, limit.get());
+                            n_intrinsic -= 1;
+                        }
+                        LenDef::MinContent | LenDef::FitContent(_) => {
+                            *length += per_track_min_contrib;
+                            min_contrib -= per_track_min_contrib;
+                        }
+                        LenDef::MaxContent => {
+                            *length += per_track_max_contrib;
+                            min_contrib -= per_track_max_contrib;
+                        }
+                        LenDef::Fixed(_) => {}
                     }
-                    _ => None,
-                })
-                .enumerate()
-                .reduce(|(_, a), (i, b)| (i + 1, a + b))
-                .unwrap_or((0, 0.));
-
-            let per_track_min_contrib = (min_contrib - pushed) / (n_intrinsic - n_unfit) as f64;
-            let per_track_max_contrib =
-                per_track_min_contrib + (max_length - min_length) / n_max as f64;
-            for (auto_length, length) in track_auto_lengths[start_track..end_track]
-                .iter()
-                .zip(&mut track_lengths[start_track..])
-            {
-                match auto_length {
-                    LenDef::MinContent | LenDef::FitContent(_) => *length += per_track_min_contrib,
-                    LenDef::MaxContent => *length += per_track_max_contrib,
-                    LenDef::Fixed(_) => {}
                 }
             }
         }
 
-        let extract_bases = |track_lengths: Vec<f64>| track_lengths;
+        // step 4: resolve fractional and auto-sized tracks
+
         let extract_bases_with_fr = |track_lengths: Vec<f64>, fr_unit: f64| {
             tracks
                 .iter()
@@ -489,12 +499,18 @@ impl Grid {
         };
 
         if len_req == LenReq::MinContent {
+            // if the grid is required to be min-content, fractional tracks are sized zero.
             return extract_bases_with_fr(track_lengths, 0.);
         }
 
         if let Some(context_length) = context_length
             && (matches!(len_req, LenReq::FitContent(_)) || !is_measuring_only)
         {
+            // if context length is provided and the grid is fit-content sized,
+            // distribute the remaining context length after sizing non-fractional tracks
+            // between the fractional tracks according to their fractions.
+            // if there is no fractional track but there are auto-sized tracks, distibute the space
+            // between the auto-sized tracks equally.
             let (occupied_length, total_fr) = tracks
                 .iter()
                 .zip(&track_lengths)
@@ -507,7 +523,7 @@ impl Grid {
 
             let leftover_length = context_length.get() - occupied_length;
             if leftover_length <= 0. {
-                return extract_bases(track_lengths);
+                return track_lengths;
             }
 
             if total_fr == 0. {
@@ -526,12 +542,14 @@ impl Grid {
                         })
                         .collect()
                 } else {
-                    extract_bases(track_lengths)
+                    track_lengths
                 }
             } else {
                 extract_bases_with_fr(track_lengths, leftover_length / total_fr)
             }
         } else {
+            // if context length is not provided or the grid is min/max-content sized,
+            // take the maximum of fractional track length from single-track childrens and apply that.
             if let Some(fr_unit) = tracks
                 .iter()
                 .zip(&track_lengths)
@@ -543,7 +561,7 @@ impl Grid {
             {
                 extract_bases_with_fr(track_lengths, fr_unit)
             } else {
-                extract_bases(track_lengths)
+                track_lengths
             }
         }
     }
@@ -1265,5 +1283,50 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(test_property_set(), widget, (300, 300));
         assert_render_snapshot!(harness, "grid_nonuniform");
+    }
+
+    #[test]
+    fn grid_fitcontent_overflow() {
+        let widget = Grid::new()
+            .with_columns([
+                GridTrackSize::MinContent,
+                GridTrackSize::FitContent(50.px()),
+                GridTrackSize::MinContent,
+            ])
+            .with_rows([GridTrackSize::Fixed(30.px()); 2])
+            .with(
+                Label::new("30px")
+                    .prepare()
+                    .with_props(Dimensions::width(30.px()))
+                    .with_props(Background::Color(palette::css::CHOCOLATE.with_alpha(0.5))),
+                GridParams::pos(0, 0),
+            )
+            .with(
+                Label::new("40px")
+                    .prepare()
+                    .with_props(Dimensions::width(40.px()))
+                    .with_props(Background::Color(palette::css::BISQUE.with_alpha(0.5))),
+                GridParams::pos(1, 0),
+            )
+            .with(
+                Label::new("20px")
+                    .prepare()
+                    .with_props(Dimensions::width(20.px()))
+                    .with_props(Background::Color(palette::css::LIME_GREEN.with_alpha(0.5))),
+                GridParams::pos(2, 0),
+            )
+            .with(
+                Label::new("160px")
+                    .prepare()
+                    .with_props(Dimensions::width(160.px()))
+                    .with_props(Background::Color(palette::css::PURPLE.with_alpha(0.5))),
+                GridParams::pos(0, 1).with_width(3),
+            )
+            .prepare()
+            .with_props(Gap::new(5.px()))
+            .with_props(Dimensions::MIN);
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (300, 300));
+        assert_render_snapshot!(harness, "grid_fitcontent_overflow");
     }
 }
