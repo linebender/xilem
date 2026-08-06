@@ -32,6 +32,7 @@ pub struct Grid {
     children: Vec<Child>,
     columns: Vec<GridTrackSize>,
     rows: Vec<GridTrackSize>,
+    needs_placing: bool,
 }
 
 #[derive(Debug)]
@@ -119,15 +120,15 @@ impl Grid {
         self
     }
 
-    /// Builder-style method to define the track sizes (heights) of the grid rows.
+    /// Builder-style method to add multiple rows to the grid.
     pub fn with_rows(mut self, rows: impl IntoIterator<Item = GridTrackSize>) -> Self {
-        self.rows = rows.into_iter().collect();
+        self.rows.extend(rows);
         self
     }
 
-    /// Builder-style method to define the track sizes (widths) of the grid columns.
+    /// Builder-style method to add multiple columns to the grid.
     pub fn with_columns(mut self, columns: impl IntoIterator<Item = GridTrackSize>) -> Self {
-        self.columns = columns.into_iter().collect();
+        self.columns.extend(columns);
         self
     }
 
@@ -135,11 +136,14 @@ impl Grid {
     ///
     /// # Panics
     ///
-    /// If the `params` refer to a row/column that does not exist, `measure`/`layout` pass would
-    /// panic in debug mode and silently ignore this child in release mode.
+    /// If the `params` refer to a row/column that does not exist, an algorithm similar
+    /// to CSS grid's would try to assign an appropriate position to it.
+    /// If the algorithm fails, `measure`/`layout` pass would panic in debug mode
+    /// and silently ignore this child in release mode.
     pub fn with(mut self, child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
         let child = Child::new(child, params);
         self.children.push(child);
+        self.needs_placing = true;
         self
     }
 }
@@ -147,7 +151,7 @@ impl Grid {
 // --- MARK: METHODS
 impl Grid {
     fn assign_cell_to_auto_placed_children(&mut self) {
-        if self.columns.is_empty() || self.rows.is_empty() {
+        if !mem::take(&mut self.needs_placing) || self.columns.is_empty() || self.rows.is_empty() {
             return;
         }
 
@@ -700,12 +704,14 @@ impl Grid {
     /// Sets the column sizes of the grid.
     pub fn set_columns(this: &mut WidgetMut<'_, Self>, columns: Vec<GridTrackSize>) {
         this.widget.columns = columns;
+        this.widget.needs_placing = true;
         this.ctx.request_layout();
     }
 
     /// Sets the row sizes of the grid.
     pub fn set_rows(this: &mut WidgetMut<'_, Self>, rows: Vec<GridTrackSize>) {
         this.widget.rows = rows;
+        this.widget.needs_placing = true;
         this.ctx.request_layout();
     }
 }
@@ -740,6 +746,7 @@ impl CollectionWidget<GridParams> for Grid {
     ) {
         let child = Child::new(child, params.into());
         this.widget.children.push(child);
+        this.widget.needs_placing = true;
         this.ctx.children_changed();
     }
 
@@ -756,6 +763,7 @@ impl CollectionWidget<GridParams> for Grid {
     ) {
         let child = Child::new(child, params.into());
         this.widget.children.insert(idx, child);
+        this.widget.needs_placing = true;
         this.ctx.children_changed();
     }
 
@@ -772,6 +780,7 @@ impl CollectionWidget<GridParams> for Grid {
     ) {
         let child = Child::new(child, params.into());
         let old_child = mem::replace(&mut this.widget.children[idx], child);
+        this.widget.needs_placing = true;
         this.ctx.remove_child(old_child.widget);
     }
 
@@ -783,6 +792,7 @@ impl CollectionWidget<GridParams> for Grid {
     fn set_params(this: &mut WidgetMut<'_, Self>, idx: usize, params: impl Into<GridParams>) {
         let child = &mut this.widget.children[idx];
         child.params = params.into();
+        this.widget.needs_placing = true;
         this.ctx.request_layout();
     }
 
@@ -802,6 +812,7 @@ impl CollectionWidget<GridParams> for Grid {
         (this.widget.children[a].x, this.widget.children[a].y) = (a_x, a_y);
         (this.widget.children[b].x, this.widget.children[b].y) = (b_x, b_y);
 
+        this.widget.needs_placing = true;
         this.ctx.children_changed();
     }
 
@@ -813,6 +824,7 @@ impl CollectionWidget<GridParams> for Grid {
     fn remove(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
+        this.widget.needs_placing = true;
     }
 
     /// Removes all children.
@@ -820,6 +832,7 @@ impl CollectionWidget<GridParams> for Grid {
         for child in this.widget.children.drain(..) {
             this.ctx.remove_child(child.widget);
         }
+        this.widget.needs_placing = true;
     }
 }
 
