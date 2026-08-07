@@ -3,7 +3,7 @@
 
 use std::sync::mpsc;
 
-use assert_matches::assert_matches;
+use std::assert_matches;
 
 use crate::core::pointer::PointerEvent;
 use crate::core::{

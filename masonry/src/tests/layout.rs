@@ -4,7 +4,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use assert_matches::assert_matches;
+use std::assert_matches;
 
 use crate::core::{NewWidget, Widget, WidgetTag};
 use crate::kurbo::{Insets, Point, Rect, Size, Vec2};
