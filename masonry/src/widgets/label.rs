@@ -58,6 +58,7 @@ pub struct Label {
     // TODO: What classes of animations?
     hint: bool,
 
+    accessibility_hidden: bool,
     accessibility: LayoutAccessibility,
 }
 
@@ -188,6 +189,7 @@ impl Label {
             styles,
             text_alignment: TextAlign::Start,
             hint: true,
+            accessibility_hidden: false,
             accessibility: LayoutAccessibility::default(),
         }
     }
@@ -239,6 +241,12 @@ impl Label {
     // Alternatively, we should automate disabling hinting at the Vello layer when composing.
     pub fn with_hint(mut self, hint: bool) -> Self {
         self.hint = hint;
+        self
+    }
+
+    /// Sets whether this label is hidden from the accessibility tree.
+    pub fn accessibility_hidden(mut self, hidden: bool) -> Self {
+        self.accessibility_hidden = hidden;
         self
     }
 
@@ -623,6 +631,11 @@ impl Widget for Label {
         props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
+        if self.accessibility_hidden {
+            node.set_hidden();
+            return;
+        }
+
         let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();
 
         let cache = ctx.property_cache();
