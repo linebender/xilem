@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![no_std]
-
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=tree_arena
 
@@ -14,6 +12,17 @@
 //! * The safe version may have features / APIs that the unsafe version doesn't yet have.
 //! * If both versions are at feature parity, [Masonry][] can switch on the unsafe version for best performance.
 //! * Otherwise, [Masonry][] uses the safe version.
+//!
+//! # Features
+//!
+//! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+//!
+//! - `std` (enabled by default): Enable future features which require the standard library.
+//!   This feature is provided for forwards compatibility only, and current behaviour is the same whether or not it is enabled.
+//! - `safe_tree` (enabled by default): Use the safe tree implementation instead of the unsafe one.
+//!
+//! This crate is `no_std` compatible; to use it without the standard library, disable default features.
+//! Note that this also disables `safe_tree`, so re-enable it explicitly if you want the safe implementation.
 //!
 //! # Architecture
 //!
@@ -66,7 +75,23 @@
 //!
 //! [Masonry]: https://crates.io/crates/masonry
 
+// LINEBENDER LINT SET - lib.rs - v3
+// See https://linebender.org/wiki/canonical-lints/
+// These lints shouldn't apply to examples or tests.
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// These lints shouldn't apply to examples.
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+// Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
+#![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![no_std]
+
 extern crate alloc;
+
+#[cfg(feature = "std")]
+// Ensure that we don't compile if you're using the std feature on a platform without `std`
+extern crate std as _;
 
 type NodeId = u64;
 
