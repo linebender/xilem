@@ -35,10 +35,10 @@ impl DemoPage for KitchenSinkDemo {
             .prepare();
 
         let grid = Grid::with_dimensions(2, 2)
-            .with(Label::new("Grid 0").prepare(), GridParams::new(0, 0, 1, 1))
-            .with(Label::new("Grid 1").prepare(), GridParams::new(1, 0, 1, 1))
-            .with(Label::new("Grid 2").prepare(), GridParams::new(0, 1, 1, 1))
-            .with(Label::new("Grid 3").prepare(), GridParams::new(1, 1, 1, 1));
+            .with(Label::new("Grid 0").prepare(), GridParams::pos(0, 0))
+            .with(Label::new("Grid 1").prepare(), GridParams::pos(1, 0))
+            .with(Label::new("Grid 2").prepare(), GridParams::pos(0, 1))
+            .with(Label::new("Grid 3").prepare(), GridParams::pos(1, 1));
 
         let grid = NewWidget::new(SizedBox::new(grid.prepare())).with_props(
             PropertySet::new()

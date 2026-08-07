@@ -299,35 +299,38 @@ fn paint_transparency() {
     let align_b = UnitPoint::BOTTOM_LEFT;
 
     let mut grid_a = Grid::with_dimensions(4, 1);
-    grid_a = grid_a.with(child("AAAA", align_a, None), GridParams::new(0, 0, 1, 1));
+    grid_a = grid_a.with(child("AAAA", align_a, None), GridParams::pos(0, 0));
     grid_a = grid_a.with(
         child("AABB", align_a, Color::TRANSPARENT),
-        GridParams::new(1, 0, 1, 1),
+        GridParams::pos(1, 0),
     );
     grid_a = grid_a.with(
         child("AACC", align_a, Color::from_rgba8(66, 117, 245, 127)),
-        GridParams::new(2, 0, 1, 1),
+        GridParams::pos(2, 0),
     );
     // Stupid workaround for typos-cli thinking it's a typo.
     let typo = concat!("AA", "DD");
     grid_a = grid_a.with(
         child(typo, align_a, Color::from_rgba8(66, 117, 245, 255)),
-        GridParams::new(3, 0, 1, 1),
+        GridParams::pos(3, 0),
     );
 
     let mut grid_b = Grid::with_dimensions(16, 1);
-    grid_b = grid_b.with(child("BBAA", align_b, None), GridParams::new(1, 0, 3, 1));
+    grid_b = grid_b.with(
+        child("BBAA", align_b, None),
+        GridParams::pos(1, 0).with_width(3),
+    );
     grid_b = grid_b.with(
         child("BBBB", align_b, Color::TRANSPARENT),
-        GridParams::new(5, 0, 3, 1),
+        GridParams::pos(5, 0).with_width(3),
     );
     grid_b = grid_b.with(
         child("BBCC", align_b, Color::from_rgba8(245, 66, 191, 127)),
-        GridParams::new(9, 0, 3, 1),
+        GridParams::pos(9, 0).with_width(3),
     );
     grid_b = grid_b.with(
         child("BBDD", align_b, Color::from_rgba8(245, 66, 191, 255)),
-        GridParams::new(13, 0, 3, 1),
+        GridParams::pos(13, 0).with_width(3),
     );
 
     let props = (Padding::all(20.px()), Gap::new(10.px()));
