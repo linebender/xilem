@@ -1,7 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use assert_matches::assert_matches;
+use std::assert_matches;
+
 
 use crate::core::{ChildrenIds, NewWidget, Update, Widget, WidgetPod, WidgetTag};
 use crate::kurbo::{Affine, Point, Rect, Size, Vec2};

@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use assert_matches::assert_matches;
+use std::assert_matches;
 
 use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
 use crate::core::{NewWidget, PaintLayerMode, PropertySet, Widget, WidgetTag};

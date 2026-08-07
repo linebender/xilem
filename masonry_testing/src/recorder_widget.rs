@@ -41,7 +41,6 @@ use masonry_core::layout::{LenReq, Length};
 /// # use masonry::widgets::Label;
 /// # use masonry::core::Update;
 /// use masonry::testing::{TestHarness, Recording, Record, TestWidgetExt};
-/// use assert_matches::assert_matches;
 ///
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);
