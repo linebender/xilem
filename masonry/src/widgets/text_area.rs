@@ -760,7 +760,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let mut edited = false;
                 match e {
                     Ime::Disabled => {
-                        self.editor.driver(fctx, lctx).clear_compose();
+                        self.editor.driver(fctx, lctx).finish_compose();
                     }
                     Ime::Preedit(text, cursor) => {
                         if text.is_empty() {
