@@ -6,7 +6,6 @@ use std::mem::Discriminant;
 
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 
 use crate::core::{
@@ -17,11 +16,12 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::{AsUnit, LenReq, Length};
-use crate::parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
+use crate::parley::LayoutAccessibility;
 use crate::properties::{ContentColor, LineBreaking};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
-use crate::{TextAlign, TextAlignOptions, theme};
+use crate::widgets::text_layout_cache::TextLayoutCache;
+use crate::{TextAlign, theme};
 
 /// A widget displaying non-interactive text.
 ///
@@ -38,15 +38,7 @@ use crate::{TextAlign, TextAlignOptions, theme};
 )]
 pub struct Label {
     /// Cached layouts.
-    layouts: Vec<TextLayout>,
-    /// Time tracking for cache usage.
-    cache_time: u8,
-    /// The currently active layout index.
-    ///
-    /// `usize::MAX` works well for none, as it will be overwritten before its used
-    /// for layout access, but will be read as-is during cache eviction.
-    /// During which any value larger than the cache capacity will be ignored.
-    active_layout: usize,
+    layouts: TextLayoutCache,
 
     text: ArcStr,
     styles: StyleSet,
@@ -61,116 +53,6 @@ pub struct Label {
     accessibility: LayoutAccessibility,
 }
 
-/// Text layout computation inputs and output.
-struct TextLayout {
-    /// Computed text layout.
-    layout: Layout<BrushIndex>,
-    /// Max advance value that was used when calculating this layout.
-    max_advance: Option<f32>,
-    /// Text alignment of this layout.
-    alignment: TextAlign,
-    /// Text alignment width of this layout.
-    alignment_width: f32,
-    /// Last use timestamp for cache eviction purposes.
-    last_used: u8,
-}
-
-impl TextLayout {
-    /// Text layout width differences less than 0.01 pixels can be considered equal.
-    const EPSILON: f32 = 0.01;
-
-    /// Creates a new [`TextLayout`] with the specified `max_advance` constraint and `timestamp`.
-    fn new(max_advance: Option<f32>, timestamp: u8) -> Self {
-        Self {
-            layout: Layout::new(),
-            max_advance,
-            alignment: TextAlign::Start,
-            alignment_width: -1., // Not aligned yet
-            last_used: timestamp,
-        }
-    }
-
-    /// Discards this layout, making it an obvious choice for cache eviction.
-    fn discard(&mut self) {
-        // Mark it as least recently used.
-        self.last_used = 0;
-        // Set a fake unlikely-to-be-seen max advance so it won't get any use.
-        self.max_advance = Some(-1.);
-    }
-
-    /// Align the text layout.
-    ///
-    /// This method ensures that alignment only happens when the inputs have changed.
-    fn align(&mut self, alignment: TextAlign, alignment_width: f32) {
-        if self.alignment == alignment
-            && (self.alignment_width - alignment_width).abs() < Self::EPSILON
-        {
-            return;
-        }
-        self.alignment = alignment;
-        self.alignment_width = alignment_width;
-        self.layout.align(
-            Some(self.alignment_width),
-            self.alignment,
-            TextAlignOptions::default(),
-        );
-    }
-
-    /// Returns `true` if this layout would be the result for `max_advance`.
-    ///
-    /// For example:
-    ///
-    /// `compute_layout(max_advance == 10) => layout.width == 8`
-    /// is also valid for `max_advance == 9`.
-    ///
-    /// This check assumes that Parley does greedy line-breaking,
-    /// which it does at the time of writing this.
-    fn satisfies(&self, max_advance: Option<f32>) -> bool {
-        // Check if the specified constraint is compatible with this layout's constraint.
-        self.max_advance.is_none_or(|layout_max_advance| {
-            max_advance.is_some_and(|max_advance| {
-                layout_max_advance - max_advance + Self::EPSILON >= 0.
-            })
-        }) &&
-        // Check if the computed layout fits into the specified constraint.
-        max_advance.is_none_or(|max_advance| {
-            max_advance - self.layout.width() + Self::EPSILON >= 0.
-        })
-    }
-
-    /// Returns `true` if this layout was more constrained than `max_advance`.
-    fn more_constrained(&self, max_advance: Option<f32>) -> bool {
-        self.max_advance.is_some_and(|layout_max_advance| {
-            max_advance.is_none_or(|max_advance| layout_max_advance < max_advance)
-        })
-    }
-
-    /// Returns `true` if the layouts are equal.
-    ///
-    /// That is if they have the same number of line breaks with the same reason at the same places.
-    fn equals(&self, other: &Self) -> bool {
-        if self.layout.len() != other.layout.len() {
-            return false;
-        }
-        let mut a = self.layout.lines();
-        let mut b = other.layout.lines();
-        loop {
-            match (a.next(), b.next()) {
-                (None, None) => return true,
-                (Some(a_line), Some(b_line)) => {
-                    if a_line.break_reason() != b_line.break_reason() {
-                        return false;
-                    }
-                    if a_line.text_range() != b_line.text_range() {
-                        return false;
-                    }
-                }
-                _ => return false,
-            }
-        }
-    }
-}
-
 // --- MARK: BUILDERS
 impl Label {
     /// Creates a new label with the given text.
@@ -181,9 +63,7 @@ impl Label {
         let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
         default_text_styles(&mut styles);
         Self {
-            layouts: Vec::new(),
-            cache_time: 0,
-            active_layout: usize::MAX,
+            layouts: TextLayoutCache::new(),
             text: text.into(),
             styles,
             text_alignment: TextAlign::Start,
@@ -345,120 +225,6 @@ impl Label {
     /// Call this whenever text, styles, or fonts have changed.
     fn clear_cache(&mut self) {
         self.layouts.clear();
-        self.active_layout = usize::MAX;
-    }
-
-    /// Total number of text layouts to cache.
-    ///
-    /// Must be at least `2`, to allow for one active layout and one speculative one.
-    /// Must be less than `u8::MAX` because it's also used as the cache time reset value.
-    const CACHE_CAPACITY: usize = 5;
-
-    /// Increments and returns the cache timestamp.
-    fn cache_time(&mut self) -> u8 {
-        if self.cache_time == u8::MAX {
-            // Compress all last_used timestamps
-            let n = self.layouts.len();
-            let mut idx: SmallVec<[usize; Self::CACHE_CAPACITY]> = (0..n).collect();
-            idx.sort_unstable_by_key(|&i| self.layouts[i].last_used);
-            for (rank, &i) in idx.iter().enumerate() {
-                self.layouts[i].last_used = rank as u8;
-            }
-            self.cache_time = Self::CACHE_CAPACITY as u8;
-        } else {
-            self.cache_time += 1;
-        }
-        self.cache_time
-    }
-
-    /// Builds the text layout and breaks the text into lines.
-    ///
-    /// Backed by a cache layer.
-    fn build_and_break(
-        &mut self,
-        font_ctx: &mut FontContext,
-        layout_ctx: &mut LayoutContext<BrushIndex>,
-        max_advance: Option<f32>,
-    ) -> usize {
-        let timestamp = self.cache_time();
-
-        // Check if the cache already has a suitable entry.
-        // A suitable entry is one that was calculated with the same or larger constraint,
-        // and resulted in a layout that still fits within this newly requested constraint.
-        for (idx, layout) in self.layouts.iter_mut().enumerate() {
-            if layout.satisfies(max_advance) {
-                layout.last_used = timestamp;
-                return idx;
-            }
-        }
-
-        // No known compatible cache entry, so need to do text layout.
-        let (mut idx, layout) = if self.layouts.len() < Self::CACHE_CAPACITY {
-            // Create a new cache entry.
-            self.layouts.push(TextLayout::new(max_advance, timestamp));
-            (self.layouts.len() - 1, self.layouts.last_mut().unwrap())
-        } else {
-            // Repurpose the least recently used non-active cache entry.
-            let (idx, layout) = self
-                .layouts
-                .iter_mut()
-                .enumerate()
-                .filter(|(idx, _)| *idx != self.active_layout)
-                .min_by(|a, b| a.1.last_used.cmp(&b.1.last_used))
-                .unwrap();
-            layout.max_advance = max_advance;
-            layout.last_used = timestamp;
-            (idx, layout)
-        };
-
-        // TODO: Should we use a different scale?
-        // See https://github.com/linebender/xilem/issues/1264
-        let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0, true);
-        for prop in self.styles.inner().values() {
-            builder.push_default(prop.to_owned());
-        }
-        builder.build_into(&mut layout.layout, &self.text);
-
-        layout.layout.break_all_lines(max_advance);
-
-        // Check if the layout result matches an existing cache entry.
-        // This happens when slightly increasing max_advance, as we can't then safely pre-identify
-        // an existing cache entry because more text might fit inside this new larger constraint.
-        // However, if it actually resulted in the same layout as with a slightly lower constraint,
-        // then we don't want to have two cache entries with the same identical layout result.
-        if let Some((equal_idx, _)) = self
-            .layouts
-            .iter()
-            .enumerate()
-            // Only those that are more constrained than the new constraint are viable.
-            .filter(|(_, layout)| layout.more_constrained(max_advance))
-            // We want the one that is closest to the new constraint.
-            .max_by(|a, b| {
-                // Because we only look at more constrained entries,
-                // these are all guaranteed to be Option::Some.
-                a.1.max_advance
-                    .unwrap()
-                    .total_cmp(&b.1.max_advance.unwrap())
-            })
-            // Make sure that it actually matches the new layout.
-            .filter(|(_, layout)| layout.equals(&self.layouts[idx]))
-        {
-            // Though these two layouts are equal, we want to keep the older one.
-            // Because the old one might be the currently active layout.
-            let equal_layout = &mut self.layouts[equal_idx];
-            // Mark the old layout as applicable up to this new constraint.
-            equal_layout.max_advance = max_advance;
-            equal_layout.last_used = timestamp;
-
-            // Discard the new layout that we just created as it is a duplicate.
-            let layout = &mut self.layouts[idx];
-            layout.discard();
-
-            // Return the updated old entry.
-            idx = equal_idx;
-        }
-
-        idx
     }
 }
 
@@ -541,8 +307,14 @@ impl Widget for Label {
         .map(|v| v.get() as f32);
 
         let (font_ctx, layout_ctx) = ctx.text_contexts();
-        let layout_idx = self.build_and_break(font_ctx, layout_ctx, max_advance);
-        let layout = &self.layouts[layout_idx];
+        let layout_idx = self.layouts.build_and_break(
+            font_ctx,
+            layout_ctx,
+            &self.text,
+            &self.styles,
+            max_advance,
+        );
+        let layout = self.layouts.get(layout_idx);
 
         let length = if axis == inline {
             layout.layout.width() // Inline length
@@ -569,8 +341,15 @@ impl Widget for Label {
         };
 
         let (font_ctx, layout_ctx) = ctx.text_contexts();
-        self.active_layout = self.build_and_break(font_ctx, layout_ctx, max_advance);
-        let layout = &mut self.layouts[self.active_layout];
+        let layout_idx = self.layouts.build_and_break(
+            font_ctx,
+            layout_ctx,
+            &self.text,
+            &self.styles,
+            max_advance,
+        );
+        self.layouts.set_active(layout_idx);
+        let layout = self.layouts.active_mut();
 
         layout.align(self.text_alignment, inline_space);
 
@@ -602,7 +381,7 @@ impl Widget for Label {
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
 
-        let layout = &self.layouts[self.active_layout];
+        let layout = self.layouts.active();
 
         render_text(
             painter,
@@ -628,7 +407,7 @@ impl Widget for Label {
         let cache = ctx.property_cache();
         let text_color = props.get::<ContentColor>(cache);
 
-        let layout = &self.layouts[self.active_layout];
+        let layout = self.layouts.active();
 
         self.accessibility.build_nodes(
             self.text.as_ref(),
