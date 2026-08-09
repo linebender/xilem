@@ -84,7 +84,7 @@ The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/fe
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Masonry Core has been verified to compile with **Rust 1.92** and later.
+This version of Masonry Core has been verified to compile with **Rust 1.96** and later.
 
 Future versions of Masonry Core might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
