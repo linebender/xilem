@@ -1,4 +1,4 @@
-// Copyright 2025 the Xilem Authors
+// Copyright 2026 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::TypeId;
@@ -7,18 +7,18 @@ use crate::core::{Property, UpdateCtx};
 use crate::layout::Length;
 use crate::peniko::Color;
 
-/// The radius of a slider's thumb.
+/// The thickness of a track.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
-pub struct ThumbRadius(pub Length);
+pub struct TrackThickness(pub Length);
 
-impl Property for ThumbRadius {
+impl Property for TrackThickness {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbRadius = ThumbRadius(Length::ZERO);
+        static DEFAULT: TrackThickness = TrackThickness(Length::ZERO);
         &DEFAULT
     }
 }
 
-impl ThumbRadius {
+impl TrackThickness {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type == TypeId::of::<Self>() {
@@ -27,28 +27,28 @@ impl ThumbRadius {
     }
 }
 
-/// The color of a slider's thumb.
+/// Colors of a track.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ThumbColor(pub Color);
+pub struct TrackColor {
+    /// Color of the active portion.
+    pub active: Color,
 
-impl Property for ThumbColor {
+    /// Color of the inactive portion.
+    pub inactive: Color,
+}
+
+impl Property for TrackColor {
     fn static_default() -> &'static Self {
-        static DEFAULT: ThumbColor = ThumbColor(Color::WHITE);
+        static DEFAULT: TrackColor = TrackColor {
+            active: Color::WHITE,
+            inactive: Color::WHITE.with_alpha(0.5),
+        };
         &DEFAULT
     }
 }
 
-impl Default for ThumbColor {
+impl Default for TrackColor {
     fn default() -> Self {
         *Self::static_default()
-    }
-}
-
-impl ThumbColor {
-    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
-    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        if property_type == TypeId::of::<Self>() {
-            ctx.request_paint_only();
-        }
     }
 }

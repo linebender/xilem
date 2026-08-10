@@ -13,14 +13,14 @@ use crate::core::{
     PropertiesRef, RegisterCtx, Update, UpdateCtx, UsesProperty, Widget, WidgetId,
 };
 use crate::imaging::Painter;
-use crate::kurbo::{Axis, Cap, Line, Size, Stroke, Vec2};
+use crate::kurbo::{Arc, Axis, Cap, Size, Stroke, Vec2};
 use crate::layout::{LenReq, Length};
-use crate::properties::ContentColor;
+use crate::properties::{AnimationDuration, TrackColor, TrackThickness};
 use crate::theme;
 
 /// An animated spinner widget for showing a loading state.
 ///
-/// You can customize the look of this spinner with the [`ContentColor`] property.
+/// You can customize the look of this spinner with the [`TrackColor`], [`TrackThickness`] and the [`AnimationDuration`] properties.
 ///
 #[doc = concat!(
     "![Spinner frame](",
@@ -28,13 +28,15 @@ use crate::theme;
     ")",
 )]
 pub struct Spinner {
-    t: f64,
+    rotation_progress: f64,
 }
 
 // --- MARK: DEFAULT
 impl Default for Spinner {
     fn default() -> Self {
-        Self { t: 0.0 }
+        Self {
+            rotation_progress: 0.0,
+        }
     }
 }
 
@@ -46,7 +48,9 @@ impl Spinner {
     }
 }
 
-impl UsesProperty<ContentColor> for Spinner {}
+impl UsesProperty<TrackColor> for Spinner {}
+impl UsesProperty<TrackThickness> for Spinner {}
+impl UsesProperty<AnimationDuration> for Spinner {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Spinner {
@@ -55,22 +59,24 @@ impl Widget for Spinner {
     fn on_anim_frame(
         &mut self,
         ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
-        self.t += (interval as f64) * 1e-9;
-        if self.t >= 1.0 {
-            self.t = self.t.rem_euclid(1.0);
-        }
+        let animation_duration_secs = props.get::<AnimationDuration>(ctx.property_cache()).seconds;
+        debug_assert!(
+            animation_duration_secs > 0.0 && animation_duration_secs != f64::INFINITY,
+            "Animation duration must be non-zero positive and finite."
+        );
+
+        let frame_secs = (interval as f64) * 1e-9;
+        self.rotation_progress += frame_secs / animation_duration_secs;
         ctx.request_anim_frame();
         ctx.request_paint_only();
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        ContentColor::prop_changed(ctx, property_type);
-    }
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx<'_>, _property_type: TypeId) {}
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
@@ -107,32 +113,37 @@ impl Widget for Spinner {
         props: &PropertiesRef<'_>,
         painter: &mut Painter<'_>,
     ) {
-        let cache = ctx.property_cache();
-        let color = props.get::<ContentColor>(cache);
-
-        let t = self.t;
         let content_box = ctx.content_box();
-        let size = content_box.size();
+        let radio = content_box.size().min_side() / 2.0;
         let center = content_box.center();
-        let scale_factor = size.width.min(size.height) / 40.0;
+        let sweep_angle = PI * 5.0 / 8.0;
 
-        for step in 1..=12 {
-            let step = f64::from(step);
-            let fade_t = (t * 12.0 + 1.0).trunc();
-            let fade = ((fade_t + step).rem_euclid(12.0) / 12.0) + 1.0 / 12.0;
-            let angle = Vec2::from_angle((step / 12.0) * -2.0 * PI);
-            let ambit_start = center + (10.0 * scale_factor * angle);
-            let ambit_end = center + (20.0 * scale_factor * angle);
-            let color = color.color.multiply_alpha(fade as f32);
+        let cache = ctx.property_cache();
+        let colors = props.get::<TrackColor>(cache);
+        let thickness = props.get::<TrackThickness>(cache).0.get().min(radio);
 
-            painter
-                .stroke(
-                    Line::new(ambit_start, ambit_end),
-                    &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
-                    color,
-                )
-                .draw();
-        }
+        let radii = Vec2::splat(radio - (thickness / 2.0));
+        painter
+            .stroke(
+                Arc::new(center, radii, 0.0, PI * 2.0, 0.0),
+                &Stroke::new(thickness).with_caps(Cap::Round),
+                colors.inactive,
+            )
+            .draw();
+
+        painter
+            .stroke(
+                Arc::new(
+                    center,
+                    radii,
+                    self.rotation_progress * PI * 2.0,
+                    sweep_angle,
+                    0.0,
+                ),
+                &Stroke::new(thickness).with_caps(Cap::Round),
+                colors.active,
+            )
+            .draw();
     }
 
     fn accessibility_role(&self) -> Role {
@@ -159,9 +170,11 @@ impl Widget for Spinner {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::layout::AsUnit;
+    use masonry_core::peniko::Color;
+
     use super::*;
-    use crate::core::{NewWidget, PropertySet};
-    use crate::palette;
+    use crate::core::NewWidget;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
 
@@ -180,29 +193,27 @@ mod tests {
     }
 
     #[test]
-    fn edit_spinner() {
-        let image_1 = {
-            let spinner = Spinner::new()
-                .prepare()
-                .with_props(PropertySet::one(ContentColor::new(palette::css::PURPLE)));
+    fn blue_spinner() {
+        let spinner = NewWidget::new(Spinner::new());
 
-            let mut harness = TestHarness::create_with_size(test_property_set(), spinner, (30, 30));
-            harness.render()
-        };
+        let mut props = test_property_set();
+        props.insert::<Spinner, _>(TrackColor {
+            active: Color::from_rgba8(0xff, 0xff, 0xff, 0xff),
+            inactive: Color::from_rgba8(0x2a, 0x00, 0x96, 0xff),
+        });
 
-        let image_2 = {
-            let spinner = NewWidget::new(Spinner::new());
+        let mut harness = TestHarness::create_with_size(props, spinner, (100, 100));
+        assert_render_snapshot!(harness, "spinner_blue");
+    }
 
-            let mut harness = TestHarness::create_with_size(test_property_set(), spinner, (30, 30));
+    #[test]
+    fn thick_spinner() {
+        let spinner = NewWidget::new(Spinner::new());
 
-            harness.edit_root_widget(|mut spinner| {
-                spinner.insert_prop(ContentColor::new(palette::css::PURPLE));
-            });
+        let mut props = test_property_set();
+        props.insert::<Spinner, _>(TrackThickness(40.px()));
 
-            harness.render()
-        };
-
-        // We don't use assert_eq because we don't want rich assert
-        assert!(image_1 == image_2);
+        let mut harness = TestHarness::create_with_size(props, spinner, (100, 100));
+        assert_render_snapshot!(harness, "spinner_thick");
     }
 }
