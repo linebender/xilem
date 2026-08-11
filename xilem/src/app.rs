@@ -8,6 +8,7 @@ use masonry::core::DefaultProperties;
 use masonry::peniko::{Blob, Color};
 use masonry::theme::{BACKGROUND_COLOR, default_property_set};
 use masonry_winit::app::{EventLoopBuilder, MasonryState, MasonryUserEvent, NewWindow, WindowId};
+#[cfg(feature = "async")]
 use tokio::runtime::Runtime as TokioRuntime;
 use winit::error::EventLoopError;
 
@@ -22,6 +23,7 @@ use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
+    #[cfg(feature = "async")]
     runtime: Arc<TokioRuntime>,
     default_properties: Option<DefaultProperties>,
     default_base_color: Color,
@@ -62,20 +64,34 @@ impl<State>
     where
         View: WidgetView<State>,
     {
-        Self::new_simple_with_tokio(
+        Self::new_impl(
             state,
             logic,
             window_options,
+            #[cfg(feature = "async")]
             Arc::new(TokioRuntime::new().unwrap()),
         )
     }
 
     /// Same as [`Self::new_simple`] but allows passing an existing tokio runtime.
+    #[cfg(feature = "async")]
     pub fn new_simple_with_tokio<View>(
+        state: State,
+        logic: impl FnMut(&mut State) -> View + 'static,
+        window_options: WindowOptions<State>,
+        tokio_rt: Arc<TokioRuntime>,
+    ) -> Self
+    where
+        View: WidgetView<State>,
+    {
+        Self::new_impl(state, logic, window_options, tokio_rt)
+    }
+
+    fn new_impl<View>(
         state: State,
         mut logic: impl FnMut(&mut State) -> View + 'static,
         window_options: WindowOptions<State>,
-        tokio_rt: Arc<TokioRuntime>,
+        #[cfg(feature = "async")] tokio_rt: Arc<TokioRuntime>,
     ) -> Self
     where
         View: WidgetView<State>,
@@ -112,6 +128,7 @@ impl<State>
                     }),
                 )
             }),
+            #[cfg(feature = "async")]
             tokio_rt,
         )
     }
@@ -138,18 +155,37 @@ where
     where
         State: AppState,
     {
-        Self::new_inner(state, logic, Arc::new(TokioRuntime::new().unwrap()))
-    }
-
-    fn new_inner(state: State, logic: Logic, runtime: Arc<TokioRuntime>) -> Self {
-        Self {
+        Self::new_inner(
             state,
             logic,
-            runtime,
-            default_properties: None,
-            default_base_color: BACKGROUND_COLOR,
-            fonts: Vec::new(),
-            on_start: None,
+            #[cfg(feature = "async")]
+            Arc::new(TokioRuntime::new().unwrap()),
+        )
+    }
+
+    fn new_inner(
+        state: State,
+        logic: Logic,
+        #[cfg(feature = "async")] runtime: Arc<TokioRuntime>,
+    ) -> Self {
+        cfg_select! {
+            feature = "async" => Self {
+                state,
+                logic,
+                runtime,
+                default_properties: None,
+                default_base_color: BACKGROUND_COLOR,
+                fonts: Vec::new(),
+                on_start: None,
+            },
+            _ => Self {
+                state,
+                logic,
+                default_properties: None,
+                default_base_color: BACKGROUND_COLOR,
+                fonts: Vec::new(),
+                on_start: None,
+            }
         }
     }
 
@@ -206,6 +242,7 @@ where
             self.state,
             self.logic,
             proxy,
+            #[cfg(feature = "async")]
             self.runtime,
             self.default_base_color,
             self.fonts,

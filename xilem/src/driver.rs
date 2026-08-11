@@ -27,6 +27,7 @@ pub struct MasonryDriver<State: 'static, Logic> {
     logic: Logic,
     windows: HashMap<WindowId, Window<State>>,
     proxy: Arc<MasonryProxy>,
+    #[cfg(feature = "async")]
     runtime: Arc<tokio::runtime::Runtime>,
     default_base_color: Color,
     // Fonts which will be registered on startup.
@@ -53,20 +54,31 @@ where
         // TODO: narrow down MasonryUserEvent in event_sink once masonry_winit supports custom event types
         // (we only ever use it to send MasonryUserEvent::Action with ASYNC_MARKER_WIDGET)
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-        runtime: Arc<tokio::runtime::Runtime>,
+        #[cfg(feature = "async")] runtime: Arc<tokio::runtime::Runtime>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
         start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
     ) -> (Self, Vec<NewWindow>) {
-        let mut driver = Self {
-            state,
-            logic,
-            windows: HashMap::new(),
-            proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
-            runtime,
-            default_base_color,
-            fonts,
-            start_callback,
+        let mut driver = cfg_select! {
+            feature = "async" => Self {
+                state,
+                logic,
+                windows: HashMap::new(),
+                proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
+                runtime,
+                default_base_color,
+                fonts,
+                start_callback,
+            },
+            _ => Self {
+                state,
+                logic,
+                windows: HashMap::new(),
+                proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
+                default_base_color,
+                fonts,
+                start_callback,
+            }
         };
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
             .map(|view| driver.build_window(view))
@@ -143,6 +155,7 @@ where
 
         let mut view_ctx = ViewCtx::new(
             Arc::new(WindowProxy(window_view.id, self.proxy.clone())),
+            #[cfg(feature = "async")]
             self.runtime.clone(),
         );
         let (new_window, view_state) = window_view.build(&mut view_ctx, &mut self.state);
