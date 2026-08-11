@@ -94,7 +94,7 @@ Let's add a visual test:
 
 The [`assert_render_snapshot!`] macro takes a snapshot name, renders the current state of the app, and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
 
-The rendered screenshot is compared against an existing file checked in your project, and panics if the reference file is meaningfully different (with some tolerance for small pixel-by-pixel differences) or if there isn't one.
+The rendered screenshot is compared against an existing screenshot checked into your project, and panics if the reference screenshot differs from the rendered screenshot.
 
 Adding screenshot tests lets you both check that your widget's `paint()` method runs correctly and explicitly track and check in your widget's visual changes into version control.
 

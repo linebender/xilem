@@ -19,11 +19,7 @@ fn pixel_min_max_distance(left: Rgb<u8>, right: Rgb<u8>) -> (u8, u8) {
         })
 }
 
-pub(crate) fn get_image_diff(
-    ref_image: &RgbImage,
-    new_image: &RgbImage,
-    max_screenshot_tolerance: u32,
-) -> Option<RgbImage> {
+pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
     let ref_size = (ref_image.width(), ref_image.height());
     let new_size = (new_image.width(), new_image.height());
 
@@ -34,7 +30,7 @@ pub(crate) fn get_image_diff(
         max_distance = std::cmp::max(max_distance, new_max);
     }
 
-    if max_distance <= max_screenshot_tolerance && ref_size == new_size {
+    if max_distance == 0 && ref_size == new_size {
         return None;
     }
 
@@ -56,7 +52,7 @@ pub(crate) fn get_image_diff(
         let (diff_min, diff_max) = pixel_min_max_distance(ref_pixel, new_pixel);
         let diff_abs = std::cmp::max(diff_min, diff_max);
 
-        if diff_abs as u32 > max_screenshot_tolerance {
+        if diff_abs != 0 {
             new_pixel
         } else {
             [0, 0, 0].into()

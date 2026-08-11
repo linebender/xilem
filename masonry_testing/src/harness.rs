@@ -153,7 +153,6 @@ pub struct TestHarness<W: Widget> {
     root_padding: u32,
     background_color: Color,
     panic_on_rewrite_saturation: bool,
-    screenshot_tolerance: u32,
     max_screenshot_size: u32,
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
@@ -186,9 +185,6 @@ pub struct TestHarnessParams {
     ///
     /// [`assert_render_snapshot`]: crate::assert_render_snapshot
     pub root_padding: u32,
-    /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
-    /// Defaults to [`TestHarnessParams::DEFAULT_SCREENSHOT_TOLERANCE`].
-    pub screenshot_tolerance: u32,
     /// The scale factor widgets are rendered at.
     /// Defaults to 1.0.
     pub scale_factor: f64,
@@ -254,7 +250,6 @@ impl TestHarnessParams {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
         root_padding: 0,
-        screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
         max_screenshot_size: 8 * Self::KIBIBYTE,
@@ -262,9 +257,6 @@ impl TestHarnessParams {
 
     /// Default canvas size for tests.
     pub const DEFAULT_SIZE: PhysicalSize<u32> = PhysicalSize::new(400, 400);
-
-    /// Default error tolerance for screenshot tests.
-    pub const DEFAULT_SCREENSHOT_TOLERANCE: u32 = 16;
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
@@ -414,7 +406,6 @@ impl<W: Widget> TestHarness<W> {
             window_size,
             background_color: params.background_color,
             root_padding: params.root_padding,
-            screenshot_tolerance: params.screenshot_tolerance,
             panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
             max_screenshot_size: params.max_screenshot_size,
             action_queue: VecDeque::new(),
@@ -1176,8 +1167,7 @@ impl<W: Widget> TestHarness<W> {
         let ref_image = reference_file.decode().unwrap().to_rgb8();
 
         if expect_failure {
-            if get_image_diff(&ref_image, &new_image.to_rgb8(), self.screenshot_tolerance).is_some()
-            {
+            if get_image_diff(&ref_image, &new_image.to_rgb8()).is_some() {
                 return;
             } else {
                 panic!(
@@ -1186,9 +1176,7 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        if let Some(diff_image) =
-            get_image_diff(&ref_image, &new_image.to_rgb8(), self.screenshot_tolerance)
-        {
+        if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
             if bless_test {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
