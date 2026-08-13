@@ -113,14 +113,17 @@ impl DynMessage {
 /// To convert a `SendMessage` into its concrete message type, you should use
 /// [`downcast`](Self::downcast).
 #[derive(Debug)]
+#[cfg(feature = "async")]
 pub struct SendMessage(pub Box<dyn AnyDebug + Send>);
 
+#[cfg(feature = "async")]
 impl From<SendMessage> for DynMessage {
     fn from(value: SendMessage) -> Self {
         Self(value.0)
     }
 }
 
+#[cfg(feature = "async")]
 impl SendMessage {
     /// Utility to make a `SendMessage` from a message value.
     pub fn new(x: impl AnyDebug + Send) -> Self {

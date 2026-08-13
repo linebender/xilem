@@ -8,7 +8,9 @@ use std::sync::Arc;
 use masonry::core::{FromDynWidget, Property, Widget, WidgetId, WidgetMut};
 
 use crate::Pod;
-use crate::core::{Environment, RawProxy, ViewId, ViewPathTracker};
+#[cfg(feature = "async")]
+use crate::core::RawProxy;
+use crate::core::{Environment, ViewId, ViewPathTracker};
 
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
@@ -17,6 +19,7 @@ pub struct ViewCtx {
     /// This includes only the widgets which might send actions
     widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
+    #[cfg(feature = "async")]
     proxy: Arc<dyn RawProxy>,
     #[cfg(feature = "async")]
     runtime: Arc<tokio::runtime::Runtime>,
@@ -134,6 +137,7 @@ impl ViewCtx {
     }
 
     /// Returns an event queue to which [`SendMessage`](crate::core::SendMessage)s can be submitted.
+    #[cfg(feature = "async")]
     pub fn proxy(&self) -> Arc<dyn RawProxy + 'static> {
         self.proxy.clone()
     }
@@ -142,7 +146,7 @@ impl ViewCtx {
     ///
     /// You almost never need to call this method unless you're building your own framework.
     pub fn new(
-        proxy: Arc<dyn RawProxy>,
+        #[cfg(feature = "async")] proxy: Arc<dyn RawProxy>,
         #[cfg(feature = "async")] runtime: Arc<tokio::runtime::Runtime>,
     ) -> Self {
         cfg_select! {
@@ -158,7 +162,6 @@ impl ViewCtx {
             _ => Self {
                 widget_map: HashMap::default(),
                 id_path: Vec::new(),
-                proxy,
                 props_changed: HashSet::default(),
                 transforms_changed: HashSet::default(),
                 environment: Environment::new(),

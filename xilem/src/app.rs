@@ -220,13 +220,17 @@ where
     /// Run app with custom window attributes.
     pub fn run_in(mut self, mut event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         let event_loop = event_loop.build()?;
-        let proxy = event_loop.create_proxy();
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (driver, windows) =
-            self.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
+        let (driver, windows) = self.into_driver_and_windows(
+            #[cfg(feature = "async")]
+            {
+                let proxy = event_loop.create_proxy();
+                move |event| proxy.send_event(event).map_err(|err| err.0)
+            },
+        );
         masonry_winit::app::run_with(event_loop, windows, driver, default_properties)
     }
 
@@ -236,11 +240,15 @@ where
     /// and returns the given event as an error in case the event loop is stopped.
     pub fn into_driver_and_windows(
         self,
-        proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
+        #[cfg(feature = "async")] proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent>
+        + Send
+        + Sync
+        + 'static,
     ) -> (MasonryDriver<State, Logic>, Vec<NewWindow>) {
         MasonryDriver::new(
             self.state,
             self.logic,
+            #[cfg(feature = "async")]
             proxy,
             #[cfg(feature = "async")]
             self.runtime,

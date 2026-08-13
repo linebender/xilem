@@ -33,7 +33,7 @@ name = "android.permission.INTERNET"
 
 [features]
 default = ["masonry/default", "masonry_winit/default"]
-async = ["tokio", "xilem_masonry/async"]
+async = ["tokio", "xilem_masonry/async", "masonry_winit/async"]
 
 [dependencies]
 xilem_core.workspace = true

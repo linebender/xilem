@@ -17,7 +17,7 @@ targets = []
 
 [features]
 default = ["masonry/default"]
-async = ["tokio"]
+async = ["tokio", "xilem_core/async"]
 
 [dependencies]
 xilem_core.workspace = true
