@@ -1021,7 +1021,7 @@ impl RenderRoot {
 impl RenderRoot {
     /// Returns a [`PropertyStackMut`] to a specific property stack.
     ///
-    /// See [`PropertyStackMut`] for more details.
+    /// The [`PropertyStackMut`] changes will only be applied to any widgets that is linked to its given id.
     ///
     /// Because of how [`PropertyStackMut`] works, it can only be passed to a user-provided callback.
     ///
@@ -1067,8 +1067,8 @@ impl RenderRoot {
 
             if is_linked_to_pstack {
                 // TODO apply diffs before hands or...
-                let mut class_set = node.item.class_set.clone();
-                class_set.apply(&state.class_diff);
+                let class_set = &node.item.class_set;
+                // class_set.apply(&state.class_diff);
                 // check if this edit is related to this node class set.
                 if changes.iter().any(|selector| selector.matches(&class_set)) {
                     state.request_update_props = true;
