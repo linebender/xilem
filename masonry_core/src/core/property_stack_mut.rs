@@ -295,7 +295,8 @@ mod tests {
     #[test]
     fn test_edit_selector() {
         let base_selector = Selector::classes(&["test1"]);
-        let base_selector_active = base_selector.clone().with_active(true);
+        // NOTE Not putting the `with_focused(false)` will make the `base_selector_active_focused` properties to shadow-ed by this.
+        let base_selector_active = base_selector.clone().with_active(true).with_focused(false);
         let base_selector_active_focused =
             base_selector.clone().with_active(true).with_focused(true);
         let mut set = ClassSet::default();
@@ -314,10 +315,9 @@ mod tests {
             property_stack.push(base_selector_active.clone(), Background::Color(WHITE));
             property_stack.push(base_selector.clone(), Background::Color(WHITE_SMOKE));
             property_stack.push(base_selector.clone(), Background::Color(WHITE_SMOKE));
-            // BUG Make this at this order will make the property resolution fail for some reason?
-            // property_stack.push(base_selector_active_focused.clone(), Background::Color(RED));
-            property_stack.push(base_selector_active.clone(), Background::Color(BLUE));
             property_stack.push(base_selector_active_focused.clone(), Background::Color(RED));
+            property_stack.push(base_selector_active.clone(), Background::Color(BLUE));
+            // property_stack.push(base_selector_active_focused.clone(), Background::Color(RED));
         }
 
         // edit tests
