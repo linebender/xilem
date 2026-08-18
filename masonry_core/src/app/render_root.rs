@@ -1017,7 +1017,17 @@ impl RenderRoot {
     }
 }
 
+// --- MARK: PROPERTY STACK EDITS
 impl RenderRoot {
+    /// Returns a [`PropertyStackMut`] to a specific property stack.
+    ///
+    /// See [`PropertyStackMut`] for more details.
+    ///
+    /// Because of how [`PropertyStackMut`] works, it can only be passed to a user-provided callback.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no property stack with the given id in the [`PropertyArena`].
     pub fn edit_property_stack<E, O>(&mut self, property_stack_id: PropertyStackId, edit_fn: E) -> O
     where
         E: FnOnce(&mut PropertyStackMut<'_>) -> O,
@@ -1078,9 +1088,15 @@ impl RenderRoot {
         self.run_rewrite_passes();
         out
     }
+    /// Checks if a property stack with the given id is in the property arena.
     pub fn has_property_stack(&self, property_stack_id: PropertyStackId) -> bool {
         self.property_arena.arena.contains_key(&property_stack_id)
     }
+    /// Remove a property stack with the given id in the property arena.
+    ///
+    /// This also invalidate the computed properties of any widget in the entire tree that is linked to that property stack,
+    /// and calls [`Widget::property_changed`] for every property previously
+    /// resolved by each widget.
     pub fn remove_property_stack(&mut self, property_stack_id: PropertyStackId) {
         self.property_arena.arena.remove(&property_stack_id);
 
@@ -1114,6 +1130,7 @@ impl RenderRoot {
 
         self.run_rewrite_passes();
     }
+    /// Add a property stack to the [`PropertyArena`] and returns its id.
     pub fn add_property_stack(&mut self, property_stack: PropertyStack) -> PropertyStackId {
         self.property_arena.insert(property_stack)
     }
