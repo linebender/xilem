@@ -19,9 +19,10 @@ use crate::app::VisualLayerPlan;
 use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
+    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, PropertyStack,
+    PropertyStackId, PropertyStackMut, QueryCtx, ResizeDirection, Selector, TextEvent, Widget,
+    WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
@@ -1013,6 +1014,106 @@ impl RenderRoot {
     #[doc(hidden)]
     pub fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.global_state.emit_signal(signal);
+    }
+}
+
+impl RenderRoot {
+    pub fn edit_property_stack<E, O>(&mut self, property_stack_id: PropertyStackId, edit_fn: E) -> O
+    where
+        E: FnOnce(&mut PropertyStackMut<'_>) -> O,
+    {
+        let Some(property_stack) = self.property_arena.arena.get_mut(&property_stack_id) else {
+            panic!("property stack not found");
+        };
+        let mut props_stack_mut = PropertyStackMut {
+            selector_changes: Vec::new(),
+            property_stack,
+        };
+
+        let out = edit_fn(&mut props_stack_mut);
+
+        let mut selector_changes = props_stack_mut.selector_changes;
+
+        let _ = props_stack_mut;
+
+        // TODO remove if not convienent
+        selector_changes.dedup();
+
+        // Only mark
+        fn invalidate_properties_resolution(
+            node: ArenaMut<'_, WidgetArenaNode>,
+            property_stack_id: &PropertyStackId,
+            changes: &[Selector],
+        ) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            let is_linked_to_pstack = state
+                .property_stack_id
+                .as_ref()
+                .is_some_and(|id| property_stack_id == id);
+
+            if is_linked_to_pstack
+                && changes.iter().any(|selector| {
+                    // TODO apply diffs before hands or...
+                    selector.matches(&node.item.class_set)
+                })
+            {
+                state.request_update_props = true;
+                state.needs_update_props = true;
+                state.property_cache.invalidated = true;
+            }
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                invalidate_properties_resolution(node, property_stack_id, changes);
+            });
+        }
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
+        invalidate_properties_resolution(root_node, &property_stack_id, &selector_changes);
+
+        self.run_rewrite_passes();
+        out
+    }
+    pub fn has_property_stack(&self, property_stack_id: PropertyStackId) -> bool {
+        self.property_arena.arena.contains_key(&property_stack_id)
+    }
+    pub fn remove_property_stack(&mut self, property_stack_id: PropertyStackId) {
+        self.property_arena.arena.remove(&property_stack_id);
+
+        // Only mark the node that is linked to this property stack for the update-properties pass: `need_update_props`
+        fn invalidate_properties_resolution(
+            node: ArenaMut<'_, WidgetArenaNode>,
+            property_stack_id: &PropertyStackId,
+        ) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            if state
+                .property_stack_id
+                .as_ref()
+                .is_some_and(|id| property_stack_id == id)
+            {
+                state.request_update_props = true;
+                state.needs_update_props = true;
+                state.property_cache.invalidated = true;
+            }
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                invalidate_properties_resolution(node, property_stack_id);
+            });
+        }
+
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
+        invalidate_properties_resolution(root_node, &property_stack_id);
+
+        self.run_rewrite_passes();
+    }
+    pub fn add_property_stack(&mut self, property_stack: PropertyStack) -> PropertyStackId {
+        self.property_arena.insert(property_stack)
     }
 }
 
