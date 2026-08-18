@@ -1039,7 +1039,8 @@ impl RenderRoot {
         // TODO remove if not convienent
         selector_changes.dedup();
 
-        // Only mark
+        // Only mark the node that is linked to this property stack
+        // for the update-properties pass: `need_update_props`
         fn invalidate_properties_resolution(
             node: ArenaMut<'_, WidgetArenaNode>,
             property_stack_id: &PropertyStackId,
@@ -1054,17 +1055,18 @@ impl RenderRoot {
                 .as_ref()
                 .is_some_and(|id| property_stack_id == id);
 
-            if is_linked_to_pstack
-                && changes.iter().any(|selector| {
-                    // TODO apply diffs before hands or...
-                    selector.matches(&node.item.class_set)
-                })
-            {
-                state.request_update_props = true;
-                state.needs_update_props = true;
-                state.property_cache.invalidated = true;
+            if is_linked_to_pstack {
+                // TODO apply diffs before hands or...
+                let mut class_set = node.item.class_set.clone();
+                class_set.apply(&state.class_diff);
+                // check if this edit is related to this node class set.
+                if changes.iter().any(|selector| selector.matches(&class_set)) {
+                    state.request_update_props = true;
+                    state.needs_update_props = true;
+                    // ? is this even required here?
+                    state.property_cache.invalidated = true;
+                }
             }
-
             let id = state.id;
             recurse_on_children(id, widget, children, |node| {
                 invalidate_properties_resolution(node, property_stack_id, changes);
