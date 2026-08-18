@@ -1,7 +1,6 @@
-use crate::core::{
-    Property, PropertySet, PropertyStack, Selector, SelectorPropertiesMut, selector,
-};
+use crate::core::{Property, PropertySet, PropertyStack, Selector, SelectorPropertiesMut};
 
+/// A rich mutable reference to a [`PropertyStack`].
 #[derive(Debug)]
 pub struct PropertyStackMut<'a> {
     pub(crate) property_stack: &'a mut PropertyStack,
@@ -9,11 +8,11 @@ pub struct PropertyStackMut<'a> {
 }
 
 impl<'a> PropertyStackMut<'a> {
-    fn push_changes(&mut self, selector: &Selector) {
-        if !self.selector_changes.contains(selector) {
-            self.selector_changes.push(selector.clone());
-        }
-    }
+    /// Edit a property set via its property stack index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn edit_property_set<E, O>(&mut self, index: usize, edit_fn: E) -> O
     where
         E: FnOnce(&mut SelectorPropertiesMut<'_>) -> O,
@@ -33,6 +32,7 @@ impl<'a> PropertyStackMut<'a> {
         }
         res
     }
+    /// Returns the corresponding indexes of the given [`Selector`].
     pub fn get_selector_indexes(&self, selector: &Selector) -> Vec<usize> {
         self.property_stack
             .stack
@@ -47,20 +47,10 @@ impl<'a> PropertyStackMut<'a> {
             })
             .collect()
     }
-    fn get_last_selector_index(&self, selector: &Selector) -> Option<usize> {
-        self.property_stack
-            .stack
-            .iter()
-            .enumerate()
-            .rev()
-            .find_map(|(index, (selector_in, _))| {
-                if selector_in == selector {
-                    Some(index)
-                } else {
-                    None
-                }
-            })
-    }
+
+    /// Edit the latest inserted property set for the given [`Selector`].
+    ///
+    /// Return [`None`] if no property set corresponding the selector is not found.
     pub fn edit_last_selector_property_set<E, O>(
         &mut self,
         selector: &Selector,
@@ -72,13 +62,15 @@ impl<'a> PropertyStackMut<'a> {
         let index = self.get_last_selector_index(selector)?;
         Some(self.edit_property_set(index, edit_fn))
     }
+    /// Checks if the given [`Selector`] has any property set present.
     pub fn has_selector(&self, selector: &Selector) -> bool {
         self.property_stack
             .stack
             .iter()
             .any(|(selector_in, _)| selector == selector_in)
     }
-    pub fn remove_selector_once(&mut self, selector: &Selector) {
+    /// Remove the latest inserted property set for the given [`Selector`] (aka `pop`).
+    pub fn pop_selector_property_set(&mut self, selector: &Selector) {
         let maybe_index = self.property_stack.stack.iter().enumerate().rev().find_map(
             |(index, (selector_in, _))| {
                 if selector_in == selector {
@@ -94,16 +86,19 @@ impl<'a> PropertyStackMut<'a> {
         self.property_stack.stack.remove(index);
         self.push_changes(selector);
     }
+    /// Remove all property set that is linked to this [`Selector`].
     pub fn remove_selector_all(&mut self, selector: &Selector) {
         self.property_stack
             .stack
             .retain(|(selector_in, _)| selector_in != selector);
         self.push_changes(selector);
     }
+    /// Push a new [`PropertySet`] into this stack.
     pub fn push(&mut self, selector: Selector, properties: impl Into<PropertySet>) {
         self.property_stack.push(selector.clone(), properties);
         self.push_changes(&selector);
     }
+    /// Remove a property from all property set that is related to this [`Selector`].
     pub fn remove_property<P>(&mut self, selector: &Selector) -> Vec<P>
     where
         P: Property,
@@ -123,22 +118,44 @@ impl<'a> PropertyStackMut<'a> {
         self.push_changes(selector);
         removed
     }
+    /// Shrinks the capacity of the stack and property sets as much as possible.
     pub fn shrink_to_fit(&mut self) {
         self.property_stack.stack.iter_mut().for_each(|set| {
             set.1.map.shrink_to_fit();
         });
         self.property_stack.stack.shrink_to_fit();
     }
+    /// Remove any stack entry where its property set is empty.
     pub fn remove_empty_sets(&mut self) {
         self.property_stack
             .stack
             .retain(|(_, set)| !set.map.is_empty());
     }
+    /// Remove a property stack with its given index.
     pub fn remove_set(&mut self, index: usize) {
         let (selector, set) = self.property_stack.stack.remove(index);
         if !set.map.is_empty() {
             self.push_changes(&selector);
         }
+    }
+    fn push_changes(&mut self, selector: &Selector) {
+        if !self.selector_changes.contains(selector) {
+            self.selector_changes.push(selector.clone());
+        }
+    }
+    fn get_last_selector_index(&self, selector: &Selector) -> Option<usize> {
+        self.property_stack
+            .stack
+            .iter()
+            .enumerate()
+            .rev()
+            .find_map(|(index, (selector_in, _))| {
+                if selector_in == selector {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -155,7 +172,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_remove_selector_once() {
+    fn test_pop_selector() {
         let base_selector = Selector::classes(&["test1"]);
         let base_selector_active = base_selector.clone().with_active(true);
         let mut set = ClassSet::default();
@@ -184,7 +201,7 @@ mod tests {
             };
             // Non-active remove test
             {
-                property_stack_mut.remove_selector_once(&base_selector);
+                property_stack_mut.pop_selector_property_set(&base_selector);
 
                 assert_eq!(property_stack_mut.property_stack.stack.len(), 3);
                 assert_eq!(property_stack_mut.selector_changes.len(), 1);
@@ -200,7 +217,7 @@ mod tests {
             {
                 let mut set = set.clone();
                 set.is_active = true;
-                property_stack_mut.remove_selector_once(&base_selector_active);
+                property_stack_mut.pop_selector_property_set(&base_selector_active);
 
                 assert_eq!(property_stack_mut.property_stack.stack.len(), 2);
                 assert_eq!(property_stack_mut.selector_changes.len(), 2);
