@@ -15,7 +15,6 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-all-features = true
 # There are no platform specific docs.
 default-target = "x86_64-unknown-linux-gnu"
 targets = []
@@ -32,7 +31,9 @@ debuggable = true
 name = "android.permission.INTERNET"
 
 [features]
-default = ["masonry/default", "masonry_winit/default"]
+default = ["masonry/default", "masonry_winit/default", "tokio-rt"]
+tokio-rt = ["dep:tokio", "xilem_masonry/tokio-rt", "masonry_winit/accesskit-tokio"]
+smol-rt = ["dep:smol", "xilem_masonry/smol-rt", "masonry_winit/accesskit-async-io"]
 
 [dependencies]
 xilem_core.workspace = true
@@ -41,7 +42,8 @@ masonry.workspace = true
 masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
-tokio = { version = "1.50.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { workspace = true, optional = true }
+smol = { workspace = true, optional = true }
 
 [dev-dependencies]
 # Used for `variable_clock`
@@ -69,18 +71,21 @@ name = "mason"
 # This actually enables scraping for all examples, not just this one.
 # However it is possible to set doc-scrape-examples to false for other specific examples.
 doc-scrape-examples = true
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "calc"
 
 [[example]]
 name = "stopwatch"
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "to_do_mvc"
 
 [[example]]
 name = "variable_clock"
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "emoji_picker"
@@ -93,6 +98,11 @@ doc-scrape-examples = false
 
 [[example]]
 name = "http_cats"
+required-features = ["tokio-rt"]
+
+[[example]]
+name = "virtual_cats"
+required-features = ["tokio-rt"]
 
 # Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
 # and update the list in xilem/examples/android/README.md.
@@ -102,6 +112,7 @@ name = "mason_android"
 path = "examples/android/mason_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "calc_android"
@@ -114,6 +125,7 @@ name = "stopwatch_android"
 path = "examples/android/stopwatch_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "to_do_mvc_android"
@@ -126,6 +138,7 @@ name = "variable_clock_android"
 path = "examples/android/variable_clock_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "emoji_picker_android"
@@ -139,6 +152,7 @@ name = "http_cats_android"
 path = "examples/android/http_cats_android.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
+required-features = ["tokio-rt"]
 
 [[example]]
 name = "canvas"

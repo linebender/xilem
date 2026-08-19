@@ -17,17 +17,18 @@ use crate::core::{
 };
 use crate::window_view::{WindowView, WindowViewState};
 use crate::{AppState, Color, ViewCtx};
+use xilem_masonry::runtime::Executor;
 
 /// The composition root of Xilem's Masonry backend.
 ///
 /// Owns the root state, the root view (kind of), the window state, the event loop proxy,
-/// the tokio runtime, etc.
+/// the async runtime executor, etc.
 pub struct MasonryDriver<State: 'static, Logic> {
     state: State,
     logic: Logic,
     windows: HashMap<WindowId, Window<State>>,
     proxy: Arc<MasonryProxy>,
-    runtime: Arc<tokio::runtime::Runtime>,
+    runtime: Arc<Executor>,
     default_base_color: Color,
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
@@ -53,7 +54,7 @@ where
         // TODO: narrow down MasonryUserEvent in event_sink once masonry_winit supports custom event types
         // (we only ever use it to send MasonryUserEvent::Action with ASYNC_MARKER_WIDGET)
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-        runtime: Arc<tokio::runtime::Runtime>,
+        runtime: Arc<Executor>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
         start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
