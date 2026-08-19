@@ -395,10 +395,7 @@ mod tests {
                 .with(Gap::new(40.px())),
         );
 
-        let mut test_params = TestHarnessParams::default().with_size((300, 300));
-        // TODO - Remove? Not sure screenshot_tolerance is useful anymore.
-        // See https://github.com/linebender/xilem/issues/1759
-        test_params.screenshot_tolerance = 32;
+        let test_params = TestHarnessParams::default().with_size((300, 300));
         let mut harness = TestHarness::create_with(test_property_set(), root_widget, test_params);
 
         harness.edit_root_widget(|mut grid| {
@@ -430,7 +427,6 @@ mod tests {
         assert_render_snapshot!(harness, "button_shadows");
 
         // Check that slightly changing the blur radius makes the screenshot test fail.
-        // If it doesn't, the screenshot_tolerance param is too high.
         harness.edit_root_widget(|mut grid| {
             // Copy-pasted from second case above.
             {
