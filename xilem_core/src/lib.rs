@@ -55,6 +55,7 @@ mod element_splice;
 mod environment;
 mod message;
 mod message_context;
+#[cfg(feature = "async")]
 mod message_proxy;
 mod view;
 mod view_ctx;
@@ -70,8 +71,11 @@ pub use self::environment::{
     Environment, EnvironmentItem, OnActionWithContext, Provides, Rebuild, Resource, Slot,
     WithContext, on_action_with_context, provides, with_context,
 };
-pub use self::message::{DynMessage, MessageResult, SendMessage};
+#[cfg(feature = "async")]
+pub use self::message::SendMessage;
+pub use self::message::{DynMessage, MessageResult};
 pub use self::message_context::MessageCtx;
+#[cfg(feature = "async")]
 pub use self::message_proxy::{MessageProxy, ProxyError, RawProxy};
 pub use self::view::{View, ViewMarker};
 pub use self::view_ctx::{ViewId, ViewPathTracker};

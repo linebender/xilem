@@ -8,7 +8,9 @@ use std::sync::Arc;
 use masonry::core::{FromDynWidget, Property, Widget, WidgetId, WidgetMut};
 
 use crate::Pod;
-use crate::core::{Environment, RawProxy, ViewId, ViewPathTracker};
+#[cfg(feature = "async")]
+use crate::core::RawProxy;
+use crate::core::{Environment, ViewId, ViewPathTracker};
 
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
@@ -17,7 +19,9 @@ pub struct ViewCtx {
     /// This includes only the widgets which might send actions
     widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
+    #[cfg(feature = "async")]
     proxy: Arc<dyn RawProxy>,
+    #[cfg(feature = "async")]
     runtime: Arc<tokio::runtime::Runtime>,
     props_changed: HashSet<(WidgetId, TypeId)>,
     transforms_changed: HashSet<WidgetId>,
@@ -81,6 +85,7 @@ impl ViewCtx {
     }
 
     /// Returns a reference to the app's tokio runtime.
+    #[cfg(feature = "async")]
     pub fn runtime(&self) -> &tokio::runtime::Runtime {
         &self.runtime
     }
@@ -132,6 +137,7 @@ impl ViewCtx {
     }
 
     /// Returns an event queue to which [`SendMessage`](crate::core::SendMessage)s can be submitted.
+    #[cfg(feature = "async")]
     pub fn proxy(&self) -> Arc<dyn RawProxy + 'static> {
         self.proxy.clone()
     }
@@ -139,15 +145,27 @@ impl ViewCtx {
     /// Creates a new `ViewCtx` for rebuilding the widget tree.
     ///
     /// You almost never need to call this method unless you're building your own framework.
-    pub fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {
-        Self {
-            widget_map: HashMap::default(),
-            id_path: Vec::new(),
-            proxy,
-            runtime,
-            props_changed: HashSet::default(),
-            transforms_changed: HashSet::default(),
-            environment: Environment::new(),
+    pub fn new(
+        #[cfg(feature = "async")] proxy: Arc<dyn RawProxy>,
+        #[cfg(feature = "async")] runtime: Arc<tokio::runtime::Runtime>,
+    ) -> Self {
+        cfg_select! {
+            feature = "async" => Self {
+                widget_map: HashMap::default(),
+                id_path: Vec::new(),
+                proxy,
+                runtime,
+                props_changed: HashSet::default(),
+                transforms_changed: HashSet::default(),
+                environment: Environment::new(),
+            },
+            _ => Self {
+                widget_map: HashMap::default(),
+                id_path: Vec::new(),
+                props_changed: HashSet::default(),
+                transforms_changed: HashSet::default(),
+                environment: Environment::new(),
+            }
         }
     }
 }

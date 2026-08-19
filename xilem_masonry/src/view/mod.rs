@@ -28,11 +28,13 @@ mod spinner;
 mod split;
 mod svg;
 mod switch;
+#[cfg(feature = "async")]
 mod task;
 mod text_input;
 mod transform;
 mod variable_label;
 mod virtual_scroll;
+#[cfg(feature = "async")]
 mod worker;
 mod zstack;
 
@@ -61,10 +63,12 @@ pub use self::spinner::*;
 pub use self::split::*;
 pub use self::svg::*;
 pub use self::switch::*;
+#[cfg(feature = "async")]
 pub use self::task::*;
 pub use self::text_input::*;
 pub use self::transform::*;
 pub use self::variable_label::*;
 pub use self::virtual_scroll::*;
+#[cfg(feature = "async")]
 pub use self::worker::*;
 pub use self::zstack::*;

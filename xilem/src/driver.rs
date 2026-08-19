@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
 use std::sync::Arc;
 
 use masonry::core::{ErasedAction, WidgetId};
@@ -10,11 +9,12 @@ use masonry::peniko::Blob;
 use masonry_winit::app::{
     AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
 };
+#[cfg(feature = "async")]
+use xilem_core::SendMessage;
 
-use crate::core::{
-    DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
-    ViewPathTracker,
-};
+use crate::core::{DynMessage, MessageCtx, MessageResult, View, ViewId, ViewPathTracker};
+#[cfg(feature = "async")]
+use crate::driver::proxy::{MasonryProxy, MessagePackage, WindowProxy};
 use crate::window_view::{WindowView, WindowViewState};
 use crate::{AppState, Color, ViewCtx};
 
@@ -26,7 +26,9 @@ pub struct MasonryDriver<State: 'static, Logic> {
     state: State,
     logic: Logic,
     windows: HashMap<WindowId, Window<State>>,
+    #[cfg(feature = "async")]
     proxy: Arc<MasonryProxy>,
+    #[cfg(feature = "async")]
     runtime: Arc<tokio::runtime::Runtime>,
     default_base_color: Color,
     // Fonts which will be registered on startup.
@@ -52,21 +54,34 @@ where
         logic: Logic,
         // TODO: narrow down MasonryUserEvent in event_sink once masonry_winit supports custom event types
         // (we only ever use it to send MasonryUserEvent::Action with ASYNC_MARKER_WIDGET)
-        event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-        runtime: Arc<tokio::runtime::Runtime>,
+        #[cfg(feature = "async")] event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent>
+        + Send
+        + Sync
+        + 'static,
+        #[cfg(feature = "async")] runtime: Arc<tokio::runtime::Runtime>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
         start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
     ) -> (Self, Vec<NewWindow>) {
-        let mut driver = Self {
-            state,
-            logic,
-            windows: HashMap::new(),
-            proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
-            runtime,
-            default_base_color,
-            fonts,
-            start_callback,
+        let mut driver = cfg_select! {
+            feature = "async" => Self {
+                state,
+                logic,
+                windows: HashMap::new(),
+                proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
+                runtime,
+                default_base_color,
+                fonts,
+                start_callback,
+            },
+            _ => Self {
+                state,
+                logic,
+                windows: HashMap::new(),
+                default_base_color,
+                fonts,
+                start_callback,
+            }
         };
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
             .map(|view| driver.build_window(view))
@@ -76,57 +91,73 @@ where
 }
 
 /// The action which should be used for async events.
+#[cfg(feature = "async")]
 pub fn async_action(path: Arc<[ViewId]>, message: SendMessage) -> ErasedAction {
     Box::<MessagePackage>::new((path, message))
 }
 
-/// The type used to send a message for async events.
-type MessagePackage = (Arc<[ViewId]>, SendMessage);
+#[cfg(feature = "async")]
+mod proxy {
+    use std::fmt::Debug;
+    use std::sync::Arc;
 
-impl MasonryProxy {
-    fn send_message(
-        &self,
-        window_id: WindowId,
-        path: Arc<[ViewId]>,
-        message: SendMessage,
-    ) -> Result<(), ProxyError> {
-        let user_event = MasonryUserEvent::AsyncAction(window_id, async_action(path, message));
-        match (self.0)(user_event) {
-            Ok(()) => Ok(()),
-            Err(err) => {
-                let MasonryUserEvent::AsyncAction(_, res) = err else {
-                    unreachable!(
-                        "We know this is the value we just created, which matches this pattern"
-                    )
-                };
-                Err(ProxyError::DriverFinished(
-                    res.downcast::<MessagePackage>().unwrap().1,
-                ))
+    use masonry_winit::app::{MasonryUserEvent, WindowId};
+    use xilem_core::{ProxyError, RawProxy, SendMessage, ViewId};
+
+    use crate::driver::async_action;
+
+    /// The type used to send a message for async events.
+    pub(crate) type MessagePackage = (Arc<[ViewId]>, SendMessage);
+
+    impl MasonryProxy {
+        pub(crate) fn send_message(
+            &self,
+            window_id: WindowId,
+            path: Arc<[ViewId]>,
+            message: SendMessage,
+        ) -> Result<(), ProxyError> {
+            let user_event = MasonryUserEvent::AsyncAction(window_id, async_action(path, message));
+            match (self.0)(user_event) {
+                Ok(()) => Ok(()),
+                Err(err) => {
+                    let MasonryUserEvent::AsyncAction(_, res) = err else {
+                        unreachable!(
+                            "We know this is the value we just created, which matches this pattern"
+                        )
+                    };
+                    Err(ProxyError::DriverFinished(
+                        res.downcast::<MessagePackage>().unwrap().1,
+                    ))
+                }
             }
         }
     }
-}
 
-struct MasonryProxy(
-    pub(crate) Box<dyn Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync>,
-);
+    pub(crate) struct MasonryProxy(
+        pub(crate) Box<dyn Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync>,
+    );
 
-impl Debug for MasonryProxy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("MasonryProxy").finish_non_exhaustive()
-    }
-}
-
-#[derive(Debug)]
-struct WindowProxy(WindowId, Arc<MasonryProxy>);
-
-impl RawProxy for WindowProxy {
-    fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError> {
-        self.1.send_message(self.0, path, message)
+    impl Debug for MasonryProxy {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("MasonryProxy").finish_non_exhaustive()
+        }
     }
 
-    fn dyn_debug(&self) -> &dyn Debug {
-        self
+    #[derive(Debug)]
+    pub(crate) struct WindowProxy(pub(crate) WindowId, pub(crate) Arc<MasonryProxy>);
+
+    impl RawProxy for WindowProxy {
+        fn send_message(
+            &self,
+            path: Arc<[ViewId]>,
+            message: SendMessage,
+        ) -> Result<(), ProxyError> {
+            self.1.send_message(self.0, path, message)
+        }
+
+        fn dyn_debug(&self) -> &dyn Debug {
+            self
+        }
     }
 }
 
@@ -142,7 +173,9 @@ where
             .get_or_insert(self.default_base_color);
 
         let mut view_ctx = ViewCtx::new(
+            #[cfg(feature = "async")]
             Arc::new(WindowProxy(window_view.id, self.proxy.clone())),
+            #[cfg(feature = "async")]
             self.runtime.clone(),
         );
         let (new_window, view_state) = window_view.build(&mut view_ctx, &mut self.state);
@@ -328,6 +361,7 @@ where
         self.handle_message_result(window_id, masonry_ctx, message_result);
     }
 
+    #[cfg(feature = "async")]
     fn on_async_action(
         &mut self,
         window_id: WindowId,

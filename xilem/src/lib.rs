@@ -153,6 +153,7 @@ pub use masonry;
 pub use masonry::dpi;
 pub use masonry::palette;
 pub use masonry::{kurbo, peniko};
+#[cfg(feature = "async")]
 pub use tokio;
 pub use winit;
 pub use xilem_core as core;
@@ -175,7 +176,9 @@ mod window_options;
 mod window_view;
 
 pub use app::{AppState, ExitOnClose, Xilem};
-pub use driver::{MasonryDriver, async_action};
+pub use driver::MasonryDriver;
+#[cfg(feature = "async")]
+pub use driver::async_action;
 pub use window_options::WindowOptions;
 pub use window_view::{PodWindow, WindowView, window};
 

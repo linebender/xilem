@@ -33,6 +33,7 @@ name = "android.permission.INTERNET"
 
 [features]
 default = ["masonry/default", "masonry_winit/default"]
+async = ["tokio", "xilem_masonry/async", "masonry_winit/async"]
 
 [dependencies]
 xilem_core.workspace = true
@@ -41,7 +42,7 @@ masonry.workspace = true
 masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
-tokio = { version = "1.50.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { optional = true, version = "1.50.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [dev-dependencies]
 # Used for `variable_clock`
