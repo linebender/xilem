@@ -34,6 +34,17 @@ The safe tree is the priority. This means:
 * If both versions are at feature parity, [Masonry][] can switch on the unsafe version for best performance.
 * Otherwise, [Masonry][] uses the safe version.
 
+## Features
+
+The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+
+- `std` (enabled by default): Enable future features which require the standard library.
+  This feature is provided for forwards compatibility only, and current behaviour is the same whether or not it is enabled.
+- `safe_tree` (enabled by default): Use the safe tree implementation instead of the unsafe one.
+
+This crate is `no_std` compatible; to use it without the standard library, disable default features.
+Note that this also disables `safe_tree`, so re-enable it explicitly if you want the safe implementation.
+
 ## Architecture
 
 ### Safe Tree
@@ -90,7 +101,7 @@ This invariant is not checked by the compiler and thus relies on the logic to de
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Tree Arena has been verified to compile with **Rust 1.92** and later.
+This version of Tree Arena has been verified to compile with **Rust 1.96** and later.
 
 Future versions of Tree Arena might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

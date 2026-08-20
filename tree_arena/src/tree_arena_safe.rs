@@ -6,6 +6,8 @@
 //! The version in `tree_arena_unsafe.rs` uses unsafe code, but should have the
 //! exact same exported API as this module.
 
+use alloc::vec::Vec;
+
 use hashbrown::HashMap;
 
 use crate::NodeId;
@@ -573,7 +575,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// and may change in any release.
     #[doc(hidden)]
     pub fn realloc_inner_storage(&mut self) {
-        std::hint::black_box(());
+        core::hint::black_box(());
     }
 }
 
