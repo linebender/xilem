@@ -1,8 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::assert_matches;
+
 use accesskit::{ActionRequest, TreeId};
-use assert_matches::assert_matches;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};

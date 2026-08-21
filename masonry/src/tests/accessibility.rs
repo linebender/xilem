@@ -1,8 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::assert_matches;
+
 use accesskit_consumer::NodeId;
-use assert_matches::assert_matches;
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
 use crate::core::{NewWidget, Widget, WidgetTag};
