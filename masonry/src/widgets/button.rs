@@ -259,9 +259,9 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use std::assert_matches;
     use masonry_core::core::WidgetTag;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
+    use std::assert_matches;
 
     use super::*;
     use crate::core::{CollectionWidget, PointerButton, PropertySet, StyleProperty};
