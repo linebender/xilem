@@ -1044,6 +1044,12 @@ impl RenderRoot {
 
         let selector_changes = props_stack_mut.selector_changes;
 
+        // We don't continue any further
+        // if there is no changes inside done inside the property stack.
+        if selector_changes.is_empty() {
+            return out;
+        }
+
         let _ = props_stack_mut;
 
         // Only mark the node that is linked to this property stack
@@ -1080,6 +1086,9 @@ impl RenderRoot {
             });
         }
         let root_node = self.widget_arena.get_node_mut(self.root_id());
+        // We tell the root node state there some props update that needs to be done.
+        // If not, the property changes will be not visible when we run the rewrite passes.
+        root_node.item.state.needs_update_props = true;
         invalidate_properties_resolution(root_node, property_stack_id, &selector_changes);
 
         self.run_rewrite_passes();
@@ -1095,7 +1104,15 @@ impl RenderRoot {
     /// and calls [`Widget::property_changed`] for every property previously
     /// resolved by each widget.
     pub fn remove_property_stack(&mut self, property_stack_id: PropertyStackId) {
-        self.property_arena.arena.remove(&property_stack_id);
+        // Don't proceed any further if nothing have been removed
+        if self
+            .property_arena
+            .arena
+            .remove(&property_stack_id)
+            .is_none()
+        {
+            return;
+        }
 
         // Only mark the node that is linked to this property stack for the update-properties pass: `need_update_props`
         fn invalidate_properties_resolution(
@@ -1123,6 +1140,9 @@ impl RenderRoot {
         }
 
         let root_node = self.widget_arena.get_node_mut(self.root_id());
+        // We tell the root node state there some props update that needs to be done.
+        // If not, the property changes will be not visible when we run the rewrite passes.
+        root_node.item.state.needs_update_props = true;
         invalidate_properties_resolution(root_node, property_stack_id);
 
         self.run_rewrite_passes();
