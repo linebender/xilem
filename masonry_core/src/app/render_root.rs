@@ -1128,7 +1128,7 @@ impl RenderRoot {
         self.run_rewrite_passes();
     }
     /// Add a property stack to the [`PropertyArena`] and returns its id.
-    pub fn add_property_stack(&mut self, property_stack: PropertyStack) -> PropertyStackId {
+    pub fn insert_property_stack(&mut self, property_stack: PropertyStack) -> PropertyStackId {
         self.property_arena.insert(property_stack)
     }
 }
