@@ -1042,12 +1042,9 @@ impl RenderRoot {
 
         let out = edit_fn(&mut props_stack_mut);
 
-        let mut selector_changes = props_stack_mut.selector_changes;
+        let selector_changes = props_stack_mut.selector_changes;
 
         let _ = props_stack_mut;
-
-        // TODO remove if not convienent
-        selector_changes.dedup();
 
         // Only mark the node that is linked to this property stack
         // for the update-properties pass: `need_update_props`
