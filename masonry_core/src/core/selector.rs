@@ -8,7 +8,7 @@ use crate::core::ClassSet;
 /// A predicate for matching widgets based on their classes and pseudo-classes.
 ///
 /// This type is mostly used for property resolution.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Selector {
     pub(crate) classes: HashSet<String>,
     // None means "don't filter on this flag"
