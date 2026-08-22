@@ -1050,7 +1050,7 @@ impl RenderRoot {
         // for the update-properties pass: `need_update_props`
         fn invalidate_properties_resolution(
             node: ArenaMut<'_, WidgetArenaNode>,
-            property_stack_id: &PropertyStackId,
+            property_stack_id: PropertyStackId,
             changes: &[Selector],
         ) {
             let children = node.children;
@@ -1060,14 +1060,14 @@ impl RenderRoot {
             let is_linked_to_pstack = state
                 .property_stack_id
                 .as_ref()
-                .is_some_and(|id| property_stack_id == id);
+                .is_some_and(|id| property_stack_id == *id);
 
             if is_linked_to_pstack {
                 // TODO apply diffs before hands or...
                 let class_set = &node.item.class_set;
                 // class_set.apply(&state.class_diff);
                 // check if this edit is related to this node class set.
-                if changes.iter().any(|selector| selector.matches(&class_set)) {
+                if changes.iter().any(|selector| selector.matches(class_set)) {
                     state.request_update_props = true;
                     state.needs_update_props = true;
                     // ? is this even required here?
@@ -1080,7 +1080,7 @@ impl RenderRoot {
             });
         }
         let root_node = self.widget_arena.get_node_mut(self.root_id());
-        invalidate_properties_resolution(root_node, &property_stack_id, &selector_changes);
+        invalidate_properties_resolution(root_node, property_stack_id, &selector_changes);
 
         self.run_rewrite_passes();
         out
