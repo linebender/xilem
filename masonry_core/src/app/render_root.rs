@@ -1100,7 +1100,7 @@ impl RenderRoot {
         // Only mark the node that is linked to this property stack for the update-properties pass: `need_update_props`
         fn invalidate_properties_resolution(
             node: ArenaMut<'_, WidgetArenaNode>,
-            property_stack_id: &PropertyStackId,
+            property_stack_id: PropertyStackId,
         ) {
             let children = node.children;
             let widget = &mut *node.item.widget;
@@ -1109,7 +1109,7 @@ impl RenderRoot {
             if state
                 .property_stack_id
                 .as_ref()
-                .is_some_and(|id| property_stack_id == id)
+                .is_some_and(|id| property_stack_id == *id)
             {
                 state.request_update_props = true;
                 state.needs_update_props = true;
@@ -1123,7 +1123,7 @@ impl RenderRoot {
         }
 
         let root_node = self.widget_arena.get_node_mut(self.root_id());
-        invalidate_properties_resolution(root_node, &property_stack_id);
+        invalidate_properties_resolution(root_node, property_stack_id);
 
         self.run_rewrite_passes();
     }
