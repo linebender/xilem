@@ -1063,6 +1063,11 @@ impl RenderRoot {
             let widget = &mut *node.item.widget;
             let state = &mut node.item.state;
 
+            // We tell the node state there some props update that needs to be done,
+            // since we can't tell in advance if its child has the property stack id.
+            // If not, the property changes will be not visible when we run the rewrite passes.
+            state.needs_update_props = true;
+
             let is_linked_to_pstack = state
                 .property_stack_id
                 .as_ref()
@@ -1075,7 +1080,6 @@ impl RenderRoot {
                 // check if this edit is related to this node class set.
                 if changes.iter().any(|selector| selector.matches(class_set)) {
                     state.request_update_props = true;
-                    state.needs_update_props = true;
                     // ? is this even required here?
                     state.property_cache.invalidated = true;
                 }
@@ -1086,9 +1090,6 @@ impl RenderRoot {
             });
         }
         let root_node = self.widget_arena.get_node_mut(self.root_id());
-        // We tell the root node state there some props update that needs to be done.
-        // If not, the property changes will be not visible when we run the rewrite passes.
-        root_node.item.state.needs_update_props = true;
         invalidate_properties_resolution(root_node, property_stack_id, &selector_changes);
 
         self.run_rewrite_passes();
@@ -1123,13 +1124,17 @@ impl RenderRoot {
             let widget = &mut *node.item.widget;
             let state = &mut node.item.state;
 
+            // We tell the node state there some props update that needs to be done,
+            // since we can't tell in advance if its child has the property stack id.
+            // If not, the property changes will be not visible when we run the rewrite passes.
+            state.needs_update_props = true;
+
             if state
                 .property_stack_id
                 .as_ref()
                 .is_some_and(|id| property_stack_id == *id)
             {
                 state.request_update_props = true;
-                state.needs_update_props = true;
                 state.property_cache.invalidated = true;
             }
 
@@ -1140,8 +1145,7 @@ impl RenderRoot {
         }
 
         let root_node = self.widget_arena.get_node_mut(self.root_id());
-        // We tell the root node state there some props update that needs to be done.
-        // If not, the property changes will be not visible when we run the rewrite passes.
+
         root_node.item.state.needs_update_props = true;
         invalidate_properties_resolution(root_node, property_stack_id);
 
