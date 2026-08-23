@@ -861,11 +861,16 @@ impl MasonryState<'_> {
                         && action_mod
                         && k.state == KeyState::Down
                     {
-                        window
-                            .render_root
-                            .handle_text_event(TextEvent::ClipboardPaste(
-                                self.clipboard_cx.get_contents().unwrap(),
-                            ));
+                        match self.clipboard_cx.get_contents() {
+                            Ok(text) => {
+                                window
+                                    .render_root
+                                    .handle_text_event(TextEvent::ClipboardPaste(text));
+                            }
+                            Err(error) => {
+                                tracing::warn!(?error, "Unable to read clipboard contents");
+                            }
+                        }
                     } else {
                         window.render_root.handle_text_event(TextEvent::Keyboard(k));
                     }
