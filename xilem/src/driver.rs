@@ -32,7 +32,7 @@ pub struct MasonryDriver<State: 'static, Logic> {
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
     // Optional callback invoked once on startup, after windows creation.
-    start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
+    start_callback: Option<Box<dyn FnOnce(&mut MasonryState)>>,
 }
 
 struct Window<State: 'static> {
@@ -56,7 +56,7 @@ where
         runtime: Arc<tokio::runtime::Runtime>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
-        start_callback: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
+        start_callback: Option<Box<dyn FnOnce(&mut MasonryState)>>,
     ) -> (Self, Vec<NewWindow>) {
         let mut driver = Self {
             state,
@@ -159,13 +159,13 @@ where
 
     pub(crate) fn create_window(
         &mut self,
-        driver_ctx: &mut DriverCtx<'_, '_>,
+        driver_ctx: &mut DriverCtx<'_>,
         view: WindowView<State>,
     ) {
         driver_ctx.create_window(self.build_window(view));
     }
 
-    fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
+    fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_>) {
         let window = self.windows.get_mut(&window_id).unwrap();
         window.view.teardown(
             &mut window.view_state,
@@ -176,7 +176,7 @@ where
         ctx.close_window(window_id);
     }
 
-    fn run_logic(&mut self, driver_ctx: &mut DriverCtx<'_, '_>) {
+    fn run_logic(&mut self, driver_ctx: &mut DriverCtx<'_>) {
         let mut returned_ids = HashSet::new();
         for next_view in (self.logic)(&mut self.state) {
             if !returned_ids.insert(next_view.id) {
@@ -227,7 +227,7 @@ where
     fn dispatch_message(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_>,
         id_path: Vec<ViewId>,
         message: DynMessage,
     ) -> MessageResult<()> {
@@ -256,7 +256,7 @@ where
     fn handle_message_result(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_>,
         message_result: MessageResult<()>,
     ) {
         let Some(window) = self.windows.get_mut(&window_id) else {
@@ -302,7 +302,7 @@ where
     fn on_action(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {
@@ -331,7 +331,7 @@ where
     fn on_async_action(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_>,
         action: ErasedAction,
     ) {
         if self.windows.get_mut(&window_id).is_none() {
@@ -351,7 +351,7 @@ where
         self.handle_message_result(window_id, masonry_ctx, message_result);
     }
 
-    fn on_start(&mut self, state: &mut MasonryState<'_>) {
+    fn on_start(&mut self, state: &mut MasonryState) {
         // self.fonts is never used again, so we may as well deallocate it.
         let fonts = std::mem::take(&mut self.fonts);
 
@@ -378,7 +378,7 @@ where
         }
     }
 
-    fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
+    fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_>) {
         let view = &self.windows.get(&window_id).unwrap().view;
         view.on_close(&mut self.state);
         self.run_logic(ctx);

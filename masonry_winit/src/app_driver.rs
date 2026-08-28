@@ -39,13 +39,13 @@ impl WindowId {
 
 /// Context for the [`AppDriver`] trait.
 #[derive(Debug)]
-pub struct DriverCtx<'a, 's> {
-    state: &'a mut MasonryState<'s>,
+pub struct DriverCtx<'a> {
+    state: &'a mut MasonryState,
     event_loop: &'a ActiveEventLoop,
 }
 
-impl<'a, 's> DriverCtx<'a, 's> {
-    pub(crate) fn new(state: &'a mut MasonryState<'s>, event_loop: &'a ActiveEventLoop) -> Self {
+impl<'a> DriverCtx<'a> {
+    pub(crate) fn new(state: &'a mut MasonryState, event_loop: &'a ActiveEventLoop) -> Self {
         Self { state, event_loop }
     }
 }
@@ -91,7 +91,7 @@ pub trait AppDriver {
     fn on_action(
         &mut self,
         window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         widget_id: WidgetId,
         action: ErasedAction,
     );
@@ -104,7 +104,7 @@ pub trait AppDriver {
     fn on_async_action(
         &mut self,
         window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         action: ErasedAction,
     ) {
     }
@@ -118,10 +118,10 @@ pub trait AppDriver {
     /// not assume it will only be called once (but should feel free to waste work if it is called multiple times,
     /// for example, as the mentioned circumstances are very rare).
     // TODO: Turn into something like on window created, or split into two.
-    fn on_start(&mut self, state: &mut MasonryState<'_>) {}
+    fn on_start(&mut self, state: &mut MasonryState) {}
 
     /// A hook called when a user has requested to close a window.
-    fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
+    fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_>) {
         ctx.exit();
     }
 
@@ -129,7 +129,7 @@ pub trait AppDriver {
     fn on_wgpu_ready(&mut self, _wgpu: &WgpuContext<'_>) {}
 }
 
-impl DriverCtx<'_, '_> {
+impl DriverCtx<'_> {
     // TODO - Add method to create timer
 
     /// Access the [`RenderRoot`] of the given window.

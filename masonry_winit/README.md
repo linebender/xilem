@@ -49,7 +49,7 @@ impl AppDriver for Driver {
     fn on_action(
         &mut self,
         window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {

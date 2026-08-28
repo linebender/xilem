@@ -38,7 +38,7 @@ struct Driver {
 }
 
 impl Driver {
-    fn set_mode(&mut self, ctx: &mut DriverCtx<'_, '_>, mode: SplitPointMode) {
+    fn set_mode(&mut self, ctx: &mut DriverCtx<'_>, mode: SplitPointMode) {
         self.mode = mode;
 
         let render_root = ctx.render_root(self.window_id);
@@ -66,7 +66,7 @@ impl AppDriver for Driver {
     fn on_action(
         &mut self,
         window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {

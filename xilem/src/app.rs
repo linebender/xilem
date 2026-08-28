@@ -28,7 +28,7 @@ pub struct Xilem<State, Logic> {
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
     // Callback invoked once on startup, after windows creation.
-    on_start: Option<Box<dyn FnOnce(&mut MasonryState<'_>)>>,
+    on_start: Option<Box<dyn FnOnce(&mut MasonryState)>>,
 }
 
 /// State type used by [`Xilem::new_simple`].
@@ -176,7 +176,7 @@ where
     }
 
     /// Registers a callback to be called once the application has started
-    pub fn with_on_start(mut self, callback: impl FnOnce(&mut MasonryState<'_>) + 'static) -> Self {
+    pub fn with_on_start(mut self, callback: impl FnOnce(&mut MasonryState) + 'static) -> Self {
         self.on_start = Some(Box::new(callback));
         self
     }

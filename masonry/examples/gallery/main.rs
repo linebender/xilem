@@ -69,7 +69,7 @@ struct Driver {
 impl Driver {
     fn apply_demo_disabled(
         &mut self,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         window_id: WindowId,
         demo_idx: usize,
         disabled: bool,
@@ -85,7 +85,7 @@ impl Driver {
         });
     }
 
-    fn select_demo(&mut self, ctx: &mut DriverCtx<'_, '_>, window_id: WindowId, idx: usize) {
+    fn select_demo(&mut self, ctx: &mut DriverCtx<'_>, window_id: WindowId, idx: usize) {
         if idx >= self.demos.len() || idx == self.selected_demo {
             return;
         }
@@ -117,7 +117,7 @@ impl AppDriver for Driver {
     fn on_action(
         &mut self,
         window_id: WindowId,
-        ctx: &mut DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {

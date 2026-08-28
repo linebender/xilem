@@ -42,7 +42,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 
 /// An application not managed by Xilem, but which wishes to embed Xilem.
 struct ExternalApp {
-    masonry_state: masonry_winit::app::MasonryState<'static>,
+    masonry_state: masonry_winit::app::MasonryState,
     app_driver: Box<dyn AppDriver>,
 }
 

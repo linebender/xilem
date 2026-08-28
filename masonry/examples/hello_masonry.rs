@@ -26,7 +26,7 @@ impl AppDriver for Driver {
     fn on_action(
         &mut self,
         window_id: WindowId,
-        _ctx: &mut DriverCtx<'_, '_>,
+        _ctx: &mut DriverCtx<'_>,
         _widget_id: WidgetId,
         action: ErasedAction,
     ) {
