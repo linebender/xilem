@@ -51,6 +51,7 @@ pub enum MasonryUserEvent {
     /// An action was emitted by something other than the widget tree.
     ///
     /// Higher-level GUI frameworks may send these to winit from background threads to wake up the event loop.
+    #[cfg(feature = "async")]
     AsyncAction(WindowId, ErasedAction),
 }
 
@@ -969,6 +970,7 @@ impl MasonryState {
                 };
                 state
             }
+            #[cfg(feature = "async")]
             MasonryUserEvent::AsyncAction(window_id, ..) => {
                 let Some(window_id) = self.window_id_to_handle_id.get(window_id) else {
                     tracing::warn!(id = ?window_id, "Got action user event for unknown window");
@@ -997,6 +999,7 @@ impl MasonryState {
                     }
                 }
             }
+            #[cfg(feature = "async")]
             MasonryUserEvent::AsyncAction(_, action) => {
                 app_driver.on_async_action(
                     window.id,

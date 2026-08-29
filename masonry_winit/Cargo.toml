@@ -19,6 +19,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = ["imaging_vello"]
+async = []
 imaging_vello = ["masonry_imaging/imaging_vello"]
 imaging_vello_hybrid = ["masonry_imaging/imaging_vello_hybrid"]
 imaging_skia = ["masonry_imaging/imaging_skia"]

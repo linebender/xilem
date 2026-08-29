@@ -101,6 +101,7 @@ pub trait AppDriver {
     /// This is called when the winit event loop gets a [`MasonryUserEvent::AsyncAction`] event.
     ///
     /// [`MasonryUserEvent::AsyncAction`]: crate::app::MasonryUserEvent::AsyncAction
+    #[cfg(feature = "async")]
     fn on_async_action(
         &mut self,
         window_id: WindowId,
