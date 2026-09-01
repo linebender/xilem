@@ -32,7 +32,18 @@ debuggable = true
 name = "android.permission.INTERNET"
 
 [features]
-default = ["masonry/default", "masonry_winit/default"]
+default = ["masonry/default", "masonry_winit/default", "imaging_vello"]
+imaging_vello = [
+    "masonry/imaging_vello",
+    "masonry_winit/imaging_vello",
+    "xilem_masonry/imaging_vello",
+]
+imaging_vello_hybrid = [
+    "masonry/imaging_vello_hybrid",
+    "masonry_winit/imaging_vello_hybrid",
+    "xilem_masonry/imaging_vello_hybrid",
+]
+imaging_skia = ["masonry/imaging_skia", "masonry_winit/imaging_skia", "xilem_masonry/imaging_skia"]
 
 [dependencies]
 xilem_core.workspace = true
