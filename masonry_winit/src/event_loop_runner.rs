@@ -62,7 +62,7 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 
 /// A container for a window yet to be created.
 ///
-/// This is stored inside [`MasonryState`] and will be created during the `resumed` event.
+/// This is stored inside [`MainState`] and will be created during the `resumed` event.
 #[derive(Debug)]
 pub struct NewWindow {
     /// The id is set by the App, and can be created using the [`WindowId::next()`] method.
@@ -201,9 +201,9 @@ impl Debug for Window {
 /// The state of the Masonry application.
 ///
 /// If you run Masonry from an external Winit event loop, create a
-/// `MasonryState` via [`MasonryState::new`] and forward events to it via the appropriate method (e.g.,
-/// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
-pub struct MasonryState {
+/// `MainState` via [`MainState::new`] and forward events to it via the appropriate method (e.g.,
+/// calling [`handle_window_event`](MainState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
+pub struct MainState {
     /// The event loop is suspended when the app is e.g. in the background on Android.
     /// We aren't allowed to have any `Surface`s, and we also don't expect to receive any events.
     /// See [`ApplicationHandler::suspended()`] for details.
@@ -236,12 +236,7 @@ pub struct MasonryState {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
-}
-
-// TODO - Merge into MasonryState?
-struct MainState {
-    masonry_state: MasonryState,
-    app_driver: Box<dyn AppDriver>,
+    app_driver: Option<Box<dyn AppDriver>>,
 }
 
 /// The type of the event loop used by Masonry.
@@ -285,26 +280,23 @@ pub fn run_with(
     // to try to set their own subscriber once the event loop has started.
     let _ = masonry_core::app::try_init_tracing();
 
-    let mut main_state = MainState {
-        masonry_state: MasonryState::new(
-            event_loop.create_proxy(),
-            new_windows,
-            default_properties,
-        ),
-        app_driver: Box::new(app_driver),
-    };
+    let mut main_state = MainState::new(
+        event_loop.create_proxy(),
+        new_windows,
+        app_driver,
+        default_properties,
+    );
 
     event_loop.run_app(&mut main_state)
 }
 
 impl ApplicationHandler<MasonryUserEvent> for MainState {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state
-            .handle_resumed(event_loop, &mut *self.app_driver);
+        self.handle_resumed(event_loop);
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state.handle_suspended(event_loop);
+        self.handle_suspended(event_loop);
     }
 
     fn window_event(
@@ -313,12 +305,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
         handle_id: HandleId,
         event: WinitWindowEvent,
     ) {
-        self.masonry_state.handle_window_event(
-            event_loop,
-            handle_id,
-            event,
-            self.app_driver.as_mut(),
-        );
+        self.handle_window_event(event_loop, handle_id, event);
     }
 
     fn device_event(
@@ -327,17 +314,11 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
         device_id: DeviceId,
         event: WinitDeviceEvent,
     ) {
-        self.masonry_state.handle_device_event(
-            event_loop,
-            device_id,
-            event,
-            self.app_driver.as_mut(),
-        );
+        self.handle_device_event(event_loop, device_id, event);
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: MasonryUserEvent) {
-        self.masonry_state
-            .handle_user_event(event_loop, event, self.app_driver.as_mut());
+        self.handle_user_event(event_loop, event);
     }
 
     // The following have empty handlers, but adding this here for future proofing. E.g., memory
@@ -345,25 +326,25 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
     // external event loops can let masonry handle these callbacks.
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state.handle_about_to_wait(event_loop);
+        self.handle_about_to_wait(event_loop);
     }
 
     fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+        self.handle_new_events(event_loop, cause);
     }
 
     fn exiting(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state.handle_exiting(event_loop);
+        self.handle_exiting(event_loop);
     }
 
     fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state.handle_memory_warning(event_loop);
+        self.handle_memory_warning(event_loop);
     }
 }
 
-impl Debug for MasonryState {
+impl Debug for MainState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MasonryState")
+        f.debug_struct("MainState")
             .field("is_suspended", &self.is_suspended)
             .field("renderer", &self.renderer)
             .field("event_loop_proxy", &self.event_loop_proxy)
@@ -381,15 +362,17 @@ impl Debug for MasonryState {
     }
 }
 
-impl MasonryState {
-    /// Creates the Masonry application's composition root.
+impl MainState {
+    /// Creates the Masonry application's main state.
     ///
     /// - `event_loop_proxy`: a queue provided by [`EventLoop::create_proxy`](winit::event_loop::EventLoop::create_proxy) to send custom events (mostly accessibility) to your event loop.
     /// - `new_windows`: the initial list of windows.
+    /// - `app_driver`: the driver for your Masonry application.
     /// - `default_properties`: the default properties for all the widgets of the app.
     pub fn new(
         event_loop_proxy: EventLoopProxy,
         new_windows: Vec<NewWindow>,
+        app_driver: impl AppDriver + 'static,
         default_properties: DefaultProperties,
     ) -> Self {
         tracing::debug!(
@@ -434,7 +417,18 @@ impl MasonryState {
             exit: false,
             new_windows,
             need_first_frame: Vec::new(),
+            app_driver: Some(Box::new(app_driver)),
         }
+    }
+
+    fn with_app_driver<R>(&mut self, f: impl FnOnce(&mut Self, &mut dyn AppDriver) -> R) -> R {
+        let mut app_driver = self
+            .app_driver
+            .take()
+            .expect("app driver is borrowed more than once at a time");
+        let result = f(self, app_driver.as_mut());
+        self.app_driver = Some(app_driver);
+        result
     }
 
     /// Configure how Masonry requests the WGPU device (features and limits).
@@ -479,7 +473,17 @@ impl MasonryState {
 
     // --- MARK: RESUMED
     /// Delegate method for [`ApplicationHandler::resumed()`].
-    pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+    pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.with_app_driver(|state, app_driver| {
+            state.handle_resumed_with_driver(event_loop, app_driver);
+        });
+    }
+
+    fn handle_resumed_with_driver(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+    ) {
         if !self.is_suspended {
             // Short-circuiting since we have already
             // handled the resumed event before this.
@@ -810,6 +814,17 @@ impl MasonryState {
         event_loop: &ActiveEventLoop,
         handle_id: HandleId,
         event: WinitWindowEvent,
+    ) {
+        self.with_app_driver(|state, app_driver| {
+            state.handle_window_event_with_driver(event_loop, handle_id, event, app_driver);
+        });
+    }
+
+    fn handle_window_event_with_driver(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        handle_id: HandleId,
+        event: WinitWindowEvent,
         app_driver: &mut dyn AppDriver,
     ) {
         if self.is_suspended {
@@ -944,18 +959,17 @@ impl MasonryState {
 
     // --- MARK: DEVICE_EVENT
     /// Delegate method for [`ApplicationHandler::device_event()`].
-    pub fn handle_device_event(
-        &mut self,
-        _: &ActiveEventLoop,
-        _: DeviceId,
-        _: WinitDeviceEvent,
-        _: &mut dyn AppDriver,
-    ) {
-    }
+    pub fn handle_device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, _: WinitDeviceEvent) {}
 
     // --- MARK: USER_EVENT
     /// Delegate method for [`ApplicationHandler::user_event()`].
-    pub fn handle_user_event(
+    pub fn handle_user_event(&mut self, event_loop: &ActiveEventLoop, event: MasonryUserEvent) {
+        self.with_app_driver(|state, app_driver| {
+            state.handle_user_event_with_driver(event_loop, event, app_driver);
+        });
+    }
+
+    fn handle_user_event_with_driver(
         &mut self,
         event_loop: &ActiveEventLoop,
         event: MasonryUserEvent,

@@ -99,7 +99,7 @@ pub use winit;
 pub mod app {
     pub use super::app_driver::{AppDriver, DriverCtx, WgpuContext, WgpuLimits, WindowId};
     pub use super::event_loop_runner::{
-        EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
+        EventLoop, EventLoopBuilder, EventLoopProxy, MainState, MasonryUserEvent, NewWindow,
         Window, run, run_with,
     };
 

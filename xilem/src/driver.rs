@@ -7,9 +7,7 @@ use std::sync::Arc;
 
 use masonry::core::{ErasedAction, WidgetId};
 use masonry::peniko::Blob;
-use masonry_winit::app::{
-    AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
-};
+use masonry_winit::app::{AppDriver, DriverCtx, MainState, MasonryUserEvent, NewWindow, WindowId};
 
 use crate::core::{
     DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
@@ -32,7 +30,7 @@ pub struct MasonryDriver<State: 'static, Logic> {
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
     // Optional callback invoked once on startup, after windows creation.
-    start_callback: Option<Box<dyn FnOnce(&mut MasonryState)>>,
+    start_callback: Option<Box<dyn FnOnce(&mut MainState)>>,
 }
 
 struct Window<State: 'static> {
@@ -56,7 +54,7 @@ where
         runtime: Arc<tokio::runtime::Runtime>,
         default_base_color: Color,
         fonts: Vec<Blob<u8>>,
-        start_callback: Option<Box<dyn FnOnce(&mut MasonryState)>>,
+        start_callback: Option<Box<dyn FnOnce(&mut MainState)>>,
     ) -> (Self, Vec<NewWindow>) {
         let mut driver = Self {
             state,
@@ -351,7 +349,7 @@ where
         self.handle_message_result(window_id, masonry_ctx, message_result);
     }
 
-    fn on_start(&mut self, state: &mut MasonryState) {
+    fn on_start(&mut self, state: &mut MainState) {
         // self.fonts is never used again, so we may as well deallocate it.
         let fonts = std::mem::take(&mut self.fonts);
 

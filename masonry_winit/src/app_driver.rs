@@ -11,12 +11,12 @@ use masonry_core::core::{ErasedAction, WidgetId};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 
-use crate::app::MasonryState;
+use crate::app::MainState;
 use crate::event_loop_runner::{NewWindow, Window};
 
 /// A unique and persistent identifier for a window.
 ///
-/// [`MasonryState`] internally maps these to winit window ids ([`winit::window::WindowId`]).
+/// [`MainState`] internally maps these to winit window ids ([`winit::window::WindowId`]).
 /// Applications should only use this struct and not be concerned with the winit window ids.
 /// When the application is suspended and resumed this id will stay the same, while the
 /// winit window id will change.
@@ -40,12 +40,12 @@ impl WindowId {
 /// Context for the [`AppDriver`] trait.
 #[derive(Debug)]
 pub struct DriverCtx<'a> {
-    state: &'a mut MasonryState,
+    state: &'a mut MainState,
     event_loop: &'a ActiveEventLoop,
 }
 
 impl<'a> DriverCtx<'a> {
-    pub(crate) fn new(state: &'a mut MasonryState, event_loop: &'a ActiveEventLoop) -> Self {
+    pub(crate) fn new(state: &'a mut MainState, event_loop: &'a ActiveEventLoop) -> Self {
         Self { state, event_loop }
     }
 }
@@ -109,7 +109,7 @@ pub trait AppDriver {
     ) {
     }
 
-    /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
+    /// A hook which will be executed when the application starts, to allow initial configuration of the `MainState`.
     ///
     /// Use cases include loading fonts.
     ///
@@ -118,7 +118,7 @@ pub trait AppDriver {
     /// not assume it will only be called once (but should feel free to waste work if it is called multiple times,
     /// for example, as the mentioned circumstances are very rare).
     // TODO: Turn into something like on window created, or split into two.
-    fn on_start(&mut self, state: &mut MasonryState) {}
+    fn on_start(&mut self, state: &mut MainState) {}
 
     /// A hook called when a user has requested to close a window.
     fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_>) {

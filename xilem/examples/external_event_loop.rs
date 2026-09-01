@@ -9,7 +9,7 @@
 use masonry::layout::AsUnit;
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::theme::default_property_set;
-use masonry_winit::app::{AppDriver, MasonryUserEvent};
+use masonry_winit::app::{MainState, MasonryUserEvent};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
@@ -42,22 +42,20 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 
 /// An application not managed by Xilem, but which wishes to embed Xilem.
 struct ExternalApp {
-    masonry_state: masonry_winit::app::MasonryState,
-    app_driver: Box<dyn AppDriver>,
+    main_state: MainState,
 }
 
 impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state
-            .handle_resumed(event_loop, &mut *self.app_driver);
+        self.main_state.handle_resumed(event_loop);
     }
 
     fn suspended(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_suspended(event_loop);
+        self.main_state.handle_suspended(event_loop);
     }
 
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_about_to_wait(event_loop);
+        self.main_state.handle_about_to_wait(event_loop);
     }
 
     fn window_event(
@@ -66,12 +64,8 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        self.masonry_state.handle_window_event(
-            event_loop,
-            window_id,
-            event,
-            self.app_driver.as_mut(),
-        );
+        self.main_state
+            .handle_window_event(event_loop, window_id, event);
     }
 
     fn user_event(
@@ -79,8 +73,7 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         event_loop: &winit::event_loop::ActiveEventLoop,
         event: MasonryUserEvent,
     ) {
-        self.masonry_state
-            .handle_user_event(event_loop, event, self.app_driver.as_mut());
+        self.main_state.handle_user_event(event_loop, event);
     }
 
     fn device_event(
@@ -98,12 +91,8 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
             return;
         }
 
-        self.masonry_state.handle_device_event(
-            event_loop,
-            device_id,
-            event,
-            self.app_driver.as_mut(),
-        );
+        self.main_state
+            .handle_device_event(event_loop, device_id, event);
     }
 
     fn new_events(
@@ -111,15 +100,15 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         event_loop: &winit::event_loop::ActiveEventLoop,
         cause: winit::event::StartCause,
     ) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+        self.main_state.handle_new_events(event_loop, cause);
     }
 
     fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_exiting(event_loop);
+        self.main_state.handle_exiting(event_loop);
     }
 
     fn memory_warning(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_memory_warning(event_loop);
+        self.main_state.handle_memory_warning(event_loop);
     }
 }
 
@@ -133,15 +122,13 @@ fn main() -> Result<(), EventLoopError> {
     let proxy = event_loop.create_proxy();
     let (driver, windows) =
         xilem.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
-    let masonry_state = masonry_winit::app::MasonryState::new(
+    let main_state = MainState::new(
         event_loop.create_proxy(),
         windows,
+        driver,
         default_property_set(),
     );
 
-    let mut app = ExternalApp {
-        masonry_state,
-        app_driver: Box::new(driver),
-    };
+    let mut app = ExternalApp { main_state };
     event_loop.run_app(&mut app)
 }
