@@ -17,8 +17,10 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
-use crate::kurbo::{Axis, Size};
+use crate::kurbo::{Axis, Join, Size, Stroke};
 use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
+use crate::peniko::Color;
+use crate::properties::{BorderWidth, CornerRadius};
 use crate::theme;
 use crate::widgets::Label;
 
@@ -158,12 +160,20 @@ impl Widget for Button {
         }
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        // Repaint when interaction state changes so the hover/press/focus
+        // highlight drawn in `pre_paint` updates as the pointer enters/leaves.
+        match event {
+            Update::HoveredChanged(_)
+            | Update::FocusChanged(_)
+            | Update::ActiveChanged(_)
+            | Update::DisabledChanged(_) => {
+                // The highlight is drawn in `pre_paint`, so request that pass
+                // specifically (`request_paint_only` would only rerun `paint`).
+                ctx.request_pre_paint();
+            }
+            _ => {}
+        }
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -210,6 +220,46 @@ impl Widget for Button {
         ctx.place_child(&mut self.child, child_origin);
 
         ctx.derive_baselines(&self.child);
+    }
+
+    fn pre_paint(
+        &mut self,
+        ctx: &mut PaintCtx<'_>,
+        props: &PropertiesRef<'_>,
+        painter: &mut Painter<'_>,
+    ) {
+        // Draw the standard box (shadow, background, border) first.
+        crate::core::pre_paint(ctx, props, painter);
+
+        // Then overlay a hover/press highlight so every clickable button gives
+        // pointer feedback regardless of its own background/border colors. The
+        // highlight is a translucent white ring that brightens on press.
+        if ctx.is_hovered() || ctx.is_active() || ctx.has_focus_target() {
+            let bbox = ctx.border_box();
+            let cache = ctx.property_cache();
+            let radius = props.get::<CornerRadius>(cache).radius.get();
+            let border_width = props.get::<BorderWidth>(cache).width.get();
+            // Match the button's own border thickness so the highlight reads as
+            // the same edge; fall back to a thin ring for borderless (e.g. ghost)
+            // buttons so hover is still visible.
+            let ring_width = if border_width > 0.0 {
+                border_width
+            } else {
+                1.5
+            };
+            let alpha = if ctx.is_active() { 0.28 } else { 0.16 };
+            // Sit the ring just outside the border box, centered on its edge.
+            let inset = ring_width * 0.5;
+            let ring = bbox.inflate(inset, inset).to_rounded_rect(radius + inset);
+            let stroke = Stroke {
+                width: ring_width,
+                join: Join::Round,
+                ..Default::default()
+            };
+            painter
+                .stroke(ring, &stroke, Color::WHITE.with_alpha(alpha))
+                .draw();
+        }
     }
 
     fn paint(
