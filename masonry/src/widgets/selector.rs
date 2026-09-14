@@ -42,12 +42,11 @@ impl Selector {
             debug_panic!("cannot create selector with no option");
             options = vec![String::new()];
         }
-        let first_option = options.first().unwrap().clone();
 
         Self {
             options,
             selected_option: 0,
-            child: WidgetPod::new(Label::new(first_option)),
+            child: WidgetPod::new(Label::new("")),
             menu_layer_id: None,
         }
     }
@@ -208,6 +207,12 @@ impl Widget for Selector {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::WidgetAdded => {
+                let option = self.options[self.selected_option].clone();
+                ctx.mutate_child_later(&mut self.child, move |mut label| {
+                    Label::set_text(&mut label, option);
+                });
+            }
             Update::HoveredChanged(_)
             | Update::ActiveChanged(_)
             | Update::FocusChanged(_)
@@ -301,5 +306,29 @@ impl Widget for Selector {
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
         trace_span!("Selector", id = id.trace())
+    }
+}
+
+// --- MARK: TESTS
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::TestHarness;
+    use crate::theme::test_property_set;
+
+    #[test]
+    fn with_selected_option() {
+        let options = vec!["Blue and black".into(), "White and gold".into()];
+        let selector = Selector::new(options).with_selected_option(1);
+        let mut harness = TestHarness::create_with_size(
+            test_property_set(),
+            NewWidget::new(selector),
+            (200u32, 60u32),
+        );
+
+        harness.edit_root_widget(|mut selector| {
+            let label = Selector::child_mut(&mut selector);
+            assert_eq!(&**label.widget.text(), "White and gold");
+        });
     }
 }
