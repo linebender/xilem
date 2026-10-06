@@ -77,6 +77,27 @@ fn pointer_event_bubbling() {
 }
 
 #[test]
+fn add_child_on_pointer_event() {
+    let parent_tag = WidgetTag::named("parent");
+
+    let parent = ModularWidget::new_multi_parent(vec![SizedBox::empty().prepare()])
+        .pointer_event_fn(|children, ctx, _, event| {
+            if matches!(event, PointerEvent::Down { .. }) {
+                children.push(SizedBox::empty().prepare().to_pod());
+                ctx.children_changed();
+            }
+        });
+    let parent = NewWidget::new(parent).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let parent_id = harness.get_widget(parent_tag).id();
+
+    assert_eq!(harness.get_widget(parent_tag).children().len(), 1);
+    harness.mouse_click_on(parent_id, None);
+    assert_eq!(harness.get_widget(parent_tag).children().len(), 2);
+}
+
+#[test]
 fn pointer_capture_and_cancel() {
     let target_tag = WidgetTag::named("target");
 
