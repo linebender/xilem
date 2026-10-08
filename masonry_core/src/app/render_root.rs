@@ -811,6 +811,13 @@ impl RenderRoot {
         self.global_state.size
     }
 
+    /// Returns the current DPI scale factor of the window.
+    ///
+    /// This is the number of physical pixels per logical pixel.
+    pub fn scale_factor(&self) -> f64 {
+        self.global_state.scale_factor
+    }
+
     pub(crate) fn get_kurbo_size(&self) -> Size {
         let size = self
             .global_state
