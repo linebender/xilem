@@ -297,6 +297,22 @@ pub fn default_property_set() -> DefaultProperties {
         properties.insert_stack::<TextArea<true>>(stack);
     }
 
+    // Prose
+    properties.insert::<Prose, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<Prose, _>(SelectionColor {
+        color: ACCENT_COLOR,
+    });
+    {
+        let mut stack = PropertyStack::new();
+        stack.push_layer(
+            Selector::classes(&["#unfocused"]),
+            SelectionColor {
+                color: DISABLED_TEXT_COLOR,
+            },
+        );
+        properties.insert_stack::<Prose>(stack);
+    }
+
     // Label
     properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
     {
