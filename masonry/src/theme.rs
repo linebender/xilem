@@ -299,6 +299,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Prose
     properties.insert::<Prose, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<Prose, _>(ContentColor::new(TEXT_COLOR));
     properties.insert::<Prose, _>(SelectionColor {
         color: ACCENT_COLOR,
     });
