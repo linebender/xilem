@@ -1128,7 +1128,7 @@ pub enum InsertNewline {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_testing::TestHarnessParams;
+    use masonry_testing::{TestHarnessParams, assert_render_snapshot};
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, NewWidget, PropertySet};
@@ -1328,5 +1328,40 @@ mod tests {
         assert_eq!(action, TextAction::Cancelled);
         assert!(harness.pop_action_erased().is_none());
         assert_eq!(text, "hello world");
+    }
+
+    #[test]
+    fn mouse_selection() {
+        let area = NewWidget::new(TextArea::new_editable("hello world"));
+
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let area_id = harness.root_id();
+
+        assert_render_snapshot!(harness, "text_area_no_selection");
+
+        let (start, end) = {
+            let node = harness
+                .access_node(area_id)
+                .expect("node for text_area should exist");
+
+            let point_at = |index| {
+                let position = node
+                    .text_position_from_global_usv_index(index)
+                    .expect("character index out of bounds");
+                let boxes = position.to_degenerate_range().bounding_boxes();
+                let caret = boxes.first().expect("missing box for position");
+                ((caret.x0 + caret.x1) / 2.0, (caret.y0 + caret.y1) / 2.0)
+            };
+
+            // selecting "llo w"
+            (point_at(2), point_at(7))
+        };
+
+        harness.mouse_move(start);
+        harness.mouse_button_press(Some(PointerButton::Primary));
+        harness.mouse_move(end);
+        harness.mouse_button_release(Some(PointerButton::Primary));
+
+        assert_render_snapshot!(harness, "text_area_selection");
     }
 }
