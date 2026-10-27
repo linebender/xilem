@@ -46,7 +46,7 @@ use masonry_core::core::{
     PointerScrollEvent, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget,
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
-use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
+use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use masonry_core::kurbo::{Affine, Point, Rect, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
@@ -549,12 +549,13 @@ impl<W: Widget> TestHarness<W> {
             let mut painter = Painter::new(&mut full_scene);
             painter.fill_rect(Rect::new(0.0, 0.0, width, height), self.background_color);
 
-            let padding_transform =
-                Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)));
+            let root_transform =
+                Affine::translate((f64::from(self.root_padding), f64::from(self.root_padding)))
+                    * Affine::scale(self.render_root.scale_factor());
 
             for layer in &visual_layers.layers {
                 if let VisualLayerKind::Scene(scene) = &layer.kind {
-                    replay_transformed(scene, &mut full_scene, padding_transform * layer.transform);
+                    replay_transformed(scene, &mut full_scene, root_transform * layer.transform);
                 }
             }
         }
@@ -607,11 +608,13 @@ impl<W: Widget> TestHarness<W> {
     // --- MARK: EVENT HELPERS
 
     /// Move an internal mouse state, and send a [`Move`](PointerEvent::Move) event to the window.
+    ///
+    /// The position is in logical coordinates.
     pub fn mouse_move(&mut self, pos: impl Into<Point>) {
-        // FIXME - Account for scaling
         let Point { x, y } = pos.into();
-        let pos = PhysicalPosition { x, y };
-        self.mouse_state.position = pos;
+        let scale_factor = self.render_root.scale_factor();
+        self.mouse_state.position = LogicalPosition { x, y }.to_physical(scale_factor);
+        self.mouse_state.scale_factor = scale_factor;
 
         debug!("Harness mouse moved to {x}, {y}");
 
@@ -648,10 +651,13 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Sends a [`Scroll`](PointerEvent::Scroll) event to the window.
+    ///
+    /// The delta is in logical pixels.
     pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
+        let scale_factor = self.render_root.scale_factor();
         self.process_pointer_event(PointerEvent::Scroll(PointerScrollEvent {
             pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition { x, y }),
+            delta: ScrollDelta::PixelDelta(LogicalPosition { x, y }.to_physical(scale_factor)),
             state: self.mouse_state.clone(),
         }));
     }
