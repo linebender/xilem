@@ -548,7 +548,6 @@ impl RenderRoot {
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
         let handled = run_on_pointer_event_pass(self, &event);
-        run_update_pointer_pass(self);
         self.run_rewrite_passes();
 
         handled
