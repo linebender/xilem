@@ -38,11 +38,11 @@ pub(crate) fn recurse_on_children(
     mut children: ArenaMutList<'_, WidgetArenaNode>,
     mut callback: impl FnMut(ArenaMut<'_, WidgetArenaNode>),
 ) {
-    let parent_name = widget.short_type_name();
     let parent_id = id;
 
     for child_id in widget.children_ids() {
         let Some(node) = children.item_mut(child_id) else {
+            let parent_name = widget.short_type_name();
             panic!(
                 "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
             );
