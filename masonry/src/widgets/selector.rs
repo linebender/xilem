@@ -323,7 +323,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(
             test_property_set(),
             NewWidget::new(selector),
-            (200u32, 60u32),
+            (200_u32, 60_u32),
         );
 
         harness.edit_root_widget(|mut selector| {
