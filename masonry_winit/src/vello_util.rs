@@ -307,10 +307,6 @@ impl RenderContext {
         };
 
         let requested_features = wgpu::Features::CLEAR_TEXTURE | self.requested_features;
-        #[cfg(feature = "tracy")]
-        let requested_features =
-            requested_features | wgpu_profiler::GpuProfiler::ALL_WGPU_TIMER_FEATURES;
-
         let required_features = supported_features & requested_features;
 
         let (device, queue) = adapter
