@@ -451,9 +451,12 @@ pub(crate) fn run_layout_on(
     {
         let name = widget.short_type_name();
         for child_id in widget.children_ids() {
-            let child_state = &children.item(child_id).unwrap().item.state;
+            let child_state = &mut children.item_mut(child_id).unwrap().item.state;
 
             if child_state.is_explicitly_stashed {
+                // Above, we forcefully set `request_layout` for unstashed children, but children
+                // may have become stashed in the meantime. Unset the flag for them.
+                child_state.request_layout = false;
                 continue;
             }
 
