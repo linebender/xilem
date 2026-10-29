@@ -8,8 +8,11 @@ use masonry::core::DefaultProperties;
 use masonry::peniko::{Blob, Color};
 use masonry::theme::{BACKGROUND_COLOR, default_property_set};
 use masonry_winit::app::{EventLoopBuilder, MasonryState, MasonryUserEvent, NewWindow, WindowId};
-use tokio::runtime::Runtime as TokioRuntime;
 use winit::error::EventLoopError;
+use xilem_masonry::runtime::Executor;
+
+#[cfg(feature = "tokio-rt")]
+use tokio::runtime::Runtime as TokioRuntime;
 
 use crate::core::map_state;
 use crate::window_options::WindowCallbacks;
@@ -22,7 +25,7 @@ use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
-    runtime: Arc<TokioRuntime>,
+    runtime: Arc<Executor>,
     default_properties: Option<DefaultProperties>,
     default_base_color: Color,
     // Font data to include in loading.
@@ -62,20 +65,33 @@ impl<State>
     where
         View: WidgetView<State>,
     {
-        Self::new_simple_with_tokio(
-            state,
-            logic,
-            window_options,
-            Arc::new(TokioRuntime::new().unwrap()),
-        )
+        Self::new_simple_with_executor(state, logic, window_options, Executor::new().into())
     }
 
     /// Same as [`Self::new_simple`] but allows passing an existing tokio runtime.
+    #[deprecated(
+        since = "0.4.0",
+        note = "use `Xilem::new_simple_with_executor` with `xilem_masonry::runtime::Executor` instead"
+    )]
+    #[cfg(feature = "tokio-rt")]
     pub fn new_simple_with_tokio<View>(
+        state: State,
+        logic: impl FnMut(&mut State) -> View + 'static,
+        window_options: WindowOptions<State>,
+        tokio_rt: Arc<TokioRuntime>,
+    ) -> Self
+    where
+        View: WidgetView<State>,
+    {
+        Self::new_simple_with_executor(state, logic, window_options, Arc::new(tokio_rt.into()))
+    }
+
+    /// Same as [`Self::new_simple`] but allows passing an existing runtime executor.
+    pub fn new_simple_with_executor<View>(
         state: State,
         mut logic: impl FnMut(&mut State) -> View + 'static,
         window_options: WindowOptions<State>,
-        tokio_rt: Arc<TokioRuntime>,
+        runtime: Arc<Executor>,
     ) -> Self
     where
         View: WidgetView<State>,
@@ -112,7 +128,7 @@ impl<State>
                     }),
                 )
             }),
-            tokio_rt,
+            runtime,
         )
     }
 }
@@ -138,10 +154,10 @@ where
     where
         State: AppState,
     {
-        Self::new_inner(state, logic, Arc::new(TokioRuntime::new().unwrap()))
+        Self::new_inner(state, logic, Arc::new(Executor::new()))
     }
 
-    fn new_inner(state: State, logic: Logic, runtime: Arc<TokioRuntime>) -> Self {
+    fn new_inner(state: State, logic: Logic, runtime: Arc<Executor>) -> Self {
         Self {
             state,
             logic,

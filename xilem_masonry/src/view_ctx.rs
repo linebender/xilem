@@ -9,6 +9,7 @@ use masonry::core::{FromDynWidget, Property, Widget, WidgetId, WidgetMut};
 
 use crate::Pod;
 use crate::core::{Environment, RawProxy, ViewId, ViewPathTracker};
+use crate::runtime::Executor;
 
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
@@ -18,7 +19,7 @@ pub struct ViewCtx {
     widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
-    runtime: Arc<tokio::runtime::Runtime>,
+    runtime: Arc<Executor>,
     props_changed: HashSet<(WidgetId, TypeId)>,
     transforms_changed: HashSet<WidgetId>,
     environment: Environment,
@@ -80,8 +81,8 @@ impl ViewCtx {
         self.widget_map.remove(&widget.ctx.widget_id());
     }
 
-    /// Returns a reference to the app's tokio runtime.
-    pub fn runtime(&self) -> &tokio::runtime::Runtime {
+    /// Returns a reference to the app's async runtime executor.
+    pub fn runtime(&self) -> &Executor {
         &self.runtime
     }
 
@@ -139,7 +140,7 @@ impl ViewCtx {
     /// Creates a new `ViewCtx` for rebuilding the widget tree.
     ///
     /// You almost never need to call this method unless you're building your own framework.
-    pub fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {
+    pub fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<Executor>) -> Self {
         Self {
             widget_map: HashMap::default(),
             id_path: Vec::new(),

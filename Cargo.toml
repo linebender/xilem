@@ -49,7 +49,7 @@ masonry_imaging = { version = "0.4.0", path = "masonry_imaging", default-feature
 masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
 masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
 xilem_core = { version = "0.4.0", path = "xilem_core" }
-xilem_masonry = { version = "0.4.0", path = "xilem_masonry" }
+xilem_masonry = { version = "0.4.0", path = "xilem_masonry", default-features = false }
 xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
@@ -85,7 +85,6 @@ bitflags = "2.11.0"
 accesskit = "0.24.0"
 accesskit_winit = { version = "0.32.2", default-features = false, features = [
     "accesskit_unix",
-    "tokio",
     "rwh_06",
 ] }
 accesskit_consumer = "0.35.0"
@@ -96,6 +95,8 @@ reqwest = { version = "0.12.28", default-features = false, features = [
     "rustls-tls",
 ] }
 divan = "0.1.21"
+tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "time", "sync"] }
+smol = "2.0.2"
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry

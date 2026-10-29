@@ -10,7 +10,6 @@ license.workspace = true
 repository.workspace = true
 
 [package.metadata.docs.rs]
-all-features = true
 # There are no platform specific docs.
 default-target = "x86_64-unknown-linux-gnu"
 targets = []
@@ -18,10 +17,12 @@ targets = []
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
-default = ["imaging_vello"]
+default = ["imaging_vello", "accesskit-tokio"]
 imaging_vello = ["masonry_imaging/imaging_vello"]
 imaging_vello_hybrid = ["masonry_imaging/imaging_vello_hybrid"]
 imaging_skia = ["masonry_imaging/imaging_skia"]
+accesskit-tokio = ["accesskit_winit/tokio"]
+accesskit-async-io = ["accesskit_winit/async-io"]
 # Enables tracing using tracy if the default Masonry tracing is used.
 # https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
 tracy = [

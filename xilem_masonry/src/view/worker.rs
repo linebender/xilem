@@ -6,15 +6,13 @@ use std::future::Future;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use tokio::task::JoinHandle;
-
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
     MessageCtx, MessageProxy, MessageResult, Mut, NoElement, Resource, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
+use crate::runtime::{self, Handle, Receiver, Sender};
 
 // TODO: Update generic variable names to be more .
 
@@ -24,7 +22,7 @@ use crate::core::{
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
-/// For example, this can be used with the time functions in [`tokio::time`].
+/// For example, this can be used with the time functions provided by the selected async runtime.
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
@@ -34,20 +32,11 @@ pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<
-    State,
-    Action,
-    F,
-    H,
-    M,
-    impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static,
-    V,
-    Dummy,
->
+) -> Worker<State, Action, F, H, M, impl Fn(&mut State, &mut Dummy, Sender<V>) + 'static, V, Dummy>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, Receiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>) + 'static,
+    S: Fn(&mut State, Sender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: 'static,
@@ -61,7 +50,7 @@ where
     };
     Worker {
         init_future,
-        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: Sender<V>| {
             store_sender(state, sender);
         },
         on_response,
@@ -79,9 +68,9 @@ pub fn env_worker<F, H, M, S, V, Res, State, Action, Fut>(
     on_response: H,
 ) -> Worker<State, Action, F, H, M, S, V, Res>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, Receiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, &mut Res, UnboundedSender<V>),
+    S: Fn(&mut State, &mut Res, Sender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     Res: Resource,
@@ -119,21 +108,12 @@ pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<
-    State,
-    Action,
-    F,
-    H,
-    M,
-    impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static,
-    V,
-    Dummy,
->
+) -> Worker<State, Action, F, H, M, impl Fn(&mut State, &mut Dummy, Sender<V>) + 'static, V, Dummy>
 where
     // TODO(DJMcNab): Accept app_state here
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: Fn(MessageProxy<M>, Receiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>) + 'static,
+    S: Fn(&mut State, Sender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: 'static,
@@ -141,7 +121,7 @@ where
     Worker {
         init_future,
         on_response,
-        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: Sender<V>| {
             store_sender(state, sender);
         },
         message: PhantomData,
@@ -163,24 +143,24 @@ impl<State, Action, F, H, M, Fut, S, V, Res> View<State, Action, ViewCtx>
 where
     Res: Resource,
     Action: 'static,
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
+    F: Fn(MessageProxy<M>, Receiver<V>) -> Fut + 'static,
     V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, &mut Res, UnboundedSender<V>) + 'static,
+    S: Fn(&mut State, &mut Res, Sender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     State: 'static,
 {
     type Element = NoElement;
 
-    type ViewState = JoinHandle<()>;
+    type ViewState = Handle;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
 
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, rx) = runtime::channel();
         let env = ctx.environment();
         if TypeId::of::<Res>() != TypeId::of::<Dummy>() {
             let pos = env.get_slot_for_type::<Res>();
