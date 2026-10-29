@@ -498,6 +498,11 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
     let state = &mut node.item.state;
     let id = state.id;
 
+    // If `needs_layout` is false, no descendant has layout flags set.
+    if !state.needs_layout() {
+        return;
+    }
+
     state.set_needs_layout(false);
     state.request_layout = false;
 
