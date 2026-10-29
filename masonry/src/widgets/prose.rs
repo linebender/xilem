@@ -1,8 +1,11 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use include_doc_path::include_doc_path;
+use masonry_core::core::UsesProperty;
 use tracing::{Span, trace_span};
 
 use crate::core::{
@@ -13,6 +16,7 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LenReq, Length};
+use crate::properties::{CaretColor, SelectionColor};
 use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
@@ -101,6 +105,9 @@ impl Prose {
     }
 }
 
+impl UsesProperty<CaretColor> for Prose {}
+impl UsesProperty<SelectionColor> for Prose {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Prose {
     type Action = NoAction;
@@ -115,10 +122,20 @@ impl Widget for Prose {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
+        event: &TextEvent,
     ) {
+        match event {
+            TextEvent::WindowFocusChange(focused) => {
+                if *focused {
+                    ctx.remove_class("#unfocused");
+                } else {
+                    ctx.add_class("#unfocused");
+                }
+            }
+            _ => {}
+        }
     }
 
     fn on_access_event(
@@ -133,12 +150,44 @@ impl Widget for Prose {
         ctx.register_child(&mut self.text);
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        // FIXME - Find more elegant way to propagate property to child.
+        if property_type == TypeId::of::<CaretColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<CaretColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
+        } else if property_type == TypeId::of::<SelectionColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<SelectionColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
+        }
+    }
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::WidgetAdded => {
+                // FIXME - Find more elegant way to propagate property to child.
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<CaretColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<SelectionColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+            }
+            _ => {}
+        }
     }
 
     fn measure(
@@ -269,5 +318,33 @@ mod tests {
         let mut harness = TestHarness::create_with_size(test_property_set(), flex, (200, 120));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
+    }
+
+    #[test]
+    fn prose_outline() {
+        let prose = Prose::new("TextInput contents").prepare();
+        let mut harness = TestHarness::create_with_size(test_property_set(), prose, (150, 40));
+
+        assert_render_snapshot!(harness, "prose_outline");
+
+        let mut text_area_id = None;
+        harness.edit_root_widget(|mut prose| {
+            let mut prose = Prose::text_mut(&mut prose);
+            text_area_id = Some(prose.ctx.widget_id());
+
+            TextArea::select_text(&mut prose, "contents");
+        });
+        harness.focus_on(text_area_id);
+
+        assert_render_snapshot!(harness, "prose_selection");
+
+        harness.process_text_event(TextEvent::WindowFocusChange(false));
+
+        assert_render_snapshot!(harness, "prose_selection_unfocused");
+
+        harness.process_text_event(TextEvent::WindowFocusChange(true));
+        harness.animate_ms(500 + 1);
+
+        assert_render_snapshot!(harness, "prose_cursor_blink");
     }
 }
