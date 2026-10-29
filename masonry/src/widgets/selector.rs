@@ -209,7 +209,9 @@ impl Widget for Selector {
         match event {
             Update::WidgetAdded => {
                 let option = self.options[self.selected_option].clone();
-                ctx.mutate_child_later(&mut self.child, move |mut label| {
+                ctx.mutate_self_later(move |mut selector| {
+                    let mut selector = selector.downcast::<Self>();
+                    let mut label = Selector::child_mut(&mut selector);
                     Label::set_text(&mut label, option);
                 });
             }
