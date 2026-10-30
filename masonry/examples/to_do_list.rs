@@ -7,6 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+use masonry::app::RenderRoot;
 use masonry::core::{ErasedAction, NewWidget, PropertySet, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::layout::Length;
@@ -19,6 +20,7 @@ use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::named("text-input");
+const ADD_BUTTON_TAG: WidgetTag<Button> = WidgetTag::named("add-button");
 const LIST_TAG: WidgetTag<Flex> = WidgetTag::named("list");
 const WIDGET_SPACING: Length = Length::const_px(5.0);
 
@@ -27,19 +29,16 @@ struct Driver {
     window_id: WindowId,
 }
 
-impl AppDriver for Driver {
-    fn on_action(
-        &mut self,
-        window_id: WindowId,
-        ctx: &mut DriverCtx<'_>,
-        _widget_id: WidgetId,
-        action: ErasedAction,
-    ) {
-        debug_assert_eq!(window_id, self.window_id, "unknown window");
+impl Driver {
+    fn new() -> Self {
+        Self {
+            next_task: String::new(),
+            window_id: WindowId::next(),
+        }
+    }
 
+    fn ui_update(&mut self, render_root: &mut RenderRoot, action: ErasedAction) {
         if action.is::<ButtonPress>() {
-            let render_root = ctx.render_root(window_id);
-
             render_root.edit_widget_with_tag(TEXT_INPUT_TAG, |mut text_input| {
                 let mut text_area = TextInput::text_mut(&mut text_input);
                 TextArea::reset_text(&mut text_area, "");
@@ -61,13 +60,27 @@ impl AppDriver for Driver {
     }
 }
 
+impl AppDriver for Driver {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_>,
+        _widget_id: WidgetId,
+        action: ErasedAction,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
+
+        self.ui_update(&mut ctx.render_root(window_id), action);
+    }
+}
+
 /// Return initial to-do-list without items.
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
     let text_input = NewWidget::new(
         TextInput::new("").with_placeholder("ex: 'Do the dishes', 'File my taxes', ..."),
     )
     .with_tag(TEXT_INPUT_TAG);
-    let button = NewWidget::new(Button::with_text("Add task"));
+    let button = NewWidget::new(Button::with_text("Add task")).with_tag(ADD_BUTTON_TAG);
 
     let portal = Portal::new(
         NewWidget::new(Flex::column().cross_axis_alignment(CrossAxisAlignment::Start))
@@ -92,10 +105,7 @@ fn main() {
         .with_title("To-do list")
         .with_resizable(true)
         .with_min_inner_size(window_size);
-    let driver = Driver {
-        next_task: String::new(),
-        window_id: WindowId::next(),
-    };
+    let driver = Driver::new();
 
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
@@ -119,17 +129,47 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry::core::PointerButton;
     use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
+        let mut state = Driver::new();
         let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
+        let text_area_id = harness.get_widget(TEXT_INPUT_TAG).area_pod().id();
+        let add_btn_id = harness.get_widget(ADD_BUTTON_TAG).id();
 
         assert_render_snapshot!(harness, "example_to_do_list_initial");
 
-        // TODO - Test clicking buttons
-        // TODO - Test typing text
+        let mut act_and_update =
+            |harness: &mut TestHarness<_>, do_action: &dyn Fn(&mut TestHarness<_>)| {
+                do_action(harness);
+                // focus produces no actions while keyboard chars give multiple
+                while let Some((erased_action, _)) = harness.pop_action_erased() {
+                    state.ui_update(harness.render_root(), erased_action);
+                }
+            };
+
+        act_and_update(&mut harness, &|harness| {
+            harness.focus_on(Some(text_area_id))
+        });
+        act_and_update(&mut harness, &|harness| {
+            harness.keyboard_type_chars("Buy milk")
+        });
+        assert_render_snapshot!(harness, "example_to_do_list_typed_task1");
+
+        act_and_update(&mut harness, &|harness| {
+            harness.mouse_click_on(add_btn_id, Some(PointerButton::Primary));
+        });
+        assert_render_snapshot!(harness, "example_to_do_list_task1_added");
+
+        act_and_update(&mut harness, &|harness| {
+            harness.focus_on(Some(text_area_id));
+            harness.keyboard_type_chars("Do laundry");
+            harness.mouse_click_on(add_btn_id, Some(PointerButton::Primary));
+        });
+        assert_render_snapshot!(harness, "example_to_do_list_task2_added");
     }
 }
