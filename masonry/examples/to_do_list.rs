@@ -70,7 +70,7 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        self.ui_update(&mut ctx.render_root(window_id), action);
+        self.ui_update(ctx.render_root(window_id), action);
     }
 }
 
@@ -153,10 +153,10 @@ mod tests {
             };
 
         act_and_update(&mut harness, &|harness| {
-            harness.focus_on(Some(text_area_id))
+            harness.focus_on(Some(text_area_id));
         });
         act_and_update(&mut harness, &|harness| {
-            harness.keyboard_type_chars("Buy milk")
+            harness.keyboard_type_chars("Buy milk");
         });
         assert_render_snapshot!(harness, "example_to_do_list_typed_task1");
 

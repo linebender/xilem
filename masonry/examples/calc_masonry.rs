@@ -64,7 +64,7 @@ impl Default for CalcAction {
 
 impl CalcState {
     fn new() -> Self {
-        CalcState {
+        Self {
             value: "0".to_string(),
             operand: 0.0,
             operator: 'C',
@@ -198,7 +198,7 @@ impl AppDriver for CalcState {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        self.ui_update(&mut ctx.render_root(window_id), widget_id, action);
+        self.ui_update(ctx.render_root(window_id), widget_id, action);
     }
 }
 
