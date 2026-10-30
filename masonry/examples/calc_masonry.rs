@@ -13,9 +13,10 @@
 
 use std::str::FromStr;
 
+use masonry::app::RenderRoot;
 use masonry::core::{
     CollectionWidget, DefaultProperties, ErasedAction, NewWidget, Property, PropertySet,
-    PropertyStack, Selector, StyleProperty, Widget, WidgetId,
+    PropertyStack, Selector, StyleProperty, Widget, WidgetId, WidgetTag,
 };
 use masonry::dpi::LogicalSize;
 use masonry::layout::AsUnit;
@@ -62,6 +63,16 @@ impl Default for CalcAction {
 // ---
 
 impl CalcState {
+    fn new() -> Self {
+        CalcState {
+            value: "0".to_string(),
+            operand: 0.0,
+            operator: 'C',
+            in_num: false,
+            window_id: WindowId::next(),
+        }
+    }
+
     fn digit(&mut self, digit: u8) {
         if !self.in_num {
             self.value.clear();
@@ -143,19 +154,14 @@ impl CalcState {
             _ => unreachable!(),
         }
     }
-}
 
-impl AppDriver for CalcState {
-    fn on_action(
+    fn ui_update(
         &mut self,
-        window_id: WindowId,
-        ctx: &mut DriverCtx<'_>,
+        render_root: &mut RenderRoot,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {
-        debug_assert_eq!(window_id, self.window_id, "unknown window");
-
-        let Some(source) = ctx.render_root(window_id).get_widget(widget_id) else {
+        let Some(source) = render_root.get_widget(widget_id) else {
             return;
         };
         let Some(button) = source.downcast::<Button>() else {
@@ -171,7 +177,7 @@ impl AppDriver for CalcState {
             CalcAction::None => (),
         }
 
-        ctx.render_root(window_id).edit_base_layer(|mut root| {
+        render_root.edit_base_layer(|mut root| {
             let mut grid = root.downcast();
             let mut flex = Grid::get_mut(&mut grid, 0);
             let mut flex = flex.downcast();
@@ -179,6 +185,20 @@ impl AppDriver for CalcState {
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);
         });
+    }
+}
+
+impl AppDriver for CalcState {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_>,
+        widget_id: WidgetId,
+        action: ErasedAction,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
+
+        self.ui_update(&mut ctx.render_root(window_id), widget_id, action);
     }
 }
 
@@ -213,6 +233,11 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
     button
 }
 
+const BTN_1: WidgetTag<Button> = WidgetTag::named("btn-1");
+const BTN_2: WidgetTag<Button> = WidgetTag::named("btn-2");
+const BTN_PLUS: WidgetTag<Button> = WidgetTag::named("btn-plus");
+const BTN_EQUALS: WidgetTag<Button> = WidgetTag::named("btn-equals");
+
 /// Build the widget tree
 pub fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
@@ -239,14 +264,14 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         .with(digit_button(5), GridParams::pos(1, 3))
         .with(digit_button(6), GridParams::pos(2, 3))
         .with(op_button('−'), GridParams::pos(3, 3))
-        .with(digit_button(1), GridParams::pos(0, 4))
-        .with(digit_button(2), GridParams::pos(1, 4))
+        .with(digit_button(1).with_tag(BTN_1), GridParams::pos(0, 4))
+        .with(digit_button(2).with_tag(BTN_2), GridParams::pos(1, 4))
         .with(digit_button(3), GridParams::pos(2, 4))
-        .with(op_button('+'), GridParams::pos(3, 4))
+        .with(op_button('+').with_tag(BTN_PLUS), GridParams::pos(3, 4))
         .with(op_button('±'), GridParams::pos(0, 5))
         .with(digit_button(0), GridParams::pos(1, 5))
         .with(op_button('.'), GridParams::pos(2, 5))
-        .with(op_button('='), GridParams::pos(3, 5));
+        .with(op_button('=').with_tag(BTN_EQUALS), GridParams::pos(3, 5));
 
     NewWidget::new(root_widget).with_props(
         PropertySet::new()
@@ -304,13 +329,7 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    let calc_state = CalcState {
-        value: "0".to_string(),
-        operand: 0.0,
-        operator: 'C',
-        in_num: false,
-        window_id: WindowId::next(),
-    };
+    let calc_state = CalcState::new();
 
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
@@ -331,12 +350,14 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry::core::PointerButton;
     use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
+        let mut state = CalcState::new();
         let mut harness = TestHarness::create_with(
             custom_property_set(),
             build_calc(),
@@ -344,6 +365,35 @@ mod tests {
         );
         assert_render_snapshot!(harness, "example_calc_masonry_initial");
 
-        // TODO - Test clicking buttons
+        let mut click_and_assert = |harness: &mut TestHarness<_>, tag: WidgetTag<Button>| {
+            let button = harness.get_widget(tag);
+            let id = button.id();
+            harness.mouse_click_on(id, Some(PointerButton::Primary));
+            state.ui_update(
+                harness.render_root(),
+                id,
+                Box::new(ButtonPress {
+                    button: Some(PointerButton::Primary),
+                }),
+            );
+            assert_eq!(
+                harness.pop_action::<ButtonPress>(),
+                Some((
+                    ButtonPress {
+                        button: Some(PointerButton::Primary),
+                    },
+                    id,
+                ))
+            );
+        };
+
+        click_and_assert(&mut harness, BTN_1);
+        assert_render_snapshot!(harness, "example_calc_masonry_after_1");
+        click_and_assert(&mut harness, BTN_PLUS);
+        click_and_assert(&mut harness, BTN_2);
+        click_and_assert(&mut harness, BTN_EQUALS);
+
+        // shows 3
+        assert_render_snapshot!(harness, "example_calc_masonry_after_1_plus_2_equals");
     }
 }

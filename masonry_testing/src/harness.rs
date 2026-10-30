@@ -571,6 +571,11 @@ impl<W: Widget> TestHarness<W> {
         RgbaImage::from_vec(image.width, image.height, image.data).expect("failed to create image")
     }
 
+    /// Returns render root of the harness
+    pub fn render_root(&mut self) -> &mut RenderRoot {
+        &mut self.render_root
+    }
+
     /// Redraws the window.
     ///
     /// If you want to get a bitmap image of the contents, use [`Self::render`] instead.
