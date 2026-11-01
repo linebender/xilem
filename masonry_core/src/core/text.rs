@@ -60,7 +60,7 @@ pub fn render_text(
             // https://drafts.csswg.org/css-text-decor/#painting-order
             if let Some(underline) = &style.underline {
                 let underline_brush = &brushes[underline.brush.0];
-                let run_metrics = glyph_run.run().metrics();
+                let run_metrics = glyph_run.run().font_metrics();
                 let offset = match underline.offset {
                     Some(offset) => offset,
                     None => run_metrics.underline_offset,
@@ -94,7 +94,11 @@ pub fn render_text(
             let glyph_xform = synthesis
                 .skew()
                 .map(|angle| Affine::skew(angle.to_radians().tan() as f64, 0.0));
-            let coords = run.normalized_coords();
+            let coords: SmallVec<[i16; 8]> = run
+                .normalized_coords()
+                .iter()
+                .map(|coord| coord.to_bits())
+                .collect();
             let brush = &brushes[style.brush.0];
             let glyphs: SmallVec<[Glyph; 16]> = glyph_run
                 .glyphs()
@@ -115,12 +119,12 @@ pub fn render_text(
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)
-                .normalized_coords(coords)
+                .normalized_coords(&coords)
                 .draw(&peniko::Style::Fill(Fill::NonZero), &glyphs);
 
             if let Some(strikethrough) = &style.strikethrough {
                 let strikethrough_brush = &brushes[strikethrough.brush.0];
-                let run_metrics = glyph_run.run().metrics();
+                let run_metrics = glyph_run.run().font_metrics();
                 let offset = match strikethrough.offset {
                     Some(offset) => offset,
                     None => run_metrics.strikethrough_offset,

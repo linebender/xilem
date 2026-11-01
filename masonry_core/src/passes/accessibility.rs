@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{Node, NodeId, Role, Tree, TreeId, TreeUpdate};
+use accesskit::{Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate};
 use kurbo::Rect;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -153,7 +153,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     let mut tree_update = TreeUpdate {
         tree_id: TreeId::ROOT,
         nodes: vec![],
-        tree: Some(Tree {
+        tree: Some(TreeInfo {
             root: root.global_state.window_node_id,
             toolkit_name: Some("Masonry".to_string()),
             toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
