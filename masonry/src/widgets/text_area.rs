@@ -10,9 +10,10 @@ use tracing::{Span, trace_span};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
-    MeasureCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
+    MeasureCtx, PaintCtx, PlainEditorAccessibility, PointerButton, PointerButtonEvent,
+    PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -47,6 +48,8 @@ use crate::{TextAlign, theme};
 pub struct TextArea<const USER_EDITABLE: bool> {
     /// The underlying `PlainEditor`, which provides a high-level interface for us to dispatch into.
     editor: PlainEditor<BrushIndex>,
+    /// Maps the editor's layout onto AccessKit nodes.
+    accessibility: PlainEditorAccessibility,
     /// Placeholder text exposed to accessibility APIs by an editable text area.
     placeholder: ArcStr,
     /// The generation of `editor` which we have rendered.
@@ -119,6 +122,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         editor.set_text(text);
         Self {
             editor,
+            accessibility: PlainEditorAccessibility::default(),
             placeholder: "".into(),
             rendered_generation: Generation::default(),
             word_wrap: true,
@@ -841,9 +845,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
                 let (fctx, lctx) = ctx.text_contexts();
-                self.editor
-                    .driver(fctx, lctx)
-                    .select_from_accesskit(selection);
+                self.accessibility
+                    .select_from_access_selection(&mut self.editor.driver(fctx, lctx), selection);
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     ctx.request_render();
@@ -1078,7 +1081,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let text_color = props.get::<ContentColor>(cache);
         let text_origin_in_border_box_space = Point::ORIGIN + ctx.border_box_translation();
 
-        let updated = self.editor.try_accessibility(
+        let updated = self.accessibility.build_nodes(
+            &self.editor,
             ctx.tree_update(),
             node,
             AccessCtx::next_node_id,

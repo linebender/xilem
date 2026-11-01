@@ -3,7 +3,7 @@
 
 use std::assert_matches;
 
-use accesskit_consumer::NodeId;
+use accesskit_consumer::FullNodeId;
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
 use crate::core::{NewWidget, Widget, WidgetTag};
@@ -86,7 +86,7 @@ fn access_node_children() {
     );
 }
 
-fn node_local_id_to_u64(node_id: NodeId) -> u64 {
+fn node_local_id_to_u64(node_id: FullNodeId) -> u64 {
     let node_id: u128 = node_id.into();
     (node_id >> 64) as u64
 }
