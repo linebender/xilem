@@ -214,7 +214,7 @@ mod tests {
                 text_layout_builder.push_default(StyleProperty::FontSize(size.height as f32));
                 let mut text_layout = text_layout_builder.build("Canvas");
                 text_layout.break_all_lines(None);
-                text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+                text_layout.align(Alignment::Start, AlignmentOptions::default());
                 let scale = Affine::scale_non_uniform(
                     size.width / text_layout.width() as f64,
                     size.height / text_layout.height() as f64,

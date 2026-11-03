@@ -33,7 +33,9 @@ use masonry_core::imaging::{ImageRenderer as _, Painter};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
-use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeId, TreeUpdate};
+use masonry_core::accesskit::{
+    Action, ActionRequest, Node, NodeId, Role, TreeId, TreeInfo, TreeUpdate,
+};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, VisualLayerKind, VisualLayerPlan,
@@ -379,7 +381,7 @@ impl<W: Widget> TestHarness<W> {
         let dummy_tree_update = TreeUpdate {
             tree_id: TreeId::ROOT,
             nodes: vec![(0.into(), Node::new(Role::Window))],
-            tree: Some(Tree {
+            tree: Some(TreeInfo {
                 root: 0.into(),
                 toolkit_name: None,
                 toolkit_version: None,
@@ -589,20 +591,10 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Returns a reference to the current value of a node of the accessibility tree.
-    pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::Node<'_>> {
-        let mut node_id = self.access_tree.state().root_id();
-        #[expect(
-            unsafe_code,
-            reason = "No public API exists for modifying/creating a accesskit_consumer::NodeId"
-        )]
-        // SAFETY: This hack isn't safe as there is no memory layout guarantee.
-        //         Remove when a public API becomes available.
-        //         https://github.com/AccessKit/accesskit/issues/701
-        unsafe {
-            let p = &mut node_id as *mut accesskit_consumer::NodeId as *mut u64;
-            core::ptr::write_unaligned(p, id.to_raw());
-        }
-        self.access_tree.state().node_by_id(node_id)
+    pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::NodeRef<'_>> {
+        self.access_tree
+            .state()
+            .node_by_tree_local_id(NodeId::from(id), TreeId::ROOT)
     }
 
     // --- MARK: EVENT HELPERS
@@ -1211,21 +1203,21 @@ impl<W: Widget> TestHarness<W> {
 struct NoOpTreeChangeHandler;
 
 impl accesskit_consumer::TreeChangeHandler for NoOpTreeChangeHandler {
-    fn node_added(&mut self, _node: &accesskit_consumer::Node<'_>) {}
+    fn node_added(&mut self, _node: &accesskit_consumer::NodeRef<'_>) {}
 
     fn node_updated(
         &mut self,
-        _old_node: &accesskit_consumer::Node<'_>,
-        _new_node: &accesskit_consumer::Node<'_>,
+        _old_node: &accesskit_consumer::NodeRef<'_>,
+        _new_node: &accesskit_consumer::NodeRef<'_>,
     ) {
     }
 
     fn focus_moved(
         &mut self,
-        _old_node: Option<&accesskit_consumer::Node<'_>>,
-        _new_node: Option<&accesskit_consumer::Node<'_>>,
+        _old_node: Option<&accesskit_consumer::NodeRef<'_>>,
+        _new_node: Option<&accesskit_consumer::NodeRef<'_>>,
     ) {
     }
 
-    fn node_removed(&mut self, _node: &accesskit_consumer::Node<'_>) {}
+    fn node_removed(&mut self, _node: &accesskit_consumer::NodeRef<'_>) {}
 }

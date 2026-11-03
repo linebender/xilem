@@ -10,14 +10,15 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, ArcStr, BrushIndex, ChildrenIds, LayoutCtx, MeasureCtx, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx,
-    UsesProperty, Widget, WidgetId, WidgetMut, render_text, set_accesskit_brush_properties,
+    AccessCtx, ArcStr, BrushIndex, ChildrenIds, LayoutAccessibility, LayoutCtx, MeasureCtx,
+    NoAction, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update,
+    UpdateCtx, UsesProperty, Widget, WidgetId, WidgetMut, render_text,
+    set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Size};
 use crate::layout::{AsUnit, LenReq, Length};
-use crate::parley::{FontContext, Layout, LayoutAccessibility, LayoutContext};
+use crate::parley::{FontContext, Layout, LayoutContext, YieldData};
 use crate::properties::{ContentColor, LineBreaking};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
@@ -110,11 +111,22 @@ impl TextLayout {
         }
         self.alignment = alignment;
         self.alignment_width = alignment_width;
-        self.layout.align(
-            Some(self.alignment_width),
-            self.alignment,
-            TextAlignOptions::default(),
-        );
+        // Parley takes the alignment width from line breaking, so we re-break with
+        // the same constraint and override each line's width.
+        let max_advance = self.max_advance.unwrap_or(f32::MAX);
+        let mut breaker = self.layout.break_lines();
+        breaker.state_mut().set_layout_max_advance(max_advance);
+        breaker.state_mut().set_line_max_advance(max_advance);
+        while let Some(yield_data) = breaker.break_next() {
+            debug_assert!(
+                matches!(yield_data, YieldData::LineBreak(_)),
+                "Label layouts have no inline boxes or max height"
+            );
+            breaker.set_prior_line_width(alignment_width);
+        }
+        breaker.finish();
+        self.layout
+            .align(self.alignment, TextAlignOptions::default());
     }
 
     /// Returns `true` if this layout would be the result for `max_advance`.
