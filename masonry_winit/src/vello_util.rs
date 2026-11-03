@@ -3,7 +3,7 @@
 
 //! Simple helpers for managing wgpu state and surfaces.
 //!
-//! This module is based on [`vello::util`] module with modifications
+//! This module is based on [`vello::util`](https://docs.rs/vello/latest/vello/util/index.html) module with modifications
 //! for transparent surfaces.
 
 use wgpu::util::{TextureBlitter, TextureBlitterBuilder};
@@ -307,10 +307,6 @@ impl RenderContext {
         };
 
         let requested_features = wgpu::Features::CLEAR_TEXTURE | self.requested_features;
-        #[cfg(feature = "tracy")]
-        let requested_features =
-            requested_features | wgpu_profiler::GpuProfiler::ALL_WGPU_TIMER_FEATURES;
-
         let required_features = supported_features & requested_features;
 
         let (device, queue) = adapter
