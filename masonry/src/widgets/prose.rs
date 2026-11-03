@@ -16,7 +16,7 @@ use crate::core::{
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LenReq, Length};
-use crate::properties::{CaretColor, SelectionColor};
+use crate::properties::{CaretColor, ContentColor, SelectionColor};
 use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
@@ -106,6 +106,7 @@ impl Prose {
 }
 
 impl UsesProperty<CaretColor> for Prose {}
+impl UsesProperty<ContentColor> for Prose {}
 impl UsesProperty<SelectionColor> for Prose {}
 
 // --- MARK: IMPL WIDGET
@@ -159,6 +160,13 @@ impl Widget for Prose {
                 let mut text_area = Self::text_mut(&mut input);
                 text_area.insert_prop(color);
             });
+        } else if property_type == TypeId::of::<ContentColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<ContentColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
         } else if property_type == TypeId::of::<SelectionColor>() {
             ctx.mutate_self_later(|mut input| {
                 let mut input = input.downcast::<Self>();
@@ -176,6 +184,12 @@ impl Widget for Prose {
                 ctx.mutate_self_later(|mut input| {
                     let mut input = input.downcast::<Self>();
                     let color = *input.get_prop::<CaretColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<ContentColor>();
                     let mut text_area = Self::text_mut(&mut input);
                     text_area.insert_prop(color);
                 });
@@ -260,7 +274,7 @@ mod tests {
     use crate::properties::Gap;
     use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::test_property_set;
+    use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, SizedBox, TextArea};
 
     #[test]
@@ -346,5 +360,37 @@ mod tests {
         harness.animate_ms(500 + 1);
 
         assert_render_snapshot!(harness, "prose_cursor_blink");
+    }
+
+    #[test]
+    fn edit_text() {
+        let image_1 = {
+            let prose = Prose::new("The quick brown fox jumps over the lazy dog")
+                .prepare()
+                .with_props(PropertySet::new().with(ContentColor::new(ACCENT_COLOR)));
+
+            let mut harness = TestHarness::create_with_size(test_property_set(), prose, (50, 50));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let prose = Prose::new("Hello world").prepare();
+
+            let mut harness = TestHarness::create_with_size(test_property_set(), prose, (50, 50));
+
+            harness.edit_root_widget(|mut prose| {
+                prose.insert_prop(ContentColor::new(ACCENT_COLOR));
+                TextArea::reset_text(
+                    &mut Prose::text_mut(&mut prose),
+                    "The quick brown fox jumps over the lazy dog",
+                );
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }
