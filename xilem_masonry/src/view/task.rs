@@ -5,21 +5,20 @@ use std::future::Future;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use tokio::task::JoinHandle;
-
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
     MessageCtx, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
+use crate::runtime::Handle;
 
 /// Launch a task which will run until the view is no longer in the tree.
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
-/// For example, this can be used with the time functions in [`tokio::time`].
+/// For example, this can be used with the time functions provided by the selected async runtime.
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
@@ -91,7 +90,7 @@ where
 {
     type Element = NoElement;
 
-    type ViewState = JoinHandle<()>;
+    type ViewState = Handle;
 
     fn build(&self, ctx: &mut ViewCtx, state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
