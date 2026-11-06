@@ -1364,4 +1364,41 @@ mod tests {
 
         assert_render_snapshot!(harness, "text_area_selection");
     }
+
+    #[test]
+    fn text_paste() {
+        let area = NewWidget::new(TextArea::new_editable("[Initial]"));
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let area_id = harness.root_id();
+
+        let modifiers = if cfg!(target_os = "macos") {
+            Modifiers::META
+        } else {
+            Modifiers::CONTROL
+        };
+
+        harness.focus_on(Some(area_id));
+        harness.edit_root_widget(|mut area| {
+            TextArea::select_text(&mut area, "Initial");
+        });
+
+        harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+            state: KeyState::Down,
+            key: Key::Character("c".into()),
+            modifiers,
+            ..Default::default()
+        }));
+        assert_eq!(harness.clipboard_contents(), "Initial");
+        assert_eq!(harness.root_widget().text().to_string(), "[Initial]");
+        assert!(harness.pop_action_erased().is_none());
+
+        harness.process_text_event(TextEvent::ClipboardPaste("<PASTED>".into()));
+
+        // shows [<PASTED>] replacing "Initial"
+        assert_eq!(harness.root_widget().text().to_string(), "[<PASTED>]");
+        assert_eq!(
+            harness.pop_action::<TextAction>(),
+            Some((TextAction::Changed("[<PASTED>]".into()), area_id)),
+        );
+    }
 }
