@@ -1339,23 +1339,8 @@ mod tests {
 
         assert_render_snapshot!(harness, "text_area_no_selection");
 
-        let (start, end) = {
-            let node = harness
-                .access_node(area_id)
-                .expect("node for text_area should exist");
-
-            let point_at = |index| {
-                let position = node
-                    .text_position_from_global_usv_index(index)
-                    .expect("character index out of bounds");
-                let boxes = position.to_degenerate_range().bounding_boxes();
-                let caret = boxes.first().expect("missing box for position");
-                ((caret.x0 + caret.x1) / 2.0, (caret.y0 + caret.y1) / 2.0)
-            };
-
-            // selecting "llo w"
-            (point_at(2), point_at(7))
-        };
+        // selecting "llo w"
+        let (start, end) = caret_range(&harness, area_id, 2, 7);
 
         harness.mouse_move(start);
         harness.mouse_button_press(Some(PointerButton::Primary));
@@ -1363,5 +1348,68 @@ mod tests {
         harness.mouse_button_release(Some(PointerButton::Primary));
 
         assert_render_snapshot!(harness, "text_area_selection");
+    }
+
+    fn caret_range(
+        harness: &TestHarness<TextArea<true>>,
+        area_id: WidgetId,
+        start: usize,
+        end: usize,
+    ) -> ((f64, f64), (f64, f64)) {
+        let node = harness
+            .access_node(area_id)
+            .expect("node for text_area should exist");
+
+        let point_at = |index| {
+            let position = node
+                .text_position_from_global_usv_index(index)
+                .expect("character index out of bounds");
+            let boxes = position.to_degenerate_range().bounding_boxes();
+            let caret = boxes.first().expect("missing box for position");
+            ((caret.x0 + caret.x1) / 2.0, (caret.y0 + caret.y1) / 2.0)
+        };
+
+        (point_at(start), point_at(end))
+    }
+
+    #[test]
+    fn text_paste() {
+        let area = NewWidget::new(TextArea::new_editable("[Initial]"));
+        let mut harness = TestHarness::create(test_property_set(), area);
+        let area_id = harness.root_id();
+
+        let modifiers = if cfg!(target_os = "macos") {
+            Modifiers::META
+        } else {
+            Modifiers::CONTROL
+        };
+
+        let (start, end) = caret_range(&harness, area_id, 1, 8);
+
+        harness.mouse_move(start);
+        harness.mouse_button_press(Some(PointerButton::Primary));
+        harness.mouse_move(end);
+        harness.mouse_button_release(Some(PointerButton::Primary));
+
+        harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+            state: KeyState::Down,
+            key: Key::Character("c".into()),
+            modifiers,
+            ..Default::default()
+        }));
+        assert_eq!(harness.clipboard_contents(), "Initial");
+        assert_eq!(harness.root_widget().text().to_string(), "[Initial]");
+        assert!(harness.pop_action_erased().is_none());
+
+        harness.process_text_event(TextEvent::ClipboardPaste("<PASTED>".into()));
+
+        // shows [<PASTED>] replacing "Initial"
+        assert_eq!(harness.root_widget().text().to_string(), "[<PASTED>]");
+        assert_eq!(
+            harness.pop_action::<TextAction>(),
+            Some((TextAction::Changed("[<PASTED>]".into()), area_id)),
+        );
+
+        assert_render_snapshot!(harness, "text_area_pasted");
     }
 }
