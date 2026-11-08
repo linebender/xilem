@@ -254,7 +254,7 @@ impl RenderContext {
         unsafe {
             if let Some(hal_surface) = surface.surface.as_hal::<::wgpu::hal::api::Metal>() {
                 let guard = hal_surface.render_layer().lock();
-                guard.set_presents_with_transaction(resizing);
+                guard.setPresentsWithTransaction(resizing);
             }
         }
 
