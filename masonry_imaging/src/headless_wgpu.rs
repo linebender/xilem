@@ -31,6 +31,7 @@ pub(crate) fn try_init_device_and_queue() -> Result<(wgpu::Device, wgpu::Queue),
                 power_preference: wgpu::PowerPreference::default(),
                 force_fallback_adapter: false,
                 compatible_surface: None,
+                apply_limit_buckets: false,
             })
             .await
             .map_err(|_| InitError::NoAdapter)?;
