@@ -12,6 +12,7 @@ use wgpu::{
     MemoryBudgetThresholds, MemoryHints, PresentMode, Surface, SurfaceConfiguration, Texture,
     TextureFormat, TextureUsages, TextureView,
 };
+use winit::event_loop::OwnedDisplayHandle;
 
 use crate::app_driver::WgpuLimits;
 
@@ -57,15 +58,18 @@ pub(crate) struct DeviceHandle {
 }
 
 impl RenderContext {
-    pub(crate) fn new() -> Self {
+    /// Creates a render context for windows on the given `display`.
+    pub(crate) fn new(display: OwnedDisplayHandle) -> Self {
         let backends = wgpu::Backends::from_env().unwrap_or_default();
         let flags = wgpu::InstanceFlags::from_build_config().with_env();
         let backend_options = wgpu::BackendOptions::from_env_or_default();
-        let instance = Instance::new(&wgpu::InstanceDescriptor {
+        let instance = Instance::new(wgpu::InstanceDescriptor {
             backends,
             flags,
             backend_options,
             memory_budget_thresholds: MemoryBudgetThresholds::default(),
+            // Some backends require the display to be present, like GLES.
+            display: Some(Box::new(display)),
         });
         Self {
             instance,
@@ -199,6 +203,7 @@ impl RenderContext {
             desired_maximum_frame_latency: 2,
             alpha_mode,
             view_formats: vec![],
+            color_space: wgpu::SurfaceColorSpace::Auto,
         };
         let (target_texture, target_view) = create_targets(width, height, &device_handle.device);
 
