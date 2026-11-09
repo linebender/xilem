@@ -480,6 +480,83 @@ fn remove_focusable() {
     assert_eq!(harness.focused_widget_id(), Some(button1_id));
 }
 
+#[test]
+fn auto_focus_on_add() {
+    let button_tag = WidgetTag::named("button");
+    let button = NewWidget::new(Button::with_text(""))
+        .with_tag(button_tag)
+        .with_auto_focus(true);
+
+    let mut harness = TestHarness::create(test_property_set(), button);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // A widget with `auto_focus` gets focused automatically when it is added to the tree.
+    assert_eq!(harness.focused_widget_id(), Some(button_id));
+}
+
+#[test]
+fn auto_focus_first_in_tree_order() {
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+
+    let button1 = NewWidget::new(Button::with_text(""))
+        .with_tag(button1_tag)
+        .with_auto_focus(true);
+    let button2 = NewWidget::new(Button::with_text(""))
+        .with_tag(button2_tag)
+        .with_auto_focus(true);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button1, button2]));
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button1_id = harness.get_widget(button1_tag).id();
+
+    // When several widgets ask for auto-focus at once, the first in tree order becomes focused.
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
+#[test]
+fn auto_focus_on_unstash() {
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+
+    let button1 = NewWidget::new(Button::with_text("")).with_tag(button1_tag);
+    let button2 = NewWidget::new(Button::with_text(""))
+        .with_tag(button2_tag)
+        .with_auto_focus(true);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button1, button2]));
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button2_id = harness.get_widget(button2_tag).id();
+
+    // Stashing the auto-focus widget gives up focus.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], true);
+    });
+    assert_eq!(harness.focused_widget_id(), None);
+
+    // Un-stashing it counts as appearing, so it gets focused again.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], false);
+    });
+    assert_eq!(harness.focused_widget_id(), Some(button2_id));
+}
+
+#[test]
+fn mutate_focus_subtree_and_resign() {
+    let button_tag = WidgetTag::named("button");
+    let button = NewWidget::new(Button::with_text("")).with_tag(button_tag);
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button]));
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // `focus_subtree` on the (non-focusable) parent sets the focus of a sibling down the tree.
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.focus_subtree();
+    });
+    assert_eq!(harness.focused_widget_id(), Some(button_id));
+}
+
 // FOCUS
 
 #[test]
