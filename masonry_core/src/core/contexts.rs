@@ -583,7 +583,7 @@ impl_context_method!(MutateCtx<'_>, ActionCtx<'_>, EventCtx<'_>, {
     /// Requests [text focus] for the first focusable widget in this widget's subtree
     /// (this widget itself if it is focusable).
     ///
-    /// Unlike [`set_focus`](Self::set_focus), the target is resolved from the subtree during
+    /// Unlike [`set_focus`](EventCtx::set_focus), the target is resolved from the subtree during
     /// the following `update_focus` pass, so the caller doesn't need to know the id of the
     /// (possibly nested) focusable widget. This is what Xilem's `.focus(true)` uses, since the
     /// modifier only knows the wrapper widget (e.g. `TextInput`), not the inner focusable one

@@ -487,7 +487,7 @@ fn auto_focus_on_add() {
         .with_tag(button_tag)
         .with_auto_focus(true);
 
-    let mut harness = TestHarness::create(test_property_set(), button);
+    let harness = TestHarness::create(test_property_set(), button);
     let button_id = harness.get_widget(button_tag).id();
 
     // A widget with `auto_focus` gets focused automatically when it is added to the tree.
@@ -507,7 +507,7 @@ fn auto_focus_first_in_tree_order() {
         .with_auto_focus(true);
 
     let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![button1, button2]));
-    let mut harness = TestHarness::create(test_property_set(), parent);
+    let harness = TestHarness::create(test_property_set(), parent);
     let button1_id = harness.get_widget(button1_tag).id();
 
     // When several widgets ask for auto-focus at once, the first in tree order becomes focused.

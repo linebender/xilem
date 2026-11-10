@@ -12,7 +12,7 @@
 //! - [`focus`](Focusable::focus): an imperative, edge-triggered command — focus on the
 //!   rising edge of a `bool`, the falling edge is ignored.
 //!
-//! [text focus]: masonry::doc::masonry_concepts#text-focus
+//! [text focus]: masonry::doc::internals_02_masonry_concepts#text-focus
 
 use std::marker::PhantomData;
 
@@ -31,7 +31,7 @@ pub trait Focusable<State: 'static, Action: 'static>: WidgetView<State, Action> 
     /// wins. The focus target is resolved to the first focusable widget in this view's
     /// subtree, so it works for wrappers like `text_input` whose focusable widget is nested.
     ///
-    /// [text focus]: masonry::doc::masonry_concepts#text-focus
+    /// [text focus]: masonry::doc::internals_02_masonry_concepts#text-focus
     fn focus_on_appear(self, on_appear: bool) -> FocusOnAppear<Self, State, Action> {
         FocusOnAppear {
             child: self,
@@ -43,14 +43,14 @@ pub trait Focusable<State: 'static, Action: 'static>: WidgetView<State, Action> 
     /// Imperatively moves [text focus] on the *edge* of `focused`:
     ///
     /// - on the rising edge (`false` -> `true`) this control's subtree takes focus;
-    /// - on the falling edge this controls ignors the signal.
+    /// - on the falling edge this controls ignores the signal.
     ///
     /// This is **edge-triggered, not level-triggered**: the initial value never fires (use
     /// [`focus_on_appear`](Self::focus_on_appear) for focus-on-load), and a steady `true`
     /// does not re-grab focus after the user tabs away. To focus again, toggle the value off
     /// and on. Typically driven from a `bool` in app state.
     ///
-    /// [text focus]: masonry::doc::masonry_concepts#text-focus
+    /// [text focus]: masonry::doc::internals_02_masonry_concepts#text-focus
     fn focus(self, focused: bool) -> Focused<Self, State, Action> {
         Focused {
             child: self,
@@ -168,27 +168,9 @@ where
             element.reborrow_mut(),
             app_state,
         );
-        //
-        if self.focused != prev.focused {
-            if self.focused {
-                element.ctx.focus_subtree();
-            }
-            /*
-            // Why is this uncommented?
-            // Before the focus was lost on falling edge.
-            // it worked well. Unfortumnately this behaviour
-            // made it impossible to focus the same control
-            // a second time. The reason is: Somewhere in time
-            // the developr has to pull the boolean flag back
-            // to false. It would remove the focus then. This could
-            // lead to side effects.
-            // This code was kept for reference.
-            else if element.ctx.has_focus_target() {
-                // Guarded so the falling edge does nothing when focus was already lost
-                // (e.g. the user tabbed away).
-                element.ctx.resign_focus();
-            }
-            */
+        // Only on rising edge focus subtree.
+        if self.focused && !prev.focused {
+            element.ctx.focus_subtree();
         }
     }
     fn teardown(
