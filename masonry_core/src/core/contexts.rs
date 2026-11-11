@@ -592,7 +592,9 @@ impl_context_method!(MutateCtx<'_>, ActionCtx<'_>, EventCtx<'_>, {
     /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn focus_subtree(&mut self) {
         trace!("focus_subtree");
-        self.global_state.focus_subtree_pending = Some(self.widget_id());
+        self.global_state
+            .focus_subtree_pending
+            .push(self.widget_id());
     }
 
     /// Sets whether this widget requests focus when it next appears (is added or un-stashed).

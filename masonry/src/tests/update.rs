@@ -515,6 +515,28 @@ fn auto_focus_first_in_tree_order() {
 }
 
 #[test]
+fn auto_focus_skips_candidate_without_focusable_widget() {
+    let button_tag = WidgetTag::named("button");
+
+    // A label is not focusable. It has nothing to focus in the subtree.
+    let label = NewWidget::new(Label::new("")).with_auto_focus(true);
+    let button = NewWidget::new(Button::with_text(""))
+        .with_tag(button_tag)
+        .with_auto_focus(true);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        label.erased(),
+        button.erased(),
+    ]));
+    let harness = TestHarness::create(test_property_set(), parent);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // The label comes first in tree order but has no focusable widget,
+    // so it is skipped instead of blocking the button.
+    assert_eq!(harness.focused_widget_id(), Some(button_id));
+}
+
+#[test]
 fn auto_focus_on_unstash() {
     let button1_tag = WidgetTag::named("button1");
     let button2_tag = WidgetTag::named("button2");
@@ -555,6 +577,36 @@ fn mutate_focus_subtree_and_resign() {
         parent.ctx.focus_subtree();
     });
     assert_eq!(harness.focused_widget_id(), Some(button_id));
+}
+
+#[test]
+fn focus_subtree_first_valid_candidate_is_prioritised() {
+    let button1_tag = WidgetTag::named("button1");
+    let button2_tag = WidgetTag::named("button2");
+
+    let label = NewWidget::new(Label::new(""));
+    let button1 = NewWidget::new(Button::with_text("")).with_tag(button1_tag);
+    let button2 = NewWidget::new(Button::with_text("")).with_tag(button2_tag);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        label.erased(),
+        button1.erased(),
+        button2.erased(),
+    ]));
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let button1_id = harness.get_widget(button1_tag).id();
+
+    // Three requests in the same frame:
+    // 1. The label has no focusable widget and is skipped.
+    // 2. button1 is the first one that's valid.
+    // 3. button2 does not. Override it.
+    harness.edit_root_widget(|mut parent| {
+        for idx in 0..3 {
+            let mut child = parent.ctx.get_mut(&mut parent.widget.state[idx]);
+            child.ctx.focus_subtree();
+        }
+    });
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
 }
 
 // FOCUS

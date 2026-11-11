@@ -474,7 +474,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 fn update_focusable_for_widget(
     node: ArenaMut<'_, WidgetArenaNode>,
-    autofocus_candidate: &mut Option<WidgetId>,
+    autofocus_candidates: &mut Vec<WidgetId>,
 ) {
     let children = node.children;
     let widget = &mut *node.item.widget;
@@ -487,14 +487,13 @@ fn update_focusable_for_widget(
         return;
     }
 
-    // A widget with `auto_focus` requests focus the first time it appears (on creation or
-    // when un-stashed); `just_appeared` is the flag. We remember the first widget in
-    // tree order, so that a top-most control gets focused when several controls appear
-    // at once. The actual focus target is resolved after the pass (see caller), because
-    // it may be a focusable descendant rather than this widget itself.
-    if autofocus_candidate.is_none() && state.auto_focus && state.just_appeared && !state.is_stashed
-    {
-        *autofocus_candidate = Some(id);
+    // Collect all candidates in tree order. The caller picks the first one whose
+    // subtree contains a focusable widget. This is only known after all children have
+    // been visited.
+    // Picking the first candidate here could select one without a
+    // focusable widget which would block the candidates following.
+    if state.auto_focus && state.just_appeared && !state.is_stashed {
+        autofocus_candidates.push(id);
     }
     state.just_appeared = false;
     state.descendant_is_focusable = false;
@@ -505,7 +504,7 @@ fn update_focusable_for_widget(
 
     let parent_state = &mut *state;
     recurse_on_children(id, widget, children, |mut node| {
-        update_focusable_for_widget(node.reborrow_mut(), autofocus_candidate);
+        update_focusable_for_widget(node.reborrow_mut(), autofocus_candidates);
 
         if node.item.state.descendant_is_focusable {
             parent_state.descendant_is_focusable = true;
@@ -518,15 +517,17 @@ fn update_focusable_for_widget(
 pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focusable").entered();
 
-    let mut autofocus_candidate = None;
+    let mut autofocus_candidates = Vec::new();
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    update_focusable_for_widget(root_node, &mut autofocus_candidate);
+    update_focusable_for_widget(root_node, &mut autofocus_candidates);
 
-    // A widget asked to be focused when it appeared. Resolve it to the first focusable
-    // widget in its subtree (itself if it is focusable) and focus that. This overrides any
-    // previous focus, which is the point: the freshly-shown control takes focus.
-    if let Some(id) = autofocus_candidate
-        && let Some(target) = find_first_focusable(root, &[], id, true)
+    // The first candidate in tree order whose subtree contains a focusable widget is picked.
+    // Candidates without focusables are skipped, so they cannot block a later candidate.
+    // This overrides any previous focus, which is what we want:
+    // the currently shown control takes focus.
+    if let Some(target) = autofocus_candidates
+        .into_iter()
+        .find_map(|id| find_first_focusable(root, &[], id, true))
     {
         root.global_state.next_focused_widget = Some(target);
     }
@@ -649,12 +650,16 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     // focus the first focusable widget in the requesting widget's subtree.
     // Done here instead of in the mutate pass because `descendant_is_focusable` is only
     // up to date after the focusable pass, which runs just before this one.
-    if let Some(id) = root.global_state.focus_subtree_pending.take()
-        && root.has_widget(id)
-        && let Some(target) = find_first_focusable(root, &[], id, true)
-    {
-        root.global_state.next_focused_widget = Some(target);
+    let pending = std::mem::take(&mut root.global_state.focus_subtree_pending);
+    for id in pending {
+        if root.has_widget(id)
+            && let Some(target) = find_first_focusable(root, &[], id, true)
+        {
+            root.global_state.next_focused_widget = Some(target);
+            break;
+        }
     }
+
     // If the next-focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.global_state.next_focused_widget

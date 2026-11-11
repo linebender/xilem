@@ -31,6 +31,8 @@ struct FocusDemo {
     name: String,
     /// Contents of the imperatively focused field.
     note: String,
+    /// Contents of the second text field. It should never get focused.
+    note2: String,
     /// Drives `.focus(bool)` on the note field (edge-triggered).
     focus_note: bool,
     /// Drives `.focus(bool)` on the button (edge-triggered).
@@ -62,11 +64,13 @@ fn app_logic(data: &mut FocusDemo) -> impl WidgetView<FocusDemo> + use<> {
         ))
         .active(data.page),
         divider_h(),
-        label("focus(bool): edge-triggered. Rising edge focuses, falling edge removes focus."),
+        label("focus(bool): edge-triggered. Rising edge focuses."),
         text_input(data.note.clone(), |data: &mut FocusDemo, v| data.note = v)
             .focus(data.focus_note),
+        text_input(data.note2.clone(), |data: &mut FocusDemo, v| data.note2 = v)
+            .focus(data.focus_note), // <- Should be ignored!
         checkbox(
-            "focus second text_input on rising edge.",
+            "focus first text_input on rising edge.",
             data.focus_note,
             |data: &mut FocusDemo, checked| data.focus_note = checked,
         ),
@@ -86,6 +90,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         autofocus: true,
         name: "Xilem is powerful.".into(),
         note: String::new(),
+        note2: "Should be ignored.".into(),
         focus_note: false,
         focus_button: false,
     };

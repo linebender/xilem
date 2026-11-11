@@ -28,8 +28,11 @@ pub trait Focusable<State: 'static, Action: 'static>: WidgetView<State, Action> 
     ///
     /// This is a setting read at appear-time; passing `false` turns it off. If several
     /// controls request focus-on-appear in the same frame, the first one in tree (tab) order
-    /// wins. The focus target is resolved to the first focusable widget in this view's
-    /// subtree, so it works for wrappers like `text_input` whose focusable widget is nested.
+    /// that contains a focusable widget gets chosen. Controls without a focusable
+    /// widget are skipped.
+    /// The focus target is resolved to the first focusable widget in this view's
+    /// subtree (the view's own widget if it is focusable), so it works for wrappers like
+    /// `text_input` whose focusable widget is nested.
     ///
     /// [text focus]: masonry::doc::internals_02_masonry_concepts#text-focus
     fn focus_on_appear(self, on_appear: bool) -> FocusOnAppear<Self, State, Action> {
