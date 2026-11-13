@@ -168,6 +168,11 @@ pub(crate) struct WidgetState {
     /// Tracks whether widget gets text focus.
     /// Should be immutable after `WidgetAdded` event.
     pub(crate) accepts_focus: bool,
+    /// Specifies that the widget or one of its child elements receives
+    /// focus as soon as it is displayed (added or un-stashed).
+    /// Unlike `accepts_focus`, this is mutable after creation (e.g. via
+    /// [`MutateCtx::set_auto_focus`](crate::core::MutateCtx::set_auto_focus)).
+    pub(crate) auto_focus: bool,
 
     /// Tracks whether widget is eligible for IME events.
     /// Should be immutable after `WidgetAdded` event.
@@ -179,6 +184,9 @@ pub(crate) struct WidgetState {
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
     pub(crate) is_new: bool,
+    /// This widget was just added to the tree or un-stashed.
+    /// Transient flag used by i.e. the focusable pass to fire `auto_focus`
+    pub(crate) just_appeared: bool,
 
     /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
@@ -311,10 +319,12 @@ impl WidgetState {
             accepts_pointer_interaction: true,
             propagates_pointer_interaction: true,
             accepts_focus: false,
+            auto_focus: options.auto_focus,
             accepts_text_input: false,
             ime_area: None,
 
             is_new: true,
+            just_appeared: true,
             is_expecting_place_child_call: false,
             request_layout: true,
             needs_layout: true,

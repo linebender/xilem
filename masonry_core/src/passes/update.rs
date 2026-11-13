@@ -435,6 +435,8 @@ fn update_stashed_for_widget(
             state.needs_paint = true;
             state.needs_accessibility = true;
             state.request_accessibility = true;
+            // Unstashing counts as the widget "appearing", so `auto_focus` can be applied again.
+            state.just_appeared = true;
         }
     }
 
@@ -470,7 +472,10 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // --- MARK: FOCUSABLE
 
-fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
+fn update_focusable_for_widget(
+    node: ArenaMut<'_, WidgetArenaNode>,
+    autofocus_candidates: &mut Vec<WidgetId>,
+) {
     let children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
@@ -482,6 +487,15 @@ fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
         return;
     }
 
+    // Collect all candidates in tree order. The caller picks the first one whose
+    // subtree contains a focusable widget. This is only known after all children have
+    // been visited.
+    // Picking the first candidate here could select one without a
+    // focusable widget which would block the candidates following.
+    if state.auto_focus && state.just_appeared && !state.is_stashed {
+        autofocus_candidates.push(id);
+    }
+    state.just_appeared = false;
     state.descendant_is_focusable = false;
 
     if state.accepts_focus && !state.is_disabled && !state.is_stashed {
@@ -490,7 +504,7 @@ fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
 
     let parent_state = &mut *state;
     recurse_on_children(id, widget, children, |mut node| {
-        update_focusable_for_widget(node.reborrow_mut());
+        update_focusable_for_widget(node.reborrow_mut(), autofocus_candidates);
 
         if node.item.state.descendant_is_focusable {
             parent_state.descendant_is_focusable = true;
@@ -503,8 +517,20 @@ fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
 pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focusable").entered();
 
+    let mut autofocus_candidates = Vec::new();
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    update_focusable_for_widget(root_node);
+    update_focusable_for_widget(root_node, &mut autofocus_candidates);
+
+    // The first candidate in tree order whose subtree contains a focusable widget is picked.
+    // Candidates without focusables are skipped, so they cannot block a later candidate.
+    // This overrides any previous focus, which is what we want:
+    // the currently shown control takes focus.
+    if let Some(target) = autofocus_candidates
+        .into_iter()
+        .find_map(|id| find_first_focusable(root, &[], id, true))
+    {
+        root.global_state.next_focused_widget = Some(target);
+    }
 }
 
 pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
@@ -618,6 +644,22 @@ fn find_first_focusable(
 /// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
+
+    // Resolve a deferred subtree-focus request (Autofocus/Focus)
+    // i.e. from `MutateCtx::focus_subtree`, Xilem's `.focus(true)`:
+    // focus the first focusable widget in the requesting widget's subtree.
+    // Done here instead of in the mutate pass because `descendant_is_focusable` is only
+    // up to date after the focusable pass, which runs just before this one.
+    let pending = std::mem::take(&mut root.global_state.focus_subtree_pending);
+    for id in pending {
+        if root.has_widget(id)
+            && let Some(target) = find_first_focusable(root, &[], id, true)
+        {
+            root.global_state.next_focused_widget = Some(target);
+            break;
+        }
+    }
+
     // If the next-focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.global_state.next_focused_widget

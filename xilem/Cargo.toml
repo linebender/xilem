@@ -154,6 +154,9 @@ crate-type = ["cdylib"]
 [[example]]
 name = "canvas"
 
+[[example]]
+name = "auto_focus"
+
 [[test]]
 name = "long_elem_seq"
 path = "stress_tests/long_elem_seq.rs"

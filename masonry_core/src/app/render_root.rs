@@ -104,6 +104,11 @@ pub(crate) struct RenderRootState {
     /// Widget which will get text events if no widget is focused.
     pub(crate) focus_fallback: Option<WidgetId>,
 
+    /// Widget whose subtree was asked to receive focus via `MutateCtx::focus_subtree`.
+    ///
+    /// Resolved to the first focusable widget in that subtree during the `update_focus` pass.
+    pub(crate) focus_subtree_pending: Vec<WidgetId>,
+
     /// Whether the window is focused.
     pub(crate) window_focused: bool,
 
@@ -347,6 +352,7 @@ impl RenderRoot {
                 next_focused_widget: None,
                 focus_anchor: None,
                 focus_fallback: None,
+                focus_subtree_pending: Vec::new(),
                 window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
