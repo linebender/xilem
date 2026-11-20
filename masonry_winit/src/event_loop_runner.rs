@@ -28,7 +28,7 @@ use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
-use winit::event_loop::ActiveEventLoop;
+use winit::event_loop::{ActiveEventLoop, OwnedDisplayHandle};
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
@@ -288,6 +288,7 @@ pub fn run_with(
     let mut main_state = MainState {
         masonry_state: MasonryState::new(
             event_loop.create_proxy(),
+            event_loop.owned_display_handle(),
             new_windows,
             default_properties,
         ),
@@ -385,10 +386,12 @@ impl MasonryState {
     /// Creates the Masonry application's composition root.
     ///
     /// - `event_loop_proxy`: a queue provided by [`EventLoop::create_proxy`](winit::event_loop::EventLoop::create_proxy) to send custom events (mostly accessibility) to your event loop.
+    /// - `display`: the display of your event loop, provided by [`EventLoop::owned_display_handle`](winit::event_loop::EventLoop::owned_display_handle).
     /// - `new_windows`: the initial list of windows.
     /// - `default_properties`: the default properties for all the widgets of the app.
     pub fn new(
         event_loop_proxy: EventLoopProxy,
+        display: OwnedDisplayHandle,
         new_windows: Vec<NewWindow>,
         default_properties: DefaultProperties,
     ) -> Self {
@@ -397,7 +400,7 @@ impl MasonryState {
             "selected Masonry Winit render backend"
         );
 
-        let render_cx = RenderContext::new();
+        let render_cx = RenderContext::new(display);
 
         let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
 
@@ -749,27 +752,42 @@ impl MasonryState {
         window: &Window,
         render_cx: &RenderContext,
     ) -> Option<wgpu::SurfaceTexture> {
-        match surface.surface.get_current_texture() {
-            Ok(texture) => Some(texture),
-            Err(wgpu::SurfaceError::Outdated) => {
-                let size = window.handle.inner_size();
-                render_cx.resize_surface(surface, size.width, size.height);
+        use wgpu::CurrentSurfaceTexture;
 
-                match surface.surface.get_current_texture() {
-                    Ok(texture) => Some(texture),
-                    Err(err) => {
-                        // This is a common occurrence on X11 and Xwayland with NVIDIA drivers
-                        // when opening and resizing the window.
-                        tracing::error!(
-                            "Couldn't get swap chain texture after configuring. Cause: '{err}'"
-                        );
-                        None
-                    }
+        let mut reconfigured = false;
+        loop {
+            match surface.surface.get_current_texture() {
+                // TODO: in case of `Suboptimal`, wgpu recommends reconfiguring the surface. We
+                // could consider adding a `RenderSurface::needs_reconfigure` flag, set it in
+                // case of `Suboptimal`, and reconfigure before the next acquire.
+                CurrentSurfaceTexture::Success(texture)
+                | CurrentSurfaceTexture::Suboptimal(texture) => return Some(texture),
+                CurrentSurfaceTexture::Outdated if !reconfigured => {
+                    let size = window.handle.inner_size();
+                    render_cx.resize_surface(surface, size.width, size.height);
+                    reconfigured = true;
                 }
-            }
-            Err(err) => {
-                tracing::error!("Couldn't get swap chain texture, operation unrecoverable: {err}");
-                None
+                // wgpu recommends skipping the frame in these cases.
+                reason @ (CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded) => {
+                    tracing::debug!(
+                        "Skipping frame, swap chain texture not available: '{reason:?}'"
+                    );
+                    return None;
+                }
+                other if reconfigured => {
+                    // This is a common occurrence on X11 and Xwayland with NVIDIA drivers
+                    // when opening and resizing the window.
+                    tracing::error!(
+                        "Couldn't get swap chain texture after configuring. Cause: '{other:?}'"
+                    );
+                    return None;
+                }
+                other => {
+                    tracing::error!(
+                        "Couldn't get swap chain texture, operation unrecoverable: {other:?}"
+                    );
+                    return None;
+                }
             }
         }
     }
@@ -795,7 +813,7 @@ impl MasonryState {
         );
         queue.submit([encoder.finish()]);
         window.pre_present_notify();
-        surface_texture.present();
+        queue.present(surface_texture);
         {
             let _render_poll_span =
                 tracing::info_span!("Waiting for GPU to finish rendering").entered();

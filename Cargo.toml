@@ -55,13 +55,16 @@ tree_arena = { version = "0.2.0", path = "tree_arena" }
 include_doc_path = { version = "0.1.0", path = "include_doc_path", package = "linebender_include_doc_path" }
 
 anymore = "1.0.0"
-imaging = "0.0.1"
-imaging_wgpu = { version = "0.0.1", features = ["wgpu-28"] }
-imaging_skia = { version = "0.0.1", features = ["gpu"] }
-imaging_vello = "0.0.1"
-imaging_vello_hybrid = "0.0.1"
-imaging_vello_cpu = "0.0.1"
-wgpu = "28.0.0"
+# TODO: Switch back to released versions once imaging publishes its wgpu 30 support.
+imaging = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
+imaging_wgpu = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
+imaging_skia = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b", features = [
+    "gpu",
+] }
+imaging_vello = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
+imaging_vello_hybrid = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
+imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
+wgpu = "30.0.1"
 kurbo = "0.13.1"
 parley = { version = "0.8.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.

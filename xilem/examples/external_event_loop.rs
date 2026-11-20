@@ -135,6 +135,7 @@ fn main() -> Result<(), EventLoopError> {
         xilem.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
     let masonry_state = masonry_winit::app::MasonryState::new(
         event_loop.create_proxy(),
+        event_loop.owned_display_handle(),
         windows,
         default_property_set(),
     );
