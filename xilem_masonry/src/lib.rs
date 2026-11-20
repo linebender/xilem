@@ -35,6 +35,7 @@
 pub use masonry;
 pub use xilem_core as core;
 
+pub mod focus;
 pub mod style;
 pub mod view;
 

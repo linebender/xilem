@@ -654,7 +654,7 @@ mod macos {
     pub trait WindowOptionsExtMacOS {
         /// Hides the window titlebar while keeping the traffic-light buttons and border.
         ///
-        /// Combine with [`with_fullsize_content_view`] and [`with_title_hidden`] to get a
+        /// Combine with [`with_fullsize_content_view`](Self::with_fullsize_content_view) and [`with_title_hidden`](Self::with_title_hidden) to get a
         /// clean window that still has native decorations.
         fn with_titlebar_hidden(self, hidden: bool) -> Self;
 

@@ -574,6 +574,37 @@ impl_context_method!(ActionCtx<'_>, EventCtx<'_>, {
     }
 });
 
+// --- MARK: FOCUS
+// Some focus-changing methods are shared by every context that can change
+// focus: `MutateCtx` (so app code can move focus during the mutate/rebuild phase, e.g.
+// Xilem's `.focus(...)`/`.focus_on_appear(...)`), and `ActionCtx`/`EventCtx` (so widgets can
+// move focus while handling actions/events).
+impl_context_method!(MutateCtx<'_>, ActionCtx<'_>, EventCtx<'_>, {
+    /// Requests [text focus] for the first focusable widget in this widget's subtree
+    /// (this widget itself if it is focusable).
+    ///
+    /// Unlike [`set_focus`](EventCtx::set_focus), the target is resolved from the subtree during
+    /// the following `update_focus` pass, so the caller doesn't need to know the id of the
+    /// (possibly nested) focusable widget. This is what Xilem's `.focus(true)` uses, since the
+    /// modifier only knows the wrapper widget (e.g. `TextInput`), not the inner focusable one
+    /// (e.g. `TextArea`).
+    ///
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
+    pub fn focus_subtree(&mut self) {
+        trace!("focus_subtree");
+        self.global_state
+            .focus_subtree_pending
+            .push(self.widget_id());
+    }
+
+    /// Sets whether this widget requests focus when it next appears (is added or un-stashed).
+    ///
+    /// This only updates the flag read at appear-time; it never moves focus by itself.
+    pub fn set_auto_focus(&mut self, auto_focus: bool) {
+        self.widget_state.auto_focus = auto_focus;
+    }
+});
+
 // --- MARK: ACCESSIBILITY
 impl AccessCtx<'_> {
     // TODO - We need access to the TreeUpdate to create sub-nodes for text runs,
