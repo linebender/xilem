@@ -51,7 +51,7 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         app_state: &mut State,
     ) {
         let mut root_id = None;
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_initial_subwindow(|mut root| {
             let mut root = root.downcast();
             ctx.reset_changed_props();
             ctx.reset_changed_transforms();
@@ -76,7 +76,7 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         ctx: &mut ViewCtx,
         render_root: Mut<'_, Self::Element>,
     ) {
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_initial_subwindow(|mut root| {
             self.root_widget_view
                 .teardown(view_state, ctx, root.downcast());
         });
@@ -89,7 +89,7 @@ impl<State> View<State, (), ViewCtx> for MasonryRoot<State> {
         render_root: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        render_root.edit_base_layer(|mut root| {
+        render_root.edit_initial_subwindow(|mut root| {
             self.root_widget_view
                 .message(view_state, message, root.downcast(), app_state)
         })

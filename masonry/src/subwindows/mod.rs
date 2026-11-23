@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! A list of widgets implementing the [`Layer`](crate::core::Layer) trait.
+//! A list of widgets implementing the [`Subwindow`](crate::core::Subwindow) trait.
 
 #![expect(
     missing_debug_implementations,

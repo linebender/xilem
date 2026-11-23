@@ -509,12 +509,14 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::Exit => (),
                 RenderRootSignal::ShowWindowMenu(_) => (),
                 RenderRootSignal::WidgetSelectedInInspector(_) => (),
-                RenderRootSignal::NewLayer(_type, root, pos) => {
-                    self.render_root.add_layer(root, pos);
+                RenderRootSignal::NewSubwindow(_type, root, pos) => {
+                    self.render_root.add_subwindow(root, pos);
                 }
-                RenderRootSignal::RemoveLayer(root_id) => self.render_root.remove_layer(root_id),
-                RenderRootSignal::RepositionLayer(root_id, new_pos) => {
-                    self.render_root.reposition_layer(root_id, new_pos);
+                RenderRootSignal::RemoveSubwindow(root_id) => {
+                    self.render_root.remove_subwindow(root_id)
+                }
+                RenderRootSignal::RepositionSubwindow(root_id, new_pos) => {
+                    self.render_root.reposition_subwindow(root_id, new_pos);
                 }
             }
         }
@@ -707,7 +709,7 @@ impl<W: Widget> TestHarness<W> {
         }
         if self
             .render_root
-            .get_layer_root(0)
+            .get_subwindow_root(0)
             .find_widget_under_pointer(widget_center)
             .map(|w| w.id())
             != Some(id)
@@ -869,12 +871,12 @@ impl<W: Widget> TestHarness<W> {
 
     /// Returns a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, W> {
-        self.render_root.get_layer_root(0).downcast().unwrap()
+        self.render_root.get_subwindow_root(0).downcast().unwrap()
     }
 
     /// Returns the [`WidgetId`] of the root widget.
     pub fn root_id(&self) -> WidgetId {
-        self.render_root.get_layer_root(0).id()
+        self.render_root.get_subwindow_root(0).id()
     }
 
     /// Replace the tree-wide default properties at runtime.
@@ -939,7 +941,7 @@ impl<W: Widget> TestHarness<W> {
     /// Returns a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_layer_root(0)
+            .get_subwindow_root(0)
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
@@ -972,14 +974,14 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        inspect(self.render_root.get_layer_root(0), &mut f);
+        inspect(self.render_root.get_subwindow_root(0), &mut f);
     }
 
     /// Returns a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
-        let ret = self.render_root.edit_base_layer(|mut root| {
+        let ret = self.render_root.edit_initial_subwindow(|mut root| {
             let root = root.downcast::<W>();
             f(root)
         });

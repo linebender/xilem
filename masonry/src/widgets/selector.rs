@@ -6,14 +6,14 @@ use tracing::{Span, trace_span};
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
-    PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, PaintCtx,
+    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, SubwindowType,
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size, Vec2};
-use crate::layers::SelectorMenu;
 use crate::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
+use crate::subwindows::SelectorMenu;
 use crate::theme;
 use crate::util::debug_panic;
 use crate::widgets::{Label, SelectorItem};
@@ -25,9 +25,8 @@ pub struct Selector {
     pub(crate) options: Vec<String>,
     pub(crate) selected_option: usize,
     pub(crate) child: WidgetPod<Label>,
-    // TODO - Implement layer tracking in masonry_core instead.
-    // Each widget should have access to a list of the layers they created.
-    pub(crate) menu_layer_id: Option<WidgetId>,
+    // FIXME - Replace with attached subwindows.
+    pub(crate) menu_subwindow_id: Option<WidgetId>,
 }
 
 // --- MARK: BUILDERS
@@ -47,7 +46,7 @@ impl Selector {
             options,
             selected_option: 0,
             child: WidgetPod::new(Label::new("")),
-            menu_layer_id: None,
+            menu_subwindow_id: None,
         }
     }
 
@@ -115,17 +114,17 @@ pub struct SelectionChanged {
 // --- MARK: HELPERS
 
 impl Selector {
-    fn toggle_selector_layer(&mut self, ctx: &mut EventCtx<'_>) {
+    fn toggle_selector_subwindow(&mut self, ctx: &mut EventCtx<'_>) {
         // If there's a selector menu, remove it.
-        if let Some(id) = self.menu_layer_id {
-            ctx.remove_layer(id);
-            self.menu_layer_id = None;
+        if let Some(id) = self.menu_subwindow_id {
+            ctx.remove_subwindow(id);
+            self.menu_subwindow_id = None;
             return;
         }
 
         // Else create selector menu
 
-        let layer_type = LayerType::Selector {
+        let subwindow_type = SubwindowType::Selector {
             options: self.options.clone(),
             selected_option: self.selected_option,
         };
@@ -136,13 +135,13 @@ impl Selector {
             menu = menu.with(NewWidget::new(item));
         }
 
-        let layer_widget = NewWidget::new(menu);
+        let subwindow_widget = NewWidget::new(menu);
 
-        // TODO: We should ideally create a layer with the same transform as this widget.
+        // TODO: We should ideally create a subwindow with the same transform as this widget.
         let border_box = ctx.border_box();
-        ctx.create_layer(
-            layer_type,
-            layer_widget,
+        ctx.create_subwindow(
+            subwindow_type,
+            subwindow_widget,
             ctx.to_window(border_box.origin()) + Vec2::new(0., border_box.size().height),
         );
     }
@@ -159,11 +158,11 @@ impl Widget for Selector {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down(..) if self.menu_layer_id.is_none() => {
+            PointerEvent::Down(..) if self.menu_subwindow_id.is_none() => {
                 ctx.capture_pointer();
             }
             PointerEvent::Up(PointerButtonEvent { .. }) if ctx.is_active() && ctx.is_hovered() => {
-                self.toggle_selector_layer(ctx);
+                self.toggle_selector_subwindow(ctx);
             }
             _ => (),
         }
@@ -181,7 +180,7 @@ impl Widget for Selector {
                     && (matches!(&event.key, Key::Character(c) if c == " ")
                         || event.key == Key::Named(NamedKey::Enter)) =>
             {
-                self.toggle_selector_layer(ctx);
+                self.toggle_selector_subwindow(ctx);
                 // TODO - On arrow key, change selected_item
             }
             // TODO - Handle text selection
@@ -199,7 +198,7 @@ impl Widget for Selector {
     ) {
         match event.action {
             accesskit::Action::Click => {
-                self.toggle_selector_layer(ctx);
+                self.toggle_selector_subwindow(ctx);
             }
             _ => {}
         }

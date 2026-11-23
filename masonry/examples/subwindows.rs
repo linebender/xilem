@@ -1,24 +1,24 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! An example showcasing how layers can be used to implement rudimentary tooltips.
+//! An example showcasing how subwindows can be used to implement rudimentary tooltips.
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayerType, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet,
-    RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
+    PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet, RegisterCtx,
+    StyleProperty, SubwindowType, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size, Vec2};
-use masonry::layers::Tooltip;
 use masonry::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
 use masonry::parley::FontWeight;
 use masonry::peniko::Color;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
+use masonry::subwindows::Tooltip;
 use masonry::theme::default_property_set;
 use masonry::util::{Duration, Instant};
 use masonry::widgets::{Flex, Label, Selector};
@@ -42,8 +42,8 @@ impl AppDriver for Driver {
 
 struct OverlayBox {
     child: WidgetPod<dyn Widget>,
-    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
-    layer_root_id: Option<WidgetId>,
+    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
+    subwindow_root_id: Option<WidgetId>,
     last_mouse_move: Option<Instant>,
     last_cursor_pos: Point,
 }
@@ -53,12 +53,12 @@ impl OverlayBox {
     /// Construct container with child, and both width and height not set.
     fn new(
         child: NewWidget<impl Widget + ?Sized>,
-        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, LayerType)>,
+        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
     ) -> Self {
         Self {
             child: child.erased().to_pod(),
             overlayer,
-            layer_root_id: None,
+            subwindow_root_id: None,
             last_mouse_move: None,
             last_cursor_pos: Point::ZERO,
         }
@@ -91,10 +91,10 @@ impl Widget for OverlayBox {
         if let Some(last_mouse_move) = self.last_mouse_move {
             let now = Instant::now();
             if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
-                let (overlay, layer_type) = (self.overlayer)();
-                self.layer_root_id = Some(overlay.id());
-                let layer_pos = self.last_cursor_pos + Vec2::new(5., -25.);
-                ctx.create_layer(layer_type, overlay, layer_pos);
+                let (overlay, subwindow_type) = (self.overlayer)();
+                self.subwindow_root_id = Some(overlay.id());
+                let subwindow_pos = self.last_cursor_pos + Vec2::new(5., -25.);
+                ctx.create_subwindow(subwindow_type, overlay, subwindow_pos);
             } else {
                 ctx.request_anim_frame();
             }
@@ -183,7 +183,7 @@ fn main() {
             Background::Color(Color::WHITE),
         )))
         .erased();
-        (tooltip, LayerType::Tooltip("Tooltip!!!".to_string()))
+        (tooltip, SubwindowType::Tooltip("Tooltip!!!".to_string()))
     };
 
     let overlay_box = OverlayBox::new(label.prepare(), Box::new(overlayer));
@@ -202,7 +202,7 @@ fn main() {
 
     masonry_winit::app::run(
         vec![NewWindow::new(
-            Window::default_attributes().with_title("Hello Layers!"),
+            Window::default_attributes().with_title("Hello Subwindows!"),
             main_widget.prepare().erased(),
         )],
         driver,

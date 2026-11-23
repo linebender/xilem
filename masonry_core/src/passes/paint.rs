@@ -289,7 +289,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> VisualLayerPlan {
     let mut scene_cache = std::mem::take(&mut root.global_state.scene_cache);
 
     let root_id = root.root_id();
-    let layer_root_ids = root.layer_root_ids();
+    let layer_root_ids = root.subwindow_root_ids();
 
     let mut layers = Vec::new();
 

@@ -357,7 +357,7 @@ where
 
         for root in state.roots() {
             if let Some(root_widget) = root
-                .get_layer_root(0)
+                .get_subwindow_root(0)
                 .downcast::<masonry::widgets::Passthrough>()
             {
                 let fallback = root_widget.inner().inner_id();

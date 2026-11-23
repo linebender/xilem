@@ -42,10 +42,11 @@ impl AppDriver for Driver {
                 _ => 0.5,
             };
 
-            ctx.render_root(window_id).edit_base_layer(|mut root| {
-                let mut grid = root.downcast::<Grid>();
-                grid.insert_prop(Gap::new(Length::px(self.grid_gap)));
-            });
+            ctx.render_root(window_id)
+                .edit_initial_subwindow(|mut root| {
+                    let mut grid = root.downcast::<Grid>();
+                    grid.insert_prop(Gap::new(Length::px(self.grid_gap)));
+                });
         }
     }
 }

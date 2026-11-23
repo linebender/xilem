@@ -186,34 +186,35 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     }
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());
-    let layer_ids = root_node.item.widget.children_ids();
-    for layer_id in layer_ids {
-        let mut layer_root = root.widget_arena.get_node_mut(layer_id);
-        let layer_type_id = layer_root.item.widget.type_id();
-        if let Some(layer) = layer_root.item.widget.as_layer() {
-            let stack = root
-                .property_arena
-                .get(layer_root.item.state.property_stack_id, layer_type_id);
+    let subwindow_ids = root_node.item.widget.children_ids();
+    for subwindow_id in subwindow_ids {
+        let mut subwindow_root = root.widget_arena.get_node_mut(subwindow_id);
+        let subwindow_type_id = subwindow_root.item.widget.type_id();
+        if let Some(subwindow) = subwindow_root.item.widget.as_subwindow() {
+            let stack = root.property_arena.get(
+                subwindow_root.item.state.property_stack_id,
+                subwindow_type_id,
+            );
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
-                widget_state: &mut layer_root.item.state,
-                children: layer_root.children.reborrow_mut(),
+                widget_state: &mut subwindow_root.item.state,
+                children: subwindow_root.children.reborrow_mut(),
                 property_arena: &root.property_arena,
-                target: layer_id,
+                target: subwindow_id,
                 allow_pointer_capture: false,
                 is_handled: false,
             };
             let mut props = PropertiesMut {
-                local: &mut layer_root.item.properties,
+                local: &mut subwindow_root.item.properties,
                 default_map: root
                     .property_arena
                     .default_properties
-                    .for_widget(layer.type_id()),
+                    .for_widget(subwindow.type_id()),
                 stack,
-                class_set: &layer_root.item.class_set,
+                class_set: &subwindow_root.item.class_set,
             };
 
-            layer.capture_pointer_event(&mut ctx, &mut props, event);
+            subwindow.capture_pointer_event(&mut ctx, &mut props, event);
         }
     }
 

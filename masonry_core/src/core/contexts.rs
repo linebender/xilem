@@ -20,10 +20,9 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, LayerType, NewWidget,
-    PaintLayerMode, PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId,
-    ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState,
+    AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, NewWidget, PaintLayerMode,
+    PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId, ResizeDirection,
+    SubwindowType, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
@@ -1625,9 +1624,9 @@ impl_context_method!(
 
                 global_state.scene_cache.remove(&state.id);
 
-                if let Some(layers) = global_state.attached_layers.remove(&state.id) {
-                    for (_, layer_id) in layers {
-                        global_state.emit_signal(RenderRootSignal::RemoveLayer(layer_id));
+                if let Some(subwindows) = global_state.attached_subwindows.remove(&state.id) {
+                    for (_, subwindow_id) in subwindows {
+                        global_state.emit_signal(RenderRootSignal::RemoveSubwindow(subwindow_id));
                     }
                 }
             }
@@ -1943,123 +1942,132 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Creates a new [layer] at a specified `position`.
+        /// Creates a new [subwindow] at a specified `position`.
         ///
         /// The given `position` must be in the window's coordinate space.
         ///
         /// # Panics
         ///
-        /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
+        /// If [`W::as_subwindow()`](Widget::as_subwindow) returns `None`.
         ///
-        /// [layer]: crate::doc::masonry_concepts#layers
-        pub fn create_layer<W: Widget + ?Sized>(
+        /// [subwindow]: crate::doc::masonry_concepts#subwindows
+        pub fn create_subwindow<W: Widget + ?Sized>(
             &mut self,
-            layer_type: LayerType,
+            subwindow_type: SubwindowType,
             mut fallback_widget: NewWidget<W>,
             position: Point,
         ) {
-            trace!("create_layer");
+            trace!("create_subwindow");
 
-            if fallback_widget.widget.as_layer().is_none() {
+            if fallback_widget.widget.as_subwindow().is_none() {
                 debug_panic!(
-                    "cannot create layer of type {} - `Widget::as_layer()` returned None",
+                    "cannot create subwindow of type {} - `Widget::as_subwindow()` returned None",
                     fallback_widget.widget.short_type_name()
                 );
                 return;
             }
 
-            self.global_state.emit_signal(RenderRootSignal::NewLayer(
-                layer_type,
-                fallback_widget.erased(),
-                position,
-            ));
+            self.global_state
+                .emit_signal(RenderRootSignal::NewSubwindow(
+                    subwindow_type,
+                    fallback_widget.erased(),
+                    position,
+                ));
         }
 
-        /// Creates a new [layer] at a specified `position`, and ties it to the current widget.
+        /// Creates a new [subwindow] at a specified `position`, and ties it to the current widget.
         ///
-        /// The layer will be removed when the current widget is removed from the tree.
-        /// A widget can only have one layer of any given type `W` at a time:
-        /// if a widget creates two layers of the same type, the old layer will be removed.
+        /// The subwindow will be removed when the current widget is removed from the tree.
+        /// A widget can only have one subwindow of any given type `W` at a time:
+        /// if a widget creates two subwindows of the same type, the old subwindow will be removed.
         ///
         /// The given `position` must be in the window's coordinate space.
         ///
         /// # Panics
         ///
-        /// If [`W::as_layer()`](Widget::as_layer) returns `None`.
+        /// If [`W::as_subwindow()`](Widget::as_subwindow) returns `None`.
         ///
-        /// [layer]: crate::doc::masonry_concepts#layers
-        pub fn create_attached_layer<W: Widget + ?Sized>(
+        /// [subwindow]: crate::doc::masonry_concepts#subwindows
+        pub fn create_attached_subwindow<W: Widget + ?Sized>(
             &mut self,
-            layer_type: LayerType,
+            subwindow_type: SubwindowType,
             mut fallback_widget: NewWidget<W>,
             position: Point,
         ) {
-            trace!("create_attached_layer");
+            trace!("create_attached_subwindow");
 
-            if fallback_widget.widget.as_layer().is_none() {
+            if fallback_widget.widget.as_subwindow().is_none() {
                 debug_panic!(
-                    "cannot create layer of type {} - `Widget::as_layer()` returned None",
+                    "cannot create subwindow of type {} - `Widget::as_subwindow()` returned None",
                     fallback_widget.widget.short_type_name()
                 );
                 return;
             }
 
-            // FIXME - Add LayerId type and use that instead.
-            let layer_id = fallback_widget.id;
+            // FIXME - Add SubwindowId type and use that instead.
+            let subwindow_id = fallback_widget.id;
 
-            let layers = self
+            let subwindows = self
                 .global_state
-                .attached_layers
+                .attached_subwindows
                 .entry(self.widget_id())
                 .or_default();
-            if let Some(prev) = layers.insert(TypeId::of::<W>(), layer_id) {
+            if let Some(prev) = subwindows.insert(TypeId::of::<W>(), subwindow_id) {
                 self.global_state
-                    .emit_signal(RenderRootSignal::RemoveLayer(prev));
+                    .emit_signal(RenderRootSignal::RemoveSubwindow(prev));
             }
-            self.global_state.emit_signal(RenderRootSignal::NewLayer(
-                layer_type,
-                fallback_widget.erased(),
-                position,
-            ));
+            self.global_state
+                .emit_signal(RenderRootSignal::NewSubwindow(
+                    subwindow_type,
+                    fallback_widget.erased(),
+                    position,
+                ));
         }
 
-        /// Returns the attached layer created by this widget with the given type `W`.
+        /// Returns the attached subwindow created by this widget with the given type `W`.
         ///
-        /// See [`Self::create_attached_layer`] for more details.
-        pub fn get_attached_layer<W: Widget + ?Sized>(&self) -> Option<WidgetId> {
+        /// See [`Self::create_attached_subwindow`] for more details.
+        pub fn get_attached_subwindow<W: Widget + ?Sized>(&self) -> Option<WidgetId> {
             self.global_state
-                .attached_layers
+                .attached_subwindows
                 .get(&self.widget_id())?
                 .get(&TypeId::of::<W>())
                 .copied()
         }
 
-        /// Removes the layer with the specified widget as root.
-        pub fn remove_layer(&mut self, root_widget_id: WidgetId) {
-            trace!("remove_layer");
+        /// Removes the subwindow with the specified widget as root.
+        pub fn remove_subwindow(&mut self, root_widget_id: WidgetId) {
+            trace!("remove_subwindow");
             self.global_state
-                .emit_signal(RenderRootSignal::RemoveLayer(root_widget_id));
+                .emit_signal(RenderRootSignal::RemoveSubwindow(root_widget_id));
 
-            let Some(layers) = self.global_state.attached_layers.get_mut(&self.widget_id()) else {
+            let Some(subwindows) = self
+                .global_state
+                .attached_subwindows
+                .get_mut(&self.widget_id())
+            else {
                 return;
             };
 
-            let layer_type_id = layers
+            let subwindow_type_id = subwindows
                 .iter()
                 .find(|(_, id)| **id == root_widget_id)
                 .map(|(type_id, _)| *type_id);
-            if let Some(type_id) = layer_type_id {
-                layers.remove(&type_id);
+            if let Some(type_id) = subwindow_type_id {
+                subwindows.remove(&type_id);
             }
         }
 
-        /// Repositions the layer with the specified widget as root.
+        /// Repositions the subwindow with the specified widget as root.
         ///
         /// The given `position` must be in the window's coordinate space.
-        pub fn reposition_layer(&mut self, root_widget_id: WidgetId, position: Point) {
-            trace!("reposition_layer");
+        pub fn reposition_subwindow(&mut self, root_widget_id: WidgetId, position: Point) {
+            trace!("reposition_subwindow");
             self.global_state
-                .emit_signal(RenderRootSignal::RepositionLayer(root_widget_id, position));
+                .emit_signal(RenderRootSignal::RepositionSubwindow(
+                    root_widget_id,
+                    position,
+                ));
         }
     }
 );

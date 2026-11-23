@@ -21,8 +21,8 @@ use std::rc::Rc;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, ActionCtx, ChildrenIds, ComposeCtx, CursorIcon, ErasedAction, EventCtx,
-    Layer, LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
+    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, Subwindow, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::imaging::Painter;
 use masonry_core::kurbo::{Axis, Point, Size};
@@ -299,7 +299,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.children_ids()
     }
 
-    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+    fn as_subwindow(&mut self) -> Option<&mut dyn Subwindow> {
         None
     }
 

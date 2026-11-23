@@ -4,8 +4,8 @@
 use masonry::app::RenderRoot;
 use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
 use masonry::kurbo::Point;
-use masonry::layers::Tooltip;
 use masonry::properties::types::CrossAxisAlignment;
+use masonry::subwindows::Tooltip;
 use masonry::widgets::{Button, ButtonPress, Flex, Label};
 
 use crate::demo::{CONTENT_GAP, DemoPage, ShellTags, wrap_in_shell};
@@ -39,7 +39,7 @@ impl DemoPage for TooltipDemo {
         let body = Flex::column()
             .cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_fixed(
-                Label::new("Click the button to create a tooltip layer.")
+                Label::new("Click the button to create a tooltip.")
                     .with_style(StyleProperty::FontSize(14.0))
                     .prepare(),
             )
@@ -65,11 +65,11 @@ impl DemoPage for TooltipDemo {
         }
 
         let tooltip = NewWidget::new(Tooltip::new(
-            Label::new("Hello from a tooltip layer!")
+            Label::new("Hello from a tooltip!")
                 .with_style(StyleProperty::FontSize(14.0))
                 .prepare(),
         ));
-        render_root.add_layer(tooltip.erased(), Point::new(320.0, 120.0));
+        render_root.add_subwindow(tooltip.erased(), Point::new(320.0, 120.0));
         Handled::Yes
     }
 }

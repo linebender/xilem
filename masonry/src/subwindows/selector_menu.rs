@@ -5,10 +5,10 @@ use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, Layer, LayoutCtx,
+    AccessCtx, AccessEvent, ChildrenIds, CollectionWidget, ComposeCtx, EventCtx, LayoutCtx,
     MeasureCtx, NewWidget, NoAction, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent,
-    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, UsesProperty, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, RegisterCtx, Subwindow, TextEvent, Update, UpdateCtx,
+    UsesProperty, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Point, Size};
@@ -16,7 +16,7 @@ use crate::layout::{AsUnit, LayoutSize, LenDef, LenReq, Length, SizeDef};
 use crate::properties::Gap;
 use crate::widgets::{SelectionChanged, Selector};
 
-/// A [`Layer`] representing a list of options for a [`Selector`] widget.
+/// A [`Subwindow`] representing a list of options for a [`Selector`] widget.
 pub struct SelectorMenu {
     creator: WidgetId,
     children: Vec<WidgetPod<dyn Widget>>,
@@ -165,7 +165,7 @@ impl Widget for SelectorMenu {
                     .unwrap();
 
                 // FIXME - This might be subject to TOCTOU.
-                // Fix this once associated layers are implemented.
+                // Fix this with attached subwindows
                 ctx.mutate_later(self.creator, move |mut selector| {
                     let mut selector = selector.downcast::<Selector>();
                     let selected_content = selector.widget.options[index].clone();
@@ -176,8 +176,8 @@ impl Widget for SelectorMenu {
                             selected_content,
                             index,
                         });
-                    selector.ctx.remove_layer(self_id);
-                    selector.widget.menu_layer_id = None;
+                    selector.ctx.remove_subwindow(self_id);
+                    selector.widget.menu_subwindow_id = None;
                     Selector::select_option(&mut selector, index);
                 });
             }
@@ -195,7 +195,7 @@ impl Widget for SelectorMenu {
     ) {
         match event {
             TextEvent::WindowFocusChange(false) => {
-                ctx.remove_layer(ctx.widget_id());
+                ctx.remove_subwindow(ctx.widget_id());
             }
             _ => (),
         }
@@ -220,12 +220,12 @@ impl Widget for SelectorMenu {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         // FIXME - This might be subject to TOCTOU.
-        // Fix this once associated layers are implemented.
+        // Fix this with attached subwindows
         if let Update::WidgetAdded = event {
             let id = ctx.widget_id();
             ctx.mutate_later(self.creator, move |mut selector| {
                 let selector = selector.downcast::<Selector>();
-                selector.widget.menu_layer_id = Some(id);
+                selector.widget.menu_subwindow_id = Some(id);
             });
         }
     }
@@ -342,7 +342,7 @@ impl Widget for SelectorMenu {
         self.children.iter().map(|child| child.id()).collect()
     }
 
-    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+    fn as_subwindow(&mut self) -> Option<&mut dyn Subwindow> {
         Some(self)
     }
 
@@ -351,8 +351,8 @@ impl Widget for SelectorMenu {
     }
 }
 
-// --- MARK: IMPL LAYER
-impl Layer for SelectorMenu {
+// --- MARK: IMPL SUBWINDOW
+impl Subwindow for SelectorMenu {
     fn capture_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -371,11 +371,11 @@ impl Layer for SelectorMenu {
 
         if remove_this {
             // FIXME - This might be subject to TOCTOU.
-            // Fix this once associated layers are implemented.
-            ctx.remove_layer(ctx.widget_id());
+            // Fix this with attached subwindows
+            ctx.remove_subwindow(ctx.widget_id());
             ctx.mutate_later(self.creator, move |mut selector| {
                 let selector = selector.downcast::<Selector>();
-                selector.widget.menu_layer_id = None;
+                selector.widget.menu_subwindow_id = None;
             });
         }
     }

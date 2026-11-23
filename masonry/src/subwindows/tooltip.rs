@@ -7,15 +7,15 @@ use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, Layer, LayoutCtx, MeasureCtx, NewWidget,
-    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, Subwindow, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 
-/// A [`Layer`] representing a simple tooltip showing some content until the mouse moves.
+/// A [`Subwindow`] representing a simple tooltip showing some content until the mouse moves.
 pub struct Tooltip {
     child: WidgetPod<dyn Widget>,
 }
@@ -142,7 +142,7 @@ impl Widget for Tooltip {
         ChildrenIds::from_slice(&[self.child.id()])
     }
 
-    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+    fn as_subwindow(&mut self) -> Option<&mut dyn Subwindow> {
         Some(self)
     }
 
@@ -155,8 +155,8 @@ impl Widget for Tooltip {
     }
 }
 
-// --- MARK: IMPL LAYER
-impl Layer for Tooltip {
+// --- MARK: IMPL SUBWINDOW
+impl Subwindow for Tooltip {
     fn capture_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -172,7 +172,7 @@ impl Layer for Tooltip {
         );
 
         if remove_tooltip {
-            ctx.remove_layer(ctx.widget_id());
+            ctx.remove_subwindow(ctx.widget_id());
         }
     }
 }
