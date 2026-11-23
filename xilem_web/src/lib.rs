@@ -39,10 +39,8 @@
 //! [Trunk]: https://trunk-rs.github.io/trunk
 //! [Xilem Core]: xilem_core
 
-// LINEBENDER LINT SET - lib.rs - v3
+// LINEBENDER LINT SET - lib.rs - v5
 // See https://linebender.org/wiki/canonical-lints/
-// These lints shouldn't apply to examples or tests.
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 // These lints shouldn't apply to examples.
 #![warn(clippy::print_stdout, clippy::print_stderr)]
 // Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
@@ -52,7 +50,6 @@
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(test, expect(clippy::print_stdout, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
