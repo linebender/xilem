@@ -83,7 +83,6 @@ image = { version = "0.25.10", default-features = false }
 resvg = "0.47.0"
 usvg = "0.47.0"
 web-time = "1.1.0"
-bitflags = "2.11.0"
 accesskit = "0.24.0"
 accesskit_winit = { version = "0.32.2", default-features = false, features = [
     "accesskit_unix",
@@ -108,7 +107,7 @@ rust.unsafe_code = "deny"
 
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compile_stress_test)'] }
 
-# LINEBENDER LINT SET - Cargo.toml - v8
+# LINEBENDER LINT SET - Cargo.toml - v9
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -126,10 +125,14 @@ rust.unused_lifetimes = "warn"
 rust.unused_macro_rules = "warn"
 rust.unused_qualifications = "warn"
 
+cargo.non_snake_case_features = "warn"
+cargo.non_snake_case_packages = "warn"
+cargo.manual_readme = "warn"
+
 clippy.too_many_arguments = "allow"
+clippy.cast_possible_truncation = "allow"
 
 clippy.allow_attributes_without_reason = "warn"
-clippy.cast_possible_truncation = "warn"
 clippy.cast_possible_wrap = "warn"
 clippy.collection_is_never_read = "warn"
 clippy.default_trait_access = "warn"

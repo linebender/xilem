@@ -25,10 +25,11 @@
 //! - `imaging_vello_cpu`: Enables the `vello_cpu` module for headless image rendering only.
 //! - `imaging_skia`: Enables the `skia` module and texture rendering support on non-wasm targets.
 
-// LINEBENDER LINT SET - lib.rs - v3
+// LINEBENDER LINT SET - lib.rs - v5
 // See https://linebender.org/wiki/canonical-lints/
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// These lints shouldn't apply to examples.
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_cfg))]

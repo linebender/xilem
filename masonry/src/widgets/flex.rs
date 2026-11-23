@@ -638,6 +638,7 @@ fn new_child(params: impl Into<FlexParams>, child: WidgetPod<dyn Widget>) -> Chi
 
 /// Calculates `(space_before, space_between)` from the `extra` space given the `child_count`.
 fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> (f64, f64) {
+    #![expect(clippy::needless_late_init, reason = "Readability")]
     let space_before;
     let space_between;
     match alignment {

@@ -26,7 +26,7 @@ struct AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        AppState {
+        Self {
             text: "Hello from Xilem Web :)".to_string(),
             file_to_open: None,
             start_opening: false,
@@ -124,7 +124,7 @@ fn hidden_save_link() -> impl Element<AppState> + use<> {
         })
 }
 
-pub fn main() {
+fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();

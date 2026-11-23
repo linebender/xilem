@@ -12,6 +12,9 @@ repository.workspace = true
 [lib]
 proc-macro = true
 
+[lints]
+workspace = true
+
 [dependencies]
 proc-macro2 = "1.0.106"
 quote = "1.0.45"

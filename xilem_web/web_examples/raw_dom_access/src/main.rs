@@ -55,7 +55,7 @@ fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
     })
 }
 
-pub fn main() {
+fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();
