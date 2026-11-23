@@ -1146,7 +1146,7 @@ impl MasonryState {
                     window.render_root.add_subwindow(root, pos);
                 }
                 RenderRootSignal::RemoveSubwindow(root_id) => {
-                    window.render_root.remove_subwindow(root_id)
+                    window.render_root.remove_subwindow(root_id);
                 }
                 RenderRootSignal::RepositionSubwindow(root_id, new_pos) => {
                     window.render_root.reposition_subwindow(root_id, new_pos);

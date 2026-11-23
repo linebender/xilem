@@ -513,7 +513,7 @@ impl<W: Widget> TestHarness<W> {
                     self.render_root.add_subwindow(root, pos);
                 }
                 RenderRootSignal::RemoveSubwindow(root_id) => {
-                    self.render_root.remove_subwindow(root_id)
+                    self.render_root.remove_subwindow(root_id);
                 }
                 RenderRootSignal::RepositionSubwindow(root_id, new_pos) => {
                     self.render_root.reposition_subwindow(root_id, new_pos);
