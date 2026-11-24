@@ -16,16 +16,16 @@ use crate::layout::{LenReq, Length, SizeDef};
 
 /// A widget representing the top-level stack of visible subwindows owned by [`RenderRoot`](crate::app::RenderRoot).
 ///
-/// This stack must always have at least one child, representing the "initial subwindow",
+/// This stack must always have at least one child, representing the "main subwindow",
 /// e.g. most of the stuff drawn in the app.
 ///
 /// Other subwindows can represent tooltips, menus, dialogs, etc.
-/// They have an associated position and are drawn on top of the initial subwindow.
+/// They have an associated position and are drawn on top of the main subwindow.
 ///
 /// Ensure that `SubwindowStack` has [`Dimensions`] set via props to [`Dimensions::MAX`].
 /// Max preferred size of `SubwindowStack` means that the question of size
-/// will get passed through to its initial subwindow, and doesn't mean that it will
-/// necessarily map to the max preferred size of the initial subwindow.
+/// will get passed through to its main subwindow, and doesn't mean that it will
+/// necessarily map to the max preferred size of the main subwindow.
 ///
 /// [`Dimensions`]: crate::properties::Dimensions
 /// [`Dimensions::MAX`]: crate::properties::Dimensions::MAX
@@ -45,7 +45,7 @@ struct SubwindowEntry {
 
 // --- MARK: IMPL SUBWINDOW_STACK
 impl SubwindowStack {
-    /// Creates a stack with the provided initial subwindow.
+    /// Creates a stack with the provided main subwindow.
     pub(crate) fn new(root: NewWidget<impl Widget + ?Sized>) -> Self {
         let subwindow = SubwindowEntry {
             root: root.erased().to_pod(),
@@ -56,7 +56,7 @@ impl SubwindowStack {
         }
     }
 
-    /// Returns the number of subwindows, including the initial subwindow.
+    /// Returns the number of subwindows, including the main subwindow.
     pub(crate) fn subwindow_count(&self) -> usize {
         self.subwindows.len()
     }
@@ -107,11 +107,11 @@ impl SubwindowStack {
 
     /// Removes the subwindow with the given widget as root.
     ///
-    /// The initial subwindow cannot be removed.
+    /// The main subwindow cannot be removed.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended subwindow is the initial subwindow or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
     pub(crate) fn remove_subwindow(this: &mut WidgetMut<'_, Self>, root_id: WidgetId) {
         match this
@@ -120,7 +120,7 @@ impl SubwindowStack {
             .iter()
             .position(|subwindow| subwindow.root.id() == root_id)
         {
-            Some(0) => debug_panic!("Cannot remove initial subwindow"),
+            Some(0) => debug_panic!("Cannot remove main subwindow"),
             None => debug_panic!("subwindow with root widget {root_id:?} not found"),
             Some(idx) => {
                 let child = this.widget.subwindows.remove(idx).root;
@@ -135,11 +135,11 @@ impl SubwindowStack {
     /// If this `SubwindowStack` is used as the root widget with no borders, padding, or transforms,
     /// then that coordinate space will exactly match the window's coordinate space.
     ///
-    /// The initial subwindow cannot be repositioned.
+    /// The main subwindow cannot be repositioned.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended subwindow is the initial subwindow or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
     pub(crate) fn reposition_subwindow(
         this: &mut WidgetMut<'_, Self>,
@@ -152,7 +152,7 @@ impl SubwindowStack {
             .iter()
             .position(|subwindow| subwindow.root.id() == root_id)
         {
-            Some(0) => debug_panic!("Cannot reposition initial subwindow"),
+            Some(0) => debug_panic!("Cannot reposition main subwindow"),
             None => debug_panic!("subwindow with root widget {root_id:?} not found"),
             Some(idx) => {
                 this.widget.subwindows[idx].position = new_origin;
@@ -182,34 +182,34 @@ impl Widget for SubwindowStack {
         _len_req: LenReq,
         cross_length: Option<Length>,
     ) -> Length {
-        // First child is the initial subwindow, for which we do measure passthrough.
-        let Some(initial_subwindow) = self.subwindows.first_mut() else {
+        // First child is the main subwindow, for which we do measure passthrough.
+        let Some(main_subwindow) = self.subwindows.first_mut() else {
             debug_panic!("Missing first subwindow");
             return Length::ZERO;
         };
-        // Let the initial subwindow handle the response
-        ctx.redirect_measurement(&mut initial_subwindow.root, axis, cross_length)
+        // Let the main subwindow handle the response
+        ctx.redirect_measurement(&mut main_subwindow.root, axis, cross_length)
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
-        // First child is the initial subwindow, for which we do layout passthrough.
-        let Some(initial_subwindow) = self.subwindows.first_mut() else {
+        // First child is the main subwindow, for which we do layout passthrough.
+        let Some(main_subwindow) = self.subwindows.first_mut() else {
             debug_panic!("Missing first subwindow");
             return;
         };
 
-        // Our measurement is just the passed on result from the initial subwindow,
-        // so the size we received is effectively meant for the initial subwindow.
-        ctx.run_layout(&mut initial_subwindow.root, size);
-        // The initial subwindow is always located at our origin.
-        ctx.place_child(&mut initial_subwindow.root, Point::ORIGIN);
+        // Our measurement is just the passed on result from the main subwindow,
+        // so the size we received is effectively meant for the main subwindow.
+        ctx.run_layout(&mut main_subwindow.root, size);
+        // The main subwindow is always located at our origin.
+        ctx.place_child(&mut main_subwindow.root, Point::ORIGIN);
 
-        ctx.derive_baselines(&initial_subwindow.root);
+        ctx.derive_baselines(&main_subwindow.root);
 
         for subwindow in &mut self.subwindows[1..] {
             // Other subwindows don't take part in our measurement,
             // so RenderRoot has no idea what they want and instead we control them.
-            // We don't really care if they go outside the bounds of the initial subwindow,
+            // We don't really care if they go outside the bounds of the main subwindow,
             // so we won't give any FitContent fallback and instead just use MaxContent.
             // These other subwindows still have access to the window size via context size.
             let subwindow_size = ctx.compute_size(&mut subwindow.root, SizeDef::MAX, size.into());

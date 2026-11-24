@@ -177,7 +177,7 @@ impl CalcState {
             CalcAction::None => (),
         }
 
-        render_root.edit_initial_subwindow(|mut root| {
+        render_root.edit_main_subwindow(|mut root| {
             let mut grid = root.downcast();
             let mut flex = Grid::get_mut(&mut grid, 0);
             let mut flex = flex.downcast();

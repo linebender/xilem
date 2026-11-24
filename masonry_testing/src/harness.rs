@@ -981,7 +981,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
-        let ret = self.render_root.edit_initial_subwindow(|mut root| {
+        let ret = self.render_root.edit_main_subwindow(|mut root| {
             let root = root.downcast::<W>();
             f(root)
         });

@@ -329,7 +329,7 @@ impl RenderRoot {
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
         // SubwindowStack can't use Dimensions::AUTO because it'll resolve to the window size.
-        // Instead we want to always measure SubwindowStack, so it can measure its initial subwindow.
+        // Instead we want to always measure SubwindowStack, so it can measure its main subwindow.
         let subwindow_stack = SubwindowStack::new(root_widget)
             .prepare()
             .with_props(Dimensions::MAX)
@@ -471,7 +471,7 @@ impl RenderRoot {
 
     /// Returns the widget ID of each subwindow, in stack order.
     ///
-    /// Index 0 is the initial subwindow; subsequent entries are overlay subwindows.
+    /// Index 0 is the main subwindow; subsequent entries are overlay subwindows.
     pub(crate) fn subwindow_root_ids(&self) -> Vec<WidgetId> {
         let node_ref = self
             .widget_arena
@@ -685,13 +685,10 @@ impl RenderRoot {
         self.widget_arena.has(id)
     }
 
-    /// Returns a [`WidgetMut`] to the root widget of the [initial subwindow](crate::doc::masonry_concepts#subwindows).
+    /// Returns a [`WidgetMut`] to the root widget of the [main subwindow](crate::doc::masonry_concepts#subwindows).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_initial_subwindow<R>(
-        &mut self,
-        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
-    ) -> R {
+    pub fn edit_main_subwindow<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
         let subwindow_id = self.subwindow_root_id(0);
         let res = mutate_widget(self, subwindow_id, f);
 
@@ -779,11 +776,11 @@ impl RenderRoot {
 
     /// Removes the subwindow with the given widget as root.
     ///
-    /// The initial subwindow cannot be removed.
+    /// The main subwindow cannot be removed.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended subwindow is the initial subwindow or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
     pub fn remove_subwindow(&mut self, root_id: WidgetId) {
         mutate_widget(self, self.root_id(), |mut subwindow_stack| {
@@ -798,11 +795,11 @@ impl RenderRoot {
     ///
     /// The given `new_origin` must be in the window's coordinate space.
     ///
-    /// The initial subwindow cannot be repositioned.
+    /// The main subwindow cannot be repositioned.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended subwindow is the initial subwindow or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
     pub fn reposition_subwindow(&mut self, root_id: WidgetId, new_origin: Point) {
         mutate_widget(self, self.root_id(), |mut subwindow_stack| {

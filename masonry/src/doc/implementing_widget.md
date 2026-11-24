@@ -422,7 +422,7 @@ As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to
 Most widgets will implement methods that let their users "project" a `WidgetMut` from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen two ways to get a `WidgetMut`: the [`RenderRoot::edit_initial_subwindow()`] and [`RenderRoot::edit_subwindow()`] methods.
+So far, we've seen two ways to get a `WidgetMut`: the [`RenderRoot::edit_main_subwindow()`] and [`RenderRoot::edit_subwindow()`] methods.
 These methods gives access to a `WidgetMut` to the root widget of a subwindow, which you can then project into a `WidgetMut` reference to its descendants.
 
 ### Using `WidgetMut` in your custom widget code
@@ -476,6 +476,6 @@ The next one is about creating a container widgets, and the complications it add
 [`PaintCtx::content_box()`]: crate::core::PaintCtx::content_box
 [`Painter`]: crate::imaging::Painter
 [`Role::Button`]: accesskit::Role::Button
-[`RenderRoot::edit_initial_subwindow()`]: crate::app::RenderRoot::edit_initial_subwindow
+[`RenderRoot::edit_main_subwindow()`]: crate::app::RenderRoot::edit_main_subwindow
 [`RenderRoot::edit_subwindow()`]: crate::app::RenderRoot::edit_subwindow
 [`Label::set_text()`]: crate::widgets::Label::set_text

@@ -259,11 +259,11 @@ A Masonry application is composed of subwindows.
 
 Subwindows are top-level items in a [`RenderRoot`], drawn on top of each other.
 
-There is always at least one subwindow, called the "initial subwindow".
+There is always at least one subwindow, called the "main subwindow".
 It's the one in which almost all content (buttons, texts, images) will be drawn.
 
 Other subwindows can represent tooltips, menus, dialogs, etc.
-They are created with a pre-set position and are drawn on top of the initial subwindow.
+They are created with a pre-set position and are drawn on top of the main subwindow.
 
 ### Adding a subwindow
 
