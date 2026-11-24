@@ -13,9 +13,9 @@ use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, Layer,
-    LayoutCtx, MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
+    AccessCtx, AccessEvent, ActionCtx, ComposeCtx, CursorIcon, ErasedAction, EventCtx, LayoutCtx,
+    MeasureCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, Subwindow, TextEvent, Update, UpdateCtx, WidgetMut, WidgetRef, pre_paint,
 };
 use crate::imaging::Painter;
 use crate::layout::{LenReq, Length};
@@ -442,10 +442,10 @@ pub trait Widget: AsDynWidget + Any {
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> ChildrenIds;
 
-    /// Return `Some(self)` if the widget also implements [`Layer`].
+    /// Return `Some(self)` if the widget also implements [`Subwindow`].
     ///
     /// Default implementation returns `None`.
-    fn as_layer(&mut self) -> Option<&mut dyn Layer> {
+    fn as_subwindow(&mut self) -> Option<&mut dyn Subwindow> {
         None
     }
 

@@ -253,31 +253,31 @@ Generally you'll want to convert any window coordinate space geometry into the w
 Then easily operate on that geometry and finally convert the results back to the window's coordinate space.
 
 
-## Layers
+## Subwindows
 
-A Masonry application is composed of layers.
+A Masonry application is composed of subwindows.
 
-Layers are top-level items in a [`RenderRoot`], drawn on top of each other.
+Subwindows are top-level items in a [`RenderRoot`], drawn on top of each other.
 
-There is always at least one layer, called the "base layer".
+There is always at least one subwindow, called the "main subwindow".
 It's the one in which almost all content (buttons, texts, images) will be drawn.
 
-Other layers can represent tooltips, menus, dialogs, etc.
-They are created with a pre-set position and are drawn on top of the base layer.
+Other subwindows can represent tooltips, menus, dialogs, etc.
+They are created with a pre-set position and are drawn on top of the main subwindow.
 
-### Adding a layer
+### Adding a subwindow
 
 <!-- TODO - Flesh this out -->
 
-Most context methods have a `create_layer(layer_type, fallback_widget, pos)` method.
+Most context methods have a `create_subwindow(subwindow_type, fallback_widget, pos)` method.
 
-`layer_type` and `fallback_widget` are two redundant representations of the same layer:
+`subwindow_type` and `fallback_widget` are two redundant representations of the same subwindow:
 
-- `layer_type` represents the layer's "semantic" content, as an enum with variants for common layer types.
-- `fallback_widget` represents the layer's "visual" content, as a widget which should be drawn at the root of the new layer.
+- `subwindow_type` represents the subwindow's "semantic" content, as an enum with variants for common subwindow types.
+- `fallback_widget` represents the subwindow's "visual" content, as a widget which should be drawn at the root of the new subwindow.
 
-These two values are sent to the Masonry driver running the app; if the driver has built-in behavior for the given `layer_type`, this behavior will be used.
-Otherwise, the driver will add a new layer to the current [`RenderRoot`] with `fallback_widget` as its root.
+These two values are sent to the Masonry driver running the app; if the driver has built-in behavior for the given `subwindow_type`, this behavior will be used.
+Otherwise, the driver will add a new subwindow to the current [`RenderRoot`] with `fallback_widget` as its root.
 
 
 ## Safety rails

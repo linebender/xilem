@@ -274,14 +274,14 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
     // INIT TREE
-    if root.layer_stack.incomplete() {
+    if root.subwindow_stack.incomplete() {
         let mut ctx = RegisterCtx {
             global_state: &mut root.global_state,
             children: root.widget_arena.nodes.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
-        ctx.register_child(&mut root.layer_stack);
+        ctx.register_child(&mut root.subwindow_stack);
     }
 
     let root_node = root.widget_arena.get_node_mut(root.root_id());

@@ -5,12 +5,12 @@ use crate::core::Widget;
 
 use crate::core::{EventCtx, PointerEvent, PropertiesMut};
 
-/// The type of a new [`Layer`].
+/// The type of a new [`Subwindow`].
 ///
-/// When adding a new [layer](crate::doc::masonry_concepts#layers) to the app,
+/// When adding a new [subwindow](crate::doc::masonry_concepts#subwindows) to the app,
 /// this tells the app driver what type of item to add.
 #[derive(Clone, Debug, Default)]
-pub enum LayerType {
+pub enum SubwindowType {
     /// A simple tooltip showing some text until the mouse moves.
     Tooltip(String),
     /// A menu showing the different options of a selector widget.
@@ -20,20 +20,20 @@ pub enum LayerType {
         /// The initially selected option.
         selected_option: usize,
     },
-    /// Unknown layer type. Always use the widget fallback.
+    /// Unknown subwindow type. Always use the widget fallback.
     #[default]
     Other,
 }
 
 /// The trait implemented by widgets which are meant to be at the root of
-/// a [layer](crate::doc::masonry_concepts#layers).
-pub trait Layer: Widget {
+/// a [subwindow](crate::doc::masonry_concepts#subwindows).
+pub trait Subwindow: Widget {
     // TODO - Possible evolutions:
     // - Return flag to suppress event from reaching children.
-    // - Return flag to remove layer.
-    // - Pass layer id to method.
+    // - Return flag to remove subwindow.
+    // - Pass subwindow id to method.
 
-    /// An event handler called for every layer for all pointer events, even those outside the layer's root widget.
+    /// An event handler called for every subwindow for all pointer events, even those outside the subwindow's root widget.
     fn capture_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,

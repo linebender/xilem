@@ -16,7 +16,7 @@ use crate::kurbo::{Axis, Size};
 use crate::layout::{LayoutSize, LenReq, Length, SizeDef};
 use crate::widgets::Label;
 
-/// An option in a [`SelectorMenu`](crate::layers::SelectorMenu).
+/// An option in a [`SelectorMenu`](crate::subwindows::SelectorMenu).
 pub struct SelectorItem {
     child: WidgetPod<Label>,
 }

@@ -39,9 +39,9 @@ Demonstration of the grid layout.
 
 Simple image example.
 
-## `layers`
+## `subwindows`
 
-Demonstration of the layer system with a simple tooltip.
+Demonstration of the subwindow system with a simple tooltip.
 
 
 ## `gallery`

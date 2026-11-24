@@ -16,7 +16,7 @@ use crate::core::Widget;
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
 ///
-/// [property]: crate::doc::masonry_concepts#layers
+/// [property]: crate::doc::masonry_concepts#properties
 pub trait Property: Default + Clone + Send + Sync + 'static {
     /// A static reference to a default value.
     ///
@@ -49,5 +49,5 @@ pub trait Property: Default + Clone + Send + Sync + 'static {
 ///
 /// This is not used directly by Masonry, but is instead provided for the convenience of external crates.
 ///
-/// [property]: crate::doc::masonry_concepts#layers
+/// [property]: crate::doc::masonry_concepts#properties
 pub trait UsesProperty<P: Property>: Widget {}

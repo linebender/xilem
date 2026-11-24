@@ -16,12 +16,13 @@ use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 
 use crate::app::VisualLayerPlan;
-use crate::app::layer_stack::LayerStack;
+use crate::app::subwindow_stack::SubwindowStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
-    Handled, Ime, LayerType, NewWidget, PointerEvent, PropertiesRef, PropertyArena, PropertyStack,
-    PropertyStackId, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaNode,
-    WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WidgetTag, WidgetTagInner, WindowEvent,
+    Handled, Ime, NewWidget, PointerEvent, PropertiesRef, PropertyArena, PropertyStack,
+    PropertyStackId, QueryCtx, ResizeDirection, SubwindowType, TextEvent, Widget, WidgetArena,
+    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WidgetTag,
+    WidgetTagInner, WindowEvent,
 };
 use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
@@ -55,8 +56,8 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 ///
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
-    /// `WidgetPod` handle for the layer stack, which holds the root widget of each layer.
-    pub(crate) layer_stack: WidgetPod<LayerStack>,
+    /// `WidgetPod` handle for the subwindow stack, which holds the root widget of each subwindow.
+    pub(crate) subwindow_stack: WidgetPod<SubwindowStack>,
 
     /// Property data, including property stacks and per-widget-type default properties.
     pub(crate) property_arena: PropertyArena,
@@ -151,8 +152,8 @@ pub(crate) struct RenderRootState {
 
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
-    /// Map of layers attached to widgets, keyed by the attached widget id, then the type of the layer root.
-    pub(crate) attached_layers: HashMap<WidgetId, HashMap<TypeId, WidgetId>>,
+    /// Map of subwindows attached to widgets, keyed by the attached widget id, then the type of the subwindow root.
+    pub(crate) attached_subwindows: HashMap<WidgetId, HashMap<TypeId, WidgetId>>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -279,18 +280,18 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
-    /// A new [layer] should be created with the widget as root.
+    /// A new [subwindow] should be created with the widget as root.
     ///
     /// The given [`Point`] must be in the window's coordinate space.
     ///
-    /// [layer]: crate::doc::masonry_concepts#layers
-    NewLayer(LayerType, NewWidget<dyn Widget>, Point),
-    /// The layer with the given widget as root should be removed.
-    RemoveLayer(WidgetId),
-    /// The layer with the given widget as root should be repositioned to the specified point.
+    /// [subwindow]: crate::doc::masonry_concepts#subwindows
+    NewSubwindow(SubwindowType, NewWidget<dyn Widget>, Point),
+    /// The subwindow with the given widget as root should be removed.
+    RemoveSubwindow(WidgetId),
+    /// The subwindow with the given widget as root should be repositioned to the specified point.
     ///
     /// The given [`Point`] must be in the window's coordinate space.
-    RepositionLayer(WidgetId, Point),
+    RepositionSubwindow(WidgetId, Point),
 }
 
 /// State of the widget inspector. Useful for debugging.
@@ -327,15 +328,15 @@ impl RenderRoot {
         } = options;
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
-        // LayerStack can't use Dimensions::AUTO because it'll resolve to the window size.
-        // Instead we want to always measure LayerStack, so it can measure its base layer.
-        let layer_stack = LayerStack::new(root_widget)
+        // SubwindowStack can't use Dimensions::AUTO because it'll resolve to the window size.
+        // Instead we want to always measure SubwindowStack, so it can measure its main subwindow.
+        let subwindow_stack = SubwindowStack::new(root_widget)
             .prepare()
             .with_props(Dimensions::MAX)
             .to_pod();
 
         let mut root = Self {
-            layer_stack,
+            subwindow_stack,
             global_state: RenderRootState {
                 signal_sink: Box::new(signal_sink),
                 window_node_id: AccessCtx::next_node_id(),
@@ -367,7 +368,7 @@ impl RenderRoot {
                 last_sent_ime_area: INVALID_IME_AREA,
                 scene_cache: HashMap::new(),
                 widget_tags: HashMap::new(),
-                attached_layers: HashMap::new(),
+                attached_subwindows: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
@@ -450,11 +451,11 @@ impl RenderRoot {
     }
 
     pub(crate) fn root_id(&self) -> WidgetId {
-        self.layer_stack.id()
+        self.subwindow_stack.id()
     }
 
-    /// `WidgetId` of the given layer's root widget.
-    pub(crate) fn layer_root_id(&self, layer_idx: usize) -> WidgetId {
+    /// `WidgetId` of the given subwindow's root widget.
+    pub(crate) fn subwindow_root_id(&self, subwindow_idx: usize) -> WidgetId {
         let node_ref = self
             .widget_arena
             .nodes
@@ -462,14 +463,16 @@ impl RenderRoot {
             .expect("root widget not in widget tree");
         let widget = &*node_ref.item.widget;
 
-        let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
-        stack.layer_root_id(layer_idx)
+        let stack = (widget as &dyn Any)
+            .downcast_ref::<SubwindowStack>()
+            .unwrap();
+        stack.subwindow_root_id(subwindow_idx)
     }
 
-    /// Returns the widget ID of each layer, in stack order.
+    /// Returns the widget ID of each subwindow, in stack order.
     ///
-    /// Index 0 is the base layer; subsequent entries are overlay layers.
-    pub(crate) fn layer_root_ids(&self) -> Vec<WidgetId> {
+    /// Index 0 is the main subwindow; subsequent entries are overlay subwindows.
+    pub(crate) fn subwindow_root_ids(&self) -> Vec<WidgetId> {
         let node_ref = self
             .widget_arena
             .nodes
@@ -477,9 +480,11 @@ impl RenderRoot {
             .expect("root widget not in widget tree");
         let widget = &*node_ref.item.widget;
 
-        let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
-        (0..stack.layer_count())
-            .map(|i| stack.layer_root_id(i))
+        let stack = (widget as &dyn Any)
+            .downcast_ref::<SubwindowStack>()
+            .unwrap();
+        (0..stack.subwindow_count())
+            .map(|i| stack.subwindow_root_id(i))
             .collect()
     }
 
@@ -499,7 +504,7 @@ impl RenderRoot {
             .widget_arena
             .nodes
             .roots_mut()
-            .into_item_mut(self.layer_stack.id())
+            .into_item_mut(self.subwindow_stack.id())
             .expect("root widget not in widget tree")
             .item
             .state
@@ -627,10 +632,10 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS
-    /// Returns a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
-    pub fn get_layer_root(&self, layer_idx: usize) -> WidgetRef<'_, dyn Widget> {
-        self.get_widget(self.layer_root_id(layer_idx))
-            .expect("layer root not in widget tree")
+    /// Returns a [`WidgetRef`] to the root widget of the given [subwindow](crate::doc::masonry_concepts#subwindows).
+    pub fn get_subwindow_root(&self, subwindow_idx: usize) -> WidgetRef<'_, dyn Widget> {
+        self.get_widget(self.subwindow_root_id(subwindow_idx))
+            .expect("subwindow root not in widget tree")
     }
 
     /// Returns a [`WidgetRef`] to a specific widget.
@@ -680,32 +685,32 @@ impl RenderRoot {
         self.widget_arena.has(id)
     }
 
-    /// Returns a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
+    /// Returns a [`WidgetMut`] to the root widget of the [main subwindow](crate::doc::masonry_concepts#subwindows).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_base_layer<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
-        let layer_id = self.layer_root_id(0);
-        let res = mutate_widget(self, layer_id, f);
+    pub fn edit_main_subwindow<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+        let subwindow_id = self.subwindow_root_id(0);
+        let res = mutate_widget(self, subwindow_id, f);
 
         self.run_rewrite_passes();
 
         res
     }
 
-    /// Returns a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layers).
+    /// Returns a [`WidgetMut`] to the root widget of the given [subwindow](crate::doc::masonry_concepts#subwindows).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     ///
     /// # Panics
     ///
     /// Panics if `idx` is out of bounds.
-    pub fn edit_layer<R>(
+    pub fn edit_subwindow<R>(
         &mut self,
-        layer_idx: usize,
+        subwindow_idx: usize,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
-        let layer_id = self.layer_root_id(layer_idx);
-        let res = mutate_widget(self, layer_id, f);
+        let subwindow_id = self.subwindow_root_id(subwindow_idx);
+        let res = mutate_widget(self, subwindow_id, f);
 
         self.run_rewrite_passes();
 
@@ -756,50 +761,50 @@ impl RenderRoot {
         res
     }
 
-    /// Adds a new layer at the end of the stack, with the given widget as its root, at the given position.
+    /// Adds a new subwindow at the end of the stack, with the given widget as its root, at the given position.
     ///
     /// The given `pos` must be in the window's coordinate space.
-    pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
-        debug!("added layer to stack");
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
-            let mut layer_stack = layer_stack.downcast::<LayerStack>();
-            LayerStack::add_layer(&mut layer_stack, root, pos);
+    pub fn add_subwindow(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
+        debug!("added subwindow to stack");
+        mutate_widget(self, self.root_id(), |mut subwindow_stack| {
+            let mut subwindow_stack = subwindow_stack.downcast::<SubwindowStack>();
+            SubwindowStack::add_subwindow(&mut subwindow_stack, root, pos);
         });
 
         self.run_rewrite_passes();
     }
 
-    /// Removes the layer with the given widget as root.
+    /// Removes the subwindow with the given widget as root.
     ///
-    /// The base layer cannot be removed.
+    /// The main subwindow cannot be removed.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended layer is the base layer or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
-    pub fn remove_layer(&mut self, root_id: WidgetId) {
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
-            let mut layer_stack = layer_stack.downcast::<LayerStack>();
-            LayerStack::remove_layer(&mut layer_stack, root_id);
+    pub fn remove_subwindow(&mut self, root_id: WidgetId) {
+        mutate_widget(self, self.root_id(), |mut subwindow_stack| {
+            let mut subwindow_stack = subwindow_stack.downcast::<SubwindowStack>();
+            SubwindowStack::remove_subwindow(&mut subwindow_stack, root_id);
         });
 
         self.run_rewrite_passes();
     }
 
-    /// Repositions the layer with the given widget as root.
+    /// Repositions the subwindow with the given widget as root.
     ///
     /// The given `new_origin` must be in the window's coordinate space.
     ///
-    /// The base layer cannot be repositioned.
+    /// The main subwindow cannot be repositioned.
     ///
     /// # Panics
     ///
-    /// Panics in debug mode if the intended layer is the base layer or
+    /// Panics in debug mode if the intended subwindow is the main subwindow or
     /// is not found.
-    pub fn reposition_layer(&mut self, root_id: WidgetId, new_origin: Point) {
-        mutate_widget(self, self.root_id(), |mut layer_stack| {
-            let mut layer_stack = layer_stack.downcast::<LayerStack>();
-            LayerStack::reposition_layer(&mut layer_stack, root_id, new_origin);
+    pub fn reposition_subwindow(&mut self, root_id: WidgetId, new_origin: Point) {
+        mutate_widget(self, self.root_id(), |mut subwindow_stack| {
+            let mut subwindow_stack = subwindow_stack.downcast::<SubwindowStack>();
+            SubwindowStack::reposition_subwindow(&mut subwindow_stack, root_id, new_origin);
         });
 
         self.run_rewrite_passes();
@@ -1110,7 +1115,7 @@ impl std::fmt::Debug for RenderRoot {
                 "widget_arena",
                 &format!("<{} widgets>", self.widget_arena.nodes.len()),
             )
-            .field("layer_stack", &self.layer_stack)
+            .field("subwindow_stack", &self.subwindow_stack)
             .field("global_state", &self.global_state)
             .finish_non_exhaustive()
     }
