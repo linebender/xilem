@@ -6,8 +6,10 @@ license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
-anyhow = "1.0.102"
 console_error_panic_hook = "0.1.7"
 console_log = "1.0.0"
 gloo-file = { version = "0.3.0", features = ["futures"] }

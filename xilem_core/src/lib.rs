@@ -33,10 +33,8 @@
 //! [Xilem Web]: https://crates.io/crates/xilem_web
 //! [xilem docs]: https://docs.rs/xilem/latest/xilem/
 
-// LINEBENDER LINT SET - lib.rs - v3
+// LINEBENDER LINT SET - lib.rs - v5
 // See https://linebender.org/wiki/canonical-lints/
-// These lints shouldn't apply to examples or tests.
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 // These lints shouldn't apply to examples.
 #![warn(clippy::print_stdout, clippy::print_stderr)]
 // Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.

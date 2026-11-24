@@ -22,6 +22,8 @@ fn next_chr(s: &str) -> char {
 }
 
 fn backslash_x(s: &str) -> Option<(u8, &str)> {
+    #![expect(clippy::cast_possible_truncation, reason = "hi/lo are always small")]
+
     let b0 = byte(s, 0);
     let b1 = byte(s, 1);
     let hi = char::from(b0).to_digit(16)?;

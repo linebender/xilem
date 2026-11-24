@@ -15,7 +15,7 @@ use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 /// Simple but suboptimal pseudo-random function, you shouldn't use this in production
 fn rand_f32() -> f32 {
     static SEED: AtomicU32 = AtomicU32::new(123);
-    SEED.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+    SEED.try_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
         Some(x.wrapping_mul(1664525).wrapping_add(1013904223))
     })
     .unwrap() as f32
