@@ -401,6 +401,16 @@ impl RenderRoot {
                 FallbackKey::new(Script::from_bytes(*b"Latn"), None),
                 families.iter().map(|(family, _)| *family),
             );
+            // Also make test fonts available as the generic families (`system-ui` etc.).
+            // The tests don't use system fonts, which means generic families in a style's font stack
+            // wouldn't resolve, and the glyphs then come from fallback. At least in Parley v0.12,
+            // that causes lines to be sized with synthesized "primary font" metrics.
+            for &generic in parley::GenericFamily::all() {
+                root.global_state
+                    .font_context
+                    .collection
+                    .append_generic_families(generic, families.iter().map(|(family, _)| *family));
+            }
         }
 
         // We run a set of passes to initialize the widget tree

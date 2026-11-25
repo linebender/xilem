@@ -66,7 +66,8 @@ imaging_vello_hybrid = { git = "https://github.com/forest-rs/imaging.git", rev =
 imaging_vello_cpu = { git = "https://github.com/forest-rs/imaging.git", rev = "f3f932a8a0e233f5ab52863041b8a3d6cff9255b" }
 wgpu = "30.0.1"
 kurbo = "0.13.1"
-parley = { version = "0.8.0", features = ["accesskit"] }
+parley = "0.12.0"
+skrifa = { version = "0.44.0", default-features = false, features = ["std"] }
 # TODO: Use no_std correctly in Xilem Web.
 peniko = "0.6.1"
 winit = "0.30.13"
@@ -83,13 +84,13 @@ image = { version = "0.25.10", default-features = false }
 resvg = "0.47.0"
 usvg = "0.47.0"
 web-time = "1.1.0"
-accesskit = "0.24.0"
-accesskit_winit = { version = "0.32.2", default-features = false, features = [
+accesskit = "0.25.2"
+accesskit_winit = { version = "0.34.2", default-features = false, features = [
     "accesskit_unix",
     "tokio",
     "rwh_06",
 ] }
-accesskit_consumer = "0.35.0"
+accesskit_consumer = "0.39.2"
 time = "0.3.47"
 reqwest = { version = "0.12.28", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
