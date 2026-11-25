@@ -70,7 +70,7 @@ parley = "0.12.0"
 skrifa = { version = "0.44.0", default-features = false, features = ["std"] }
 # TODO: Use no_std correctly in Xilem Web.
 peniko = "0.6.1"
-winit = "0.30.13"
+winit = "0.31.0-beta.4"
 tracing = { version = "0.1.44", default-features = false }
 tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"

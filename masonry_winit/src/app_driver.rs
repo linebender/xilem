@@ -41,11 +41,11 @@ impl WindowId {
 #[derive(Debug)]
 pub struct DriverCtx<'a> {
     state: &'a mut MasonryState,
-    event_loop: &'a ActiveEventLoop,
+    event_loop: &'a dyn ActiveEventLoop,
 }
 
 impl<'a> DriverCtx<'a> {
-    pub(crate) fn new(state: &'a mut MasonryState, event_loop: &'a ActiveEventLoop) -> Self {
+    pub(crate) fn new(state: &'a mut MasonryState, event_loop: &'a dyn ActiveEventLoop) -> Self {
         Self { state, event_loop }
     }
 }

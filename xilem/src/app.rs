@@ -189,8 +189,7 @@ where
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (driver, windows) =
-            self.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
+        let (driver, windows) = self.into_driver_and_windows(move |event| todo!());
         masonry_winit::app::run_with(event_loop, windows, driver, default_properties)
     }
 
