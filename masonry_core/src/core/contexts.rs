@@ -1626,7 +1626,7 @@ impl_context_method!(
 
                 if let Some(subwindows) = global_state.attached_subwindows.remove(&state.id) {
                     for (_, subwindow_id) in subwindows {
-                        global_state.emit_signal(RenderRootSignal::RemoveSubwindow(subwindow_id));
+                        global_state.remove_subwindow(subwindow_id);
                     }
                 }
             }
@@ -2004,17 +2004,18 @@ impl_context_method!(
                 return;
             }
 
+            let self_id = self.widget_id();
+            let type_id = TypeId::of::<W>();
             // FIXME - Add SubwindowId type and use that instead.
             let subwindow_id = fallback_widget.id;
 
             let subwindows = self
                 .global_state
                 .attached_subwindows
-                .entry(self.widget_id())
+                .entry(self_id)
                 .or_default();
-            if let Some(prev) = subwindows.insert(TypeId::of::<W>(), subwindow_id) {
-                self.global_state
-                    .emit_signal(RenderRootSignal::RemoveSubwindow(prev));
+            if let Some(prev) = subwindows.insert(type_id, subwindow_id) {
+                self.global_state.remove_subwindow(prev);
             }
             self.global_state
                 .emit_signal(RenderRootSignal::NewSubwindow(
@@ -2022,6 +2023,9 @@ impl_context_method!(
                     fallback_widget.erased(),
                     position,
                 ));
+            self.global_state
+                .attached_subwindows_rev
+                .insert(subwindow_id, (type_id, self_id));
         }
 
         /// Returns the attached subwindow created by this widget with the given type `W`.
@@ -2036,26 +2040,9 @@ impl_context_method!(
         }
 
         /// Removes the subwindow with the specified widget as root.
-        pub fn remove_subwindow(&mut self, root_widget_id: WidgetId) {
+        pub fn remove_subwindow(&mut self, subwindow_root: WidgetId) {
             trace!("remove_subwindow");
-            self.global_state
-                .emit_signal(RenderRootSignal::RemoveSubwindow(root_widget_id));
-
-            let Some(subwindows) = self
-                .global_state
-                .attached_subwindows
-                .get_mut(&self.widget_id())
-            else {
-                return;
-            };
-
-            let subwindow_type_id = subwindows
-                .iter()
-                .find(|(_, id)| **id == root_widget_id)
-                .map(|(type_id, _)| *type_id);
-            if let Some(type_id) = subwindow_type_id {
-                subwindows.remove(&type_id);
-            }
+            self.global_state.remove_subwindow(subwindow_root);
         }
 
         /// Repositions the subwindow with the specified widget as root.

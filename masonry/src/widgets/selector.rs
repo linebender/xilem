@@ -25,8 +25,6 @@ pub struct Selector {
     pub(crate) options: Vec<String>,
     pub(crate) selected_option: usize,
     pub(crate) child: WidgetPod<Label>,
-    // FIXME - Replace with attached subwindows.
-    pub(crate) menu_subwindow_id: Option<WidgetId>,
 }
 
 // --- MARK: BUILDERS
@@ -46,7 +44,6 @@ impl Selector {
             options,
             selected_option: 0,
             child: WidgetPod::new(Label::new("")),
-            menu_subwindow_id: None,
         }
     }
 
@@ -116,9 +113,8 @@ pub struct SelectionChanged {
 impl Selector {
     fn toggle_selector_subwindow(&mut self, ctx: &mut EventCtx<'_>) {
         // If there's a selector menu, remove it.
-        if let Some(id) = self.menu_subwindow_id {
-            ctx.remove_subwindow(id);
-            self.menu_subwindow_id = None;
+        if let Some(menu) = ctx.get_attached_subwindow::<SelectorMenu>() {
+            ctx.remove_subwindow(menu);
             return;
         }
 
@@ -139,7 +135,7 @@ impl Selector {
 
         // TODO: We should ideally create a subwindow with the same transform as this widget.
         let border_box = ctx.border_box();
-        ctx.create_subwindow(
+        ctx.create_attached_subwindow(
             subwindow_type,
             subwindow_widget,
             ctx.to_window(border_box.origin()) + Vec2::new(0., border_box.size().height),
@@ -158,7 +154,7 @@ impl Widget for Selector {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down(..) if self.menu_subwindow_id.is_none() => {
+            PointerEvent::Down(..) if ctx.get_attached_subwindow::<SelectorMenu>().is_none() => {
                 ctx.capture_pointer();
             }
             PointerEvent::Up(PointerButtonEvent { .. }) if ctx.is_active() && ctx.is_hovered() => {
@@ -332,4 +328,6 @@ mod tests {
             assert_eq!(&**label.widget.text(), "White and gold");
         });
     }
+
+    // TODO - Add holistic tests that exercise subwindow behavior.
 }
