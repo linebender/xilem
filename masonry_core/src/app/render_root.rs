@@ -493,9 +493,8 @@ impl RenderRoot {
         let stack = (widget as &dyn Any)
             .downcast_ref::<SubwindowStack>()
             .unwrap();
-        (0..stack.subwindow_count())
-            .map(|i| stack.subwindow_root_id(i))
-            .collect()
+
+        Vec::from_fn(stack.subwindow_count(), |i| stack.subwindow_root_id(i))
     }
 
     pub(crate) fn root_state(&self) -> &WidgetState {

@@ -204,8 +204,7 @@ fn main() {
     let demos = build_demos();
 
     // Sidebar button tags (one per demo).
-    let sidebar_buttons: Vec<WidgetTag<Button>> =
-        (0..demos.len()).map(|_| WidgetTag::unique()).collect();
+    let sidebar_buttons = Vec::from_fn(demos.len(), |_| WidgetTag::<Button>::unique());
 
     let list = {
         let mut column = Flex::column().cross_axis_alignment(CrossAxisAlignment::Stretch);
