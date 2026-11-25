@@ -1143,10 +1143,10 @@ impl RenderRootState {
     /// Emit a `RemoveSubwindow` signal and perform related cleanups.
     // FIXME - Add SubwindowId type and use that instead.
     pub(crate) fn remove_subwindow(&mut self, subwindow_id: WidgetId) {
-        if let Some((type_id, widget_id)) = self.attached_subwindows_rev.remove(&subwindow_id) {
-            if let Some(map) = self.attached_subwindows.get_mut(&widget_id) {
-                let _ = map.remove(&type_id);
-            }
+        if let Some((type_id, widget_id)) = self.attached_subwindows_rev.remove(&subwindow_id)
+            && let Some(map) = self.attached_subwindows.get_mut(&widget_id)
+        {
+            let _ = map.remove(&type_id);
         }
         self.emit_signal(RenderRootSignal::RemoveSubwindow(subwindow_id));
     }
