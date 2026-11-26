@@ -717,6 +717,21 @@ impl Widget for VirtualScroll {
         // Calculate the sizes of all children
         self.virtual_list.model_mut().clear();
         for (idx, child) in &mut self.items {
+            if !self.active_range.contains(idx) {
+                // We stash any children we have which are outside of the active range.
+                // This is because we have asked the driver to remove them, but it hasn't
+                // gotten around to it yet, and laying out a stashed child is an error.
+                // N.B. although `LayoutCtx::set_stashed` is documented as being "TODO" for removal,
+                // this is nearly impossible to handle correctly without using this method; in
+                // particular, if a driver is delayed in being called (such as if layout is run
+                // twice in the passes loop).
+                ctx.set_stashed(child, true);
+                continue;
+            }
+            // The child might have been stashed by a previous layout pass (if it fell outside
+            // the materialized range while a fetch was pending), so unstash it before laying
+            // it out.
+            ctx.set_stashed(child, false);
             let auto_size = SizeDef::fit(size).with(self.direction.axis(), LenDef::MaxContent);
             let child_size = ctx.compute_size(child, auto_size, size.into());
             ctx.run_layout(child, child_size);
@@ -760,6 +775,10 @@ impl Widget for VirtualScroll {
         // place children
         let offset_of_anchor = self.virtual_list.offset_of(self.anchor_index);
         for (idx, child) in &mut self.items {
+            if !self.active_range.contains(idx) {
+                // Stashed in the size loop above; it was not laid out, so it can't be placed.
+                continue;
+            }
             if self.virtual_list.materialized_range().contains(idx) {
                 let pos = self.virtual_list.offset_of(*idx) - offset_of_anchor;
                 let placed_pos = if self.direction.is_reverse() {
@@ -1153,6 +1172,100 @@ mod tests {
                 "Should be scrolled as far as possible (which is the same as we originally were)"
             );
         }
+    }
+
+    #[test]
+    /// Scrolling multiple times before the driver has a chance to respond should not panic.
+    ///
+    /// After a `VirtualScrollFetchAction` is submitted but before the driver handles it,
+    /// children which fall outside the materialized range are stashed by the place loop.
+    /// A subsequent layout pass (e.g. from another scroll event) must not try to lay out
+    /// those stashed children.
+    fn scroll_between_driver_responses() {
+        let widget = VirtualScroll::new(0, usize::MAX).prepare();
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_id = harness.root_id();
+        fn driver(action: VirtualScrollFetchAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        NewWidget::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        )
+                        .erased(),
+                    );
+                }
+            }
+        }
+
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
+        harness.mouse_move_to(virtual_scroll_id);
+        // Scroll far enough that the previously loaded children fall outside the
+        // materialized range, then scroll again without letting the driver respond.
+        // Each scroll runs a layout pass; the second one must not lay out the
+        // children stashed by the first.
+        harness.mouse_wheel(Vec2 { x: 0., y: -3000. });
+        harness.mouse_wheel(Vec2 { x: 0., y: -3000. });
+        harness.mouse_wheel(Vec2 { x: 0., y: -3000. });
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
+    }
+
+    #[test]
+    /// A driver which defers removing children (e.g. because removal happens asynchronously)
+    /// should not cause a panic.
+    ///
+    /// Children which the driver has been asked to remove (i.e. which are outside the active
+    /// range) are stashed, and must not be laid out until they are actually removed.
+    fn deferred_removal_driver() {
+        let widget = VirtualScroll::new(0, usize::MAX).prepare();
+
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, (100, 200));
+        let virtual_scroll_id = harness.root_id();
+        // Removals requested by the previous action, which we haven't performed yet.
+        let mut pending_removals: Vec<usize> = Vec::new();
+        let mut driver = |action: VirtualScrollFetchAction,
+                          mut scroll: WidgetMut<'_, VirtualScroll>| {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            // Perform the removals requested by the *previous* action, simulating a driver
+            // which is slow to remove children.
+            for idx in pending_removals.drain(..) {
+                VirtualScroll::remove_child(&mut scroll, idx);
+            }
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    pending_removals.push(idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        NewWidget::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        )
+                        .erased(),
+                    );
+                }
+            }
+        };
+
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, &mut driver);
+        harness.mouse_move_to(virtual_scroll_id);
+        // Scroll downwards only, so that the deferred removals never re-enter the active range.
+        harness.mouse_wheel(Vec2 { x: 0., y: -1000. });
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, &mut driver);
+        harness.mouse_wheel(Vec2 { x: 0., y: -1000. });
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, &mut driver);
     }
 
     fn drive_to_fixpoint(
