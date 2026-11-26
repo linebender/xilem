@@ -170,7 +170,7 @@ pub struct TestHarness<W: Widget> {
 pub struct TestHarnessParams {
     /// The size of the virtual window the harness renders into for snapshot testing.
     /// Defaults to [`TestHarnessParams::DEFAULT_SIZE`].
-    pub window_size: PhysicalSize<u32>,
+    pub window_size: LogicalSize<u32>,
     /// The background color of the virtual window.
     /// Defaults to [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
@@ -258,7 +258,7 @@ impl TestHarnessParams {
     };
 
     /// Default canvas size for tests.
-    pub const DEFAULT_SIZE: PhysicalSize<u32> = PhysicalSize::new(400, 400);
+    pub const DEFAULT_SIZE: LogicalSize<u32> = LogicalSize::new(400, 400);
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
@@ -280,7 +280,7 @@ impl Default for TestHarnessParams {
 
 impl TestHarnessParams {
     /// Returns parameters for a test harness with custom dimensions.
-    pub fn size_and_padding(window_size: impl Into<PhysicalSize<u32>>, root_padding: u32) -> Self {
+    pub fn size_and_padding(window_size: impl Into<LogicalSize<u32>>, root_padding: u32) -> Self {
         Self {
             window_size: window_size.into(),
             root_padding,
@@ -289,7 +289,7 @@ impl TestHarnessParams {
     }
 
     /// Builder method to set `window_size`.
-    pub fn with_size(self, window_size: impl Into<PhysicalSize<u32>>) -> Self {
+    pub fn with_size(self, window_size: impl Into<LogicalSize<u32>>) -> Self {
         Self {
             window_size: window_size.into(),
             ..self
@@ -349,7 +349,7 @@ impl<W: Widget> TestHarness<W> {
     pub fn create_with_size(
         default_props: DefaultProperties,
         root_widget: NewWidget<W>,
-        window_size: impl Into<PhysicalSize<u32>>,
+        window_size: impl Into<LogicalSize<u32>>,
     ) -> Self {
         Self::create_with(
             default_props,
@@ -365,7 +365,7 @@ impl<W: Widget> TestHarness<W> {
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
-        let window_size = params.window_size;
+        let window_size = params.window_size.to_physical(params.scale_factor);
 
         // If no tracing subscriber has been set before, we set our own. If one has
         // already been set, we get an error which we swallow.
@@ -1134,7 +1134,7 @@ impl<W: Widget> TestHarness<W> {
                 && saved_len > max_size
             {
                 panic!(
-                    "New screenshot file ({saved_len} bytes) was larger than the supported file size ({max_size} bytes).\
+                    "New screenshot file ({saved_len} bytes) was larger than the supported file size ({max_size} bytes). \
                         Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
                 );
             }
@@ -1198,7 +1198,7 @@ impl<W: Widget> TestHarness<W> {
             let _ = std::fs::remove_file(&diff_path);
             if reference_size > u64::from(self.max_screenshot_size) {
                 panic!(
-                    "Existing file ({reference_size}) was larger than the supported file size ({}).\
+                    "Existing file ({reference_size}) was larger than the supported file size ({}). \
                     Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
                     self.max_screenshot_size
                 );

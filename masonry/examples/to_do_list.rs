@@ -130,7 +130,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use masonry::core::PointerButton;
-    use masonry_testing::{TestHarness, assert_render_snapshot};
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 
@@ -171,5 +171,15 @@ mod tests {
             harness.mouse_click_on(add_btn_id, Some(PointerButton::Primary));
         });
         assert_render_snapshot!(harness, "example_to_do_list_task2_added");
+    }
+
+    #[test]
+    fn screenshot_test_scaled() {
+        let mut params = TestHarnessParams::default();
+        params.scale_factor = 2.0;
+        params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+        let mut harness =
+            TestHarness::create_with(default_property_set(), make_widget_tree(), params);
+        assert_render_snapshot!(harness, "example_to_do_list_scaled");
     }
 }
