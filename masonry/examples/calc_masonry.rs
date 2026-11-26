@@ -401,7 +401,7 @@ mod tests {
     fn screenshot_test_scaled() {
         let mut params = TestHarnessParams::default();
         params.scale_factor = 2.0;
-        params.max_screenshot_size = 16 * 1024;
+        params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
         let mut harness = TestHarness::create_with(custom_property_set(), build_calc(), params);
         assert_render_snapshot!(harness, "example_calc_masonry_scaled");
     }

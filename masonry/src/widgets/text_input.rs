@@ -386,14 +386,14 @@ mod tests {
 
     use super::*;
     use crate::core::{StyleProperty, TextEvent};
-    use crate::dpi::PhysicalSize;
+    use crate::dpi::LogicalSize;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::test_property_set;
     use crate::widgets::TextArea;
 
     const HARNESS_PARAMS: TestHarnessParams = {
         let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = PhysicalSize::new(150, 40);
+        params.window_size = LogicalSize::new(150, 40);
         params.root_padding = 15;
         params
     };

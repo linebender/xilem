@@ -139,4 +139,14 @@ mod tests {
 
         // TODO - Test clicking buttons
     }
+
+    #[test]
+    fn screenshot_test_scaled() {
+        let mut test_params = TestHarnessParams::default();
+        test_params.scale_factor = 2.0;
+        test_params.max_screenshot_size = 32 * TestHarnessParams::KIBIBYTE;
+        let mut harness =
+            TestHarness::create_with(default_property_set(), make_grid(1.0), test_params);
+        assert_render_snapshot!(harness, "example_grid_masonry_scaled");
+    }
 }
