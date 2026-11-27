@@ -1,8 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use winit::cursor::Cursor;
 use winit::dpi::{Position, Size};
-use winit::window::{Cursor, Icon, Window, WindowAttributes, WindowButtons, WindowLevel};
+use winit::icon::Icon;
+use winit::window::{Window, WindowAttributes, WindowButtons, WindowLevel};
 
 // TODO: make this a type-state builder to force Xilem::new apps to define on_close?
 /// Attributes and callbacks of a window.
@@ -181,13 +183,13 @@ impl<State> WindowOptions<State> {
             .with_window_icon(self.initial.window_icon.clone());
 
         if let Some(min_inner_size) = self.reactive.min_inner_size {
-            attrs = attrs.with_min_inner_size(min_inner_size);
+            attrs = attrs.with_min_surface_size(min_inner_size);
         }
         if let Some(max_inner_size) = self.reactive.max_inner_size {
-            attrs = attrs.with_max_inner_size(max_inner_size);
+            attrs = attrs.with_max_surface_size(max_inner_size);
         }
         if let Some(inner_size) = self.initial.inner_size {
-            attrs = attrs.with_inner_size(inner_size);
+            attrs = attrs.with_surface_size(inner_size);
         }
         if let Some(position) = self.initial.position {
             attrs = attrs.with_position(position);
@@ -197,12 +199,12 @@ impl<State> WindowOptions<State> {
             .build(self.reactive.platform_specific.build(attrs))
     }
 
-    pub(crate) fn rebuild(&self, prev: &Self, window: &Window) {
+    pub(crate) fn rebuild(&self, prev: &Self, window: &dyn Window) {
         self.rebuild_reactive_window_attributes(prev, window);
         self.warn_for_changed_initial_attributes(prev);
     }
 
-    fn rebuild_reactive_window_attributes(&self, prev: &Self, window: &Window) {
+    fn rebuild_reactive_window_attributes(&self, prev: &Self, window: &dyn Window) {
         let current = &self.reactive;
         let prev = &prev.reactive;
 
@@ -219,10 +221,10 @@ impl<State> WindowOptions<State> {
             window.set_cursor(current.cursor.clone());
         }
         if current.min_inner_size != prev.min_inner_size {
-            window.set_min_inner_size(current.min_inner_size);
+            window.set_min_surface_size(current.min_inner_size);
         }
         if current.max_inner_size != prev.max_inner_size {
-            window.set_max_inner_size(current.max_inner_size);
+            window.set_max_surface_size(current.max_inner_size);
         }
         if current.window_level != prev.window_level {
             window.set_window_level(current.window_level);
@@ -269,7 +271,7 @@ impl<State> WindowOptions<State> {
 #[cfg(windows)]
 mod windows {
     use winit::platform::windows::{
-        BackdropType, Color, CornerPreference, HMENU, HWND, WindowAttributesExtWindows,
+        BackdropType, Color, CornerPreference, HMENU, HWND, WindowAttributesWindows,
         WindowExtWindows,
     };
     use winit::window::{Icon, Window, WindowAttributes};
@@ -369,7 +371,7 @@ mod windows {
             attrs
         }
 
-        pub(crate) fn rebuild(&self, prev: &Self, window: &Window) {
+        pub(crate) fn rebuild(&self, prev: &Self, window: &dyn Window) {
             // TODO: move taskbar_icon to ReactiveWindowAttrs once the winit type implements PartialEq
             // if self.taskbar_icon != prev.taskbar_icon {
             //     window.set_taskbar_icon(self.taskbar_icon)
@@ -588,7 +590,7 @@ mod windows {
 
 #[cfg(target_os = "macos")]
 mod macos {
-    use winit::platform::macos::WindowAttributesExtMacOS;
+    use winit::platform::macos::WindowAttributesMacOS;
     use winit::window::{Window, WindowAttributes};
 
     #[derive(Debug, Clone, Default)]
@@ -647,7 +649,7 @@ mod macos {
             attrs
         }
 
-        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &dyn Window) {}
     }
 
     /// Extension setters for macOS-specific window options.
@@ -706,8 +708,8 @@ mod macos {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use winit::platform::wayland::WindowAttributesExtWayland;
-    use winit::platform::x11::WindowAttributesExtX11;
+    use winit::platform::wayland::WindowAttributesWayland;
+    use winit::platform::x11::WindowAttributesX11;
     use winit::window::{Window, WindowAttributes};
 
     #[derive(Debug, Clone, Default)]
@@ -722,15 +724,7 @@ mod linux {
 
     impl PlatformSpecificInitialWindowAttrs {
         pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
-            let Some((general, instance)) = &self.name else {
-                return attrs;
-            };
-            // winit only knows which backend it will use at runtime, so the
-            // same identifier is applied to both: the Wayland `app_id` and the
-            // X11 `WM_CLASS`.
-            let attrs =
-                WindowAttributesExtWayland::with_name(attrs, general.clone(), instance.clone());
-            WindowAttributesExtX11::with_name(attrs, general.clone(), instance.clone())
+            return attrs;
         }
 
         pub(crate) fn warn(&self, prev: &Self) {
@@ -747,7 +741,7 @@ mod linux {
             attrs
         }
 
-        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &dyn Window) {}
     }
 
     /// Extension setters for Linux-specific window options.
@@ -793,7 +787,7 @@ mod dummy_platform {
             attrs
         }
 
-        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &dyn Window) {}
     }
 }
 
