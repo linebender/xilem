@@ -7,11 +7,12 @@ use tracing::{Span, trace_span};
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, PaintCtx,
-    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, SubwindowType,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    SubwindowPlacement, SubwindowType, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::imaging::Painter;
-use crate::kurbo::{Axis, Size, Vec2};
+use crate::kurbo::{Axis, Size};
 use crate::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
 use crate::subwindows::SelectorMenu;
 use crate::theme;
@@ -131,14 +132,12 @@ impl Selector {
             menu = menu.with(NewWidget::new(item));
         }
 
-        let subwindow_widget = NewWidget::new(menu);
-
         // TODO: We should ideally create a subwindow with the same transform as this widget.
-        let border_box = ctx.border_box();
+        let anchor = ctx.window_transform().transform_rect_bbox(ctx.border_box());
         ctx.create_attached_subwindow(
             subwindow_type,
-            subwindow_widget,
-            ctx.to_window(border_box.origin()) + Vec2::new(0., border_box.size().height),
+            NewWidget::new(menu),
+            SubwindowPlacement::Dropdown(anchor),
         );
     }
 }
@@ -310,8 +309,11 @@ impl Widget for Selector {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::PointerButton;
+    use crate::layout::UnitPoint;
     use crate::testing::TestHarness;
     use crate::theme::test_property_set;
+    use crate::widgets::Align;
 
     #[test]
     fn with_selected_option() {
@@ -327,6 +329,35 @@ mod tests {
             let label = Selector::child_mut(&mut selector);
             assert_eq!(&**label.widget.text(), "White and gold");
         });
+    }
+
+    #[test]
+    fn menu_opens_below_or_flips_above_the_selector() {
+        for (alignment, opens_below) in [(UnitPoint::TOP, true), (UnitPoint::BOTTOM, false)] {
+            let selector = Selector::new(vec!["Short".into(), "A wider option".into()]).prepare();
+            let id = selector.id();
+            let root = Align::new(alignment, selector).prepare();
+            let mut harness = TestHarness::create_with_size(test_property_set(), root, (300, 200));
+            harness.mouse_click_on(id, Some(PointerButton::Primary));
+
+            let root = harness.render_root();
+            let selector = root.get_widget(id).unwrap();
+            let menu = root.get_subwindow_root(1);
+            let selector_ctx = selector.ctx();
+            let menu_ctx = menu.ctx();
+            let selector = selector_ctx
+                .window_transform()
+                .transform_rect_bbox(selector_ctx.border_box());
+            let menu = menu_ctx
+                .window_transform()
+                .transform_rect_bbox(menu_ctx.border_box());
+            assert_eq!(menu.x0, selector.x0);
+            if opens_below {
+                assert_eq!(menu.y0, selector.y1);
+            } else {
+                assert_eq!(menu.y1, selector.y0);
+            }
+        }
     }
 
     // TODO - Add holistic tests that exercise subwindow behavior.

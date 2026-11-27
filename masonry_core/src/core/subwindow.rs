@@ -15,6 +15,11 @@ pub enum SubwindowPlacement {
     ///
     /// The rectangle must be finite and is captured at creation time.
     Anchored(Rect),
+    /// Place a menu flush below this rectangle, aligned with its left edge.
+    /// Flip above or shift as needed to fit in the window.
+    ///
+    /// The rectangle must be finite and is captured at creation time.
+    Dropdown(Rect),
 }
 
 impl SubwindowPlacement {

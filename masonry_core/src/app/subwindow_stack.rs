@@ -259,13 +259,16 @@ impl Widget for SubwindowStack {
 }
 
 fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewport: Rect) -> Point {
-    let anchor = match subwindow.placement {
+    let (anchor, preferred, fallback, gap) = match subwindow.placement {
         SubwindowPlacement::Fixed(origin) => return origin,
-        SubwindowPlacement::Anchored(anchor) => anchor,
+        SubwindowPlacement::Anchored(anchor) => (anchor, Placement::TOP, Placement::BOTTOM, 8.0),
+        SubwindowPlacement::Dropdown(anchor) => {
+            (anchor, Placement::BOTTOM_START, Placement::TOP_START, 0.0)
+        }
     };
     let constraints = [
         AnchorConstraint::Offset {
-            main_axis: 8.0,
+            main_axis: gap,
             cross_axis: 0.0,
         },
         AnchorConstraint::Shift {
@@ -273,7 +276,7 @@ fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewpor
         },
     ];
     let option = |placement| AnchorPositionOption::new(placement).with_constraints(&constraints);
-    let fallbacks = [option(Placement::BOTTOM)];
+    let fallbacks = [option(fallback)];
     let policy = AnchorPolicy {
         scoring: ScoringPolicy {
             // Avoid rewarding a candidate for shifting closer to the anchor.
@@ -286,7 +289,7 @@ fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewpor
             // With equal visibility, switch as soon as the other side saves 2 logical pixels of shift.
             switch_threshold: 1.0,
         },
-        ..AnchorPolicy::new(option(Placement::TOP), &fallbacks)
+        ..AnchorPolicy::new(option(preferred), &fallbacks)
     };
 
     let frame = resolve_anchor(
