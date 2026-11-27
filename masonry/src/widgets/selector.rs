@@ -8,8 +8,8 @@ use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, AnchorPlacement, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx,
     NewWidget, PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, SubwindowPlacement, SubwindowType, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    RegisterCtx, SubwindowAnchor, SubwindowPlacement, SubwindowType, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
@@ -133,12 +133,11 @@ impl Selector {
         }
 
         // TODO: We should ideally create a subwindow with the same transform as this widget.
-        let anchor = ctx.window_transform().transform_rect_bbox(ctx.border_box());
         ctx.create_attached_subwindow(
             subwindow_type,
             NewWidget::new(menu),
             SubwindowPlacement::Anchored {
-                anchor,
+                anchor: SubwindowAnchor::Widget(ctx.widget_id()),
                 preferred: AnchorPlacement::BOTTOM_START,
                 gap: 0.0,
             },
@@ -313,7 +312,8 @@ impl Widget for Selector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::PointerButton;
+    use crate::core::{PointerButton, WindowEvent};
+    use crate::dpi::PhysicalSize;
     use crate::layout::UnitPoint;
     use crate::testing::TestHarness;
     use crate::theme::test_property_set;
@@ -344,22 +344,25 @@ mod tests {
             let mut harness = TestHarness::create_with_size(test_property_set(), root, (300, 200));
             harness.mouse_click_on(id, Some(PointerButton::Primary));
 
-            let root = harness.render_root();
-            let selector = root.get_widget(id).unwrap();
-            let menu = root.get_subwindow_root(1);
-            let selector_ctx = selector.ctx();
-            let menu_ctx = menu.ctx();
-            let selector = selector_ctx
-                .window_transform()
-                .transform_rect_bbox(selector_ctx.border_box());
-            let menu = menu_ctx
-                .window_transform()
-                .transform_rect_bbox(menu_ctx.border_box());
-            assert_eq!(menu.x0, selector.x0);
-            if opens_below {
-                assert_eq!(menu.y0, selector.y1);
-            } else {
-                assert_eq!(menu.y1, selector.y0);
+            for size in [PhysicalSize::new(300, 200), PhysicalSize::new(400, 250)] {
+                harness.process_window_event(WindowEvent::Resize(size));
+                let root = harness.render_root();
+                let selector = root.get_widget(id).unwrap();
+                let menu = root.get_subwindow_root(1);
+                let selector_ctx = selector.ctx();
+                let menu_ctx = menu.ctx();
+                let selector = selector_ctx
+                    .window_transform()
+                    .transform_rect_bbox(selector_ctx.border_box());
+                let menu = menu_ctx
+                    .window_transform()
+                    .transform_rect_bbox(menu_ctx.border_box());
+                assert_eq!(menu.x0, selector.x0);
+                if opens_below {
+                    assert_eq!(menu.y0, selector.y1);
+                } else {
+                    assert_eq!(menu.y1, selector.y0);
+                }
             }
         }
     }

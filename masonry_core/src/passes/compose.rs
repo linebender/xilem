@@ -5,8 +5,8 @@ use kurbo::Affine;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, PropertyArena, WidgetArenaNode};
+use crate::app::{RenderRoot, RenderRootState, SubwindowStack};
+use crate::core::{ComposeCtx, FromDynWidget, PropertyArena, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
@@ -16,6 +16,7 @@ fn compose_widget(
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_transformed: bool,
     parent_window_transform: Affine,
+    is_subwindow_stack: bool,
 ) {
     let mut children = node.children;
     let widget = &mut *node.item.widget;
@@ -55,14 +56,16 @@ fn compose_widget(
     state.transform_changed = false;
 
     let parent_transform = state.window_transform;
+    let stack_content_box = is_subwindow_stack.then(|| state.content_box());
     let parent_state = state;
-    recurse_on_children(id, widget, children, |mut node| {
+    let compose_child = |mut node: ArenaMut<'_, WidgetArenaNode>| {
         compose_widget(
             global_state,
             property_arena,
             node.reborrow_mut(),
             transformed,
             parent_transform,
+            false,
         );
         let parent_bounding_box = parent_state.bounding_box;
 
@@ -71,7 +74,14 @@ fn compose_widget(
         }
 
         parent_state.merge_up(&mut node.item.state);
-    });
+    };
+    if let Some(content_box) = stack_content_box {
+        SubwindowStack::from_dyn_mut(widget)
+            .expect("root widget must be a SubwindowStack")
+            .compose_subwindows(children, parent_transform, content_box, compose_child);
+    } else {
+        recurse_on_children(id, widget, children, compose_child);
+    }
 }
 
 // --- MARK: ROOT
@@ -92,5 +102,6 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root_node,
         false,
         Affine::IDENTITY,
+        true,
     );
 }

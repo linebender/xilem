@@ -271,10 +271,12 @@ They are drawn on top of the main subwindow at a fixed position or relative to a
 
 Most contexts have a `create_subwindow(subwindow_type, fallback_widget, placement)` method.
 Pass a point for fixed placement or [`SubwindowPlacement::Anchored`](crate::core::SubwindowPlacement::Anchored)
-with a rectangle in window coordinates, a preferred side and alignment, and a gap.
+with an anchor, a preferred side and alignment, and a gap.
+An anchor can be a fixed rectangle in window coordinates or the current border box of a
+widget in an earlier subwindow.
 For example, a tooltip can prefer `AnchorPlacement::TOP` with an 8 px gap, and a menu
 can prefer `AnchorPlacement::BOTTOM_START` with a zero gap. Use [`SubwindowPlacement::anchored_at`](crate::core::SubwindowPlacement::anchored_at)
-to anchor to a point. These placements capture the anchor when the subwindow is created.
+to use a fixed point in window coordinates.
 
 `subwindow_type` and `fallback_widget` are two redundant representations of the same subwindow:
 

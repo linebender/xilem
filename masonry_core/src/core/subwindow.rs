@@ -3,10 +3,28 @@
 
 use kurbo::{Point, Rect};
 
-use crate::core::{EventCtx, PointerEvent, PropertiesMut, Widget};
+use crate::core::{EventCtx, PointerEvent, PropertiesMut, Widget, WidgetId};
 
 /// The preferred side of an anchor and alignment along that side.
 pub use understory_anchor::Placement as AnchorPlacement;
+
+/// The geometry a subwindow is anchored to.
+#[derive(Clone, Copy, Debug)]
+pub enum SubwindowAnchor {
+    /// A fixed, finite rectangle in logical window coordinates.
+    Rect(Rect),
+    /// The current border box of a widget in an earlier subwindow in the stack.
+    ///
+    /// The position follows the widget as it moves. If the widget is absent
+    /// or stashed, the subwindow keeps its last visible placement.
+    Widget(WidgetId),
+}
+
+impl From<Rect> for SubwindowAnchor {
+    fn from(rect: Rect) -> Self {
+        Self::Rect(rect)
+    }
+}
 
 /// Placement of an in-window subwindow in logical window coordinates.
 #[derive(Clone, Copy, Debug)]
@@ -16,8 +34,8 @@ pub enum SubwindowPlacement {
     /// Place the subwindow next to an anchor, flipping to the opposite side or
     /// shifting as needed to fit in the window.
     Anchored {
-        /// The finite rectangle captured when the subwindow is created.
-        anchor: Rect,
+        /// A fixed rectangle or the widget to follow.
+        anchor: SubwindowAnchor,
         /// The preferred side and alignment. The fallback preserves the alignment.
         preferred: AnchorPlacement,
         /// The finite distance away from the anchor in logical pixels.
@@ -30,7 +48,7 @@ impl SubwindowPlacement {
     #[must_use]
     pub fn anchored_at(point: Point, preferred: AnchorPlacement, gap: f64) -> Self {
         Self::Anchored {
-            anchor: Rect::from_points(point, point),
+            anchor: SubwindowAnchor::Rect(Rect::from_points(point, point)),
             preferred,
             gap,
         }

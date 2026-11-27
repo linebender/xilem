@@ -4,19 +4,22 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use kurbo::{Axis, Insets, Point, Rect, Size};
+use kurbo::{Affine, Axis, Insets, Point, Rect, Size};
 use tracing::{Span, trace_span};
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use understory_anchor::{
     Anchor, AnchorConstraint, AnchorInput, AnchorPolicy, AnchorPositionOption, HysteresisPolicy,
     PreviousAnchorFrame, ScoringPolicy, resolve_anchor,
 };
 
 use crate::core::{
-    AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
-    RegisterCtx, SubwindowPlacement, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AnchorPlacement, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesRef, RegisterCtx, SubwindowAnchor, SubwindowPlacement, UpdateCtx, Widget,
+    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetState,
 };
 use crate::imaging::Painter;
 use crate::layout::{LenReq, Length, SizeDef};
+use crate::passes::layout::place_widget;
 
 /// A widget representing the top-level stack of visible subwindows owned by [`RenderRoot`](crate::app::RenderRoot).
 ///
@@ -221,7 +224,28 @@ impl Widget for SubwindowStack {
             // Measure overlays against the window size, using max-content as the fallback.
             let subwindow_size = ctx.compute_size(&mut subwindow.root, SizeDef::MAX, size.into());
             ctx.run_layout(&mut subwindow.root, subwindow_size);
-            let origin = subwindow_origin(subwindow, subwindow_size, viewport);
+            let origin = match subwindow.placement {
+                SubwindowPlacement::Fixed(origin) => origin,
+                SubwindowPlacement::Anchored {
+                    anchor: SubwindowAnchor::Rect(anchor),
+                    preferred,
+                    gap,
+                } => anchored_origin(
+                    anchor,
+                    preferred,
+                    gap,
+                    subwindow_size,
+                    viewport,
+                    &mut subwindow.previous_anchor,
+                ),
+                // Widget anchors use the current transforms during composition.
+                SubwindowPlacement::Anchored {
+                    anchor: SubwindowAnchor::Widget(_),
+                    ..
+                } => subwindow
+                    .previous_anchor
+                    .map_or(Point::ORIGIN, |frame| frame.rect().origin()),
+            };
             ctx.place_child(&mut subwindow.root, origin);
         }
     }
@@ -258,15 +282,82 @@ impl Widget for SubwindowStack {
     }
 }
 
-fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewport: Rect) -> Point {
-    let (anchor, preferred, gap) = match subwindow.placement {
-        SubwindowPlacement::Fixed(origin) => return origin,
-        SubwindowPlacement::Anchored {
-            anchor,
-            preferred,
-            gap,
-        } => (anchor, preferred, gap),
-    };
+impl SubwindowStack {
+    /// Compose in stack order so widget anchors can use the geometry of lower subwindows.
+    pub(crate) fn compose_subwindows(
+        &mut self,
+        mut children: ArenaMutList<'_, WidgetArenaNode>,
+        window_transform: Affine,
+        content_box: Rect,
+        mut compose: impl FnMut(ArenaMut<'_, WidgetArenaNode>),
+    ) {
+        let content_origin = content_box.origin().to_vec2();
+        let window_to_content = window_transform.pre_translate(content_origin).inverse();
+        let viewport = content_box.size().to_rect();
+        for index in 0..self.subwindows.len() {
+            let (lower, rest) = self.subwindows.split_at_mut(index);
+            let subwindow = &mut rest[0];
+            let widget_placement = match subwindow.placement {
+                SubwindowPlacement::Anchored {
+                    anchor: SubwindowAnchor::Widget(id),
+                    preferred,
+                    gap,
+                } => find_anchor_widget(children.reborrow(), lower, id).map(|state| {
+                    let anchor = (window_to_content * state.window_transform)
+                        .transform_rect_bbox(state.border_box());
+                    (anchor, preferred, gap)
+                }),
+                _ => None,
+            };
+            let child = children
+                .item_mut(subwindow.root.id())
+                .expect("subwindow root not in widget tree");
+            if let Some((anchor, preferred, gap)) = widget_placement {
+                let state = &mut child.item.state;
+                let origin = anchored_origin(
+                    anchor,
+                    preferred,
+                    gap,
+                    state.layout_border_box_size,
+                    viewport,
+                    &mut subwindow.previous_anchor,
+                );
+                let previous_end_point = state.end_point;
+                place_widget(state, origin + content_origin);
+                // Pixel snapping can change the border box while leaving its origin fixed.
+                state.needs_compose |= state.end_point != previous_end_point;
+            }
+            compose(child);
+        }
+    }
+}
+
+fn find_anchor_widget<'a>(
+    children: ArenaRefList<'a, WidgetArenaNode>,
+    lower: &[SubwindowEntry],
+    id: WidgetId,
+) -> Option<&'a WidgetState> {
+    lower
+        .iter()
+        .find_map(|entry| {
+            let root = children.item(entry.root.id())?;
+            Some(if entry.root.id() == id {
+                &root.item.state
+            } else {
+                &root.children.find(id)?.item.state
+            })
+        })
+        .filter(|state| !state.is_stashed)
+}
+
+fn anchored_origin(
+    anchor: Rect,
+    preferred: AnchorPlacement,
+    gap: f64,
+    floating_size: Size,
+    viewport: Rect,
+    previous: &mut Option<PreviousAnchorFrame>,
+) -> Point {
     let constraints = [
         AnchorConstraint::Offset {
             main_axis: gap,
@@ -299,10 +390,10 @@ fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewpor
             floating_size,
             viewport,
             boundary: viewport,
-            previous: subwindow.previous_anchor.as_ref(),
+            previous: previous.as_ref(),
         },
         policy,
     );
-    subwindow.previous_anchor = frame.visible.then(|| PreviousAnchorFrame::from(&frame));
+    *previous = frame.visible.then(|| PreviousAnchorFrame::from(&frame));
     frame.rect.origin()
 }

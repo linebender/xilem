@@ -200,7 +200,7 @@ mod tests {
         for (placement, expected) in [
             (
                 SubwindowPlacement::Anchored {
-                    anchor: Rect::new(40.0, 50.0, 60.0, 60.0),
+                    anchor: Rect::new(40.0, 50.0, 60.0, 60.0).into(),
                     preferred: AnchorPlacement::TOP,
                     gap: 8.0,
                 },

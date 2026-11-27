@@ -76,7 +76,7 @@ impl DemoPage for TooltipDemo {
         render_root.add_subwindow(
             tooltip,
             SubwindowPlacement::Anchored {
-                anchor,
+                anchor: anchor.into(),
                 preferred: AnchorPlacement::TOP,
                 gap: 8.0,
             },
