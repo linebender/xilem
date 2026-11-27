@@ -5,28 +5,35 @@ use kurbo::{Point, Rect};
 
 use crate::core::{EventCtx, PointerEvent, PropertiesMut, Widget};
 
+/// The preferred side of an anchor and alignment along that side.
+pub use understory_anchor::Placement as AnchorPlacement;
+
 /// Placement of an in-window subwindow in logical window coordinates.
 #[derive(Clone, Copy, Debug)]
 pub enum SubwindowPlacement {
     /// Place the subwindow's top-left corner at this point.
     Fixed(Point),
-    /// Place the subwindow above this rectangle with a gap, flipping below or
+    /// Place the subwindow next to an anchor, flipping to the opposite side or
     /// shifting as needed to fit in the window.
-    ///
-    /// The rectangle must be finite and is captured at creation time.
-    Anchored(Rect),
-    /// Place a menu flush below this rectangle, aligned with its left edge.
-    /// Flip above or shift as needed to fit in the window.
-    ///
-    /// The rectangle must be finite and is captured at creation time.
-    Dropdown(Rect),
+    Anchored {
+        /// The finite rectangle captured when the subwindow is created.
+        anchor: Rect,
+        /// The preferred side and alignment. The fallback preserves the alignment.
+        preferred: AnchorPlacement,
+        /// The finite distance away from the anchor in logical pixels.
+        gap: f64,
+    },
 }
 
 impl SubwindowPlacement {
-    /// Anchor a subwindow to a finite point in logical window coordinates.
+    /// Create an [anchored placement](Self::Anchored) from a finite point in window coordinates.
     #[must_use]
-    pub fn anchored_at(point: Point) -> Self {
-        Self::Anchored(Rect::from_points(point, point))
+    pub fn anchored_at(point: Point, preferred: AnchorPlacement, gap: f64) -> Self {
+        Self::Anchored {
+            anchor: Rect::from_points(point, point),
+            preferred,
+            gap,
+        }
     }
 }
 

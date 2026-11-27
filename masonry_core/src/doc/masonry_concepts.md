@@ -271,9 +271,10 @@ They are drawn on top of the main subwindow at a fixed position or relative to a
 
 Most contexts have a `create_subwindow(subwindow_type, fallback_widget, placement)` method.
 Pass a point for fixed placement or [`SubwindowPlacement::Anchored`](crate::core::SubwindowPlacement::Anchored)
-with a rectangle in window coordinates. Use [`SubwindowPlacement::anchored_at`](crate::core::SubwindowPlacement::anchored_at)
-to anchor to a point, or [`SubwindowPlacement::Dropdown`](crate::core::SubwindowPlacement::Dropdown)
-for a menu aligned with the left edge of a rectangle. These placements capture the anchor when the subwindow is created.
+with a rectangle in window coordinates, a preferred side and alignment, and a gap.
+For example, a tooltip can prefer `AnchorPlacement::TOP` with an 8 px gap, and a menu
+can prefer `AnchorPlacement::BOTTOM_START` with a zero gap. Use [`SubwindowPlacement::anchored_at`](crate::core::SubwindowPlacement::anchored_at)
+to anchor to a point. These placements capture the anchor when the subwindow is created.
 
 `subwindow_type` and `fallback_widget` are two redundant representations of the same subwindow:
 
@@ -285,8 +286,8 @@ Otherwise, the driver will add a new subwindow to the current [`RenderRoot`] wit
 
 For custom drivers, the third field of [`RenderRootSignal::NewSubwindow`](crate::app::RenderRootSignal::NewSubwindow)
 is now a `SubwindowPlacement`. Forward it directly to [`RenderRoot::add_subwindow`](crate::app::RenderRoot::add_subwindow)
-for in-window subwindows. Drivers that handle placement themselves can match `Fixed(point)`,
-`Anchored(rect)`, or `Dropdown(rect)`.
+for in-window subwindows. Drivers that handle placement themselves can match `Fixed(point)`
+or `Anchored { anchor, preferred, gap }`.
 
 
 ## Safety rails

@@ -182,7 +182,7 @@ mod tests {
     use masonry_testing::TestHarness;
 
     use super::*;
-    use crate::core::{SubwindowPlacement, WindowEvent};
+    use crate::core::{AnchorPlacement, SubwindowPlacement, WindowEvent};
     use crate::dpi::PhysicalSize;
     use crate::kurbo::{Point, Rect};
     use crate::layout::AsUnit;
@@ -199,11 +199,15 @@ mod tests {
         let root = harness.render_root();
         for (placement, expected) in [
             (
-                SubwindowPlacement::Anchored(Rect::new(40.0, 50.0, 60.0, 60.0)),
+                SubwindowPlacement::Anchored {
+                    anchor: Rect::new(40.0, 50.0, 60.0, 60.0),
+                    preferred: AnchorPlacement::TOP,
+                    gap: 8.0,
+                },
                 Rect::new(30.0, 22.0, 70.0, 42.0),
             ),
             (
-                SubwindowPlacement::anchored_at(Point::new(98.0, 2.0)),
+                SubwindowPlacement::anchored_at(Point::new(98.0, 2.0), AnchorPlacement::TOP, 8.0),
                 Rect::new(60.0, 10.0, 100.0, 30.0),
             ),
             (
@@ -231,7 +235,7 @@ mod tests {
         let tooltip = Tooltip::new(SizedBox::empty().size(40.px(), 20.px()).prepare()).prepare();
         root.add_subwindow(
             tooltip,
-            SubwindowPlacement::anchored_at(Point::new(50.0, 27.0)),
+            SubwindowPlacement::anchored_at(Point::new(50.0, 27.0), AnchorPlacement::TOP, 8.0),
         );
         assert_eq!(root.get_subwindow_root(1).ctx().bounding_box().y0, 35.0);
 

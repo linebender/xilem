@@ -3,8 +3,8 @@
 
 use masonry::app::RenderRoot;
 use masonry::core::{
-    ErasedAction, Handled, NewWidget, StyleProperty, SubwindowPlacement, Widget, WidgetId,
-    WidgetTag,
+    AnchorPlacement, ErasedAction, Handled, NewWidget, StyleProperty, SubwindowPlacement, Widget,
+    WidgetId, WidgetTag,
 };
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::subwindows::Tooltip;
@@ -73,7 +73,14 @@ impl DemoPage for TooltipDemo {
         ));
         let ctx = button.ctx();
         let anchor = ctx.window_transform().transform_rect_bbox(ctx.border_box());
-        render_root.add_subwindow(tooltip, SubwindowPlacement::Anchored(anchor));
+        render_root.add_subwindow(
+            tooltip,
+            SubwindowPlacement::Anchored {
+                anchor,
+                preferred: AnchorPlacement::TOP,
+                gap: 8.0,
+            },
+        );
         Handled::Yes
     }
 }

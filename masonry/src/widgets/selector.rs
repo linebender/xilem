@@ -6,10 +6,10 @@ use tracing::{Span, trace_span};
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx, NewWidget, PaintCtx,
-    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
-    SubwindowPlacement, SubwindowType, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, AccessEvent, AnchorPlacement, ChildrenIds, EventCtx, LayoutCtx, MeasureCtx,
+    NewWidget, PaintCtx, PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef,
+    RegisterCtx, SubwindowPlacement, SubwindowType, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Axis, Size};
@@ -137,7 +137,11 @@ impl Selector {
         ctx.create_attached_subwindow(
             subwindow_type,
             NewWidget::new(menu),
-            SubwindowPlacement::Dropdown(anchor),
+            SubwindowPlacement::Anchored {
+                anchor,
+                preferred: AnchorPlacement::BOTTOM_START,
+                gap: 0.0,
+            },
         );
     }
 }

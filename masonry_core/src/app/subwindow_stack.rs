@@ -8,7 +8,7 @@ use kurbo::{Axis, Insets, Point, Rect, Size};
 use tracing::{Span, trace_span};
 use understory_anchor::{
     Anchor, AnchorConstraint, AnchorInput, AnchorPolicy, AnchorPositionOption, HysteresisPolicy,
-    Placement, PreviousAnchorFrame, ScoringPolicy, resolve_anchor,
+    PreviousAnchorFrame, ScoringPolicy, resolve_anchor,
 };
 
 use crate::core::{
@@ -259,12 +259,13 @@ impl Widget for SubwindowStack {
 }
 
 fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewport: Rect) -> Point {
-    let (anchor, preferred, fallback, gap) = match subwindow.placement {
+    let (anchor, preferred, gap) = match subwindow.placement {
         SubwindowPlacement::Fixed(origin) => return origin,
-        SubwindowPlacement::Anchored(anchor) => (anchor, Placement::TOP, Placement::BOTTOM, 8.0),
-        SubwindowPlacement::Dropdown(anchor) => {
-            (anchor, Placement::BOTTOM_START, Placement::TOP_START, 0.0)
-        }
+        SubwindowPlacement::Anchored {
+            anchor,
+            preferred,
+            gap,
+        } => (anchor, preferred, gap),
     };
     let constraints = [
         AnchorConstraint::Offset {
@@ -276,7 +277,7 @@ fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewpor
         },
     ];
     let option = |placement| AnchorPositionOption::new(placement).with_constraints(&constraints);
-    let fallbacks = [option(fallback)];
+    let fallbacks = [option(preferred.opposite())];
     let policy = AnchorPolicy {
         scoring: ScoringPolicy {
             // Avoid rewarding a candidate for shifting closer to the anchor.
