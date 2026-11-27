@@ -4,12 +4,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use kurbo::{Axis, Point, Size};
+use kurbo::{Axis, Insets, Point, Rect, Size};
 use tracing::{Span, trace_span};
+use understory_anchor::{
+    Anchor, AnchorConstraint, AnchorInput, AnchorPolicy, AnchorPositionOption, Placement,
+    ScoringPolicy, resolve_anchor,
+};
 
 use crate::core::{
     AccessCtx, ChildrenIds, LayoutCtx, MeasureCtx, NewWidget, NoAction, PaintCtx, PropertiesRef,
-    RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    RegisterCtx, SubwindowPlacement, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::imaging::Painter;
 use crate::layout::{LenReq, Length, SizeDef};
@@ -39,8 +43,8 @@ pub(crate) struct SubwindowStack {
 struct SubwindowEntry {
     /// Root widget owned by this top-level subwindow entry.
     root: WidgetPod<dyn Widget>,
-    /// Position of this subwindow entry in the `SubwindowStack`'s content-box coordinates.
-    position: Point,
+    /// Placement in the `SubwindowStack`'s content-box coordinates.
+    placement: SubwindowPlacement,
 }
 
 // --- MARK: IMPL SUBWINDOW_STACK
@@ -49,7 +53,7 @@ impl SubwindowStack {
     pub(crate) fn new(root: NewWidget<impl Widget + ?Sized>) -> Self {
         let subwindow = SubwindowEntry {
             root: root.erased().to_pod(),
-            position: Point::ZERO,
+            placement: SubwindowPlacement::Fixed(Point::ORIGIN),
         };
         Self {
             subwindows: vec![subwindow],
@@ -73,19 +77,19 @@ impl SubwindowStack {
 
 // --- MARK: IMPL WIDGETMUT
 impl SubwindowStack {
-    /// Adds a new subwindow at the end of the stack, with the given widget as its root, at the given position.
+    /// Adds a new subwindow at the end of the stack with the given widget as its root.
     ///
-    /// The given `pos` must be in this `SubwindowStack`'s content-box coordinate space.
+    /// The placement must be in this `SubwindowStack`'s content-box coordinate space.
     /// If this `SubwindowStack` is used as the root widget with no borders, padding, or transforms,
     /// then that coordinate space will exactly match the window's coordinate space.
     pub(crate) fn add_subwindow(
         this: &mut WidgetMut<'_, Self>,
         root: NewWidget<impl Widget + ?Sized>,
-        position: Point,
+        placement: SubwindowPlacement,
     ) {
         let subwindow = SubwindowEntry {
             root: root.erased().to_pod(),
-            position,
+            placement,
         };
         this.widget.subwindows.push(subwindow);
         this.ctx.children_changed();
@@ -155,7 +159,7 @@ impl SubwindowStack {
             Some(0) => debug_panic!("Cannot reposition main subwindow"),
             None => debug_panic!("subwindow with root widget {root_id:?} not found"),
             Some(idx) => {
-                this.widget.subwindows[idx].position = new_origin;
+                this.widget.subwindows[idx].placement = SubwindowPlacement::Fixed(new_origin);
                 this.ctx.request_layout();
             }
         }
@@ -206,15 +210,13 @@ impl Widget for SubwindowStack {
 
         ctx.derive_baselines(&main_subwindow.root);
 
+        let viewport = size.to_rect();
         for subwindow in &mut self.subwindows[1..] {
-            // Other subwindows don't take part in our measurement,
-            // so RenderRoot has no idea what they want and instead we control them.
-            // We don't really care if they go outside the bounds of the main subwindow,
-            // so we won't give any FitContent fallback and instead just use MaxContent.
-            // These other subwindows still have access to the window size via context size.
+            // Measure overlays against the window size, using max-content as the fallback.
             let subwindow_size = ctx.compute_size(&mut subwindow.root, SizeDef::MAX, size.into());
             ctx.run_layout(&mut subwindow.root, subwindow_size);
-            ctx.place_child(&mut subwindow.root, subwindow.position);
+            let origin = subwindow_origin(subwindow.placement, subwindow_size, viewport);
+            ctx.place_child(&mut subwindow.root, origin);
         }
     }
 
@@ -248,4 +250,43 @@ impl Widget for SubwindowStack {
     fn make_trace_span(&self, id: WidgetId) -> Span {
         trace_span!("SubwindowStack", id = id.trace())
     }
+}
+
+fn subwindow_origin(placement: SubwindowPlacement, floating_size: Size, viewport: Rect) -> Point {
+    let anchor = match placement {
+        SubwindowPlacement::Fixed(origin) => return origin,
+        SubwindowPlacement::Anchored(anchor) => anchor,
+    };
+    let constraints = [
+        AnchorConstraint::Offset {
+            main_axis: 8.0,
+            cross_axis: 0.0,
+        },
+        AnchorConstraint::Shift {
+            padding: Insets::ZERO,
+        },
+    ];
+    let option = |placement| AnchorPositionOption::new(placement).with_constraints(&constraints);
+    let fallbacks = [option(Placement::BOTTOM)];
+    let policy = AnchorPolicy {
+        scoring: ScoringPolicy {
+            // Avoid rewarding a candidate for shifting closer to the anchor.
+            anchor_distance_weight: 0.0,
+            ..ScoringPolicy::collision_first()
+        },
+        ..AnchorPolicy::new(option(Placement::TOP), &fallbacks)
+    };
+
+    resolve_anchor(
+        AnchorInput {
+            anchor: Anchor::Rect(anchor),
+            floating_size,
+            viewport,
+            boundary: viewport,
+            previous: None,
+        },
+        policy,
+    )
+    .rect
+    .origin()
 }

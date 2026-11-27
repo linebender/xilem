@@ -263,13 +263,16 @@ There is always at least one subwindow, called the "main subwindow".
 It's the one in which almost all content (buttons, texts, images) will be drawn.
 
 Other subwindows can represent tooltips, menus, dialogs, etc.
-They are created with a pre-set position and are drawn on top of the main subwindow.
+They are drawn on top of the main subwindow at a fixed position or relative to an anchor.
 
 ### Adding a subwindow
 
 <!-- TODO - Flesh this out -->
 
-Most context methods have a `create_subwindow(subwindow_type, fallback_widget, pos)` method.
+Most contexts have a `create_subwindow(subwindow_type, fallback_widget, placement)` method.
+Pass a point for fixed placement or [`SubwindowPlacement::Anchored`](crate::core::SubwindowPlacement::Anchored)
+with a rectangle in window coordinates. Use [`SubwindowPlacement::anchored_at`](crate::core::SubwindowPlacement::anchored_at)
+to anchor to a point. Both capture the anchor when the subwindow is created.
 
 `subwindow_type` and `fallback_widget` are two redundant representations of the same subwindow:
 
@@ -278,6 +281,10 @@ Most context methods have a `create_subwindow(subwindow_type, fallback_widget, p
 
 These two values are sent to the Masonry driver running the app; if the driver has built-in behavior for the given `subwindow_type`, this behavior will be used.
 Otherwise, the driver will add a new subwindow to the current [`RenderRoot`] with `fallback_widget` as its root.
+
+For custom drivers, the third field of [`RenderRootSignal::NewSubwindow`](crate::app::RenderRootSignal::NewSubwindow)
+is now a `SubwindowPlacement`. Forward it directly to [`RenderRoot::add_subwindow`](crate::app::RenderRoot::add_subwindow)
+for in-window subwindows. Drivers that handle placement themselves can match `Fixed(point)` or `Anchored(rect)`.
 
 
 ## Safety rails

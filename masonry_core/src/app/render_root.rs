@@ -20,9 +20,9 @@ use crate::app::subwindow_stack::SubwindowStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
     Handled, Ime, NewWidget, PointerEvent, PropertiesRef, PropertyArena, PropertyStack,
-    PropertyStackId, QueryCtx, ResizeDirection, SubwindowType, TextEvent, Widget, WidgetArena,
-    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WidgetTag,
-    WidgetTagInner, WindowEvent,
+    PropertyStackId, QueryCtx, ResizeDirection, SubwindowPlacement, SubwindowType, TextEvent,
+    Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
@@ -287,10 +287,10 @@ pub enum RenderRootSignal {
     WidgetSelectedInInspector(WidgetId),
     /// A new [subwindow] should be created with the widget as root.
     ///
-    /// The given [`Point`] must be in the window's coordinate space.
+    /// The placement is in the window's coordinate space.
     ///
     /// [subwindow]: crate::doc::masonry_concepts#subwindows
-    NewSubwindow(SubwindowType, NewWidget<dyn Widget>, Point),
+    NewSubwindow(SubwindowType, NewWidget<dyn Widget>, SubwindowPlacement),
     /// The subwindow with the given widget as root should be removed.
     RemoveSubwindow(WidgetId),
     /// The subwindow with the given widget as root should be repositioned to the specified point.
@@ -776,14 +776,19 @@ impl RenderRoot {
         res
     }
 
-    /// Adds a new subwindow at the end of the stack, with the given widget as its root, at the given position.
+    /// Adds a new subwindow at the end of the stack with the given widget as its root.
     ///
-    /// The given `pos` must be in the window's coordinate space.
-    pub fn add_subwindow(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
+    /// Pass a [`Point`] for fixed placement or a [`SubwindowPlacement`] to anchor it.
+    /// Both use the window's coordinate space.
+    pub fn add_subwindow(
+        &mut self,
+        root: NewWidget<impl Widget + ?Sized>,
+        placement: impl Into<SubwindowPlacement>,
+    ) {
         debug!("added subwindow to stack");
         mutate_widget(self, self.root_id(), |mut subwindow_stack| {
             let mut subwindow_stack = subwindow_stack.downcast::<SubwindowStack>();
-            SubwindowStack::add_subwindow(&mut subwindow_stack, root, pos);
+            SubwindowStack::add_subwindow(&mut subwindow_stack, root, placement.into());
         });
 
         self.run_rewrite_passes();
@@ -809,6 +814,7 @@ impl RenderRoot {
     /// Repositions the subwindow with the given widget as root.
     ///
     /// The given `new_origin` must be in the window's coordinate space.
+    /// This switches anchored subwindows to fixed placement.
     ///
     /// The main subwindow cannot be repositioned.
     ///

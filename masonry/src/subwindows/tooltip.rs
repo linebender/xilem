@@ -176,3 +176,46 @@ impl Subwindow for Tooltip {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use masonry_testing::TestHarness;
+
+    use super::*;
+    use crate::core::SubwindowPlacement;
+    use crate::kurbo::{Point, Rect};
+    use crate::layout::AsUnit;
+    use crate::theme::test_property_set;
+    use crate::widgets::SizedBox;
+
+    #[test]
+    fn anchored_tooltip_uses_measured_size_and_window_bounds() {
+        let mut harness = TestHarness::create_with_size(
+            test_property_set(),
+            SizedBox::empty().prepare(),
+            (100, 100),
+        );
+        let root = harness.render_root();
+        for (placement, expected) in [
+            (
+                SubwindowPlacement::Anchored(Rect::new(40.0, 50.0, 60.0, 60.0)),
+                Rect::new(30.0, 22.0, 70.0, 42.0),
+            ),
+            (
+                SubwindowPlacement::anchored_at(Point::new(98.0, 2.0)),
+                Rect::new(60.0, 10.0, 100.0, 30.0),
+            ),
+            (
+                Point::new(98.0, 2.0).into(),
+                Rect::new(98.0, 2.0, 138.0, 22.0),
+            ),
+        ] {
+            let tooltip =
+                Tooltip::new(SizedBox::empty().size(40.px(), 20.px()).prepare()).prepare();
+            let id = tooltip.id();
+            root.add_subwindow(tooltip, placement);
+            assert_eq!(root.get_subwindow_root(1).ctx().bounding_box(), expected);
+            root.remove_subwindow(id);
+        }
+    }
+}

@@ -22,7 +22,8 @@ use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BrushIndex, ClassSet, ErasedAction, FromDynWidget, NewWidget, PaintLayerMode,
     PropertiesMut, PropertiesRef, PropertyArena, PropertyCache, PropertyStackId, ResizeDirection,
-    SubwindowType, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    SubwindowPlacement, SubwindowType, Widget, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod,
+    WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
@@ -1942,9 +1943,10 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Creates a new [subwindow] at a specified `position`.
+        /// Creates a new [subwindow] with the specified placement.
         ///
-        /// The given `position` must be in the window's coordinate space.
+        /// Pass a [`Point`] for fixed placement or a [`SubwindowPlacement`] to anchor it.
+        /// Both use the window's coordinate space.
         ///
         /// # Panics
         ///
@@ -1955,7 +1957,7 @@ impl_context_method!(
             &mut self,
             subwindow_type: SubwindowType,
             mut fallback_widget: NewWidget<W>,
-            position: Point,
+            placement: impl Into<SubwindowPlacement>,
         ) {
             trace!("create_subwindow");
 
@@ -1971,17 +1973,17 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::NewSubwindow(
                     subwindow_type,
                     fallback_widget.erased(),
-                    position,
+                    placement.into(),
                 ));
         }
 
-        /// Creates a new [subwindow] at a specified `position`, and ties it to the current widget.
+        /// Creates a new [subwindow] with the specified placement and ties its lifetime to the current widget.
         ///
         /// The subwindow will be removed when the current widget is removed from the tree.
         /// A widget can only have one subwindow of any given type `W` at a time:
         /// if a widget creates two subwindows of the same type, the old subwindow will be removed.
         ///
-        /// The given `position` must be in the window's coordinate space.
+        /// See [`Self::create_subwindow`] for placement options.
         ///
         /// # Panics
         ///
@@ -1992,7 +1994,7 @@ impl_context_method!(
             &mut self,
             subwindow_type: SubwindowType,
             mut fallback_widget: NewWidget<W>,
-            position: Point,
+            placement: impl Into<SubwindowPlacement>,
         ) {
             trace!("create_attached_subwindow");
 
@@ -2021,7 +2023,7 @@ impl_context_method!(
                 .emit_signal(RenderRootSignal::NewSubwindow(
                     subwindow_type,
                     fallback_widget.erased(),
-                    position,
+                    placement.into(),
                 ));
             self.global_state
                 .attached_subwindows_rev

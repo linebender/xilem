@@ -1,9 +1,35 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::Widget;
+use kurbo::{Point, Rect};
 
-use crate::core::{EventCtx, PointerEvent, PropertiesMut};
+use crate::core::{EventCtx, PointerEvent, PropertiesMut, Widget};
+
+/// Placement of an in-window subwindow in logical window coordinates.
+#[derive(Clone, Copy, Debug)]
+pub enum SubwindowPlacement {
+    /// Place the subwindow's top-left corner at this point.
+    Fixed(Point),
+    /// Place the subwindow above this rectangle with a gap, flipping below or
+    /// shifting as needed to fit in the window.
+    ///
+    /// The rectangle must be finite and is captured at creation time.
+    Anchored(Rect),
+}
+
+impl SubwindowPlacement {
+    /// Anchor a subwindow to a finite point in logical window coordinates.
+    #[must_use]
+    pub fn anchored_at(point: Point) -> Self {
+        Self::Anchored(Rect::from_points(point, point))
+    }
+}
+
+impl From<Point> for SubwindowPlacement {
+    fn from(point: Point) -> Self {
+        Self::Fixed(point)
+    }
+}
 
 /// The type of a new [`Subwindow`].
 ///
