@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{ErasedAction, Handled, NewWidget, StyleProperty, Widget, WidgetId, WidgetTag};
-use masonry::kurbo::Point;
+use masonry::core::{
+    AnchorPlacement, ErasedAction, Handled, NewWidget, StyleProperty, SubwindowPlacement, Widget,
+    WidgetId, WidgetTag,
+};
 use masonry::properties::types::CrossAxisAlignment;
 use masonry::subwindows::Tooltip;
 use masonry::widgets::{Button, ButtonPress, Flex, Label};
@@ -59,8 +61,8 @@ impl DemoPage for TooltipDemo {
             return Handled::No;
         }
 
-        let id = render_root.get_widget_with_tag(self.show_btn).unwrap().id();
-        if widget_id != id {
+        let button = render_root.get_widget_with_tag(self.show_btn).unwrap();
+        if widget_id != button.id() {
             return Handled::No;
         }
 
@@ -69,7 +71,16 @@ impl DemoPage for TooltipDemo {
                 .with_style(StyleProperty::FontSize(14.0))
                 .prepare(),
         ));
-        render_root.add_subwindow(tooltip.erased(), Point::new(320.0, 120.0));
+        let ctx = button.ctx();
+        let anchor = ctx.window_transform().transform_rect_bbox(ctx.border_box());
+        render_root.add_subwindow(
+            tooltip,
+            SubwindowPlacement::Anchored {
+                anchor: anchor.into(),
+                preferred: AnchorPlacement::TOP,
+                gap: 8.0,
+            },
+        );
         Handled::Yes
     }
 }

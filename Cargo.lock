@@ -2706,6 +2706,7 @@ dependencies = [
  "tracing_android_trace",
  "tree_arena",
  "ui-events",
+ "understory_anchor",
  "web-time",
 ]
 
@@ -5462,6 +5463,15 @@ dependencies = [
  "ui-events",
  "web-time",
  "winit",
+]
+
+[[package]]
+name = "understory_anchor"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11d8008416e1d4019a15525d1b03fb0062ac690b0a5e53cbddcf12cef0f62261"
+dependencies = [
+ "kurbo",
 ]
 
 [[package]]

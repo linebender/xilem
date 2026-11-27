@@ -16,3 +16,4 @@ pub use tracing_backend::{
 pub use visual_layers::{VisualLayer, VisualLayerKind, VisualLayerPlan};
 
 pub(crate) use render_root::{MutateCallback, RenderRootState};
+pub(crate) use subwindow_stack::SubwindowStack;

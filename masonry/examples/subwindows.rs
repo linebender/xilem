@@ -8,12 +8,13 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
-    PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet, RegisterCtx,
-    StyleProperty, SubwindowType, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, AnchorPlacement, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx,
+    NewWidget, NoAction, PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
+    PropertySet, RegisterCtx, StyleProperty, SubwindowPlacement, SubwindowType, Update, UpdateCtx,
+    Widget, WidgetId, WidgetPod,
 };
 use masonry::imaging::Painter;
-use masonry::kurbo::{Axis, Point, Size, Vec2};
+use masonry::kurbo::{Axis, Point, Size};
 use masonry::layout::{AsUnit, LayoutSize, LenReq, Length, SizeDef};
 use masonry::parley::FontWeight;
 use masonry::peniko::Color;
@@ -93,8 +94,12 @@ impl Widget for OverlayBox {
             if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
                 let (overlay, subwindow_type) = (self.overlayer)();
                 self.subwindow_root_id = Some(overlay.id());
-                let subwindow_pos = self.last_cursor_pos + Vec2::new(5., -25.);
-                ctx.create_subwindow(subwindow_type, overlay, subwindow_pos);
+                let placement = SubwindowPlacement::anchored_at(
+                    self.last_cursor_pos,
+                    AnchorPlacement::TOP,
+                    8.0,
+                );
+                ctx.create_subwindow(subwindow_type, overlay, placement);
             } else {
                 ctx.request_anim_frame();
             }
