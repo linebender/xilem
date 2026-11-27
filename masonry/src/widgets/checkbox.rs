@@ -231,10 +231,9 @@ impl Widget for Checkbox {
         );
 
         let label_size = ctx.compute_size(&mut self.label, SizeDef::fit(space), space.into());
-        ctx.run_layout(&mut self.label, label_size);
 
         let label_origin = Point::new(check_side + check_padding, 0.);
-        ctx.place_child(&mut self.label, label_origin);
+        ctx.layout_child(&mut self.label, label_origin, label_size);
 
         ctx.derive_baselines(&self.label);
     }

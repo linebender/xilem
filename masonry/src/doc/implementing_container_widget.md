@@ -72,11 +72,11 @@ Like with a leaf widget, the `measure` method must compute and return the length
 Before that, it must call [`MeasureCtx::compute_length`] for each of its own children.
 For a vertical stack, we want to sum these on the vertical axis and take the largest on the horizontal axis.
 
-Then later in `layout`, it must call [`LayoutCtx::run_layout`] then [`LayoutCtx::place_child`] for each of its own children:
+Then later in `layout`, it must call [`LayoutCtx::layout_child`] for each of its own children:
 
-- `LayoutCtx::run_layout` recursively calls `Widget::layout` on the child.
-  It takes a [`Size`] argument, which is the chosen size of the child.
-- `LayoutCtx::place_child` sets the child's position relative to the container.
+- `LayoutCtx::layout_child` recursively calls `Widget::layout` on the child.
+  It takes both a [`Point`] and [`Size`] argument, which are the chosen origin and size of the child.
+  The child's origin is in relation to the container.
 
 The `layout` method *must* iterate over all its children.
 Not doing so is a logical bug.
@@ -144,8 +144,7 @@ impl Widget for VerticalStack {
         let mut y_offset = 0.0;
         for child in &mut self.children {
             let child_size = ctx.compute_size(child, auto_size, context_size);
-            ctx.run_layout(child, child_size);
-            ctx.place_child(child, Point::new(0.0, y_offset));
+            ctx.layout_child(child, Point::new(0.0, y_offset), child_size);
 
             y_offset += child_size.height + self.gap;
         }
@@ -322,11 +321,11 @@ So for instance, if `VerticalStack::children_ids()` returns a list of three chil
 Pass methods in container widgets should only implement the logic that is specific to the container itself.
 For instance, a container widget with a background color should implement `paint` to draw the background.
 
+[`Point`]: crate::kurbo::Point
 [`Size`]: crate::kurbo::Size
 [`Widget`]: crate::core::Widget
 [`WidgetPod`]: crate::core::WidgetPod
 [`WidgetMut`]: crate::core::WidgetMut
 [`MeasureCtx::compute_length`]: crate::core::MeasureCtx::compute_length
-[`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
-[`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
+[`LayoutCtx::layout_child`]: crate::core::LayoutCtx::layout_child
 [`RegisterCtx::register_child`]: crate::core::RegisterCtx::register_child

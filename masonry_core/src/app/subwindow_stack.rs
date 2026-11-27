@@ -200,9 +200,8 @@ impl Widget for SubwindowStack {
 
         // Our measurement is just the passed on result from the main subwindow,
         // so the size we received is effectively meant for the main subwindow.
-        ctx.run_layout(&mut main_subwindow.root, size);
         // The main subwindow is always located at our origin.
-        ctx.place_child(&mut main_subwindow.root, Point::ORIGIN);
+        ctx.layout_child(&mut main_subwindow.root, Point::ORIGIN, size);
 
         ctx.derive_baselines(&main_subwindow.root);
 
@@ -213,8 +212,7 @@ impl Widget for SubwindowStack {
             // so we won't give any FitContent fallback and instead just use MaxContent.
             // These other subwindows still have access to the window size via context size.
             let subwindow_size = ctx.compute_size(&mut subwindow.root, SizeDef::MAX, size.into());
-            ctx.run_layout(&mut subwindow.root, subwindow_size);
-            ctx.place_child(&mut subwindow.root, subwindow.position);
+            ctx.layout_child(&mut subwindow.root, subwindow.position, subwindow_size);
         }
     }
 

@@ -133,8 +133,7 @@ impl Widget for OverlayBox {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.child, child_size);
-        ctx.place_child(&mut self.child, Point::ORIGIN);
+        ctx.layout_child(&mut self.child, Point::ORIGIN, child_size);
     }
 
     fn paint(

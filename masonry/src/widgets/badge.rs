@@ -181,10 +181,9 @@ impl Widget for Badge {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let child_size = ctx.compute_size(&mut self.child, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.child, child_size);
 
         let child_origin = ((size - child_size).to_vec2() * 0.5).to_point();
-        ctx.place_child(&mut self.child, child_origin);
+        ctx.layout_child(&mut self.child, child_origin, child_size);
 
         ctx.derive_baselines(&self.child);
     }

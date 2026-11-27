@@ -171,8 +171,7 @@ impl Widget for HorizontalColorPicker {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let content_size = ctx.compute_size(&mut self.widget, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.widget, content_size);
-        ctx.place_child(&mut self.widget, Point::ORIGIN);
+        ctx.layout_child(&mut self.widget, Point::ORIGIN, content_size);
         ctx.derive_baselines(&self.widget);
     }
 

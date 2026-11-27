@@ -947,12 +947,10 @@ impl Widget for Grid {
             )
             .max(Size::ZERO);
 
-            ctx.run_layout(&mut child.widget, size);
-
             let origin = Point::new(col_offsets[col], row_offsets[row]);
-            ctx.place_child(&mut child.widget, origin);
+            ctx.layout_child(&mut child.widget, origin, size);
 
-            let (first_baseline, last_baseline) = ctx.child_aligned_baselines(&child.widget);
+            let (first_baseline, last_baseline) = ctx.child_baselines(&child.widget);
             let last_row = child.y + child.params.height;
 
             baselines = Some(match baselines {

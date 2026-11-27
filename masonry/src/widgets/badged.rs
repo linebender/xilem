@@ -200,8 +200,8 @@ impl Widget for Badged {
 
     fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &PropertiesRef<'_>, size: Size) {
         let content_size = ctx.compute_size(&mut self.content, SizeDef::fit(size), size.into());
-        ctx.run_layout(&mut self.content, content_size);
-        ctx.place_child(&mut self.content, Point::ORIGIN);
+        ctx.layout_child(&mut self.content, Point::ORIGIN, content_size);
+        let content_size = ctx.child_size(&self.content);
         ctx.derive_baselines(&self.content);
 
         let Some(badge) = &mut self.badge else {
@@ -209,13 +209,11 @@ impl Widget for Badged {
         };
 
         let badge_size = ctx.compute_size(badge, SizeDef::MAX, size.into());
-        ctx.run_layout(badge, badge_size);
-
         let content_anchor = self.placement.resolve(content_size);
 
         let badge_origin = content_anchor + self.offset
             - Vec2::new(badge_size.width * 0.5, badge_size.height * 0.5);
-        ctx.place_child(badge, badge_origin);
+        ctx.layout_child(badge, badge_origin, badge_size);
     }
 
     fn paint(

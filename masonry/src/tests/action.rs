@@ -66,8 +66,7 @@ fn action_source_removed() {
         })
         .layout_fn(move |child, ctx, _props, size| {
             if let Some(child) = child {
-                ctx.run_layout(child, size);
-                ctx.place_child(child, Point::ZERO);
+                ctx.layout_child(child, Point::ZERO, size);
             }
         })
         .children_fn(|child| {

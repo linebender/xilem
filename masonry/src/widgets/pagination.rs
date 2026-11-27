@@ -346,10 +346,8 @@ impl Widget for Pagination {
             let button_size =
                 ctx.compute_size(&mut button.widget, SizeDef::fit(space), size.into());
 
-            ctx.run_layout(&mut button.widget, button_size);
-
             let button_origin = Point::new(used_width, 0.);
-            ctx.place_child(&mut button.widget, button_origin);
+            ctx.layout_child(&mut button.widget, button_origin, button_size);
 
             used_width += button_size.width;
         }

@@ -122,6 +122,16 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.set_transform(transform);
     }
 
+    /// Sets whether pixel snapping is disabled for this widget and its descendants.
+    ///
+    /// This is primarily useful for continuous motion such as drag, scroll, or transform
+    /// animation, where stable fractional presentation is preferred over pixel-aligned layout.
+    ///
+    /// Changing this requests layout because snapping affects layout geometry.
+    pub fn set_snap_disabled(&mut self, disabled: bool) {
+        self.ctx.set_snap_disabled(disabled);
+    }
+
     /// Attempts to downcast to `WidgetMut` of concrete widget type.
     pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
         &mut self,

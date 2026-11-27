@@ -14,7 +14,7 @@ use crate::core::{
 };
 use crate::dpi::PhysicalPosition;
 use crate::imaging::Painter;
-use crate::kurbo::{Axis, Size};
+use crate::kurbo::{Axis, Point, Size};
 use crate::layout::{LenDef, LenReq, Length, SizeDef};
 use crate::util::debug_panic;
 
@@ -719,7 +719,8 @@ impl Widget for VirtualScroll {
         for (idx, child) in &mut self.items {
             let auto_size = SizeDef::fit(size).with(self.direction.axis(), LenDef::MaxContent);
             let child_size = ctx.compute_size(child, auto_size, size.into());
-            ctx.run_layout(child, child_size);
+            ctx.layout_child(child, Point::ORIGIN, child_size);
+            let child_size = ctx.child_size(child);
             let child_length = child_size.get_coord(self.direction.axis());
             self.virtual_list.model_mut().set_extent(*idx, child_length);
             total_children_length += child_length;
@@ -767,7 +768,7 @@ impl Widget for VirtualScroll {
                 } else {
                     pos
                 };
-                ctx.place_child(child, self.direction.axis().pack_point(placed_pos, 0.));
+                ctx.move_child(child, self.direction.axis().pack_point(placed_pos, 0.));
             } else {
                 ctx.set_stashed(child, true);
             }
@@ -785,11 +786,7 @@ impl Widget for VirtualScroll {
         let translation = self.direction.axis().pack_vec2(offset, 0.);
         for idx in self.active_range.clone() {
             if let Some(child) = self.items.get_mut(&idx) {
-                if self.scrolling {
-                    ctx.set_animated_child_scroll_translation(child, translation);
-                } else {
-                    ctx.set_child_scroll_translation(child, translation);
-                }
+                ctx.set_child_scroll_translation(child, translation);
             }
         }
 

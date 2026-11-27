@@ -85,6 +85,8 @@ pub struct WidgetOptions {
     ///
     /// This transform is applied before `scroll_translation` and `origin`.
     pub transform: Affine,
+    /// Whether pixel snapping should be disabled for this widget and its descendants.
+    pub snap_disabled: bool,
     /// The disabled state the widget will be created with.
     pub disabled: bool,
 }
@@ -175,6 +177,15 @@ impl<W: Widget + ?Sized> NewWidget<W> {
     /// Sets the [`Affine`] transform for this widget.
     pub fn with_transform(mut self, transform: Affine) -> Self {
         self.options.transform = transform;
+        self
+    }
+
+    /// Sets whether pixel snapping is disabled for this widget and its descendants.
+    ///
+    /// This is primarily useful for continuous motion such as drag, scroll, or transform
+    /// animation, where stable fractional presentation is preferred over pixel-aligned layout.
+    pub fn with_snap_disabled(mut self, disabled: bool) -> Self {
+        self.options.snap_disabled = disabled;
         self
     }
 
