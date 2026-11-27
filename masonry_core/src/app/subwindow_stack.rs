@@ -7,8 +7,8 @@ use accesskit::{Node, Role};
 use kurbo::{Axis, Insets, Point, Rect, Size};
 use tracing::{Span, trace_span};
 use understory_anchor::{
-    Anchor, AnchorConstraint, AnchorInput, AnchorPolicy, AnchorPositionOption, Placement,
-    ScoringPolicy, resolve_anchor,
+    Anchor, AnchorConstraint, AnchorInput, AnchorPolicy, AnchorPositionOption, HysteresisPolicy,
+    Placement, PreviousAnchorFrame, ScoringPolicy, resolve_anchor,
 };
 
 use crate::core::{
@@ -45,6 +45,8 @@ struct SubwindowEntry {
     root: WidgetPod<dyn Widget>,
     /// Placement in the `SubwindowStack`'s content-box coordinates.
     placement: SubwindowPlacement,
+    /// Last visible placement for this subwindow's anchor.
+    previous_anchor: Option<PreviousAnchorFrame>,
 }
 
 // --- MARK: IMPL SUBWINDOW_STACK
@@ -54,6 +56,7 @@ impl SubwindowStack {
         let subwindow = SubwindowEntry {
             root: root.erased().to_pod(),
             placement: SubwindowPlacement::Fixed(Point::ORIGIN),
+            previous_anchor: None,
         };
         Self {
             subwindows: vec![subwindow],
@@ -90,6 +93,7 @@ impl SubwindowStack {
         let subwindow = SubwindowEntry {
             root: root.erased().to_pod(),
             placement,
+            previous_anchor: None,
         };
         this.widget.subwindows.push(subwindow);
         this.ctx.children_changed();
@@ -159,7 +163,9 @@ impl SubwindowStack {
             Some(0) => debug_panic!("Cannot reposition main subwindow"),
             None => debug_panic!("subwindow with root widget {root_id:?} not found"),
             Some(idx) => {
-                this.widget.subwindows[idx].placement = SubwindowPlacement::Fixed(new_origin);
+                let subwindow = &mut this.widget.subwindows[idx];
+                subwindow.placement = SubwindowPlacement::Fixed(new_origin);
+                subwindow.previous_anchor = None;
                 this.ctx.request_layout();
             }
         }
@@ -215,7 +221,7 @@ impl Widget for SubwindowStack {
             // Measure overlays against the window size, using max-content as the fallback.
             let subwindow_size = ctx.compute_size(&mut subwindow.root, SizeDef::MAX, size.into());
             ctx.run_layout(&mut subwindow.root, subwindow_size);
-            let origin = subwindow_origin(subwindow.placement, subwindow_size, viewport);
+            let origin = subwindow_origin(subwindow, subwindow_size, viewport);
             ctx.place_child(&mut subwindow.root, origin);
         }
     }
@@ -252,8 +258,8 @@ impl Widget for SubwindowStack {
     }
 }
 
-fn subwindow_origin(placement: SubwindowPlacement, floating_size: Size, viewport: Rect) -> Point {
-    let anchor = match placement {
+fn subwindow_origin(subwindow: &mut SubwindowEntry, floating_size: Size, viewport: Rect) -> Point {
+    let anchor = match subwindow.placement {
         SubwindowPlacement::Fixed(origin) => return origin,
         SubwindowPlacement::Anchored(anchor) => anchor,
     };
@@ -274,19 +280,25 @@ fn subwindow_origin(placement: SubwindowPlacement, floating_size: Size, viewport
             anchor_distance_weight: 0.0,
             ..ScoringPolicy::collision_first()
         },
+        hysteresis: HysteresisPolicy {
+            enabled: true,
+            incumbent_bonus: 0.0,
+            // With equal visibility, switch as soon as the other side saves 2 logical pixels of shift.
+            switch_threshold: 1.0,
+        },
         ..AnchorPolicy::new(option(Placement::TOP), &fallbacks)
     };
 
-    resolve_anchor(
+    let frame = resolve_anchor(
         AnchorInput {
             anchor: Anchor::Rect(anchor),
             floating_size,
             viewport,
             boundary: viewport,
-            previous: None,
+            previous: subwindow.previous_anchor.as_ref(),
         },
         policy,
-    )
-    .rect
-    .origin()
+    );
+    subwindow.previous_anchor = frame.visible.then(|| PreviousAnchorFrame::from(&frame));
+    frame.rect.origin()
 }

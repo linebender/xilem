@@ -182,7 +182,8 @@ mod tests {
     use masonry_testing::TestHarness;
 
     use super::*;
-    use crate::core::SubwindowPlacement;
+    use crate::core::{SubwindowPlacement, WindowEvent};
+    use crate::dpi::PhysicalSize;
     use crate::kurbo::{Point, Rect};
     use crate::layout::AsUnit;
     use crate::theme::test_property_set;
@@ -216,6 +217,32 @@ mod tests {
             root.add_subwindow(tooltip, placement);
             assert_eq!(root.get_subwindow_root(1).ctx().bounding_box(), expected);
             root.remove_subwindow(id);
+        }
+    }
+
+    #[test]
+    fn anchored_tooltip_keeps_its_side_through_small_resizes() {
+        let mut harness = TestHarness::create_with_size(
+            test_property_set(),
+            SizedBox::empty().prepare(),
+            (100, 100),
+        );
+        let root = harness.render_root();
+        let tooltip = Tooltip::new(SizedBox::empty().size(40.px(), 20.px()).prepare()).prepare();
+        root.add_subwindow(
+            tooltip,
+            SubwindowPlacement::anchored_at(Point::new(50.0, 27.0)),
+        );
+        assert_eq!(root.get_subwindow_root(1).ctx().bounding_box().y0, 35.0);
+
+        for (height, y) in [
+            (53, 33.0), // Above needs 1 px less shift. Keep below.
+            (54, 34.0), // Resize back to the tie. Keep below.
+            (52, 0.0),  // Above now saves 2 px. Flip.
+            (100, 0.0), // Below now saves 1 px. Keep above.
+        ] {
+            root.handle_window_event(WindowEvent::Resize(PhysicalSize::new(100, height)));
+            assert_eq!(root.get_subwindow_root(1).ctx().bounding_box().y0, y);
         }
     }
 }
