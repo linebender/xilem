@@ -153,7 +153,12 @@ pub(crate) struct RenderRootState {
     pub(crate) widget_tags: HashMap<WidgetTagInner, WidgetId>,
 
     /// Map of subwindows attached to widgets, keyed by the attached widget id, then the type of the subwindow root.
+    // FIXME - Add SubwindowId type and use that instead.
     pub(crate) attached_subwindows: HashMap<WidgetId, HashMap<TypeId, WidgetId>>,
+
+    /// Map of widgets with subwindows attached, keyed by the subwindow root id.
+    // FIXME - Add SubwindowId type and use that instead.
+    pub(crate) attached_subwindows_rev: HashMap<WidgetId, (TypeId, WidgetId)>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -369,6 +374,7 @@ impl RenderRoot {
                 scene_cache: HashMap::new(),
                 widget_tags: HashMap::new(),
                 attached_subwindows: HashMap::new(),
+                attached_subwindows_rev: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
@@ -1141,6 +1147,17 @@ impl RenderRootState {
     /// Sends a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         (self.signal_sink)(signal);
+    }
+
+    /// Emit a `RemoveSubwindow` signal and perform related cleanups.
+    // FIXME - Add SubwindowId type and use that instead.
+    pub(crate) fn remove_subwindow(&mut self, subwindow_id: WidgetId) {
+        if let Some((type_id, widget_id)) = self.attached_subwindows_rev.remove(&subwindow_id)
+            && let Some(map) = self.attached_subwindows.get_mut(&widget_id)
+        {
+            let _ = map.remove(&type_id);
+        }
+        self.emit_signal(RenderRootSignal::RemoveSubwindow(subwindow_id));
     }
 
     /// Does something in this state indicate that the rewrite passes need to be reran.

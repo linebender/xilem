@@ -164,20 +164,20 @@ impl Widget for SelectorMenu {
                     .position(|child| child.id() == clicked_id)
                     .unwrap();
 
-                // FIXME - This might be subject to TOCTOU.
-                // Fix this with attached subwindows
                 ctx.mutate_later(self.creator, move |mut selector| {
                     let mut selector = selector.downcast::<Selector>();
                     let selected_content = selector.widget.options[index].clone();
 
-                    selector
-                        .ctx
-                        .submit_action::<SelectionChanged>(SelectionChanged {
-                            selected_content,
-                            index,
-                        });
+                    if selector.ctx.get_attached_subwindow::<Self>().is_none() {
+                        return;
+                    }
+
+                    let action = SelectionChanged {
+                        selected_content,
+                        index,
+                    };
+                    selector.ctx.submit_action::<SelectionChanged>(action);
                     selector.ctx.remove_subwindow(self_id);
-                    selector.widget.menu_subwindow_id = None;
                     Selector::select_option(&mut selector, index);
                 });
             }
@@ -218,16 +218,12 @@ impl Widget for SelectorMenu {
     ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        // FIXME - This might be subject to TOCTOU.
-        // Fix this with attached subwindows
-        if let Update::WidgetAdded = event {
-            let id = ctx.widget_id();
-            ctx.mutate_later(self.creator, move |mut selector| {
-                let selector = selector.downcast::<Selector>();
-                selector.widget.menu_subwindow_id = Some(id);
-            });
-        }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
     }
 
     fn measure(
@@ -370,13 +366,7 @@ impl Subwindow for SelectorMenu {
         };
 
         if remove_this {
-            // FIXME - This might be subject to TOCTOU.
-            // Fix this with attached subwindows
             ctx.remove_subwindow(ctx.widget_id());
-            ctx.mutate_later(self.creator, move |mut selector| {
-                let selector = selector.downcast::<Selector>();
-                selector.widget.menu_subwindow_id = None;
-            });
         }
     }
 }
