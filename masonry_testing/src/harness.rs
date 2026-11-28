@@ -18,11 +18,13 @@
 //!
 //! When adding features to `TestHarness`, we should always strive to give them such a high-level API.
 
+use std::cell::Cell;
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufReader, Cursor};
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Arc, mpsc};
 use std::time::UNIX_EPOCH;
 
@@ -51,7 +53,7 @@ use masonry_core::core::{
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use masonry_core::kurbo::{Affine, Point, Rect, Vec2};
 use masonry_core::peniko::{Blob, Color};
-use masonry_core::util::Duration;
+use masonry_core::util::{Duration, Instant};
 
 use crate::screenshots::get_image_diff;
 use crate::{Record, Recorder};
@@ -99,7 +101,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// `TestHarness` tries to act like the normal masonry environment. It will run the same passes as the normal app after every user event and animation.
 ///
-/// Animations can be simulated with the [`animate_ms`](Self::animate_ms) method.
+/// Timers and animation frames can be simulated with [`advance_time`](Self::advance_time).
 ///
 /// One minor difference is that paint only happens when the user explicitly calls rendering
 /// methods, whereas in a normal applications you could reasonably expect multiple paint calls
@@ -148,6 +150,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
+    clock: Rc<Cell<Instant>>,
     access_tree: accesskit_consumer::Tree,
     renderer: Option<VelloCpuRenderer>,
     mouse_state: PointerState,
@@ -388,9 +391,11 @@ impl<W: Widget> TestHarness<W> {
             }),
             focus: 0.into(),
         };
+        let clock = Rc::new(Cell::new(Instant::now()));
+        let root_clock = Rc::clone(&clock);
         let mut harness = Self {
             signal_receiver,
-            render_root: RenderRoot::new(
+            render_root: RenderRoot::new_with_clock(
                 root_widget,
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
@@ -401,7 +406,9 @@ impl<W: Widget> TestHarness<W> {
                     scale_factor: params.scale_factor,
                     test_font: Some(data),
                 },
+                move || root_clock.get(),
             ),
+            clock,
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             renderer: None,
             mouse_state,
@@ -845,10 +852,18 @@ impl<W: Widget> TestHarness<W> {
         let _ = self.render_root.set_focus_fallback(id);
     }
 
-    /// Runs an animation pass on the widget tree.
+    /// Advances simulated time by the given number of milliseconds.
     pub fn animate_ms(&mut self, ms: u64) {
+        self.advance_time(Duration::from_millis(ms));
+    }
+
+    /// Advances the simulated clock by `elapsed`, runs an animation frame,
+    /// and delivers timers due at the new time.
+    pub fn advance_time(&mut self, elapsed: Duration) {
+        self.clock.set(self.clock.get() + elapsed);
         self.render_root
-            .handle_window_event(WindowEvent::AnimFrame(Duration::from_millis(ms)));
+            .handle_window_event(WindowEvent::AnimFrame(elapsed));
+        self.render_root.handle_timers();
         self.process_signals();
     }
 

@@ -14,15 +14,16 @@ use parley::fontique::{
 use parley::{FontContext, LayoutContext};
 use tracing::{debug, info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
+use understory_timing::{TimerInstant, TimerQueue};
 
 use crate::app::VisualLayerPlan;
 use crate::app::subwindow_stack::SubwindowStack;
 use crate::core::{
     AccessCtx, AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget,
     Handled, Ime, NewWidget, PointerEvent, PropertiesRef, PropertyArena, PropertyStack,
-    PropertyStackId, QueryCtx, ResizeDirection, SubwindowType, TextEvent, Widget, WidgetArena,
-    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WidgetTag,
-    WidgetTagInner, WindowEvent,
+    PropertyStackId, QueryCtx, ResizeDirection, SubwindowType, TextEvent, TimerToken, Widget,
+    WidgetArena, WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    WidgetTag, WidgetTagInner, WindowEvent,
 };
 use crate::imaging::record::Scene;
 use crate::passes::accessibility::run_accessibility_pass;
@@ -38,10 +39,11 @@ use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_fonts_pass, run_update_pointer_pass, run_update_props_pass, run_update_scroll_pass,
-    run_update_stashed_pass, run_update_widget_tree_pass,
+    run_update_stashed_pass, run_update_timer_pass, run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
 use crate::properties::Dimensions;
+use crate::util::{Duration, Instant};
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
@@ -171,6 +173,15 @@ pub(crate) struct RenderRootState {
 
     /// Whether the next accessibility pass tree should be updated during `render()`.
     pub(crate) access_tree_active: bool,
+
+    /// Queue of pending widget timers.
+    pub(crate) timers: TimerQueue<WidgetId>,
+
+    /// Origin for the nanosecond ticks stored in the timer queue.
+    timer_origin: Instant,
+
+    /// Monotonic time source used for widget timers.
+    timer_clock: Box<dyn Fn() -> Instant>,
 
     /// DPI scale factor.
     ///
@@ -323,6 +334,19 @@ impl RenderRoot {
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
+        Self::new_with_clock(root_widget, signal_sink, options, Instant::now)
+    }
+
+    /// Creates a render root with a custom monotonic clock for widget timers.
+    ///
+    /// Supply a clock that returns nondecreasing values. Tests and hosts that
+    /// simulate time can use this constructor to control when timers become due.
+    pub fn new_with_clock(
+        root_widget: NewWidget<impl Widget + ?Sized>,
+        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        options: RenderRootOptions,
+        timer_clock: impl Fn() -> Instant + 'static,
+    ) -> Self {
         let RenderRootOptions {
             default_properties,
             use_system_fonts,
@@ -382,6 +406,9 @@ impl RenderRoot {
                     hovered_widget: None,
                 },
                 access_tree_active: false,
+                timers: TimerQueue::new(),
+                timer_origin: timer_clock(),
+                timer_clock: Box::new(timer_clock),
                 scale_factor,
                 debug_paint,
             },
@@ -1023,6 +1050,44 @@ impl RenderRoot {
         self.root_state().needs_anim
     }
 
+    /// Returns the next timer deadline on this root's monotonic clock.
+    pub fn next_timer_deadline(&self) -> Option<Instant> {
+        let deadline = self.global_state.timers.next_deadline()?;
+        self.global_state
+            .timer_origin
+            .checked_add(Duration::from_nanos(deadline))
+    }
+
+    /// Delivers pending timers due when this call begins.
+    ///
+    /// Timers targeting removed widgets are discarded. Timers requested during
+    /// delivery are considered on the next call.
+    pub fn handle_timers(&mut self) {
+        if self.global_state.timers.is_empty() {
+            return;
+        }
+        let now = self.global_state.timer_ticks();
+        let mut fired = Vec::new();
+        // Pop the due set before dispatch. Widget updates may request or cancel
+        // timers; those mutations should not change which timers fire in this
+        // drain cycle.
+        while let Some(timer) = self.global_state.timers.pop_expired(now) {
+            let token = TimerToken(timer.id());
+            fired.push((timer.into_target(), token));
+        }
+
+        let had_due_timer = !fired.is_empty();
+        for (target, token) in fired {
+            if !self.widget_arena.has(target) {
+                continue;
+            }
+            run_update_timer_pass(self, target, token);
+        }
+        if had_due_timer {
+            self.run_rewrite_passes();
+        }
+    }
+
     /// Returns true if the accessibility tree needs to be rebuilt.
     ///
     /// This will be inhibited if `access_tree_active` is false.
@@ -1160,6 +1225,27 @@ impl RenderRootState {
         self.emit_signal(RenderRootSignal::RemoveSubwindow(subwindow_id));
     }
 
+    pub(crate) fn request_timer(&mut self, target: WidgetId, delay: Duration) -> TimerToken {
+        let now = self.timer_ticks();
+        let id = self
+            .timers
+            .schedule_once(target, now, duration_to_timer_ticks(delay));
+        TimerToken(id)
+    }
+
+    pub(crate) fn cancel_timer(&mut self, token: TimerToken) -> bool {
+        self.timers.cancel(token.0)
+    }
+
+    pub(crate) fn now(&self) -> Instant {
+        (self.timer_clock)()
+    }
+
+    fn timer_ticks(&self) -> TimerInstant {
+        let elapsed = self.now().saturating_duration_since(self.timer_origin);
+        duration_to_timer_ticks(elapsed)
+    }
+
     /// Does something in this state indicate that the rewrite passes need to be reran.
     ///
     /// This is checked in conjunction with [`WidgetState::needs_rewrite_passes`] - if
@@ -1171,6 +1257,10 @@ impl RenderRootState {
             || !self.mutate_callbacks.is_empty()
             || !self.actions.is_empty()
     }
+}
+
+fn duration_to_timer_ticks(duration: Duration) -> TimerInstant {
+    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
 }
 
 impl RenderRootSignal {

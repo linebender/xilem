@@ -1,10 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::mpsc;
+use std::cell::Cell;
+use std::rc::Rc;
+use std::sync::{Arc, mpsc};
 
 use std::assert_matches;
 
+use crate::app::{RenderRoot, RenderRootOptions, WindowSizePolicy};
 use crate::core::pointer::PointerEvent;
 use crate::core::{
     CursorIcon, Ime, NewWidget, PropertySet, TextEvent, Update, Widget, WidgetId, WidgetPod,
@@ -12,10 +15,11 @@ use crate::core::{
 };
 use crate::layout::{AsUnit, Length};
 use crate::testing::{
-    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
-    assert_debug_panics,
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_all,
+    assert_any, assert_debug_panics,
 };
 use crate::theme::test_property_set;
+use crate::util::{Duration, Instant};
 use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 // TREE
@@ -63,6 +67,92 @@ fn new_widget() {
             Record::Update(Update::WidgetAdded)
         ]
     );
+}
+
+#[test]
+fn timer_update_targets_widget() {
+    let target_tag = WidgetTag::named("target");
+    let parent_tag = WidgetTag::named("parent");
+    let child = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+    let parent = NewWidget::new(ModularWidget::new_parent(child).record()).with_tag(parent_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), parent);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+
+    harness.flush_records_of(target_tag);
+    harness.flush_records_of(parent_tag);
+
+    harness.advance_time(Duration::from_millis(10));
+
+    let records = harness.take_records_of(target_tag);
+    assert_any(
+        records,
+        |record| matches!(record, Record::Update(Update::TimerExpired(seen)) if seen == token),
+    );
+
+    let records = harness.take_records_of(parent_tag);
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
+}
+
+#[test]
+fn timer_uses_the_clock_at_the_point_of_request() {
+    let start = Instant::now();
+    let clock = Rc::new(Cell::new(start));
+    let root_clock = Rc::clone(&clock);
+    let mut root = RenderRoot::new_with_clock(
+        SizedBox::empty().prepare(),
+        |_| {},
+        RenderRootOptions {
+            default_properties: Arc::new(test_property_set()),
+            use_system_fonts: false,
+            size_policy: WindowSizePolicy::User,
+            size: (100, 100).into(),
+            scale_factor: 1.0,
+            test_font: None,
+        },
+        move || root_clock.get(),
+    );
+
+    let delay = Duration::from_millis(10);
+    let request_time = start + Duration::from_secs(1);
+    root.edit_main_subwindow(|mut widget| {
+        // Time passes during this callback, before the widget requests its timer.
+        clock.set(request_time);
+        widget.ctx.request_timer(delay);
+    });
+
+    let deadline = request_time + delay;
+    root.handle_timers();
+    assert_eq!(root.next_timer_deadline(), Some(deadline));
+    clock.set(deadline);
+    root.handle_timers();
+    assert_eq!(root.next_timer_deadline(), None);
+}
+
+#[test]
+fn cancelled_timer_does_not_fire() {
+    let target_tag = WidgetTag::named("target");
+    let widget = NewWidget::new(SizedBox::empty().record()).with_tag(target_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+    let token = harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.request_timer(Duration::from_millis(10))
+    });
+    harness.edit_widget(target_tag, |mut widget| {
+        widget.ctx.cancel_timer(token);
+    });
+    harness.flush_records_of(target_tag);
+
+    harness.advance_time(Duration::from_millis(10));
+
+    let records = harness.take_records_of(target_tag);
+    assert_all(records, |record| {
+        !matches!(record, Record::Update(Update::TimerExpired(_)))
+    });
 }
 
 #[test]

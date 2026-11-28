@@ -13,6 +13,7 @@ use masonry_winit::app::{AppDriver, MasonryUserEvent};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
+use winit::event_loop::ControlFlow;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use xilem::style::Style;
 use xilem::view::{Label, button, flex_row, label, sized_box};
@@ -58,6 +59,8 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
 
     fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_about_to_wait(event_loop);
+        let wakeup = self.masonry_state.next_timer_wakeup();
+        event_loop.set_control_flow(wakeup.map_or(ControlFlow::Wait, ControlFlow::WaitUntil));
     }
 
     fn window_event(
@@ -111,7 +114,8 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         event_loop: &winit::event_loop::ActiveEventLoop,
         cause: winit::event::StartCause,
     ) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+        self.masonry_state
+            .handle_new_events(event_loop, cause, self.app_driver.as_mut());
     }
 
     fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {

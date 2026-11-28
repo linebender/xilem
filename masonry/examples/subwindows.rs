@@ -10,7 +10,7 @@ use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, MeasureCtx, NewWidget, NoAction,
     PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, PropertySet, RegisterCtx,
-    StyleProperty, SubwindowType, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    StyleProperty, SubwindowType, TimerToken, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::imaging::Painter;
 use masonry::kurbo::{Axis, Point, Size, Vec2};
@@ -20,7 +20,7 @@ use masonry::peniko::Color;
 use masonry::properties::{Background, BorderColor, BorderWidth, ContentColor};
 use masonry::subwindows::Tooltip;
 use masonry::theme::default_property_set;
-use masonry::util::{Duration, Instant};
+use masonry::util::Duration;
 use masonry::widgets::{Flex, Label, Selector};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
@@ -42,9 +42,8 @@ impl AppDriver for Driver {
 
 struct OverlayBox {
     child: WidgetPod<dyn Widget>,
-    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
-    subwindow_root_id: Option<WidgetId>,
-    last_mouse_move: Option<Instant>,
+    overlayer: Box<dyn Fn() -> (NewWidget<Tooltip>, SubwindowType)>,
+    hover_timer: Option<TimerToken>,
     last_cursor_pos: Point,
 }
 
@@ -53,13 +52,12 @@ impl OverlayBox {
     /// Construct container with child, and both width and height not set.
     fn new(
         child: NewWidget<impl Widget + ?Sized>,
-        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
+        overlayer: Box<dyn Fn() -> (NewWidget<Tooltip>, SubwindowType)>,
     ) -> Self {
         Self {
             child: child.erased().to_pod(),
             overlayer,
-            subwindow_root_id: None,
-            last_mouse_move: None,
+            hover_timer: None,
             last_cursor_pos: Point::ZERO,
         }
     }
@@ -77,26 +75,11 @@ impl Widget for OverlayBox {
     ) {
         if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
             self.last_cursor_pos = current.logical_point();
-            self.last_mouse_move = Some(Instant::now());
-            ctx.request_anim_frame();
-        }
-    }
-
-    fn on_anim_frame(
-        &mut self,
-        ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _interval: u64,
-    ) {
-        if let Some(last_mouse_move) = self.last_mouse_move {
-            let now = Instant::now();
-            if now.duration_since(last_mouse_move) > Duration::from_millis(300) {
-                let (overlay, subwindow_type) = (self.overlayer)();
-                self.subwindow_root_id = Some(overlay.id());
-                let subwindow_pos = self.last_cursor_pos + Vec2::new(5., -25.);
-                ctx.create_subwindow(subwindow_type, overlay, subwindow_pos);
-            } else {
-                ctx.request_anim_frame();
+            if ctx.is_hovered()
+                && self.hover_timer.is_none()
+                && ctx.get_attached_subwindow::<Tooltip>().is_none()
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
             }
         }
     }
@@ -105,9 +88,32 @@ impl Widget for OverlayBox {
         ctx.register_child(&mut self.child);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        if let Update::HoveredChanged(false) = event {
-            self.last_mouse_move = None;
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::HoveredChanged(true)
+                if self.hover_timer.is_none()
+                    && ctx.get_attached_subwindow::<Tooltip>().is_none() =>
+            {
+                self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
+            }
+            Update::HoveredChanged(false) => {
+                if let Some(timer) = self.hover_timer.take() {
+                    ctx.cancel_timer(timer);
+                }
+                if let Some(subwindow) = ctx.get_attached_subwindow::<Tooltip>() {
+                    ctx.remove_subwindow(subwindow);
+                }
+            }
+            Update::TimerExpired(token) if Some(*token) == self.hover_timer => {
+                self.hover_timer = None;
+                if !ctx.is_hovered() {
+                    return;
+                }
+                let (overlay, subwindow_type) = (self.overlayer)();
+                let subwindow_pos = self.last_cursor_pos + Vec2::new(5., -25.);
+                ctx.create_attached_subwindow(subwindow_type, overlay, subwindow_pos);
+            }
+            _ => {}
         }
     }
 
@@ -181,8 +187,7 @@ fn main() {
             BorderWidth::all(1.px()),
             BorderColor::new(Color::BLACK),
             Background::Color(Color::WHITE),
-        )))
-        .erased();
+        )));
         (tooltip, SubwindowType::Tooltip("Tooltip!!!".to_string()))
     };
 
@@ -209,4 +214,32 @@ fn main() {
         default_property_set(),
     )
     .unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use masonry_testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn leaving_the_trigger_dismisses_the_hover_tooltip() {
+        let trigger = OverlayBox::new(
+            Label::new("Hover").prepare(),
+            Box::new(|| {
+                (
+                    Tooltip::new(Label::new("Tooltip").prepare()).prepare(),
+                    SubwindowType::Other,
+                )
+            }),
+        )
+        .prepare();
+        let mut harness = TestHarness::create(default_property_set(), trigger);
+        harness.mouse_move((20.0, 20.0));
+        harness.advance_time(Duration::from_millis(300));
+        let tooltip = harness.render_root().get_subwindow_root(1).id();
+
+        harness.mouse_move((-1.0, -1.0));
+        assert!(harness.render_root().get_widget(tooltip).is_none());
+    }
 }

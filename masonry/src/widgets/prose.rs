@@ -275,6 +275,7 @@ mod tests {
     use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, test_property_set};
+    use crate::util::Duration;
     use crate::widgets::{Flex, SizedBox, TextArea};
 
     #[test]
@@ -357,7 +358,7 @@ mod tests {
         assert_render_snapshot!(harness, "prose_selection_unfocused");
 
         harness.process_text_event(TextEvent::WindowFocusChange(true));
-        harness.animate_ms(500 + 1);
+        harness.advance_time(Duration::from_millis(500));
 
         assert_render_snapshot!(harness, "prose_cursor_blink");
     }

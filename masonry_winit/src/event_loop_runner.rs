@@ -27,8 +27,10 @@ use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
-use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
-use winit::event_loop::{ActiveEventLoop, OwnedDisplayHandle};
+use winit::event::{
+    DeviceEvent as WinitDeviceEvent, DeviceId, StartCause, WindowEvent as WinitWindowEvent,
+};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, OwnedDisplayHandle};
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
@@ -341,16 +343,15 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
             .handle_user_event(event_loop, event, self.app_driver.as_mut());
     }
 
-    // The following have empty handlers, but adding this here for future proofing. E.g., memory
-    // warning is very likely to be handled for mobile and we in particular want to make sure
-    // external event loops can let masonry handle these callbacks.
-
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_about_to_wait(event_loop);
+        let wakeup = self.masonry_state.next_timer_wakeup();
+        event_loop.set_control_flow(wakeup.map_or(ControlFlow::Wait, ControlFlow::WaitUntil));
     }
 
-    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
-        self.masonry_state.handle_new_events(event_loop, cause);
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: StartCause) {
+        self.masonry_state
+            .handle_new_events(event_loop, cause, self.app_driver.as_mut());
     }
 
     fn exiting(&mut self, event_loop: &ActiveEventLoop) {
@@ -601,6 +602,25 @@ impl MasonryState {
         // the IME state gets preserved until the app next opens. We work around this by force-deleting
         // the IME state just before exiting.
         window.handle.set_ime_allowed(false);
+    }
+
+    /// Returns the earliest wakeup needed by a pending widget timer.
+    ///
+    /// Hosts with their own event loop can combine this with their other wakeup
+    /// deadlines when choosing control flow in `about_to_wait`.
+    pub fn next_timer_wakeup(&self) -> Option<Instant> {
+        self.windows
+            .values()
+            .filter_map(|window| window.render_root.next_timer_deadline())
+            .min()
+    }
+
+    fn drain_due_timers(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+        for window in self.windows.values_mut() {
+            window.render_root.handle_timers();
+        }
+
+        self.handle_signals(event_loop, app_driver);
     }
 
     // --- MARK: REDRAW
@@ -1027,12 +1047,22 @@ impl MasonryState {
         self.handle_signals(event_loop, app_driver);
     }
 
-    // --- MARK: EMPTY WINIT HANDLERS
+    // --- MARK: OTHER WINIT HANDLERS
     /// Delegate method for [`ApplicationHandler::about_to_wait()`].
+    ///
+    /// Hosts can use [`Self::next_timer_wakeup`] to include widget timers in their
+    /// event loop's wakeup policy.
     pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
 
     /// Delegate method for [`ApplicationHandler::new_events()`].
-    pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
+    pub fn handle_new_events(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _: StartCause,
+        app_driver: &mut dyn AppDriver,
+    ) {
+        self.drain_due_timers(event_loop, app_driver);
+    }
 
     /// Delegate method for [`ApplicationHandler::exiting()`].
     pub fn handle_exiting(&mut self, _: &ActiveEventLoop) {}

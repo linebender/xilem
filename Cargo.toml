@@ -76,6 +76,7 @@ tracing-wasm = "0.2.1"
 console_error_panic_hook = "0.1.7"
 # Remove "std" when that's fixed upstream
 ui-events = { version = "0.3.0", default-features = false, features = ["kurbo"] }
+understory_timing = "0.1.2"
 ui-events-winit = { version = "0.3.0", default-features = false }
 smallvec = "1.15.1"
 hashbrown = { version = "0.17.0", default-features = false, features = ["default-hasher"] }

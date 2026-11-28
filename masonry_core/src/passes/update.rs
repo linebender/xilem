@@ -10,8 +10,8 @@ use ui_events::pointer::PointerType;
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     ClassSetDiff, CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut,
-    PropertiesRef, PropertyArena, PropertyCache, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetArenaNode, WidgetId, WidgetState,
+    PropertiesRef, PropertyArena, PropertyCache, QueryCtx, RegisterCtx, TextEvent, TimerToken,
+    Update, UpdateCtx, Widget, WidgetArenaNode, WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -1246,6 +1246,17 @@ pub(crate) fn run_update_fonts_pass(root: &mut RenderRoot) {
         &root.property_arena,
         root_node,
     );
+}
+
+// ----------------
+
+// --- MARK: TIMERS
+pub(crate) fn run_update_timer_pass(root: &mut RenderRoot, target: WidgetId, token: TimerToken) {
+    let _span = info_span!("update_timer").entered();
+
+    run_single_update_pass(root, Some(target), |widget, ctx, props| {
+        widget.update(ctx, props, &Update::TimerExpired(token));
+    });
 }
 
 // ----------------
