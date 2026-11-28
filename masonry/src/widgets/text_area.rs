@@ -12,8 +12,8 @@ use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime, LayoutCtx,
     MeasureCtx, PaintCtx, PlainEditorAccessibility, PointerButton, PointerButtonEvent,
     PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    StyleProperty, TextEvent, TimerToken, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
-    set_accesskit_brush_properties,
+    StyleProperty, TextEvent, TimerToken, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    render_text, set_accesskit_brush_properties,
 };
 use crate::imaging::Painter;
 use crate::kurbo::{Affine, Axis, Point, Rect, Size};
@@ -22,15 +22,13 @@ use crate::parley::PlainEditor;
 use crate::parley::editing::{Generation, SplitString};
 use crate::properties::{CaretColor, ContentColor, SelectionColor};
 use crate::theme::default_text_styles;
-use crate::util::{Duration, bounding_box_to_rect, debug_panic};
+use crate::util::{Duration, Instant, bounding_box_to_rect, debug_panic};
 use crate::{TextAlign, theme};
 
 /// The time for half of a cursor blink cycle.
-const CURSOR_BLINK_INTERVAL: u64 = 500;
-/// The time for a complete cursor blink cycle.
-const CURSOR_BLINK_TIME: u64 = CURSOR_BLINK_INTERVAL * 2;
+const CURSOR_BLINK_INTERVAL: Duration = Duration::from_millis(500);
 /// The timeout after which the cursor will stop blinking and stay solid.
-const CURSOR_BLINK_TIMEOUT: u64 = 10_000;
+const CURSOR_BLINK_TIMEOUT: Duration = Duration::from_secs(10);
 // TODO: These should be read from system settings, but we currently
 // aren't aware of a robust way to read that cross-platform.
 
@@ -86,17 +84,17 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
 
-    /// Whether to show the cursor, used for the blink animation.
-    anim_cursor_visible: bool,
+    /// Whether to show the cursor when focused.
+    cursor_visible: bool,
 
-    /// Previous interval (ms), used for the cursor's blink animation.
-    anim_prev_interval: u64,
+    /// The active blink and its stop time.
+    cursor_blink: Option<CursorBlink>,
+}
 
-    /// Time elapsed (ms) to calculate the timeout of the cursor's blink animation.
-    anim_elapsed: u64,
-
-    /// Pending cursor blink timer.
-    cursor_blink_timer: Option<TimerToken>,
+#[derive(Clone, Copy, Debug)]
+struct CursorBlink {
+    timer: TimerToken,
+    deadline: Instant,
 }
 
 // --- MARK: BUILDERS
@@ -140,10 +138,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_max_advance: None,
             hint: true,
             insert_newline: InsertNewline::default(),
-            anim_cursor_visible: true,
-            anim_prev_interval: 0,
-            anim_elapsed: 0,
-            cursor_blink_timer: None,
+            cursor_visible: true,
+            cursor_blink: None,
         }
     }
 
@@ -276,33 +272,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         bounding_box_to_rect(self.editor.ime_cursor_area())
     }
 
-    fn reset_cursor_blink(&mut self) -> bool {
-        self.anim_prev_interval = 0;
-        self.anim_elapsed = 0;
-        let was_hidden = !self.anim_cursor_visible;
-        self.anim_cursor_visible = true;
-        was_hidden
-    }
-
-    fn advance_cursor_blink(&mut self) -> bool {
-        self.anim_prev_interval += CURSOR_BLINK_INTERVAL;
-        self.anim_elapsed += CURSOR_BLINK_INTERVAL;
-
-        if self.anim_prev_interval >= CURSOR_BLINK_TIME {
-            self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
-        }
-
-        let should_show = self.anim_elapsed >= CURSOR_BLINK_TIMEOUT || self.anim_prev_interval == 0;
-        if self.anim_cursor_visible == should_show {
-            false
-        } else {
-            self.anim_cursor_visible = should_show;
-            true
-        }
-    }
-
-    fn cursor_should_blink(&self) -> bool {
-        self.anim_elapsed < CURSOR_BLINK_TIMEOUT
+    fn start_cursor_blink(&mut self, now: Instant, timer: TimerToken) {
+        self.cursor_blink = Some(CursorBlink {
+            timer,
+            deadline: now + CURSOR_BLINK_TIMEOUT,
+        });
     }
 }
 
@@ -543,18 +517,18 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        if let Some(timer) = self.cursor_blink_timer.take() {
-            ctx.cancel_timer(timer);
+        if let Some(blink) = self.cursor_blink.take() {
+            ctx.cancel_timer(blink.timer);
         }
         if ctx.is_window_focused()
             && ctx.is_focus_target()
             && !matches!(event, TextEvent::WindowFocusChange(false))
         {
-            if self.reset_cursor_blink() {
+            if !self.cursor_visible {
+                self.cursor_visible = true;
                 ctx.request_paint_only();
             }
-            self.cursor_blink_timer =
-                Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
+            self.start_cursor_blink(ctx.now(), ctx.request_timer(CURSOR_BLINK_INTERVAL));
         }
 
         match event {
@@ -876,41 +850,40 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.request_layout();
             }
             Update::FocusChanged(true) => {
-                if let Some(timer) = self.cursor_blink_timer.take() {
-                    ctx.cancel_timer(timer);
+                if let Some(blink) = self.cursor_blink.take() {
+                    ctx.cancel_timer(blink.timer);
                 }
-                if self.reset_cursor_blink() {
-                    ctx.request_paint_only();
-                }
-                if ctx.is_window_focused() && self.cursor_should_blink() {
-                    self.cursor_blink_timer =
-                        Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
+                self.cursor_visible = true;
+                if ctx.is_window_focused() {
+                    self.start_cursor_blink(ctx.now(), ctx.request_timer(CURSOR_BLINK_INTERVAL));
                 }
                 ctx.request_render();
             }
-            Update::FocusChanged(false) => {
-                if let Some(timer) = self.cursor_blink_timer.take() {
-                    ctx.cancel_timer(timer);
-                }
-                ctx.request_render();
-            }
-            Update::DisabledChanged(_) => {
-                if let Some(timer) = self.cursor_blink_timer.take() {
-                    ctx.cancel_timer(timer);
+            Update::FocusChanged(false) | Update::DisabledChanged(_) => {
+                if let Some(blink) = self.cursor_blink.take() {
+                    ctx.cancel_timer(blink.timer);
                 }
                 // We might need to use the disabled brush, and stop displaying the selection.
                 ctx.request_render();
             }
-            Update::TimerExpired(token) if Some(*token) == self.cursor_blink_timer => {
-                self.cursor_blink_timer = None;
-                if ctx.is_window_focused() && ctx.is_focus_target() {
-                    if self.advance_cursor_blink() {
-                        ctx.request_paint_only();
-                    }
-                    if self.cursor_should_blink() {
-                        self.cursor_blink_timer =
-                            Some(ctx.request_timer(Duration::from_millis(CURSOR_BLINK_INTERVAL)));
-                    }
+            Update::TimerExpired(token) => {
+                let Some(blink) = self.cursor_blink.filter(|blink| blink.timer == *token) else {
+                    return;
+                };
+                self.cursor_blink = None;
+                if !ctx.is_window_focused() || !ctx.is_focus_target() {
+                    return;
+                }
+
+                let remaining = blink.deadline.saturating_duration_since(ctx.now());
+                let visible = remaining.is_zero() || !self.cursor_visible;
+                if self.cursor_visible != visible {
+                    self.cursor_visible = visible;
+                    ctx.request_paint_only();
+                }
+                if !remaining.is_zero() {
+                    let timer = ctx.request_timer(CURSOR_BLINK_INTERVAL.min(remaining));
+                    self.cursor_blink = Some(CursorBlink { timer, ..blink });
                 }
             }
             _ => {}
@@ -1061,7 +1034,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 painter.fill(rect, selection_color).draw();
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
-                && self.anim_cursor_visible
+                && self.cursor_visible
                 && ctx.is_window_focused()
             {
                 let rect = bounding_box_to_rect(cursor);
@@ -1172,6 +1145,21 @@ mod tests {
     use crate::testing::TestHarness;
     use crate::theme::test_property_set;
     // Tests of alignment happen in Prose.
+
+    #[test]
+    fn cursor_blink_stops_after_elapsed_timeout() {
+        let area = TextArea::new_editable("Text").prepare();
+        let id = area.id();
+        let mut harness = TestHarness::create(test_property_set(), area);
+        harness.focus_on(Some(id));
+        harness.advance_time(CURSOR_BLINK_INTERVAL);
+        assert!(!harness.root_widget().cursor_visible);
+
+        // Only one timer callback is delivered after a long pause.
+        harness.advance_time(CURSOR_BLINK_TIMEOUT);
+        assert!(harness.root_widget().cursor_visible);
+        assert_eq!(harness.render_root().next_timer_deadline(), None);
+    }
 
     #[test]
     fn edit_wordwrap() {

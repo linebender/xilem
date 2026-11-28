@@ -43,7 +43,7 @@ use crate::passes::update::{
 };
 use crate::passes::{PassTracing, recurse_on_children};
 use crate::properties::Dimensions;
-use crate::util::Duration;
+use crate::util::{Duration, Instant};
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
@@ -177,8 +177,11 @@ pub(crate) struct RenderRootState {
     /// Queue of pending widget timers.
     pub(crate) timers: TimerQueue<WidgetId>,
 
-    /// Current host-provided timer time.
-    pub(crate) timer_now: TimerInstant,
+    /// Origin for the nanosecond ticks stored in the timer queue.
+    timer_origin: Instant,
+
+    /// Monotonic time source used for widget timers.
+    timer_clock: Box<dyn Fn() -> Instant>,
 
     /// DPI scale factor.
     ///
@@ -331,6 +334,19 @@ impl RenderRoot {
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
+        Self::new_with_clock(root_widget, signal_sink, options, Instant::now)
+    }
+
+    /// Creates a render root with a custom monotonic clock for widget timers.
+    ///
+    /// Supply a clock that returns nondecreasing values. Tests and hosts that
+    /// simulate time can use this constructor to control when timers become due.
+    pub fn new_with_clock(
+        root_widget: NewWidget<impl Widget + ?Sized>,
+        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        options: RenderRootOptions,
+        timer_clock: impl Fn() -> Instant + 'static,
+    ) -> Self {
         let RenderRootOptions {
             default_properties,
             use_system_fonts,
@@ -391,7 +407,8 @@ impl RenderRoot {
                 },
                 access_tree_active: false,
                 timers: TimerQueue::new(),
-                timer_now: 0,
+                timer_origin: timer_clock(),
+                timer_clock: Box::new(timer_clock),
                 scale_factor,
                 debug_paint,
             },
@@ -1033,42 +1050,23 @@ impl RenderRoot {
         self.root_state().needs_anim
     }
 
-    /// Sets the current host-provided timer time.
-    ///
-    /// The time is measured as a [`Duration`] from an origin chosen by the host.
-    /// All calls to this method, [`handle_timers`](Self::handle_timers), and
-    /// [`next_timer_deadline`](Self::next_timer_deadline) must use the same origin.
-    ///
-    /// Masonry stores this as a `Duration` rather than a [`std::time::Instant`]
-    /// so tests can provide deterministic clock values, and so hosts can choose
-    /// the monotonic clock origin used to schedule wakeups.
-    ///
-    /// This is separate from [`handle_timers`](Self::handle_timers) because
-    /// [`UpdateCtx::request_timer`](crate::core::UpdateCtx::request_timer) schedules
-    /// timers relative to this value. Hosts should call this before delivering
-    /// normal events that may request timers.
-    pub fn set_timer_time(&mut self, time: Duration) {
-        self.global_state.timer_now = duration_to_timer_ticks(time);
-    }
-
-    /// Returns the next timer deadline, measured from the host's timer origin.
-    pub fn next_timer_deadline(&self) -> Option<Duration> {
+    /// Returns the next timer deadline on this root's monotonic clock.
+    pub fn next_timer_deadline(&self) -> Option<Instant> {
+        let deadline = self.global_state.timers.next_deadline()?;
         self.global_state
-            .timers
-            .next_deadline()
-            .map(Duration::from_nanos)
+            .timer_origin
+            .checked_add(Duration::from_nanos(deadline))
     }
 
-    /// Delivers all timers due at or before `time`.
+    /// Delivers pending timers due when this call begins.
     ///
-    /// `time` must be measured from the same host-chosen origin used by
-    /// [`set_timer_time`](Self::set_timer_time) and
-    /// [`next_timer_deadline`](Self::next_timer_deadline).
-    ///
-    /// Timers targeting removed widgets are discarded.
-    pub fn handle_timers(&mut self, time: Duration) {
-        self.set_timer_time(time);
-        let now = self.global_state.timer_now;
+    /// Timers targeting removed widgets are discarded. Timers requested during
+    /// delivery are considered on the next call.
+    pub fn handle_timers(&mut self) {
+        if self.global_state.timers.is_empty() {
+            return;
+        }
+        let now = self.global_state.timer_ticks();
         let mut fired = Vec::new();
         // Pop the due set before dispatch. Widget updates may request or cancel
         // timers; those mutations should not change which timers fire in this
@@ -1228,14 +1226,24 @@ impl RenderRootState {
     }
 
     pub(crate) fn request_timer(&mut self, target: WidgetId, delay: Duration) -> TimerToken {
+        let now = self.timer_ticks();
         let id = self
             .timers
-            .schedule_once(target, self.timer_now, duration_to_timer_ticks(delay));
+            .schedule_once(target, now, duration_to_timer_ticks(delay));
         TimerToken(id)
     }
 
     pub(crate) fn cancel_timer(&mut self, token: TimerToken) -> bool {
         self.timers.cancel(token.0)
+    }
+
+    pub(crate) fn now(&self) -> Instant {
+        (self.timer_clock)()
+    }
+
+    fn timer_ticks(&self) -> TimerInstant {
+        let elapsed = self.now().saturating_duration_since(self.timer_origin);
+        duration_to_timer_ticks(elapsed)
     }
 
     /// Does something in this state indicate that the rewrite passes need to be reran.

@@ -58,6 +58,12 @@ Like the animation pass, it is triggered externally by the host event loop and s
 Timers are best for delayed one-shot UI behavior such as cursor blinking, tooltip delays, debounce, and long press recognition.
 Use animation frames instead for visual state that should advance with frame cadence.
 
+Custom backends can use [`RenderRoot::next_timer_deadline`](crate::app::RenderRoot::next_timer_deadline)
+to schedule a wakeup and call [`RenderRoot::handle_timers`](crate::app::RenderRoot::handle_timers)
+when the event loop wakes. Both use the root's monotonic clock.
+Hosts that simulate time can supply a clock with [`RenderRoot::new_with_clock`](crate::app::RenderRoot::new_with_clock).
+Tests can advance timers and animation frames together with `TestHarness::advance_time`.
+
 
 ## Rewrite passes
 

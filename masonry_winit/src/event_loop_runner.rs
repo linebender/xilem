@@ -27,8 +27,9 @@ use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
-use winit::event::StartCause;
-use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
+use winit::event::{
+    DeviceEvent as WinitDeviceEvent, DeviceId, StartCause, WindowEvent as WinitWindowEvent,
+};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, OwnedDisplayHandle};
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
@@ -133,7 +134,6 @@ pub struct Window {
     pub(crate) accesskit_adapter: Adapter,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
-    timer_origin: Instant,
     pub(crate) base_color: Color,
 }
 
@@ -149,7 +149,6 @@ impl Window {
         size: PhysicalSize<u32>,
         scale_factor: f64,
     ) -> Self {
-        let timer_origin = Instant::now();
         Self {
             id: window_id,
             handle,
@@ -169,7 +168,6 @@ impl Window {
                     test_font: None,
                 },
             ),
-            timer_origin,
             base_color,
         }
     }
@@ -345,12 +343,10 @@ impl ApplicationHandler<MasonryUserEvent> for MainState {
             .handle_user_event(event_loop, event, self.app_driver.as_mut());
     }
 
-    // The following have empty handlers, but adding this here for future proofing. E.g., memory
-    // warning is very likely to be handled for mobile and we in particular want to make sure
-    // external event loops can let masonry handle these callbacks.
-
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_about_to_wait(event_loop);
+        let wakeup = self.masonry_state.next_timer_wakeup();
+        event_loop.set_control_flow(wakeup.map_or(ControlFlow::Wait, ControlFlow::WaitUntil));
     }
 
     fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: StartCause) {
@@ -608,32 +604,20 @@ impl MasonryState {
         window.handle.set_ime_allowed(false);
     }
 
-    fn next_timer_wakeup(&self) -> Option<Instant> {
+    /// Returns the earliest wakeup needed by a pending widget timer.
+    ///
+    /// Hosts with their own event loop can combine this with their other wakeup
+    /// deadlines when choosing control flow in `about_to_wait`.
+    pub fn next_timer_wakeup(&self) -> Option<Instant> {
         self.windows
             .values()
-            .filter_map(|window| {
-                let delay = window
-                    .render_root
-                    .next_timer_deadline()?
-                    .saturating_sub(window.timer_origin.elapsed());
-                Instant::now().checked_add(delay)
-            })
+            .filter_map(|window| window.render_root.next_timer_deadline())
             .min()
-    }
-
-    fn arm_next_timer(&self, event_loop: &ActiveEventLoop) {
-        if let Some(deadline) = self.next_timer_wakeup() {
-            event_loop.set_control_flow(ControlFlow::WaitUntil(deadline));
-        } else {
-            event_loop.set_control_flow(ControlFlow::Wait);
-        }
     }
 
     fn drain_due_timers(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         for window in self.windows.values_mut() {
-            window
-                .render_root
-                .handle_timers(window.timer_origin.elapsed());
+            window.render_root.handle_timers();
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -889,9 +873,6 @@ impl MasonryState {
             self.frame = Some(tracing_tracy::client::non_continuous_frame!("Masonry"));
         }
         window
-            .render_root
-            .set_timer_time(window.timer_origin.elapsed());
-        window
             .accesskit_adapter
             .process_event(&window.handle, &event);
 
@@ -1034,9 +1015,6 @@ impl MasonryState {
                 self.windows.get_mut(window_id).unwrap()
             }
         };
-        window
-            .render_root
-            .set_timer_time(window.timer_origin.elapsed());
         match event {
             MasonryUserEvent::AccessKit(_, event) => {
                 match event {
@@ -1069,11 +1047,12 @@ impl MasonryState {
         self.handle_signals(event_loop, app_driver);
     }
 
-    // --- MARK: EMPTY WINIT HANDLERS
+    // --- MARK: OTHER WINIT HANDLERS
     /// Delegate method for [`ApplicationHandler::about_to_wait()`].
-    pub fn handle_about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.arm_next_timer(event_loop);
-    }
+    ///
+    /// Hosts can use [`Self::next_timer_wakeup`] to include widget timers in their
+    /// event loop's wakeup policy.
+    pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
 
     /// Delegate method for [`ApplicationHandler::new_events()`].
     pub fn handle_new_events(
@@ -1219,8 +1198,6 @@ impl MasonryState {
             let window = self.windows.get(&handle_id).unwrap();
             window.handle.request_redraw();
         }
-
-        self.arm_next_timer(event_loop);
     }
 
     fn handle_id(&self, window_id: WindowId) -> HandleId {

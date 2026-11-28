@@ -29,7 +29,7 @@ use crate::kurbo::{Affine, Axis, Insets, Point, Rect, Size, Vec2};
 use crate::layout::{LayoutSize, LenDef, Length, SizeDef};
 use crate::passes::layout::{place_widget, resolve_length, resolve_size, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{Duration, ParentLinkedList, get_debug_color};
+use crate::util::{Duration, Instant, ParentLinkedList, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -427,6 +427,11 @@ impl_context_method!(
     UpdateCtx<'_>,
     RawCtx<'_>,
     {
+        /// Returns the current monotonic time from the clock used for widget timers.
+        pub fn now(&self) -> Instant {
+            self.global_state.now()
+        }
+
         /// Requests a timer for the current widget.
         ///
         /// When the timer expires, this widget receives [`Update::TimerExpired`] with

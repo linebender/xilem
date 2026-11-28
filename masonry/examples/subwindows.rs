@@ -42,8 +42,7 @@ impl AppDriver for Driver {
 
 struct OverlayBox {
     child: WidgetPod<dyn Widget>,
-    overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
-    subwindow_root_id: Option<WidgetId>,
+    overlayer: Box<dyn Fn() -> (NewWidget<Tooltip>, SubwindowType)>,
     hover_timer: Option<TimerToken>,
     last_cursor_pos: Point,
 }
@@ -53,12 +52,11 @@ impl OverlayBox {
     /// Construct container with child, and both width and height not set.
     fn new(
         child: NewWidget<impl Widget + ?Sized>,
-        overlayer: Box<dyn Fn() -> (NewWidget<dyn Widget>, SubwindowType)>,
+        overlayer: Box<dyn Fn() -> (NewWidget<Tooltip>, SubwindowType)>,
     ) -> Self {
         Self {
             child: child.erased().to_pod(),
             overlayer,
-            subwindow_root_id: None,
             hover_timer: None,
             last_cursor_pos: Point::ZERO,
         }
@@ -77,7 +75,9 @@ impl Widget for OverlayBox {
     ) {
         if let PointerEvent::Move(PointerUpdate { current, .. }) = event {
             self.last_cursor_pos = current.logical_point();
-            if self.subwindow_root_id.take().is_some() && ctx.is_hovered() && self.hover_timer.is_none()
+            if ctx.is_hovered()
+                && self.hover_timer.is_none()
+                && ctx.get_attached_subwindow::<Tooltip>().is_none()
             {
                 self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
             }
@@ -91,7 +91,8 @@ impl Widget for OverlayBox {
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(true)
-                if self.subwindow_root_id.is_none() && self.hover_timer.is_none() =>
+                if self.hover_timer.is_none()
+                    && ctx.get_attached_subwindow::<Tooltip>().is_none() =>
             {
                 self.hover_timer = Some(ctx.request_timer(Duration::from_millis(300)));
             }
@@ -99,7 +100,7 @@ impl Widget for OverlayBox {
                 if let Some(timer) = self.hover_timer.take() {
                     ctx.cancel_timer(timer);
                 }
-                if let Some(subwindow) = self.subwindow_root_id.take() {
+                if let Some(subwindow) = ctx.get_attached_subwindow::<Tooltip>() {
                     ctx.remove_subwindow(subwindow);
                 }
             }
@@ -109,9 +110,8 @@ impl Widget for OverlayBox {
                     return;
                 }
                 let (overlay, subwindow_type) = (self.overlayer)();
-                self.subwindow_root_id = Some(overlay.id());
                 let subwindow_pos = self.last_cursor_pos + Vec2::new(5., -25.);
-                ctx.create_subwindow(subwindow_type, overlay, subwindow_pos);
+                ctx.create_attached_subwindow(subwindow_type, overlay, subwindow_pos);
             }
             _ => {}
         }
@@ -187,8 +187,7 @@ fn main() {
             BorderWidth::all(1.px()),
             BorderColor::new(Color::BLACK),
             Background::Color(Color::WHITE),
-        )))
-        .erased();
+        )));
         (tooltip, SubwindowType::Tooltip("Tooltip!!!".to_string()))
     };
 
@@ -215,4 +214,32 @@ fn main() {
         default_property_set(),
     )
     .unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use masonry_testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn leaving_the_trigger_dismisses_the_hover_tooltip() {
+        let trigger = OverlayBox::new(
+            Label::new("Hover").prepare(),
+            Box::new(|| {
+                (
+                    Tooltip::new(Label::new("Tooltip").prepare()).prepare(),
+                    SubwindowType::Other,
+                )
+            }),
+        )
+        .prepare();
+        let mut harness = TestHarness::create(default_property_set(), trigger);
+        harness.mouse_move((20.0, 20.0));
+        harness.advance_time(Duration::from_millis(300));
+        let tooltip = harness.render_root().get_subwindow_root(1).id();
+
+        harness.mouse_move((-1.0, -1.0));
+        assert!(harness.render_root().get_widget(tooltip).is_none());
+    }
 }
